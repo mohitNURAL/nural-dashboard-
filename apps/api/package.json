@@ -7,12 +7,15 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.build.json",
     "start": "tsx src/server.ts",
+    "bitrix:ping": "tsx src/scripts/bitrixPing.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.2",
     "@nural/shared": "workspace:*",
+    "bullmq": "^5",
     "fastify": "^5.2.0",
+    "ioredis": "^5",
     "zod": "^3.24.1"
   },
   "devDependencies": {
