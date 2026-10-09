@@ -1,25 +1,10 @@
 // Change notifications between the sync worker and every API process (Redis pub/sub).
-import type { StageGroup, StageTitle } from '@nural/shared';
+import type { TaskChanged } from '@nural/shared';
 import { Redis } from 'ioredis';
 
-export const CHANNEL = 'dashboard:events';
+export type { TaskChanged };
 
-/** Sent to browsers as SSE `task.changed` (SRS 7, module 6). */
-export interface TaskChanged {
-  type: 'task.changed';
-  taskId: number;
-  title: string;
-  projectId: number;
-  stage: StageTitle | null;
-  fromStage: StageTitle | null;
-  stageGroup: StageGroup | null;
-  isIssue: boolean;
-  isNew: boolean;
-  reopened: boolean;
-  deleted: boolean;
-  source: 'webhook' | 'reconcile' | 'nightly';
-  at: string;
-}
+export const CHANNEL = 'dashboard:events';
 
 export interface EventBus {
   publish(change: TaskChanged): Promise<void>;

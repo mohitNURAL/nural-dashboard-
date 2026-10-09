@@ -5,11 +5,17 @@
 @tailwind utilities;
 
 body {
-  @apply bg-bg font-body text-xs text-text;
+  @apply bg-bg font-body text-body text-text;
 }
 
 h1,
 h2,
 h3 {
   @apply font-heading font-bold;
+}
+
+@layer components {
+  .skeleton {
+    @apply animate-pulse rounded bg-primary-soft-100;
+  }
 }

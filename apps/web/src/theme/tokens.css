@@ -24,3 +24,11 @@
   --border: #dfddde; /* Grey 200 */
   --text-muted: #b9b2b4; /* Grey 300 */
 }
+
+/* Shape and spacing: 4 px grid, 8 px card radius (SRS section 6). */
+:root {
+  --space: 4px;
+  --radius-card: 8px;
+  --radius-control: 6px;
+  --shadow-pop: 0 8px 24px rgb(24 36 78 / 0.14);
+}
