@@ -30,4 +30,5 @@ Live Development and QA dashboard over Bitrix24 (nural.bitrix24.in). Full spec: 
 
 Checks: `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm format:check`.
 Bitrix24: `pnpm bitrix:ping` (stages per group), `pnpm sync:verify [148,154]` (Postgres vs Bitrix24 counts per stage).
+API (all take `project`, `assignee`, `tag`, `type`, `dateField`, `from`, `to`): `/api/dev/summary|assignees|ranking|matrix`, `/api/qa/summary|issues|testing`, `/api/tasks?kind=tasks|issues|testing&preset=…`, `/api/tasks/:id`, `/api/filters/options?tab=dev|qa`. Metric rules live in `packages/shared/src/metrics.ts`.
 Schema changes: edit `apps/api/src/db/schema.ts`, then `pnpm db:generate` and `pnpm db:migrate`.

@@ -1,40 +1,60 @@
-// Core models shared by apps/api and apps/web. Expanded in milestones 3 and 4.
+// Models shared by apps/api and apps/web.
 import type { StageGroup, StageTitle } from './stages';
 
 export type { StageGroup, StageTitle };
 
-export type Priority = 'low' | 'normal' | 'high';
 export type IssueType = 'bug' | 'feedback';
 
-export interface Task {
+/** A stage move, from the history backfill or (milestone 5) live webhooks. */
+export interface StageEvent {
+  from: StageTitle | null;
+  to: StageTitle | null;
+  at: Date;
+  by: number | null;
+}
+
+/** A task as the metric functions see it (packages/shared/src/metrics.ts). */
+export interface MetricTask {
   id: number;
   title: string;
+  /** 0 = outside any workgroup (testing team tasks). */
   groupId: number;
-  stageId: string;
+  /** Canonical stage, null when the board column is not in the stage map. */
   stage: StageTitle | null;
-  priority: Priority;
+  stageTitle: string | null;
+  status: number;
+  /** Bitrix24 priority: 0 low, 1 normal, 2 high. */
+  priority: number;
   responsibleId: number;
   createdBy: number;
-  createdAt: string;
-  deadline: string | null;
-  closedAt: string | null;
+  createdAt: Date;
+  changedAt: Date;
+  deadline: Date | null;
+  closedAt: Date | null;
   parentId: number | null;
+  relatedIds: number[];
   tags: string[];
   isIssue: boolean;
   issueType: IssueType | null;
-  changedAt: string;
+  /** Stage moves, oldest first. */
+  events: StageEvent[];
 }
 
-export interface Issue extends Task {
-  isIssue: true;
-  issueType: IssueType;
+export interface MetricContext {
+  now: Date;
+  /** IANA zone for "today" and "overdue" (APP_TIMEZONE). */
+  tz: string;
+  /** User IDs in the QA Testing department. */
+  testers: ReadonlySet<number>;
 }
 
 export interface Filters {
   projectIds?: number[];
   assigneeIds?: number[];
   tags?: string[];
+  issueType?: IssueType;
   dateField?: 'created' | 'deadline';
+  /** Inclusive calendar dates (YYYY-MM-DD) in the app time zone. */
   from?: string;
   to?: string;
 }

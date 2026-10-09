@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { issueTypeOf, mapTask, type BitrixTask } from './mapTask';
+import { mapTask, type BitrixTask } from './mapTask';
 import { buildStageMap, resolveTaskStage } from './stageMap';
 
 // Two boards with different stage IDs for the same titles (as on the real portal).
@@ -60,14 +60,6 @@ describe('resolveTaskStage', () => {
     expect(resolveTaskStage({ groupId: 0, stageId: '12', status: 3 }, stages).stage).toBe(
       'In progress',
     );
-  });
-});
-
-describe('issueTypeOf', () => {
-  it('detects bug and feedback case-insensitively, bug first', () => {
-    expect(issueTypeOf(['New Development'])).toBeNull();
-    expect(issueTypeOf(['Feedback'])).toBe('feedback');
-    expect(issueTypeOf(['feedback', 'BUG'])).toBe('bug');
   });
 });
 

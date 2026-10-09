@@ -1,5 +1,6 @@
 // Maps a Bitrix24 task (tasks.task.list / tasks.task.get, camelCase keys) to a tasks row.
-import type { IssueType } from '@nural/shared';
+// Issue rules (bug / feedback / feedbacks / Re-Open tags) live in packages/shared/src/tags.ts.
+import { issueTypeOf } from '@nural/shared';
 import type { schema } from '../db/client';
 import { resolveTaskStage, type StageMap } from './stageMap';
 
@@ -56,14 +57,6 @@ export function tagTitles(tags: BitrixTask['tags']): string[] {
   return Object.values(tags)
     .map((t) => t.title.trim())
     .filter(Boolean);
-}
-
-/** Issue = tagged bug or feedback (case-insensitive); bug wins when both are present. */
-export function issueTypeOf(tags: string[]): IssueType | null {
-  const lower = new Set(tags.map((t) => t.toLowerCase()));
-  if (lower.has('bug')) return 'bug';
-  if (lower.has('feedback')) return 'feedback';
-  return null;
 }
 
 export function mapTask(t: BitrixTask, stages: StageMap): TaskRow {

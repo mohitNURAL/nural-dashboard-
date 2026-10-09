@@ -2,6 +2,7 @@
 // tasks outside any workgroup. Re-runnable: rows are upserted and missing tasks marked deleted.
 import { and, eq, inArray, notInArray, sql } from 'drizzle-orm';
 import { batch, listAll, type Call, type Command } from '../bitrix';
+import { departmentTree, TESTING_DEPT } from '../data/dataset';
 import { db, schema } from '../db/client';
 import { chunk, excludedSet } from '../db/upsert';
 import { mapTask, TASK_SELECT, type BitrixTask, type TaskRow } from './mapTask';
@@ -13,18 +14,7 @@ export async function loadStageMap(): Promise<StageMap> {
 
 /** QA Testing department and its sub-departments (SRS 5, "Testing team"). */
 export async function testingTeamIds(): Promise<number[]> {
-  const depts = await db.select().from(schema.departments);
-  const roots = depts.filter((d) => /\bqa\b|testing/i.test(d.name)).map((d) => d.id);
-  const ids = new Set(roots);
-  for (let grew = true; grew;) {
-    grew = false;
-    for (const d of depts) {
-      if (d.parentId && ids.has(d.parentId) && !ids.has(d.id)) {
-        ids.add(d.id);
-        grew = true;
-      }
-    }
-  }
+  const ids = departmentTree(await db.select().from(schema.departments), TESTING_DEPT);
   if (!ids.size) return [];
   const members = await db
     .select({ id: schema.users.id })
