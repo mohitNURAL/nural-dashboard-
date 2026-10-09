@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   PENDING_STAGES,
   SENT_TO_QA_STAGES,
+  STAGE_ALIASES,
   STAGE_COLORS,
   STAGE_TITLES,
   canonicalStage,
@@ -24,6 +25,16 @@ describe('stages', () => {
     expect(canonicalStage('  in   qa ')).toBe('In QA');
     expect(canonicalStage('live')).toBe('LIVE');
     expect(canonicalStage('Backlog')).toBeNull();
+  });
+
+  it('maps non-standard board titles to the nearest standard stage', () => {
+    for (const [alias, stage] of Object.entries(STAGE_ALIASES)) {
+      expect(canonicalStage(alias.toUpperCase()), alias).toBe(stage);
+      expect(STAGE_TITLES).toContain(stage);
+    }
+    expect(canonicalStage('issues raised')).toBe('Issue Raised');
+    expect(canonicalStage('Unit testing')).toBe('In progress');
+    expect(canonicalStage('Name')).toBeNull();
   });
 
   it('treats stage id 0 as To do', () => {

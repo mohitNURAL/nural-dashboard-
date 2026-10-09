@@ -24,8 +24,10 @@ Live Development and QA dashboard over Bitrix24 (nural.bitrix24.in). Full spec: 
 ## Run locally
 
 1. `pnpm install`
-2. Start Docker Desktop, then `docker compose up -d` (Postgres 16 on 5432, Redis 7 on 6379)
-3. `pnpm dev`: web on http://localhost:5173, API on http://localhost:4000/health
+2. Start Docker Desktop, then `docker compose up -d` (Postgres 16 on **5433**, since a local PostgreSQL service uses 5432; Redis 7 on 6379)
+3. `pnpm sync:initial`: creates the tables, then loads users, departments, workgroups, stages and every task, and backfills stage moves from Bitrix24 history (resumable; `--skip-history` to skip)
+4. `pnpm dev`: web on http://localhost:5173, API on http://localhost:4000/health
 
 Checks: `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm format:check`.
-`pnpm db:migrate`, `pnpm sync:initial` and `pnpm bitrix:ping` are placeholders until milestones 2 and 3.
+Bitrix24: `pnpm bitrix:ping` (stages per group), `pnpm sync:verify [148,154]` (Postgres vs Bitrix24 counts per stage).
+Schema changes: edit `apps/api/src/db/schema.ts`, then `pnpm db:generate` and `pnpm db:migrate`.

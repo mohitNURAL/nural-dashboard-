@@ -62,7 +62,34 @@ export const STAGE_COLORS: Record<StageTitle, string> = {
 
 const normalize = (s: string) => s.trim().replace(/\s+/g, ' ').toLowerCase();
 
-const BY_NORMALIZED = new Map<string, StageTitle>(STAGE_TITLES.map((t) => [normalize(t), t]));
+/**
+ * Non-standard board titles mapped to the nearest standard stage. Temporary: the boards
+ * are being aligned to the 11 standard stages, after which this can shrink. The raw
+ * title is always stored alongside the canonical stage.
+ */
+export const STAGE_ALIASES: Readonly<Record<string, StageTitle>> = {
+  New: 'To do',
+  'Figma Review': 'To do',
+  Documentation: 'To do',
+  'Unit Testing': 'In progress',
+  Integration: 'In progress',
+  Hold: 'On Hold',
+  'Project Hold': 'On Hold',
+  'To be discussed': 'On Hold',
+  'Push to Master': 'Pushed to Master',
+  'Merge to Development': 'Merged to Development',
+  'Marged To Development': 'Merged to Development',
+  'Issues Raised': 'Issue Raised',
+  Staging: 'Done',
+  'Done On Staging': 'Done',
+  Finished: 'Done',
+  'Done On Live': 'LIVE',
+};
+
+const BY_NORMALIZED = new Map<string, StageTitle>([
+  ...Object.entries(STAGE_ALIASES).map(([alias, t]) => [normalize(alias), t] as const),
+  ...STAGE_TITLES.map((t) => [normalize(t), t] as const),
+]);
 
 /** Maps a board column title (any case/spacing) to its canonical stage, or null if unknown. */
 export function canonicalStage(title: string | null | undefined): StageTitle | null {

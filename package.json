@@ -15,9 +15,11 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "db:migrate": "node scripts/not-yet.mjs db:migrate 3",
-    "sync:initial": "node scripts/not-yet.mjs sync:initial 3",
-    "bitrix:ping": "pnpm --filter @nural/api bitrix:ping"
+    "bitrix:ping": "pnpm --filter @nural/api bitrix:ping",
+    "db:generate": "pnpm --filter @nural/api db:generate",
+    "db:migrate": "pnpm --filter @nural/api db:migrate",
+    "sync:initial": "pnpm --filter @nural/api sync:initial",
+    "sync:verify": "pnpm --filter @nural/api sync:verify"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
