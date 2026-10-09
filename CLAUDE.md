@@ -21,5 +21,7 @@ Build order: SRS section 10.5, milestones 1 to 9. Do one milestone per session, 
 pnpm dev | pnpm test | pnpm db:migrate | pnpm sync:initial | pnpm bitrix:ping
 pnpm db:generate   # after editing apps/api/src/db/schema.ts
 pnpm sync:verify [148,154]   # per-stage task counts, Postgres vs Bitrix24
+pnpm tunnel   # public HTTPS URL for the outbound webhook (changes on every start)
+pnpm hooks:simulate <taskId> [event]   # signed fake webhook call to the local API
 Docker Postgres is on port 5433 (a local PostgreSQL service holds 5432).
 node --env-file=.env scripts/test-webhook.mjs # checks the inbound webhook

@@ -104,15 +104,34 @@ export async function syncDirectory(call: Call): Promise<DirectorySummary> {
       });
   }
 
+  const stageRows = await syncGroupStages(
+    call,
+    groups.map((g) => Number(g.ID)),
+  );
+
+  return {
+    users: userRows.length,
+    departments: depts.length,
+    groups: groups.length,
+    stages: stageRows.length,
+    unmappedStages: stageRows
+      .filter((s) => s.canonical === null)
+      .map((s) => ({ groupId: s.groupId, title: s.title })),
+  };
+}
+
+/** Reads the Kanban columns of the given workgroups and stores them (matched by title later). */
+export async function syncGroupStages(call: Call, groupIds: number[]) {
+  if (!groupIds.length) return [];
   const commands: Record<string, Command> = {};
-  for (const g of groups) {
-    commands[`g${g.ID}`] = { method: 'task.stages.get', params: { entityId: Number(g.ID) } };
+  for (const id of groupIds) {
+    commands[`g${id}`] = { method: 'task.stages.get', params: { entityId: id } };
   }
   const res = await batch<Record<string, BitrixStage> | BitrixStage[]>(call, commands);
-  const stageRows = groups.flatMap((g) =>
-    Object.values(res.result[`g${g.ID}`] ?? {}).map((s) => ({
+  const stageRows = groupIds.flatMap((groupId) =>
+    Object.values(res.result[`g${groupId}`] ?? {}).map((s) => ({
       id: Number(s.ID),
-      groupId: Number(g.ID),
+      groupId,
       title: s.TITLE.trim(),
       canonical: canonicalStage(s.TITLE),
       sort: Number(s.SORT) || 0,
@@ -128,10 +147,7 @@ export async function syncDirectory(call: Call): Promise<DirectorySummary> {
     // just read, keeping every stage just seen.
     await db.delete(schema.stages).where(
       and(
-        inArray(
-          schema.stages.groupId,
-          groups.map((g) => Number(g.ID)),
-        ),
+        inArray(schema.stages.groupId, groupIds),
         notInArray(
           schema.stages.id,
           stageRows.map((s) => s.id),
@@ -139,14 +155,5 @@ export async function syncDirectory(call: Call): Promise<DirectorySummary> {
       ),
     );
   }
-
-  return {
-    users: userRows.length,
-    departments: depts.length,
-    groups: groups.length,
-    stages: stageRows.length,
-    unmappedStages: stageRows
-      .filter((s) => s.canonical === null)
-      .map((s) => ({ groupId: s.groupId, title: s.title })),
-  };
+  return stageRows;
 }

@@ -4,23 +4,44 @@ import { pathToFileURL } from 'node:url';
 import { ZodError } from 'zod';
 import { config } from './config';
 import { cachedDataset, loadDataset, type DatasetProvider } from './data/dataset';
+import { createMemoryBus, type EventBus } from './events/bus';
+import { hookRoutes, type ReceiverDeps } from './hooks/receiver';
 import { devRoutes } from './routes/dev';
 import { filterRoutes } from './routes/filters';
 import { qaRoutes } from './routes/qa';
+import { streamRoutes } from './routes/stream';
 import { taskRoutes } from './routes/tasks';
 
 export interface ServerOptions {
-  /** Defaults to Postgres with a 30 s cache; tests pass an in-memory dataset. */
+  /** Defaults to Postgres with a 30 s cache, refreshed on every change; tests pass a fixture. */
   getDataset?: DatasetProvider;
   now?: () => Date;
   logger?: boolean;
+  /** Change notifications; defaults to an in-process bus. */
+  bus?: EventBus;
+  /** Webhook receiver dependencies; without `enqueue` the receiver answers 503. */
+  hooks?: Partial<ReceiverDeps>;
+  /** For /health (NFR-9). */
+  health?: { worker: 'on' | 'off'; lastReconcileAt?: () => Promise<Date | null> };
 }
 
-export async function buildServer({ getDataset, now, logger = true }: ServerOptions = {}) {
+export async function buildServer({
+  getDataset,
+  now,
+  logger = true,
+  bus = createMemoryBus(),
+  hooks = {},
+  health = { worker: 'off' },
+}: ServerOptions = {}) {
   const app = Fastify({
     logger: logger && {
       level: process.env.LOG_LEVEL ?? 'info',
-      redact: ['req.headers.authorization', 'req.body.auth', '*.BITRIX_INBOUND_URL'],
+      redact: [
+        'req.headers.authorization',
+        'req.body.auth',
+        '*.BITRIX_INBOUND_URL',
+        '*.BITRIX_OUTBOUND_TOKEN',
+      ],
       ...(process.env.NODE_ENV !== 'production' && process.stdout.isTTY
         ? { transport: { target: 'pino-pretty', options: { translateTime: 'HH:MM:ss' } } }
         : {}),
@@ -41,29 +62,99 @@ export async function buildServer({ getDataset, now, logger = true }: ServerOpti
     return reply.code(status).send({ error: status === 500 ? 'Internal error' : err.message });
   });
 
+  let lastWebhookAt: Date | null = null;
+  let lastChangeAt: Date | null = null;
+  bus.subscribe(() => {
+    lastChangeAt = new Date();
+  });
+
   app.get('/health', async () => ({
     status: 'ok',
     time: new Date().toISOString(),
     uptime: Math.round(process.uptime()),
+    worker: health.worker,
+    lastWebhookAt,
+    lastChangeAt,
+    lastReconcileAt: (await health.lastReconcileAt?.().catch(() => null)) ?? null,
   }));
 
-  const dataset = getDataset ?? cachedDataset(loadDataset).get;
+  let dataset = getDataset;
+  if (!dataset) {
+    const cache = cachedDataset(loadDataset);
+    // A change anywhere invalidates the in-memory dataset; the next query reloads it.
+    bus.subscribe(() => cache.invalidate());
+    dataset = cache.get;
+  }
   const opts = { tz: config.APP_TIMEZONE, now };
   devRoutes(app, dataset, opts);
   qaRoutes(app, dataset, opts);
   taskRoutes(app, dataset, opts);
   filterRoutes(app, dataset, opts);
+  streamRoutes(app, bus, config.WEB_ORIGIN);
+  await hookRoutes(app, {
+    token: config.BITRIX_OUTBOUND_TOKEN,
+    ...hooks,
+    onAccepted: (e) => {
+      lastWebhookAt = new Date();
+      hooks.onAccepted?.(e);
+    },
+  });
 
   return app;
 }
 
+/** Production wiring: Redis bus and queue, Bitrix24 limiter, sync worker and schedules. */
+async function main() {
+  const [{ createRedisBus }, { createTaskQueue, startTaskWorker }, reconciler, bitrix, dbm] =
+    await Promise.all([
+      import('./events/bus'),
+      import('./sync/worker'),
+      import('./sync/reconciler'),
+      import('./bitrix'),
+      import('./db/client'),
+    ]);
+  const bus = createRedisBus(config.REDIS_URL);
+  const queue = createTaskQueue(config.REDIS_URL);
+  const workerOn = config.SYNC_WORKER === 'on';
+
+  const app = await buildServer({
+    bus,
+    hooks: {
+      enqueue: queue.enqueue,
+      record: async (event, taskId, payload) => {
+        await dbm.db.insert(dbm.schema.webhookEvents).values({ event, taskId, payload });
+      },
+    },
+    health: { worker: workerOn ? 'on' : 'off', lastReconcileAt: reconciler.lastReconcileAt },
+  });
+
+  const closers: (() => Promise<unknown>)[] = [];
+  if (workerOn) {
+    const { call } = bitrix.getBitrix();
+    const deps = { redisUrl: config.REDIS_URL, call, bus, log: app.log };
+    closers.push(startTaskWorker(deps).close);
+    closers.push((await reconciler.startSchedules({ ...deps, tz: config.APP_TIMEZONE })).close);
+  }
+
+  const shutdown = async () => {
+    await app.close();
+    for (const close of closers) await close().catch(() => undefined);
+    await queue.close();
+    await bus.close();
+    await bitrix.closeBitrix();
+    await dbm.closeDb();
+    process.exit(0);
+  };
+  process.once('SIGINT', () => void shutdown());
+  process.once('SIGTERM', () => void shutdown());
+
+  await app.listen({ host: '0.0.0.0', port: config.PORT });
+}
+
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
-  const app = await buildServer();
-  try {
-    await app.listen({ host: '0.0.0.0', port: config.PORT });
-  } catch (err) {
-    app.log.error(err);
+  main().catch((err) => {
+    console.error(err instanceof Error ? err.message : err);
     process.exit(1);
-  }
+  });
 }

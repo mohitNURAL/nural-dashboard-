@@ -35,6 +35,8 @@ const schema = z.object({
   PUBLIC_BASE_URL: optionalString,
   PORT: z.coerce.number().int().positive().default(4000),
   WEB_ORIGIN: z.string().url().default('http://localhost:5173'),
+  // 'off' = this process only receives webhooks and serves the API; another runs the sync.
+  SYNC_WORKER: z.enum(['on', 'off']).default('on'),
 });
 
 export type Config = z.infer<typeof schema>;

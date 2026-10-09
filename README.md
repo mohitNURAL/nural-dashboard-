@@ -30,5 +30,6 @@ Live Development and QA dashboard over Bitrix24 (nural.bitrix24.in). Full spec: 
 
 Checks: `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm format:check`.
 Bitrix24: `pnpm bitrix:ping` (stages per group), `pnpm sync:verify [148,154]` (Postgres vs Bitrix24 counts per stage).
+Live updates: `pnpm dev` also runs the sync worker (webhooks, 10-minute reconcile, hourly directory, nightly resync; `SYNC_WORKER=off` disables it). `pnpm tunnel` prints a public URL; set the Bitrix24 outbound webhook handler to `<url>/hooks/bitrix` (events ONTASKADD, ONTASKUPDATE, ONTASKDELETE, ONTASKCOMMENTADD) and put its application token in `.env` as `BITRIX_OUTBOUND_TOKEN`. Watch changes with `curl -N localhost:4000/api/stream`; test without Bitrix24 using `pnpm hooks:simulate <taskId>`.
 API (all take `project`, `assignee`, `tag`, `type`, `dateField`, `from`, `to`): `/api/dev/summary|assignees|ranking|matrix`, `/api/qa/summary|issues|testing`, `/api/tasks?kind=tasks|issues|testing&preset=…`, `/api/tasks/:id`, `/api/filters/options?tab=dev|qa`. Metric rules live in `packages/shared/src/metrics.ts`.
 Schema changes: edit `apps/api/src/db/schema.ts`, then `pnpm db:generate` and `pnpm db:migrate`.

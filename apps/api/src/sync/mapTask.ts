@@ -37,6 +37,9 @@ export interface BitrixTask {
   changedDate: string;
   parentId?: string | null;
   tags?: Record<string, { id: number; title: string }> | unknown[] | null;
+  /** Only on tasks.task.get. */
+  relatedTasks?: (string | number)[] | Record<string, unknown> | null;
+  changedBy?: string | null;
 }
 
 export type TaskRow = typeof schema.tasks.$inferInsert;

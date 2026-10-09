@@ -19,7 +19,9 @@
     "db:generate": "pnpm --filter @nural/api db:generate",
     "db:migrate": "pnpm --filter @nural/api db:migrate",
     "sync:initial": "pnpm --filter @nural/api sync:initial",
-    "sync:verify": "pnpm --filter @nural/api sync:verify"
+    "sync:verify": "pnpm --filter @nural/api sync:verify",
+    "hooks:simulate": "pnpm --filter @nural/api hooks:simulate",
+    "tunnel": "node scripts/tunnel.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

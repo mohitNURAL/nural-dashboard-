@@ -11,7 +11,7 @@ import { mapLimit } from './initialLoad';
 const STATE_KEY = 'history_backfill';
 const TASKS_PER_STEP = 100; // two batches of 50 in flight
 
-interface HistoryEntry {
+export interface HistoryEntry {
   id: number | string;
   createdDate: string;
   field: string;
@@ -21,7 +21,11 @@ interface HistoryEntry {
 
 export type StageEventRow = typeof schema.taskStageEvents.$inferInsert;
 
-export function stageEventsFrom(taskId: number, list: HistoryEntry[]): StageEventRow[] {
+export function stageEventsFrom(
+  taskId: number,
+  list: HistoryEntry[],
+  source: 'history' | 'webhook' | 'reconcile' = 'history',
+): StageEventRow[] {
   return list
     .filter((e) => e.field === 'STAGE')
     .map((e) => {
@@ -35,7 +39,7 @@ export function stageEventsFrom(taskId: number, list: HistoryEntry[]): StageEven
         toCanonical: canonicalStage(to),
         movedAt: new Date(e.createdDate),
         movedBy: Number(e.user?.id) || null,
-        source: 'history',
+        source,
         historyId: Number(e.id),
       };
     })

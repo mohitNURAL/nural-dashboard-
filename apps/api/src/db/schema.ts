@@ -128,3 +128,16 @@ export const syncState = pgTable('sync_state', {
   lastRun: tz('last_run'),
   cursor: jsonb('cursor'),
 });
+
+/** Outbound webhook calls, kept 30 days for debugging (NFR-10). The auth part is never stored. */
+export const webhookEvents = pgTable(
+  'webhook_events',
+  {
+    id: serial('id').primaryKey(),
+    receivedAt: tz('received_at').notNull().defaultNow(),
+    event: text('event').notNull(),
+    taskId: integer('task_id'),
+    payload: jsonb('payload').notNull(),
+  },
+  (t) => [index('webhook_events_received_idx').on(t.receivedAt)],
+);
