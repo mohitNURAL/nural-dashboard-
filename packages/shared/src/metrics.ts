@@ -328,11 +328,21 @@ export interface RankingRow {
 /**
  * DEV-04 speed ranking: lead time = deadline - completedAt for completed tasks with a
  * deadline. Rank by on-time % then average days early; fewer than `minTasks` = unranked.
+ * `eligible` limits it to those assignees (the Development department group).
  */
-export function speedRanking(tasks: readonly MetricTask[], { minTasks = 3 } = {}): RankingRow[] {
+export function speedRanking(
+  tasks: readonly MetricTask[],
+  { minTasks = 3, eligible }: { minTasks?: number; eligible?: ReadonlySet<number> } = {},
+): RankingRow[] {
   const done = tasks
     .map((t) => ({ t, at: completedAt(t) }))
-    .filter((x): x is { t: MetricTask; at: Date } => !!x.at && !!x.t.deadline && isSentToQa(x.t));
+    .filter(
+      (x): x is { t: MetricTask; at: Date } =>
+        !!x.at &&
+        !!x.t.deadline &&
+        isSentToQa(x.t) &&
+        (!eligible || eligible.has(x.t.responsibleId)),
+    );
 
   const rows = [
     ...groupBy(

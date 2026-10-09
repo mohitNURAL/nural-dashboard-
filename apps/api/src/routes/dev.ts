@@ -56,7 +56,11 @@ export function devRoutes(app: FastifyInstance, getDataset: DatasetProvider, opt
       minTasks: z.coerce.number().int().min(1).optional(),
     });
     const minTasks = (q as { minTasks?: number }).minTasks ?? 3;
-    return { minTasks, rows: withPeople(ds, speedRanking(tasks, { minTasks })) };
+    // Only the Development department group is ranked (Software Development tree).
+    const eligible = new Set(
+      [...ds.users.values()].filter((u) => u.deptGroup === 'Development').map((u) => u.id),
+    );
+    return { minTasks, rows: withPeople(ds, speedRanking(tasks, { minTasks, eligible })) };
   });
 
   app.get('/api/dev/matrix', async (req) => {

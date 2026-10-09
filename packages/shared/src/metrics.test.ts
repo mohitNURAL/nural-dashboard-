@@ -259,6 +259,13 @@ describe('Development tab', () => {
     ]);
     expect(r[0]).toMatchObject({ completed: 3, avgDaysEarly: 4, onTimePct: 100 });
     expect(r[2]!.onTimePct).toBe(66.7);
+
+    // Limited to the Development group: others are left out entirely.
+    const devOnly = speedRanking(list, { eligible: new Set([40, 42]) });
+    expect(devOnly.map((x) => [x.id, x.rank])).toEqual([
+      [40, 1],
+      [42, null],
+    ]);
   });
 });
 
