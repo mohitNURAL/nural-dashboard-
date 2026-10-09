@@ -1,0 +1,6 @@
+docs/
+dist/
+coverage/
+pnpm-lock.yaml
+.env*
+*.md

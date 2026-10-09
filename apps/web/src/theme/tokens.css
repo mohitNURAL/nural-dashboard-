@@ -1,0 +1,26 @@
+/* Nural design tokens from Figma (SRS section 6). */
+:root {
+  --primary: #32499f; /* Blue/B500 */
+  --primary-dark: #18244e; /* Blue/B700 */
+  --primary-deep: #111937; /* Blue/B800 */
+  --primary-deeper: #0c1226; /* Blue/B900 */
+  --primary-soft: #e2e7f6; /* Blue/B200 */
+  --primary-soft-100: #f1f3fb; /* Blue/B100 */
+  --primary-soft-300: #c6ceed; /* Blue/B300 */
+  --primary-muted: #8d9edb; /* Blue/B400 */
+  --bg: #f8f9fd; /* Blue/B50 */
+  --surface: #ffffff;
+  --accent: #05cfd3; /* Teal/T500 */
+  --accent-dark: #039194; /* Teal/T600 */
+  --accent-darker: #026668; /* Teal/T700 */
+  --accent-soft: #edfeff; /* Teal/T100 */
+  --accent-soft-200: #dbfefe; /* Teal/T200 */
+  --bad: #e63639; /* Red/R500 */
+  --bad-dark: #8a282a; /* Red/R700 */
+  --bad-soft: #f1b9ba; /* Red/R200 */
+  --good: #039194; /* Teal/T600 until design adds a green */
+  --warn: #f59e0b;
+  --text: #231f20;
+  --border: #dfddde; /* Grey 200 */
+  --text-muted: #b9b2b4; /* Grey 300 */
+}

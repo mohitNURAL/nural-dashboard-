@@ -1,0 +1,15 @@
+@import './theme/tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-bg font-body text-xs text-text;
+}
+
+h1,
+h2,
+h3 {
+  @apply font-heading font-bold;
+}
