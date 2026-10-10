@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { TaskRow } from '../../api/types';
 import { DataTable, type Columns, type SortingState } from '../../components/DataTable';
-import { useOpenTask, useTaskList, type TaskListKind, type TaskSort } from './api';
+import { taskExportUrl, useOpenTask, useTaskList, type TaskListKind, type TaskSort } from './api';
 import { SORTABLE } from './columns';
 
 interface Props {
@@ -16,6 +16,8 @@ interface Props {
   columns: Columns<TaskRow>;
   searchable?: boolean;
   onTotal?: (n: number) => void;
+  /** Accordion title: names the Excel file of the export icon. */
+  exportName: string;
 }
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -34,6 +36,7 @@ export function TaskList({
   columns,
   searchable,
   onTotal,
+  exportName,
 }: Props) {
   const [, openTask] = useOpenTask();
   const [search, setSearch] = useState('');
@@ -64,16 +67,46 @@ export function TaskList({
 
   return (
     <div className="space-y-3">
-      {searchable && (
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by ID or title…"
-          aria-label="Search tasks"
-          className="h-9 w-full max-w-sm rounded-control border border-border px-3 outline-none focus:border-primary"
-        />
-      )}
+      <div className="flex items-center gap-3">
+        {searchable && (
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by ID or title…"
+            aria-label="Search tasks"
+            className="h-9 w-full max-w-sm rounded-control border border-border px-3 outline-none focus:border-primary"
+          />
+        )}
+        <a
+          href={taskExportUrl(filterParams, { kind, preset, q, sort }, exportName)}
+          download
+          aria-label={`Export ${data?.total ?? ''} tasks to Excel`}
+          title={`Export to Excel: ${data ? `all ${data.total.toLocaleString('en-IN')}` : 'these'} tasks with every detail`}
+          className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-control border border-border bg-surface px-2.5 font-heading text-button text-primary hover:border-primary"
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
+            <rect x="1.5" y="1.5" width="13" height="13" rx="2" fill="#1D6F42" />
+            <path
+              d="M5 4.5l6 7M11 4.5l-6 7"
+              stroke="#fff"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            />
+          </svg>
+          <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden>
+            <path
+              d="M6 1.5v6M3.5 5L6 7.5 8.5 5M2 10h8"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          Excel
+        </a>
+      </div>
       {isError ? (
         <p className="py-6 text-center text-bad">
           Could not load tasks. They will retry on the next change.

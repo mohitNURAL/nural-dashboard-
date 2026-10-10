@@ -15,6 +15,18 @@ export interface TaskListQuery {
   pageSize?: number;
 }
 
+/** The same params as the list (all pages), for GET /api/tasks/export. */
+export function taskExportUrl(
+  filterParams: Record<string, string>,
+  { kind = 'tasks', preset, q, sort }: TaskListQuery,
+  name: string,
+): string {
+  const params: Record<string, string> = { ...filterParams, kind, preset, name };
+  if (q) params.q = q;
+  if (sort) params.sort = sort;
+  return `/api/tasks/export?${new URLSearchParams(params).toString()}`;
+}
+
 export function useTaskList(
   filterParams: Record<string, string>,
   { kind = 'tasks', preset, q, sort, page = 1, pageSize = 50 }: TaskListQuery,

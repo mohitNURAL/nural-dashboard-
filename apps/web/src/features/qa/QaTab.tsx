@@ -104,6 +104,7 @@ export function QaTab() {
             filterParams={params}
             kind="issues"
             preset="lastFiled"
+            exportName="Latest filed issues"
             defaultSort="-created"
             columns={LATEST_COLUMNS}
           />
@@ -137,6 +138,13 @@ export function QaTab() {
             filterParams={list.params ? { ...params, ...list.params } : params}
             kind="issues"
             preset={allPreset}
+            exportName={
+              list.label
+                ? `All issues · ${list.label}`
+                : allPreset === 'all'
+                  ? 'All issues'
+                  : `All issues · ${ISSUE_PRESET_LABELS[allPreset]}`
+            }
             defaultSort="-created"
             columns={ALL_COLUMNS}
             searchable

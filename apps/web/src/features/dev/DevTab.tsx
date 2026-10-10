@@ -134,7 +134,12 @@ export function DevTab() {
           open={open.dueToday}
           onOpenChange={toggle('dueToday')}
         >
-          <TaskList filterParams={params} preset="dueToday" columns={LIST_COLUMNS} />
+          <TaskList
+            filterParams={params}
+            preset="dueToday"
+            columns={LIST_COLUMNS}
+            exportName="Tasks due today"
+          />
         </Accordion>
 
         <Accordion
@@ -147,7 +152,12 @@ export function DevTab() {
           open={open.overdue}
           onOpenChange={toggle('overdue')}
         >
-          <TaskList filterParams={params} preset="overdue" columns={LIST_COLUMNS} />
+          <TaskList
+            filterParams={params}
+            preset="overdue"
+            columns={LIST_COLUMNS}
+            exportName="Overdue tasks"
+          />
         </Accordion>
 
         <Accordion
@@ -171,6 +181,7 @@ export function DevTab() {
           <TaskList
             filterParams={listParams}
             preset={drill?.preset ?? 'total'}
+            exportName={drill ? `All tasks · ${drill.label}` : 'All tasks'}
             columns={ALL_COLUMNS}
             searchable
             onTotal={setListTotal}

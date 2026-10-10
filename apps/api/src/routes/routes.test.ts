@@ -1,4 +1,5 @@
 import { indexTasks, issueTypeOf, type MetricTask } from '@nural/shared';
+import ExcelJS from 'exceljs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Dataset } from '../data/dataset';
 import { buildServer } from '../server';
@@ -303,6 +304,43 @@ describe('metrics API', () => {
     expect(issue.body.reopens).toHaveLength(1);
     expect(issue.body.task).toMatchObject({ rework: 1, linkedTaskId: 1, issueType: 'bug' });
     expect((await get('/api/tasks/999')).status).toBe(404);
+  });
+
+  it('GET /api/tasks/export downloads the list as shown, with every detail and the IDs', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/tasks/export?scope=all&preset=total&name=All%20tasks%20%C2%B7%20Neha',
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['content-type']).toContain('spreadsheetml');
+    expect(res.headers['content-disposition']).toContain(
+      "filename*=UTF-8''All%20tasks%20%C2%B7%20Neha",
+    );
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(res.rawPayload as unknown as ArrayBuffer);
+    const ws = wb.getWorksheet('Tasks')!;
+    const header = (ws.getRow(1).values as unknown[]).slice(1);
+    expect(header).toEqual(
+      expect.arrayContaining([
+        'Task ID',
+        'Project ID',
+        'Assignee ID',
+        'Creator ID',
+        'Open in Bitrix24',
+      ]),
+    );
+    // Same rows as the on-screen list (all pages).
+    const list = await get('/api/tasks?scope=all&preset=total&pageSize=1');
+    expect(ws.rowCount - 1).toBe(list.body.total);
+    const col = (h: string) => header.indexOf(h) + 1;
+    const first = ws.getRow(2);
+    const id = Number((first.getCell(col('Task ID')).value as { text: string }).text);
+    const row = (await get(`/api/tasks/${id}`)).body.task;
+    expect(first.getCell(col('Project ID')).value).toBe(row.project.id);
+    expect(first.getCell(col('Assignee ID')).value).toBe(row.assignee.id);
+    expect((first.getCell(col('Open in Bitrix24')).value as { hyperlink: string }).hyperlink).toBe(
+      row.url,
+    );
   });
 
   it('GET /api/filters/options is contextual', async () => {

@@ -4,6 +4,7 @@ import {
   ageingBucket,
   alertOwner,
   applyFilters,
+  dayKey,
   DEV_PRESETS,
   devTasks,
   ISSUE_PRESETS,
@@ -23,6 +24,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { DatasetProvider } from '../data/dataset';
 import { contextOf, person, taskRow, type AppOptions } from './context';
+import { contentDisposition, tasksWorkbook } from './export';
 import { list as listParam, parseQuery, scopeParam } from './params';
 
 const SORTS = ['deadline', '-deadline', 'created', '-created', 'id', '-id'] as const;
@@ -75,8 +77,9 @@ export function taskRoutes(
   opts: AppOptions,
   { describe }: TaskRouteDeps = {},
 ) {
-  app.get('/api/tasks', async (req) => {
-    const { query, filters } = parseQuery(req.query, listParams);
+  /** The task list for these query params: filters, drill-downs, search and order (no paging). */
+  async function selectTasks(rawQuery: unknown) {
+    const { query, filters } = parseQuery(rawQuery, listParams);
     const ds = await getDataset();
     const ctx = contextOf(ds, opts);
     const base =
@@ -112,6 +115,11 @@ export function taskRoutes(
     // DEV lists: by deadline, latest first. Issue lists: by created, newest first.
     list.sort(sorter(query.sort ?? (query.kind === 'issues' ? '-created' : '-deadline')));
 
+    return { query, ds, ctx, list };
+  }
+
+  app.get('/api/tasks', async (req) => {
+    const { query, ds, ctx, list } = await selectTasks(req.query);
     const start = (query.page - 1) * query.pageSize;
     return {
       total: list.length,
@@ -119,6 +127,24 @@ export function taskRoutes(
       pageSize: query.pageSize,
       rows: list.slice(start, start + query.pageSize).map((t) => taskRow(ds, ctx, t)),
     };
+  });
+
+  // Export to Excel: every task of the list as it is on screen (all pages), same params.
+  app.get('/api/tasks/export', async (req, reply) => {
+    const { name } = z
+      .object({ name: z.string().trim().max(120).optional() })
+      .parse(req.query ?? {});
+    const { ds, ctx, list } = await selectTasks(req.query);
+    const title = name || 'Tasks';
+    const file = await tasksWorkbook(
+      list.map((t) => taskRow(ds, ctx, t)),
+      title,
+      ctx.tz,
+    );
+    return reply
+      .header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+      .header('Content-Disposition', contentDisposition(`${title} ${dayKey(ctx.now, ctx.tz)}.xlsx`))
+      .send(file);
   });
 
   app.get('/api/tasks/:id', async (req, reply) => {
