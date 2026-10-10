@@ -8,6 +8,7 @@ import {
   devSummary,
   devSummaryParts,
   alertOwner,
+  boardStageCount,
   alerts,
   daysInStage,
   isStuck,
@@ -388,6 +389,21 @@ describe('alerts', () => {
     expect(a.stuck).toEqual([
       { personId: 28, role: 'assignee', projectId: 154, stage: 'Done', count: 2, oldestDays: 20 },
     ]);
+  });
+});
+
+describe('board stage count', () => {
+  it('counts every task in the stage like the Bitrix24 filter, whatever its age', () => {
+    const list = [
+      task({ stage: 'Done', responsibleId: 34, groupId: 12 }),
+      task({ stage: 'Done', responsibleId: 34, groupId: 12, createdBy: 16 }),
+      task({ stage: 'Done', responsibleId: 30, groupId: 12 }),
+      task({ stage: 'LIVE', responsibleId: 34, groupId: 12 }),
+      task({ stage: 'Done', responsibleId: 34, groupId: 8 }),
+    ];
+    expect(boardStageCount(list, 12, 'Done', { responsibleId: 34 })).toBe(2);
+    expect(boardStageCount(list, 12, 'Done', { createdBy: 16 })).toBe(1);
+    expect(boardStageCount(list, 12, 'Done')).toBe(3);
   });
 });
 

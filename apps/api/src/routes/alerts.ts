@@ -2,13 +2,21 @@
 // than STUCK_DAYS days in a stage (LIVE aside), for the Development department's tasks and
 // issues. Work stuck in QA Backlog or In QA names the tester who filed it, or the QA lead.
 // The filter bar does not apply: the bell shows the whole picture.
-import { alerts, devTasks, PENDING_STAGES, STUCK_DAYS } from '@nural/shared';
+import { alerts, boardStageCount, devTasks, PENDING_STAGES, STUCK_DAYS } from '@nural/shared';
 import type { FastifyInstance } from 'fastify';
 import type { DatasetProvider } from '../data/dataset';
 import { boardUrl, contextOf, person, project, type AppOptions } from './context';
 
 /** Overdue = pending and not On Hold (SRS 5), so the Bitrix24 link uses these stages. */
 const OVERDUE_STAGES = PENDING_STAGES.filter((s) => s !== 'On Hold');
+
+/** A tester's line: the issues they filed. A QA lead's line mixes creators: stage only. */
+const ownerFilter = (r: { role: 'assignee' | 'tester' | 'qaLead'; personId: number }) =>
+  r.role === 'assignee'
+    ? { responsibleId: r.personId }
+    : r.role === 'tester'
+      ? { createdBy: r.personId }
+      : {};
 
 export function alertRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts: AppOptions) {
   app.get('/api/alerts', async () => {
@@ -35,14 +43,11 @@ export function alertRoutes(app: FastifyInstance, getDataset: DatasetProvider, o
       })),
       stuck: a.stuck.map((r) => ({
         ...names(r),
-        // A tester's line: the issues they filed. A QA lead's line mixes creators: stage only.
+        // Bitrix24 cannot filter by days in a stage, so its board shows the whole stage.
+        boardCount: boardStageCount(ds.tasks, r.projectId, r.stage, ownerFilter(r)),
         boardUrl: boardUrl(ds, r.projectId, {
           stages: [r.stage],
-          ...(r.role === 'assignee'
-            ? { responsibleId: r.personId }
-            : r.role === 'tester'
-              ? { createdBy: r.personId }
-              : {}),
+          ...ownerFilter(r),
         }),
       })),
       total: a.overdue.length + a.stuck.length,

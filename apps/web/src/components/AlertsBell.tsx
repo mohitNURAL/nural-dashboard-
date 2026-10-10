@@ -143,8 +143,13 @@ export function AlertsBell({ onTab }: { onTab: (t: Tab) => void }) {
                   count={a.count}
                   what={a.stage}
                   stageColor={STAGE_COLORS[a.stage]}
-                  detail={`longest ${days(a.oldestDays)} in ${a.stage}`}
+                  detail={
+                    a.boardCount > a.count
+                      ? `longest ${days(a.oldestDays)} · ${a.boardCount} in ${a.stage} in Bitrix24 (any age)`
+                      : `longest ${days(a.oldestDays)} in ${a.stage}`
+                  }
                   boardUrl={a.boardUrl}
+                  boardCount={a.boardCount}
                   onClick={() =>
                     go(
                       {
@@ -180,6 +185,7 @@ function AlertRow({
   stageColor,
   detail,
   boardUrl,
+  boardCount,
   onClick,
 }: {
   name: string;
@@ -190,6 +196,8 @@ function AlertRow({
   stageColor?: string;
   detail: string;
   boardUrl: string | null;
+  /** Shown on the link when Bitrix24 will list more than the alert (no days-in-stage filter). */
+  boardCount?: number;
   onClick: () => void;
 }) {
   return (
@@ -232,10 +240,17 @@ function AlertRow({
           href={boardUrl}
           target="_blank"
           rel="noreferrer"
-          title={`Open ${project ?? 'the project'} in Bitrix24, filtered to this alert, to clear it`}
+          title={
+            boardCount !== undefined && boardCount > count
+              ? `Bitrix24 cannot filter by days in a stage: it lists all ${boardCount} in this stage; ${count} have been there over the limit (the dashboard list is exact)`
+              : `Open ${project ?? 'the project'} in Bitrix24, filtered to this alert, to clear it`
+          }
           className="mr-1 mt-2 inline-flex shrink-0 items-center gap-1 rounded-control border border-border bg-surface px-2 py-1 font-heading text-label font-bold text-primary hover:border-primary"
         >
           Bitrix24
+          {boardCount !== undefined && boardCount > count && (
+            <span className="font-normal text-text-muted">· {boardCount}</span>
+          )}
           <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden>
             <path
               d="M4 1h5v5M9 1 4.5 5.5M7 6.5V9H1V3h2.5"

@@ -776,6 +776,26 @@ export function alerts(tasks: readonly MetricTask[], ctx: MetricContext) {
   return { overdue: order([...overdue.values()]), stuck: order([...stuck.values()]) };
 }
 
+/**
+ * What the alert's filtered Bitrix24 board shows: every task in the project and stage (of any
+ * age, since Bitrix24 cannot filter by days in a stage), narrowed by responsible person or
+ * creator like the link. Lets the alert say e.g. "479 over 5 days, 508 in Done in Bitrix24".
+ */
+export function boardStageCount(
+  tasks: readonly MetricTask[],
+  projectId: number,
+  stage: StageTitle,
+  { responsibleId, createdBy }: { responsibleId?: number; createdBy?: number } = {},
+): number {
+  return tasks.filter(
+    (t) =>
+      t.groupId === projectId &&
+      t.stage === stage &&
+      (!responsibleId || t.responsibleId === responsibleId) &&
+      (!createdBy || t.createdBy === createdBy),
+  ).length;
+}
+
 // ---------------------------------------------------------------- lists
 
 export const DEV_PRESETS = [

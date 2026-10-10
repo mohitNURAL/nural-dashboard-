@@ -221,6 +221,7 @@ interface AlertBase {
 export interface AlertsResponse {
   stuckDays: number;
   overdue: AlertBase[];
-  stuck: (AlertBase & { stage: StageTitle })[];
+  /** boardCount: what the Bitrix24 link shows (the whole stage, any age). */
+  stuck: (AlertBase & { stage: StageTitle; boardCount: number })[];
   total: number;
 }
