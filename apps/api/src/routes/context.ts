@@ -11,6 +11,7 @@ import {
   type GroupBy,
   type MetricContext,
   type MetricTask,
+  type StageTitle,
 } from '@nural/shared';
 import type { Dataset, DeptGroup } from '../data/dataset';
 
@@ -59,9 +60,28 @@ export const withGroupNames = <R extends { id: number }>(ds: Dataset, rows: R[],
 
 const PRIORITY = ['low', 'normal', 'high'] as const;
 
-/** A workgroup's task board in Bitrix24, where alerts are acted on. */
-export const boardUrl = (ds: Dataset, groupId: number) =>
-  groupId ? `${ds.portalOrigin}/workgroups/group/${groupId}/tasks/` : null;
+export interface BoardFilter {
+  responsibleId?: number;
+  createdBy?: number;
+  stage?: StageTitle;
+}
+
+/**
+ * A workgroup's task board in Bitrix24, opened with its filter set (`apply_filter=Y`), where
+ * alerts are acted on. A dashboard stage can cover several Bitrix24 columns, so stage IDs go
+ * as a list; "To do" also includes 0, Bitrix24's stage for tasks never moved on the board.
+ */
+export function boardUrl(ds: Dataset, groupId: number, f: BoardFilter = {}): string | null {
+  if (!groupId) return null;
+  const q = new URLSearchParams({ apply_filter: 'Y' });
+  if (f.responsibleId) q.append('RESPONSIBLE_ID', String(f.responsibleId));
+  if (f.createdBy) q.append('CREATED_BY', String(f.createdBy));
+  if (f.stage) {
+    const ids = ds.stageIds?.get(groupId)?.get(f.stage) ?? [];
+    for (const id of f.stage === 'To do' ? [0, ...ids] : ids) q.append('STAGE_ID[]', String(id));
+  }
+  return `${ds.portalOrigin}/workgroups/group/${groupId}/tasks/?${q.toString().replaceAll('%5B%5D', '[]')}`;
+}
 
 export const taskUrl = (ds: Dataset, t: MetricTask) =>
   t.groupId

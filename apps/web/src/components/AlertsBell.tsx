@@ -232,7 +232,7 @@ function AlertRow({
           href={boardUrl}
           target="_blank"
           rel="noreferrer"
-          title={`Open the ${project ?? ''} task board in Bitrix24 to clear this`}
+          title={`Open ${project ?? 'the project'} in Bitrix24, filtered to this alert, to clear it`}
           className="mr-1 mt-2 inline-flex shrink-0 items-center gap-1 rounded-control border border-border bg-surface px-2 py-1 font-heading text-label font-bold text-primary hover:border-primary"
         >
           Bitrix24

@@ -55,6 +55,7 @@ const dataset: Dataset = {
   testers: new Set([14]),
   developers: new Set([30, 28, 10]),
   qaLead: 14,
+  stageIds: new Map([[154, new Map([['To do', [1088]]])]]),
   users: new Map([
     [
       30,
@@ -188,13 +189,19 @@ describe('metrics API', () => {
         count: 1,
         person: expect.objectContaining({ name: 'Neha Gautam' }),
         project: { id: 154, name: 'Support Tool' },
-        boardUrl: 'https://portal.example/workgroups/group/154/tasks/',
+        boardUrl:
+          'https://portal.example/workgroups/group/154/tasks/?apply_filter=Y&RESPONSIBLE_ID=30',
       }),
     ]);
     // Tasks 1 and 5 (To do since 1 Oct, In QA last changed 5 Oct) are stuck; LIVE task 3 is not.
     const stuckStages = a.stuck.map((s: { stage: string }) => s.stage).sort();
     expect(stuckStages).not.toContain('LIVE');
     expect(stuckStages).toContain('To do');
+    // Stuck links add the project's own stage IDs; To do also takes stage 0 (never moved).
+    const todo = a.stuck.find((s: { stage: string }) => s.stage === 'To do');
+    expect(todo.boardUrl).toBe(
+      'https://portal.example/workgroups/group/154/tasks/?apply_filter=Y&RESPONSIBLE_ID=30&STAGE_ID[]=0&STAGE_ID[]=1088',
+    );
     const ids = (await get('/api/tasks?scope=all&preset=total&stuck=true')).body.rows
       .map((r: { id: number }) => r.id)
       .sort();

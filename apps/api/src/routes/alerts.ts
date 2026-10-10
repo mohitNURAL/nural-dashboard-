@@ -16,13 +16,27 @@ export function alertRoutes(app: FastifyInstance, getDataset: DatasetProvider, o
       ...r,
       person: person(ds, r.personId),
       project: project(ds, r.projectId),
-      // Fix it in Bitrix24; the alert clears here on the next sync.
-      boardUrl: boardUrl(ds, r.projectId),
     });
+    // Each alert links to its project's Bitrix24 board, filtered to it; fixing the tasks there
+    // clears the alert here on the next sync.
     return {
       stuckDays: STUCK_DAYS,
-      overdue: a.overdue.map(names),
-      stuck: a.stuck.map(names),
+      overdue: a.overdue.map((r) => ({
+        ...names(r),
+        boardUrl: boardUrl(ds, r.projectId, { responsibleId: r.personId }),
+      })),
+      stuck: a.stuck.map((r) => ({
+        ...names(r),
+        // A tester's line: the issues they filed. A QA lead's line mixes creators: stage only.
+        boardUrl: boardUrl(ds, r.projectId, {
+          stage: r.stage,
+          ...(r.role === 'assignee'
+            ? { responsibleId: r.personId }
+            : r.role === 'tester'
+              ? { createdBy: r.personId }
+              : {}),
+        }),
+      })),
       total: a.overdue.length + a.stuck.length,
     };
   });

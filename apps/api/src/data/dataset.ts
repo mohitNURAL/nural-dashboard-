@@ -4,6 +4,7 @@ import {
   canonicalStage,
   indexTasks,
   type IssueType,
+  type StageTitle,
   type MetricTask,
   type StageEvent,
 } from '@nural/shared';
@@ -29,6 +30,8 @@ export interface Dataset {
   developers?: Set<number>;
   /** Head of the QA Testing department, named on alerts for work waiting in QA. */
   qaLead?: number | null;
+  /** Bitrix24 stage IDs per workgroup and dashboard stage (for filtered Bitrix24 links). */
+  stageIds?: Map<number, Map<StageTitle, number[]>>;
   users: Map<number, UserInfo>;
   projects: Map<number, { id: number; name: string }>;
   /** Board colours etc. are fixed; this is just the portal origin for "Open in Bitrix24". */
@@ -61,17 +64,29 @@ export const TESTING_DEPT = /\bqa\b|testing/i;
 export const DEVELOPMENT_DEPT = /software development/i;
 
 export async function loadDataset(): Promise<Dataset> {
-  const [taskRows, eventRows, relationRows, userRows, deptRows, groupRows] = await Promise.all([
-    db.select().from(schema.tasks).where(eq(schema.tasks.deleted, false)),
-    db
-      .select()
-      .from(schema.taskStageEvents)
-      .orderBy(asc(schema.taskStageEvents.taskId), asc(schema.taskStageEvents.movedAt)),
-    db.select().from(schema.taskRelations).where(eq(schema.taskRelations.kind, 'related')),
-    db.select().from(schema.users),
-    db.select().from(schema.departments),
-    db.select().from(schema.workgroups),
-  ]);
+  const [taskRows, eventRows, relationRows, userRows, deptRows, groupRows, stageRows] =
+    await Promise.all([
+      db.select().from(schema.tasks).where(eq(schema.tasks.deleted, false)),
+      db
+        .select()
+        .from(schema.taskStageEvents)
+        .orderBy(asc(schema.taskStageEvents.taskId), asc(schema.taskStageEvents.movedAt)),
+      db.select().from(schema.taskRelations).where(eq(schema.taskRelations.kind, 'related')),
+      db.select().from(schema.users),
+      db.select().from(schema.departments),
+      db.select().from(schema.workgroups),
+      db.select().from(schema.stages),
+    ]);
+
+  // Several Bitrix24 columns can share one dashboard stage (e.g. Figma Review and To Do).
+  const stageIds = new Map<number, Map<StageTitle, number[]>>();
+  for (const st of stageRows) {
+    const title = canonicalStage(st.canonical);
+    if (!title) continue;
+    const byTitle = stageIds.get(st.groupId) ?? new Map<StageTitle, number[]>();
+    byTitle.set(title, [...(byTitle.get(title) ?? []), st.id]);
+    stageIds.set(st.groupId, byTitle);
+  }
 
   const events = new Map<number, StageEvent[]>();
   for (const e of eventRows) {
@@ -152,6 +167,7 @@ export async function loadDataset(): Promise<Dataset> {
     testers,
     developers,
     qaLead,
+    stageIds,
     users,
     projects: new Map(groupRows.map((g) => [g.id, { id: g.id, name: g.name }])),
     portalOrigin: new URL(config.BITRIX_INBOUND_URL).origin,
