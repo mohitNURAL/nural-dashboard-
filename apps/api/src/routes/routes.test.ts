@@ -172,6 +172,12 @@ describe('metrics API', () => {
     expect(await ids('stage=To%20do&overdue=false')).toEqual([]);
     expect(await ids('ageing=0-2')).toEqual([1]);
     expect(await ids('ageing=notDue')).toEqual([]);
+    // Speed ranking tasks: the list behind each row matches its "completed" count.
+    const ranking = (await get('/api/dev/ranking?scope=all')).body.rows;
+    for (const r of ranking) {
+      const list = await get(`/api/tasks?scope=all&preset=total&ranked=true&assignee=${r.id}`);
+      expect(list.body.total).toBe(r.completed);
+    }
     const m = await get('/api/dev/matrix?scope=all');
     const neha = m.body.rows.find((r: { id: number }) => r.id === 30);
     expect(neha.overdue['To do']).toBe(1);

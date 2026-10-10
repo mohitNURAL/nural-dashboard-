@@ -13,6 +13,7 @@ import {
   reopenEvents,
   isOverdue,
   isPending,
+  isRankedTask,
   isStuck,
   STAGE_TITLES,
   testingTasks,
@@ -42,6 +43,8 @@ const listParams = {
   stuck: z.enum(['true']).optional(),
   // Header alert person: the assignee, or the tester / QA lead for work waiting in QA.
   owner: z.coerce.number().int().positive().optional(),
+  // DEV-04: the tasks behind a speed ranking row (sent to QA, with a deadline).
+  ranked: z.enum(['true']).optional(),
   ...scopeParam,
 };
 
@@ -91,6 +94,7 @@ export function taskRoutes(
     }
     if (query.stuck) list = list.filter((t) => isStuck(t, ctx));
     if (query.owner) list = list.filter((t) => alertOwner(t, ctx).id === query.owner);
+    if (query.ranked) list = list.filter(isRankedTask);
     // Ageing buckets describe open (pending) tasks only, as in DEV-03.
     if (query.ageing) {
       list = list.filter((t) => isPending(t) && ageingBucket(t, ctx) === query.ageing);

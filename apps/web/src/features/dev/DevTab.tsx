@@ -4,7 +4,7 @@ import type { DevPreset, DevScope } from '@nural/shared';
 import clsx from 'clsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Accordion } from '../../components/Accordion';
-import { useDevScope } from '../filters/useFilters';
+import { useDevScope, useFilters } from '../filters/useFilters';
 import { taskColumns } from '../tasks/columns';
 import { TaskList } from '../tasks/TaskList';
 import { AgeingCard } from './AgeingCard';
@@ -12,7 +12,7 @@ import { AlertDetails } from './AlertDetails';
 import { useAlerts } from './alerts';
 import { useDevAssignees, useDevParams, useDevSummary } from './api';
 import { AssigneeTableCard, PendingDoneCard } from './AssigneeCards';
-import { useDrillStore } from './drill';
+import { filterKey, useDrillStore } from './drill';
 import { TILE_LABELS } from './format';
 import { RankingCard } from './RankingCard';
 import { StageMatrixCard } from './StageMatrixCard';
@@ -64,6 +64,19 @@ export function DevTab() {
     stopFollow.current?.();
     stopFollow.current = keepInView(allRef);
   }, [revealDrill, revealed]);
+  // Clearing, resetting or changing the filters returns "All tasks" to its default, unless the
+  // new filters are the ones the drill-down itself set (e.g. clicking an assignee's count).
+  const { filters } = useFilters();
+  const [scope] = useDevScope();
+  const currentKey = filterKey(filters, scope);
+  const lastKey = useRef(currentKey);
+  useEffect(() => {
+    if (currentKey === lastKey.current) return;
+    lastKey.current = currentKey;
+    const open = useDrillStore.getState().drill;
+    if (open && open.filterKey !== currentKey) clear();
+  }, [currentKey, clear]);
+
   // The header bell opens Alert details.
   useEffect(() => {
     if (!showAlerts) return;

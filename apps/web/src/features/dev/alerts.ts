@@ -6,7 +6,7 @@ import { useApi } from '../../api/queries';
 import type { AlertsResponse } from '../../api/types';
 import { EMPTY_FILTERS } from '../filters/toParams';
 import { useDevScope, useFilters } from '../filters/useFilters';
-import { useDrill } from './drill';
+import { filterKey, useDrill } from './drill';
 
 export const useAlerts = () => useApi<AlertsResponse>('/api/alerts', {});
 
@@ -59,13 +59,20 @@ export function useOpenAlert() {
   const drill = useDrill();
   return useCallback(
     (t: AlertTarget) => {
-      setScope('all');
-      setFilters({
+      const next = {
         ...EMPTY_FILTERS,
         project: t.projectId ? [t.projectId] : [],
         assignee: t.assigneeId ? [t.assigneeId] : [],
+      };
+      setScope('all');
+      setFilters(next);
+      drill({
+        label: t.label,
+        preset: t.preset,
+        params: t.params,
+        replaceFilters: true,
+        filterKey: filterKey(next, 'all'),
       });
-      drill({ label: t.label, preset: t.preset, params: t.params, replaceFilters: true });
     },
     [setFilters, setScope, drill],
   );

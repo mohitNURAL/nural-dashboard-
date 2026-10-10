@@ -8,7 +8,7 @@ import { SearchCombobox } from '../../components/SearchCombobox';
 import { useFocusRow } from '../filters/useFilters';
 import { CountButton } from '../../components/CountButton';
 import { useDevMatrix } from './api';
-import { rowParams, useDrill } from './drill';
+import { rowParams, useDrillTo } from './drill';
 import { GROUP_LABEL, heatShade } from './format';
 
 export function StageMatrixCard({ className }: { className?: string }) {
@@ -16,15 +16,18 @@ export function StageMatrixCard({ className }: { className?: string }) {
   const [by, setBy] = useState<GroupBy>('assignee');
   const { data, isLoading } = useDevMatrix(tag, by);
   const focus = useFocusRow();
-  const drill = useDrill();
+  const drill = useDrillTo();
   // The tag toggle narrows the drill-down too.
   const tagParams: Record<string, string> = tag ? { tag } : {};
   const open = (r: { id: number; name: string }, extra: Record<string, string>, what: string) =>
-    drill({
-      label: [r.name, what, tag].filter(Boolean).join(' · '),
-      preset: 'total',
-      params: { ...rowParams(by, r.id), ...tagParams, ...extra },
-    });
+    drill(
+      {
+        label: [r.name, what, tag].filter(Boolean).join(' · '),
+        preset: 'total',
+        params: { ...rowParams(by, r.id), ...tagParams, ...extra },
+      },
+      { by, id: r.id },
+    );
 
   return (
     <Card

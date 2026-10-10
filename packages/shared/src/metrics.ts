@@ -428,26 +428,17 @@ export interface RankingRow {
  * deadline. Rank by on-time % then average days early; fewer than `minTasks` = unranked.
  * `eligible` limits it to those assignees (the Development department group).
  */
+/** DEV-04: a task the speed ranking counts: sent to QA, with a completion time and a deadline. */
+export const isRankedTask = (t: MetricTask): boolean =>
+  !!t.deadline && isSentToQa(t) && !!completedAt(t);
+
 export function speedRanking(
   tasks: readonly MetricTask[],
   { minTasks = 3, eligible }: { minTasks?: number; eligible?: ReadonlySet<number> } = {},
 ): RankingRow[] {
-  const done = tasks
-    .map((t) => ({ t, at: completedAt(t) }))
-    .filter(
-      (x): x is { t: MetricTask; at: Date } =>
-        !!x.at &&
-        !!x.t.deadline &&
-        isSentToQa(x.t) &&
-        (!eligible || eligible.has(x.t.responsibleId)),
-    );
+  const done = tasks.filter((t) => isRankedTask(t) && (!eligible || eligible.has(t.responsibleId)));
 
-  const rows = [
-    ...groupBy(
-      done.map((x) => x.t),
-      (t) => t.responsibleId,
-    ),
-  ].map(([id, list]) => {
+  const rows = [...groupBy(done, (t) => t.responsibleId)].map(([id, list]) => {
     const leads = list.map((t) => diffDays(t.deadline!, completedAt(t)!));
     const onTime = leads.filter((d) => d >= 0).length;
     return {

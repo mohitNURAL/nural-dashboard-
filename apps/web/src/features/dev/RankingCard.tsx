@@ -1,8 +1,12 @@
-// DEV-04: speed ranking, how early tasks reached QA Backlog against their deadline.
+// DEV-04: speed ranking, how early tasks reached QA Backlog against their deadline. A row sets the
+// Assignee filter and opens the tasks it counts (sent to QA, with a deadline).
 import clsx from 'clsx';
 import { Card } from '../../components/Card';
 import { Avatar } from '../../components/chips';
+import { CountButton } from '../../components/CountButton';
+import type { RankingRow } from '../../api/types';
 import { useDevRanking } from './api';
+import { useDrillTo } from './drill';
 import { daysEarlyText } from './format';
 
 const MEDALS = ['#E0A100', '#9AA3B5', '#B87333'];
@@ -11,6 +15,16 @@ export function RankingCard({ className }: { className?: string }) {
   const { data, isLoading } = useDevRanking();
   const ranked = data?.rows.filter((r) => r.rank !== null) ?? [];
   const unranked = data?.rows.filter((r) => r.rank === null) ?? [];
+  const drill = useDrillTo();
+  const open = (r: RankingRow) =>
+    drill(
+      {
+        label: `${r.person.name} · Fastest to QA Backlog`,
+        preset: 'completed',
+        params: { assignee: String(r.id), ranked: 'true' },
+      },
+      { by: 'assignee', id: r.id },
+    );
 
   return (
     <Card
@@ -35,7 +49,12 @@ export function RankingCard({ className }: { className?: string }) {
             {[...ranked, ...unranked].map((r) => (
               <tr
                 key={r.id}
-                className={clsx('hover:bg-primary-soft-100', r.rank === null && 'text-text-muted')}
+                onClick={() => open(r)}
+                title={`Show ${r.person.name}: tasks counted here`}
+                className={clsx(
+                  'cursor-pointer hover:bg-primary-soft-100',
+                  r.rank === null && 'text-text-muted',
+                )}
               >
                 <td className="border-b border-primary-soft-100 px-2 py-1.5">
                   {r.badge && r.rank ? (
@@ -58,8 +77,8 @@ export function RankingCard({ className }: { className?: string }) {
                     </span>
                   </span>
                 </td>
-                <td className="border-b border-primary-soft-100 px-2 py-1.5 text-right tabular-nums">
-                  {r.completed}
+                <td className="border-b border-primary-soft-100 px-2 py-1.5 text-right">
+                  <CountButton n={r.completed} onClick={() => open(r)} />
                 </td>
                 <td
                   className={clsx(

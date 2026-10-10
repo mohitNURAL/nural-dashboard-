@@ -3,7 +3,7 @@
 import type { DevPreset, SummaryPart } from '@nural/shared';
 import { StatTile } from '../../components/StatTile';
 import { useDevSummary } from './api';
-import { useDrill } from './drill';
+import { useDrillTo } from './drill';
 import { splitLine, TILE_LABELS } from './format';
 
 const TILES: { preset: DevPreset; sub?: string }[] = [
@@ -32,7 +32,7 @@ interface Props {
 
 export function SummaryTiles({ active, onSelect }: Props) {
   const { data } = useDevSummary();
-  const drill = useDrill();
+  const drill = useDrillTo();
   const split = data?.split;
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">

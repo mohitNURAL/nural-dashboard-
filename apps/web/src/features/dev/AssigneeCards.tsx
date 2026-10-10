@@ -12,7 +12,7 @@ import { token } from '../../components/chartTheme';
 import { DataTable, type Columns } from '../../components/DataTable';
 import { useFocusRow } from '../filters/useFilters';
 import { useDevAssignees } from './api';
-import { rowParams, useDrill } from './drill';
+import { rowParams, useDrillTo } from './drill';
 import { GROUP_LABEL } from './format';
 
 const col = createColumnHelper<AssigneeRow>();
@@ -34,7 +34,7 @@ export function AssigneeTableCard({ className }: { className?: string }) {
   const { data, isLoading } = useDevAssignees(by);
   const focus = useFocusRow();
 
-  const drill = useDrill();
+  const drill = useDrillTo();
 
   const columns = useMemo(() => {
     // Each count opens "All tasks" for that row and column; the totals row for the column.
@@ -49,11 +49,14 @@ export function AssigneeTableCard({ className }: { className?: string }) {
               n={c.getValue()}
               title={`Open ${r.name}: ${header}`}
               onClick={() =>
-                drill({
-                  label: `${r.name} · ${header}`,
-                  preset: COUNT_PRESET[key],
-                  params: rowParams(by, r.id),
-                })
+                drill(
+                  {
+                    label: `${r.name} · ${header}`,
+                    preset: COUNT_PRESET[key],
+                    params: rowParams(by, r.id),
+                  },
+                  { by, id: r.id },
+                )
               }
             />
           );
@@ -112,7 +115,7 @@ export function AssigneeTableCard({ className }: { className?: string }) {
 export function PendingDoneCard({ className }: { className?: string }) {
   const [by, setBy] = useState<GroupBy>('assignee');
   const { data, isLoading } = useDevAssignees(by);
-  const drill = useDrill();
+  const drill = useDrillTo();
   // API rows are sorted by total; ECharts draws the first category at the bottom.
   const rows = useMemo(() => (data?.rows ?? []).slice(0, CHART_ROWS).reverse(), [data]);
 
@@ -131,11 +134,14 @@ export function PendingDoneCard({ className }: { className?: string }) {
           const row = rows[p.dataIndex];
           if (!row) return;
           const pending = p.seriesName === 'Pending';
-          drill({
-            label: `${row.name} · ${pending ? 'Pending' : 'Done'}`,
-            preset: pending ? 'pending' : 'completed',
-            params: rowParams(by, row.id),
-          });
+          drill(
+            {
+              label: `${row.name} · ${pending ? 'Pending' : 'Done'}`,
+              preset: pending ? 'pending' : 'completed',
+              params: rowParams(by, row.id),
+            },
+            { by, id: row.id },
+          );
         }}
         option={{
           grid: { left: 8, right: 16, top: 8, bottom: 28, containLabel: true },

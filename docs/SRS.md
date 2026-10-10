@@ -101,7 +101,7 @@ The Development tab answers three questions for the PM and team leads: how much 
 - Whatever the switch, the tab only counts work assigned to people in the **Development department** (Software Development tree, read from the company structure). Tasks of QA Testing or other departments are left out, and so is work outside a workgroup.
 - Every tile, card, drop-down option and task list on the tab follows the switch. It is kept in the URL (`scope=dev|issues`; All is the default and is left out).
 
-**Drill-down from any count.** Every count on the Development tab opens the "All tasks" accordion (DEV-08) narrowed to exactly that count, and the accordion title takes the count's label, for example "All tasks: Neha Gautam · Pending" or "All tasks: Umang Singh · To do, overdue". This covers the tiles, every number and the totals row of the DEV-02 and DEV-03 tables, the bars of the DEV-02 and DEV-03 charts, and each part of a DEV-05 cell. "Show all tasks" clears it. Clicking a name (not a number) still sets the Assignee or Project filter.
+**Drill-down from any count.** Every count on the Development tab opens the "All tasks" accordion (DEV-08) narrowed to exactly that count, and the accordion title takes the count's label, for example "All tasks: Neha Gautam · Pending" or "All tasks: Umang Singh · To do, overdue". This covers the tiles, every number and the totals row of the DEV-02 and DEV-03 tables, the bars of the DEV-02 and DEV-03 charts, and each part of a DEV-05 cell. A count that belongs to one assignee or project (a table row, a chart bar, a matrix cell, an ageing segment, a speed-ranking row) **also sets that Assignee or Project filter**, so the whole tab follows the click. Clearing, resetting or changing the filters afterwards returns "All tasks" to its default (title and list); "Show all tasks" does the same. Clicking a name (not a number) sets the filter only.
 
 **DEV-01 Summary tiles (one row of 6)**
 
@@ -134,7 +134,7 @@ Under each tile's number, a breakdown follows the All / Dev / Issues switch (DEV
 
 **DEV-04 Speed ranking**
 
-- Ranks employees by how early, on average, their tasks reached QA Backlog compared to the deadline (formula in section 5). Shows rank, name, tasks completed, average days early or late, on-time %. Top 3 get a badge.
+- Ranks employees by how early, on average, their tasks reached QA Backlog compared to the deadline (formula in section 5). Shows rank, name, tasks completed, average days early or late, on-time %. Top 3 get a badge. Clicking a row (or its Tasks number) sets the Assignee filter and opens the tasks it counts: sent to QA, with a deadline (`/api/tasks?ranked=true`).
 
 **DEV-05 Stage x assignee x tag counts**
 

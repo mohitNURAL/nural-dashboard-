@@ -9,7 +9,7 @@ import { token } from '../../components/chartTheme';
 import { CountButton } from '../../components/CountButton';
 import { DataTable, type Columns } from '../../components/DataTable';
 import { useDevAssignees } from './api';
-import { rowParams, useDrill } from './drill';
+import { rowParams, useDrillTo } from './drill';
 import { GROUP_LABEL } from './format';
 
 type Key = keyof AgeingCounts;
@@ -34,7 +34,7 @@ export function AgeingCard({ className }: { className?: string }) {
   const [by, setBy] = useState<GroupBy>('assignee');
   const [view, setView] = useState<'chart' | 'table'>('chart');
   const { data, isLoading } = useDevAssignees(by);
-  const drill = useDrill();
+  const drill = useDrillTo();
   const totals = data?.ageing.totals;
   const open = totals ? BUCKETS.reduce((n, b) => n + totals[b.key], 0) : 0;
 
@@ -42,11 +42,14 @@ export function AgeingCard({ className }: { className?: string }) {
   const openBucket = useCallback(
     (key: Key, row?: Row) => {
       const b = BUCKETS.find((x) => x.key === key)!;
-      drill({
-        label: [row?.name, b.late ? `${b.label} days late` : b.label].filter(Boolean).join(' · '),
-        preset: 'pending',
-        params: { ageing: key, ...(row ? rowParams(by, row.id) : {}) },
-      });
+      drill(
+        {
+          label: [row?.name, b.late ? `${b.label} days late` : b.label].filter(Boolean).join(' · '),
+          preset: 'pending',
+          params: { ageing: key, ...(row ? rowParams(by, row.id) : {}) },
+        },
+        row ? { by, id: row.id } : undefined,
+      );
     },
     [by, drill],
   );
