@@ -10,7 +10,7 @@ import {
   type StageGroup,
   type StageTitle,
 } from './stages';
-import { hasReopenTag, isTestingTag, normalizeTag } from './tags';
+import { isTestingTag, normalizeTag } from './tags';
 import { dayKey, daysBetween, diffDays } from './time';
 import type { Filters, IssueType, MetricContext, MetricTask } from './types';
 
@@ -217,20 +217,13 @@ export type TaskIndex = ReadonlyMap<number, MetricTask>;
 export const indexTasks = (tasks: readonly MetricTask[]): Map<number, MetricTask> =>
   new Map(tasks.map((t) => [t.id, t]));
 
-/** An issue raised on an issue: its parent or a related task is itself an issue. */
-export const isRaisedOnIssue = (t: MetricTask, byId: TaskIndex): boolean =>
-  [t.parentId, ...t.relatedIds].some((id) => id != null && id !== t.id && !!byId.get(id)?.isIssue);
-
 /**
- * Rework count for an issue (SRS 5): each reopen move counts 1, being raised on an
- * issue counts 1, and a Re-Open tag counts 1 only when neither already counted it.
+ * Rework count for an issue (SRS 5): the number of QA send-backs in its stage history (from QA
+ * Backlog, In QA or Done back to Issue Raised, To do or In progress). Only the stage flow counts:
+ * linked or related issues and Re-Open tags do not.
  */
-export function reworkCount(t: MetricTask, byId: TaskIndex): number {
-  if (!t.isIssue) return 0;
-  const moves = reopenEvents(t).length;
-  const onIssue = isRaisedOnIssue(t, byId) ? 1 : 0;
-  const tag = moves === 0 && onIssue === 0 && hasReopenTag(t.tags) ? 1 : 0;
-  return moves + onIssue + tag;
+export function reworkCount(t: MetricTask): number {
+  return t.isIssue ? reopenEvents(t).length : 0;
 }
 
 // ---------------------------------------------------------------- helpers
@@ -531,7 +524,7 @@ export function lastFiled(list: readonly MetricTask[], ctx: MetricContext) {
   };
 }
 
-/** QA-01 tiles. Pass issues already filtered. `byId` must index all tasks (for rework links). */
+/** QA-01 tiles. Pass issues already filtered. */
 /** One part of the QA-01 tile breakdown. */
 export interface QaSummaryPart {
   key: IssueType;
@@ -543,11 +536,7 @@ export interface QaSummaryPart {
 }
 
 /** QA-01 tile breakdown: every tile split into Bug and Feedback; the parts add up to the tile. */
-export function qaSummaryParts(
-  list: readonly MetricTask[],
-  ctx: MetricContext,
-  byId: TaskIndex,
-): QaSummaryPart[] {
+export function qaSummaryParts(list: readonly MetricTask[], ctx: MetricContext): QaSummaryPart[] {
   const day = lastFiled(list, ctx)?.date;
   return (['bug', 'feedback'] as const).map((key) => {
     const sub = list.filter((t) => t.issueType === key);
@@ -556,14 +545,14 @@ export function qaSummaryParts(
       total: sub.length,
       open: sub.filter(isOpenIssue).length,
       lastFiled: day ? sub.filter((t) => dayKey(t.createdAt, ctx.tz) === day).length : 0,
-      rework: sub.filter((t) => reworkCount(t, byId) > 0).length,
+      rework: sub.filter((t) => reworkCount(t) > 0).length,
     };
   });
 }
 
-export function qaSummary(list: readonly MetricTask[], ctx: MetricContext, byId: TaskIndex) {
+export function qaSummary(list: readonly MetricTask[], ctx: MetricContext) {
   const resolved = list.filter((t) => !isOpenIssue(t)).length;
-  const rework = list.map((t) => reworkCount(t, byId));
+  const rework = list.map((t) => reworkCount(t));
   const reworkIssues = rework.filter((n) => n > 0).length;
   return {
     total: list.length,
@@ -657,14 +646,10 @@ export function issueAgeByAssignee(
 }
 
 /** QA-05: rework count and % of each developer's (or project's) issues that are rework. */
-export function reworkByDeveloper(
-  list: readonly MetricTask[],
-  byId: TaskIndex,
-  by: GroupBy = 'assignee',
-) {
+export function reworkByDeveloper(list: readonly MetricTask[], by: GroupBy = 'assignee') {
   return [...groupBy(list, groupKey(by))]
     .map(([id, l]) => {
-      const counts = l.map((t) => reworkCount(t, byId));
+      const counts = l.map((t) => reworkCount(t));
       const reworkIssues = counts.filter((n) => n > 0).length;
       return {
         id,
@@ -873,7 +858,7 @@ export type IssuePreset = (typeof ISSUE_PRESETS)[number];
 export function presetPredicate(
   preset: DevPreset | IssuePreset,
   ctx: MetricContext,
-  { byId, lastFiledDate }: { byId?: TaskIndex; lastFiledDate?: string | null } = {},
+  { lastFiledDate }: { lastFiledDate?: string | null } = {},
 ): (t: MetricTask) => boolean {
   switch (preset) {
     case 'total':
@@ -900,7 +885,7 @@ export function presetPredicate(
     case 'lastFiled':
       return (t) => !!lastFiledDate && dayKey(t.createdAt, ctx.tz) === lastFiledDate;
     case 'rework':
-      return (t) => !!byId && reworkCount(t, byId) > 0;
+      return (t) => reworkCount(t) > 0;
     case 'retest':
       return isWaitingForRetest;
   }

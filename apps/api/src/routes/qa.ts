@@ -33,9 +33,9 @@ export function qaRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts
     const { filters, ds, ctx } = await scope(req.query);
     const list = applyFilters(issues(ds.tasks, ctx), filters, ctx.tz);
     return {
-      ...qaSummary(list, ctx, ds.byId),
+      ...qaSummary(list, ctx),
       // Tile breakdown: every QA tile split into Bug and Feedback.
-      parts: qaSummaryParts(list, ctx, ds.byId),
+      parts: qaSummaryParts(list, ctx),
       asOf: ctx.now,
       dataLoadedAt: ds.loadedAt,
     };
@@ -81,7 +81,7 @@ export function qaRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts
         const g = ageingByAssignee(list, ctx, by);
         return { rows: withGroupNames(ds, g.rows, by), totals: g.totals };
       })(),
-      rework: withGroupNames(ds, reworkByDeveloper(list, ds.byId, by), by),
+      rework: withGroupNames(ds, reworkByDeveloper(list, by), by),
       waitingForRetest: { total: retest.total, byCreator: withPeople(ds, retest.byCreator) },
     };
   });

@@ -173,9 +173,11 @@ Under each tile's number the count is split into **Bug | Feedback**; the parts a
 
 **QA-03 Issue status by Kanban stage**: the same stage heat matrix as DEV-05, for issues: rows are assignees (or projects, Assignee / Project switch), columns the 11 Kanban stages with their board colours, cells shaded by count and split into not overdue and **overdue** (red), row totals. A **Bug / Feedback** selector (in place of DEV-05's tag) narrows it. Every number opens those issues in "All issues" and sets the Assignee or Project filter. Alternate views: **Table** (Bug, Feedback, Total and a column per stage, totals row, sortable) and **Chart** (issues per stage in board order and colours). Full width.
 
-**QA-04 Age of open issues**: buckets 0 to 2, 3 to 7, 8 to 14, over 14 days since created, per assignee or per project.
+**QA-04 Issue ageing**: the same card as DEV-03 task ageing, for open issues: buckets Not due, 0 to 2, 3 to 7, 8 to 14, 15 to 30, over 30 days **past deadline**, and No deadline; a stacked bar per assignee (or project) with bucket totals, a table view, Assignee / Project switch; every count opens those issues (replaces "age since created", 2026-10-10).
 
 **QA-05 Rework by developer**: bar per developer (or per project) with rework count and rework % of their issues.
+
+**Drill-down on the QA tab.** As on the Development tab, every number and chart bar opens the "All issues" accordion narrowed to it, with the accordion title taking its label, and a number of one assignee or project also sets that filter; clearing or changing the filters returns the list to its default. This covers the tiles and their Bug / Feedback parts, Issues by assignee (Open, Resolved, Bug, Feedback bars), the stage matrix and table, Issue ageing, Rework by developer, Testing team workload (opens that tester's testing tasks, titled "Testing tasks: …") and Waiting for retest (opens the issues that tester filed, `createdBy`).
 
 **QA-06 Testing team workload**
 
@@ -188,7 +190,7 @@ Under each tile's number the count is split into **Bug | Feedback**; the parts a
 
 **QA-08 Accordion: Latest filed issues** (closed by default)
 
-- Issues filed on the "Last filed" date from QA-01. Columns: Bitrix ID, Title, Type (Bug or Feedback), Assignee, Creator, Priority, Stage, Linked task, Created. Sorted by created date, newest first.
+- Issues filed on the "Last filed" date from QA-01. Columns: Bitrix ID, Title, Type (Bug or Feedback), Assignee, Creator, Project, Priority, Stage, Linked task, Created, Deadline. Sorted by created date, newest first.
 
 **QA-09 Accordion: All issues** (closed by default)
 
@@ -237,12 +239,9 @@ A task with stage ID 0 (Bitrix24's default for a task never moved on the board) 
 
 Rank by on-time % first, then by average days early. Employees with fewer than 3 completed tasks in the range are listed but not ranked. Tasks without a deadline are left out.
 
-**Rework.** An issue counts as rework, charged to its assignee, when either:
+**Rework.** An issue counts as rework, charged to its assignee, when QA sends it back after it was fixed and came for testing: a move from **QA Backlog, In QA or Done** back to **Issue Raised, To do or In progress**. Each send-back counts once. **Only the stage flow counts**: an issue linked to (raised on) another issue and the Re-Open tag no longer count as rework (changed 2026-10-10).
 
-1. QA sends it back after it was fixed and came for testing: a move from **QA Backlog, In QA or Done** back to **Issue Raised, To do or In progress**. Each send-back counts once; or
-2. a new issue is created whose parent or related task is itself an issue.
-
-The workflow behind it: a tester files a bug, it sits in **Issue Raised**, the PM or team lead reviews it and moves it to **To do** for a developer; that first cycle is **not** rework. When the fixed issue reaches QA Backlog / In QA and fails, it goes back (usually to Issue Raised, then the PM sends it to To do again): that is **one** rework, counted at the send-back; the PM's Issue Raised to To do step is not counted again. So moves **from** Issue Raised never count. (Changed 2026-10-10.) The same rule flags live "reopened" changes in the sync worker.
+The workflow behind it: a tester files a bug, it sits in **Issue Raised**, the PM or team lead reviews it and moves it to **To do** for a developer; that first cycle is **not** rework. When the fixed issue reaches QA Backlog / In QA and fails, it goes back (usually to Issue Raised, then the PM sends it to To do again): that is **one** rework, counted at the send-back; the PM's Issue Raised to To do step is not counted again. So moves **from** Issue Raised never count. The same rule flags live "reopened" changes in the sync worker.
 
 Each reopen counts once, so an issue reopened twice adds 2 to the rework count. The task drawer shows each reopen with date and who moved it.
 

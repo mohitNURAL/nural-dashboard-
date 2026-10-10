@@ -123,7 +123,7 @@ export function taskRow(ds: Dataset, ctx: MetricContext, t: MetricTask) {
     issueType: t.issueType,
     ...(t.isIssue && {
       ageDays: isOpenIssue(t) ? issueAgeDays(t, ctx) : null,
-      rework: reworkCount(t, ds.byId),
+      rework: reworkCount(t),
       linkedTaskId,
     }),
   };

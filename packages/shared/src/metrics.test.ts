@@ -15,7 +15,6 @@ import {
   stageEnteredAt,
   devTasks,
   filterOptions,
-  indexTasks,
   isDueToday,
   isOverdue,
   issueAgeByAssignee,
@@ -489,7 +488,6 @@ describe('QA tab', () => {
   });
   const devTask = task({ id: 406, stage: 'LIVE' });
   const all = [parentIssue, reopenedTwice, raisedOnIssue, tagOnly, plain, devTask];
-  const byId = indexTasks(all);
   const list = issues(all);
 
   it('counts a QA send-back once, not the first Issue Raised to To do cycle', () => {
@@ -499,7 +497,6 @@ describe('QA tab', () => {
           tags: ['Bug'],
           events: stages.slice(1).map((to, k) => ev(stages[k]!, to, `2026-10-0${k + 1}T05:00:00Z`)),
         }),
-        byId,
       );
     // Tester files the bug, PM sends it to the developer: not rework.
     expect(cycle('Issue Raised', 'To do', 'In progress', 'QA Backlog')).toBe(0);
@@ -519,25 +516,26 @@ describe('QA tab', () => {
     expect(cycle('QA Backlog', 'Pending for QA')).toBe(0);
   });
 
-  it('counts rework without double counting', () => {
-    expect(reworkCount(parentIssue, byId)).toBe(0);
-    expect(reworkCount(reopenedTwice, byId)).toBe(2);
-    expect(reworkCount(raisedOnIssue, byId)).toBe(1); // raised on an issue; tag not added again
-    expect(reworkCount(tagOnly, byId)).toBe(1);
-    expect(reworkCount(devTask, byId)).toBe(0);
+  it('counts only the stage flow: not linked issues, not Re-Open tags', () => {
+    expect(reworkCount(parentIssue)).toBe(0);
+    expect(reworkCount(reopenedTwice)).toBe(2);
+    expect(reworkCount(raisedOnIssue)).toBe(0); // filed on an issue, never sent back by QA
+    expect(reworkCount(tagOnly)).toBe(0); // Re-Open tag only
+    expect(reworkCount(devTask)).toBe(0);
   });
 
   it('computes the 4 tiles', () => {
-    expect(qaSummary(list, ctx, byId)).toEqual({
+    expect(qaSummary(list, ctx)).toEqual({
       total: 5,
       open: 4,
       resolved: 1,
       resolvedPct: 20,
       openPct: 80,
       lastFiled: { date: '2026-10-10', isToday: true, count: 1 },
-      reworkIssues: 3,
-      reworkPct: 60,
-      reworkTotal: 4,
+      // Only the issue QA sent back twice (402) is rework.
+      reworkIssues: 1,
+      reworkPct: 20,
+      reworkTotal: 2,
     });
     expect(lastFiled([parentIssue], ctx)).toEqual({ date: '2026-10-01', isToday: false, count: 1 });
   });
@@ -560,9 +558,8 @@ describe('QA tab', () => {
       '8-14': 3,
       '15+': 0,
     });
-    expect(reworkByDeveloper(list, byId)).toEqual([
-      // Equal rework counts: ties break by user ID.
-      { id: 28, issues: 2, rework: 2, reworkIssues: 2, reworkPct: 100 },
+    expect(reworkByDeveloper(list)).toEqual([
+      // 28's issues are linked / tagged only: not rework under the flow rule.
       { id: 30, issues: 2, rework: 2, reworkIssues: 1, reworkPct: 50 },
     ]);
   });
@@ -577,14 +574,14 @@ describe('QA tab', () => {
     ]);
     expect(byProject[1]).toMatchObject({ open: 1, bug: 0, feedback: 1 });
     expect(issueAgeByAssignee(all, ctx, 'project').rows.find((r) => r.id === 148)?.total).toBe(1);
-    expect(reworkByDeveloper(all, byId, 'project')).toEqual([
-      { id: 154, issues: list.length, rework: 4, reworkIssues: 3, reworkPct: 60 },
+    expect(reworkByDeveloper(all, 'project')).toEqual([
+      { id: 154, issues: list.length, rework: 2, reworkIssues: 1, reworkPct: 20 },
     ]);
   });
 
   it('splits every QA tile into bug and feedback, adding up to the tile', () => {
-    const s = qaSummary(list, ctx, byId);
-    const parts = qaSummaryParts(list, ctx, byId);
+    const s = qaSummary(list, ctx);
+    const parts = qaSummaryParts(list, ctx);
     expect(parts.map((p) => p.key)).toEqual(['bug', 'feedback']);
     const sum = (k: 'total' | 'open' | 'lastFiled' | 'rework') =>
       parts.reduce((n, p) => n + p[k], 0);
@@ -597,7 +594,7 @@ describe('QA tab', () => {
   it('counts last filed parts on the overall last filed day', () => {
     const late = task({ tags: ['Bug'], createdAt: new Date('2026-10-09T05:00:00Z') });
     const early = task({ tags: ['Feedback'], createdAt: new Date('2026-10-01T05:00:00Z') });
-    expect(qaSummaryParts([late, early], ctx, indexTasks([late, early]))).toEqual([
+    expect(qaSummaryParts([late, early], ctx)).toEqual([
       expect.objectContaining({ key: 'bug', lastFiled: 1 }),
       // Feedback's own latest day is 1 Oct, but the tile is about 9 Oct: 0.
       expect.objectContaining({ key: 'feedback', lastFiled: 0 }),
@@ -656,9 +653,7 @@ describe('QA tab', () => {
     expect(
       list.filter(presetPredicate('lastFiled', ctx, { lastFiledDate: last })).map((t) => t.id),
     ).toEqual([405]);
-    expect(list.filter(presetPredicate('rework', ctx, { byId })).map((t) => t.id)).toEqual([
-      402, 403, 404,
-    ]);
+    expect(list.filter(presetPredicate('rework', ctx)).map((t) => t.id)).toEqual([402]);
     expect(list.filter(presetPredicate('retest', ctx)).map((t) => t.id)).toEqual([404, 405]);
   });
 });

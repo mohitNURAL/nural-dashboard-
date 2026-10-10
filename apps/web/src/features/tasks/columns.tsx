@@ -116,7 +116,8 @@ const TYPE_STYLE = {
 } as const;
 
 /**
- * QA-08: ID, Title, Type, Assignee, Creator, Priority, Stage, Linked task, Created.
+ * QA-08: ID, Title, Type, Assignee, Creator, Project, Priority, Stage, Linked task, Created,
+ * Deadline.
  * QA-09 (`full`) adds Rework and Age.
  */
 export function issueColumns({ full = false } = {}): Columns<TaskRow> {
@@ -145,6 +146,7 @@ export function issueColumns({ full = false } = {}): Columns<TaskRow> {
     }),
     pick('assignee'),
     col.accessor((r) => r.creator.name, { id: 'creator', header: 'Creator', enableSorting: false }),
+    pick('project'),
     pick('priority'),
     pick('stage'),
     col.accessor('linkedTaskId', {
@@ -156,6 +158,7 @@ export function issueColumns({ full = false } = {}): Columns<TaskRow> {
       header: 'Created',
       cell: (c) => <span className="whitespace-nowrap">{fmtDate(c.getValue())}</span>,
     }),
+    pick('deadline'),
     ...(full
       ? [
           col.accessor('rework', {

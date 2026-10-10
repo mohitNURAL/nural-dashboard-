@@ -108,9 +108,7 @@ export function taskRoutes(
     }
     if (query.preset) {
       const last = query.preset === 'lastFiled' ? lastFiled(list, ctx)?.date : undefined;
-      list = list.filter(
-        presetPredicate(query.preset, ctx, { byId: ds.byId, lastFiledDate: last }),
-      );
+      list = list.filter(presetPredicate(query.preset, ctx, { lastFiledDate: last }));
     }
     if (query.q) {
       const q = query.q.toLowerCase();
