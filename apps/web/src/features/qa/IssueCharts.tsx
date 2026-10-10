@@ -8,7 +8,6 @@ import { AgeingCard } from '../../components/AgeingCard';
 import { Actions, Card, GroupToggle, ViewToggle } from '../../components/Card';
 import { Chart } from '../../components/Chart';
 import { token } from '../../components/chartTheme';
-import { GROUP_LABEL } from '../dev/format';
 import { useQaIssues } from './api';
 import { useOpenIssues } from './issueList';
 import { INFO } from '../info';
