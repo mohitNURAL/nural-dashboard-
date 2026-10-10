@@ -384,7 +384,7 @@ SSE is chosen over WebSocket because the browser only receives; filters are sent
 
 - `AUTH=bitrix` turns sign-in on; `AUTH=off` (the default, for local development) lets every call through.
 - `GET /api/auth/login` sends the browser to the portal's `/oauth/authorize/` page with the local app's client ID and a random `state`, kept in a short-lived signed cookie.
-- Bitrix24 returns to `GET /api/auth/callback`. The API checks the `state` and exchanges the code at `https://oauth.bitrix.info/oauth/token/`. It accepts the result only when its `client_endpoint` is our portal and the `user_id` is an active user in our `users` table. The access token is not used or kept: sign-in makes no REST call and writes nothing to Bitrix24.
+- Bitrix24 returns to the local app's handler path (the site root) with `?code=&state=`, even when `redirect_uri` is given. Caddy redirects that to `GET /api/auth/callback`. The API checks the `state` and exchanges the code at `https://oauth.bitrix.info/oauth/token/`. It accepts the result only when its `client_endpoint` is our portal and the `user_id` is an active user in our `users` table. The access token is not used or kept: sign-in makes no REST call and writes nothing to Bitrix24.
 - The session is a signed cookie (HMAC-SHA256 with `SESSION_SECRET`): HttpOnly, SameSite=Lax, Secure on HTTPS, valid 7 days, holding the user ID and name. There is no session table, and changing `SESSION_SECRET` signs everyone out.
 - With sign-in on, every `/api` call other than `/api/auth/*` needs the session, or it gets 401 and the web app goes to sign-in. `/health` and `/hooks/bitrix` (checked by its application token) stay open.
 - `GET /api/auth/me` returns the signed-in name, shown in the user menu with Sign out (`POST /api/auth/logout`).
@@ -660,7 +660,7 @@ Why not keep the manual timer: on 2026-10-10 the portal had 38 tasks in status I
 
 ### 12.4 Stage clocks (automatic time tracking)
 
-Every stage move is an event with a time. A **clock segment** is the time between entering a stage and leaving it, counted in **working hours only** (default Mon–Sat 10:00–19:00 Asia/Kolkata, company holidays excluded; set in `config/calendar.json`). Each segment is charged to the clock owner from 12.2: the assignee at that moment for development, and the person who made the next move for TL/PM stages (history tells us who).
+Every stage move is an event with a time. A **clock segment** is the time between entering a stage and leaving it, counted in **working hours only** (Mon–Fri 09:30–18:30 Asia/Kolkata, public holidays excluded; see 13.1 and `config/holidays.json`). Each segment is charged to the clock owner from 12.2: the assignee at that moment for development, and the person who made the next move for TL/PM stages (history tells us who).
 
 What Mohit asked for, mapped to clocks:
 
@@ -722,7 +722,116 @@ New dashboard views: a **Planned vs Actual** table (employee rows, the columns a
 
 | # | Question | Default assumed |
 | --- | --- | --- |
-| 12 | Working hours for clocks | Mon–Sat 10:00–19:00 IST |
+| 12 | Working hours for clocks | Resolved: Mon–Fri 09:30–18:30 IST, public holidays excluded (13.1) |
 | 13 | Who counts as TL/PM for the guard | Balram Jha (PM), Adnan Mubeen, Faiz Arsalan, plus each project's owner |
 | 14 | Should the guard revert, or only warn? | Monitor for two weeks, then revert |
 | 15 | Developer time ends at Merged to Development (includes review wait) | Yes, as requested; review wait is also shown separately |
+
+## 13. KPI tab (management view: planned vs actual, load, overdue, hot projects)
+
+Added 2026-10-10. A third tab, **KPI**, written for management. Unlike the Development and QA tabs it covers **every task in every workgroup**: development, QA and support. It answers five questions: are projects on plan, who is overloaded, what is overdue, which projects are hot or silent, and who is lagging or doing well.
+
+### 13.1 Working calendar
+
+- Working time is **Monday to Friday, 09:30 to 18:30 Asia/Kolkata** (9 hours a day). Saturdays, Sundays and public holidays are not counted.
+- Public holidays come from `config/holidays.json` (date, name), which an admin edits once a year. This calendar replaces the default in 12.4, so every hour on every tab is a working hour.
+- Capacity of one person = 9 working hours a day, 45 a week.
+
+### 13.2 Planned and actual time
+
+**Per task**
+
+| Value | Rule (first one that exists) |
+| --- | --- |
+| Planned start | `START_DATE_PLAN` (auto-filled on first In progress, 12.5) → Bitrix24 `DATE_START` (first time the task was started) → created date |
+| Planned end | Baseline deadline (12.5) → current deadline. Tasks with no deadline get no planned time and are listed under "No deadline" |
+| Planned hours | Working hours from planned start to planned end |
+| Actual end | First entry to QA Backlog (development boards) → Bitrix24 closed date (support and QA tasks, or boards without these stages) |
+| Actual hours | Working hours from planned start to actual end, minus On Hold time (12.4). For open tasks, elapsed working hours so far |
+| On time | Actual end ≤ planned end |
+
+**Per project.** A project's **planned window** runs from the earliest planned start of its tasks to the **deadline of its last task** (the latest planned end). Planned hours = sum of its tasks' planned hours. Actual hours = sum of its tasks' actual hours (cumulative over all task movement). Completion % = closed tasks / all tasks.
+
+**Indexes used across the tab**
+
+| Index | Formula | Reads as |
+| --- | --- | --- |
+| Efficiency | Planned hours / actual hours, closed tasks only | Above 1.0 = faster than plan |
+| On-time % | On-time closed tasks / closed tasks with a deadline | Share of promises kept |
+| Overdue rate | Overdue open tasks / open tasks | Share of open work already late |
+| Schedule slip | Days from the project's planned end to its forecast end (13.3, KPI-03) | Positive = will finish late |
+
+### 13.3 Layout
+
+The tab uses the same filter bar (project, assignee, tag, date range) plus two extra controls: a **Department** filter (Development, QA, Support, All, default All) and a **Day / Week / Month** period switch (default Week), which sets the periods for trends and the assignee table.
+
+**KPI-01 Headline tiles (one row of 6)**
+
+| Tile | Value | Sub-line |
+| --- | --- | --- |
+| Active projects | Workgroups with at least one open task and any action in the last 30 days | "+ N silent" (open tasks, no action for 10+ working days) |
+| Open tasks | All open tasks in scope | Split Development / QA / Support |
+| Overdue | Open tasks past deadline | % of open, and change since last period |
+| On-time % | For tasks closed in the period | Arrow vs previous period |
+| Planned vs actual hours | Sum for tasks closed in the period, e.g. "820 h planned · 1,040 h actual" | Efficiency index |
+| Team load | Remaining planned hours due in the next 10 working days / team capacity | "N people over 100%" |
+
+**KPI-02 Project scorecard (main table)**
+
+One row per project, sorted by health (red first). Columns: Project · **Owner** (product owner from `config/project-owners.json`, seeded with Mohit's list of 2026-10-10; Bitrix24 group owner as fallback) · Status chip (Green / Amber / Red, 13.4) · Open · Overdue · Completion % (bar) · Planned hours · Actual hours · Efficiency · Planned end (deadline of last task) · Forecast end · **Action since** (last activity on any task of the project; shown as "2 h ago", or in red "No action for 12 days" when over 3 working days). Clicking a row filters the whole tab to that project.
+
+**KPI-03 Planned vs actual by project (chart)**
+
+A grouped horizontal bar per project: planned hours (outline) and actual hours (solid), coloured green where actual ≤ planned and red where it exceeds it. A second view switches to a **timeline**: one row per project showing the planned window (planned start to last deadline) as a bar, a marker for today, and the forecast end. Forecast end = today + remaining planned hours of open tasks / (working hours a day × people assigned to the project), and never earlier than the latest open deadline.
+
+**KPI-04 Assignee performance (day / week / month)**
+
+One row per assignee, for the selected period. Columns: Name · Department · Closed · On-time % · Planned h · Actual h · Efficiency · Overdue now · Rework · Load % · Score (13.4) · an 8-period sparkline of closed tasks. Sortable. Rows with fewer than 3 closed tasks in the period show their numbers but no score.
+
+**KPI-05 Load per assignee**
+
+Horizontal bars of **load %** = remaining planned hours of open tasks due in the next 10 working days / 90 hours of capacity. Overdue open tasks have no remaining plan, so each counts as 4 hours (half a day, `OVERDUE_REMAINING_HOURS`), because the work is still owed. Bands: under 50 % (spare capacity, grey), 50 to 100 % (healthy, teal), over 100 % (overloaded, red). Each bar's tooltip shows open tasks, overdue tasks, projects involved and tasks with no deadline (not counted in load, but listed).
+
+**Exclusions.** Tasks with no workgroup are shown in their own callout (count, owners) and left out of project and load figures until they are filed into a project. Tasks closed in bulk (30 or more in one project on the same day) are left out of planned vs actual, because their close date is not when the work finished.
+
+**KPI-06 Overdue (three views of one number)**
+
+The total overdue count, then two ranked lists side by side: **by project** and **by assignee**, each with ageing chips (1 to 2, 3 to 7, 8 to 30, over 30 days). Every number opens the task list.
+
+**KPI-07 Hot projects right now**
+
+Top 5 projects by **heat** over the last 7 days: heat = new tasks × 2 + bugs raised × 3 + stage moves + comments. Overdue work is left out of heat on purpose, so a stalled project with a large overdue backlog does not show as hot; it shows under Overdue and Silent instead. Each card shows the project, owner, heat score, a 14-day activity sparkline and the reason ("9 bugs raised this week", "40 tasks changed"). A project is **silent** when it has open tasks and no action for 10 or more working days. Silent projects appear in a separate list under the hot ones.
+
+**KPI-08 Doing well / Needs attention**
+
+Two columns for people and two for projects, ranked by **performance score** (13.4). The top 5 are under "Doing well", the bottom 5 under "Needs attention". Each row shows the one or two numbers behind its position, for example "On-time 92 % · efficiency 1.2" or "7 overdue · on-time 38 %".
+
+**KPI-09 Insights**
+
+Up to six plain-language findings, worked out by rules from the same data and refreshed with it. Examples: "Vijay Prajapati holds 24 % of all open work across 9 projects", "Support tasks have timers running for over 2 days on 11 tasks", "Moto Indonesia's planned end passed 18 days ago with 7 open tasks", "Planned hours are missing on 31 % of open tasks (no deadline)". Each finding links to the tasks behind it.
+
+### 13.4 Scores and status
+
+**Performance score (0 to 100)**, per person or project, over the selected period:
+
+```latex
+\text{Score} = 40\cdot\text{OnTime} + 25\cdot\min\!\left(\tfrac{\text{Efficiency}}{1.2},1\right) + 20\cdot(1-\text{OverdueRate}) + 15\cdot(1-\text{ReworkRate})
+```
+
+Rework rate = rework cycles / closed tasks, capped at 1. People need at least 3 closed tasks and projects at least 5 to get a score.
+
+**Project status**
+
+| Status | Rule |
+| --- | --- |
+| Red | Planned end passed with open tasks, or overdue rate over 25 %, or score under 50 |
+| Amber | Overdue rate 10 to 25 %, or score 50 to 70, or no action for 10+ working days |
+| Green | Everything else |
+
+### 13.5 Data and API
+
+- Reads the same `tasks`, `task_stage_events`, `clock_segments` and `task_time_summary` tables (sections 7 and 12), extended to all workgroups for this tab only.
+- New config: `config/holidays.json`, `config/project-owners.json`, `config/departments.json` (maps Bitrix24 departments to Development / QA / Support).
+- New endpoints, all taking the filter parameters plus `period=day|week|month` and `dept=`: `GET /api/kpi/summary`, `/api/kpi/projects`, `/api/kpi/assignees`, `/api/kpi/load`, `/api/kpi/overdue`, `/api/kpi/hot`, `/api/kpi/insights`.
+- Values are computed in a nightly job and topped up by live events, so the tab opens in under 2 seconds.
+- Who sees it: PM, team leads and management. Developers do not see other people's scores (role from department, section 7 auth).

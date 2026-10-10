@@ -13,6 +13,14 @@
 		Referrer-Policy strict-origin-when-cross-origin
 	}
 
+	# Sign in with Bitrix24: the portal returns to the local app's handler path (the site root)
+	# with ?code=&state=, ignoring redirect_uri; hand that to the API's callback.
+	@oauthReturn {
+		path /
+		query code=* state=*
+	}
+	redir @oauthReturn /api/auth/callback?{query} 302
+
 	@backend path /api/* /hooks/* /health
 	handle @backend {
 		# flush_interval -1: Server-Sent Events (/api/stream) pass through unbuffered.
