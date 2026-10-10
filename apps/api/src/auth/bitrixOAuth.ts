@@ -9,11 +9,21 @@ export interface TokenResponse {
   error?: string;
 }
 
-/** Where the browser goes to sign in; Bitrix24 sends it back to the app's redirect URL. */
-export function authorizeUrl(portalOrigin: string, clientId: string, state: string): string {
+/**
+ * Where the browser goes to sign in. Without `redirect_uri` Bitrix24 returns to the local app's
+ * handler path (the site root), so the callback URL is always given; it must be on the handler's
+ * domain.
+ */
+export function authorizeUrl(
+  portalOrigin: string,
+  clientId: string,
+  state: string,
+  redirectUri?: string,
+): string {
   const u = new URL('/oauth/authorize/', portalOrigin);
   u.searchParams.set('client_id', clientId);
   u.searchParams.set('state', state);
+  if (redirectUri) u.searchParams.set('redirect_uri', redirectUri);
   return u.toString();
 }
 

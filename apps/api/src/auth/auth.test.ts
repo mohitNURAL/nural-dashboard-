@@ -34,6 +34,7 @@ async function server(mode: 'off' | 'bitrix' = 'bitrix') {
       sessionSecret: SECRET,
       portalOrigin: PORTAL,
       secure: true,
+      callbackUrl: 'https://dash.example/api/auth/callback',
       exchange: async () => token,
     },
   });
@@ -62,6 +63,8 @@ describe('Sign in with Bitrix24', () => {
     const to = new URL(res.headers.location as string);
     expect(to.origin + to.pathname).toBe(`${PORTAL}/oauth/authorize/`);
     expect(to.searchParams.get('client_id')).toBe('local.app');
+    // Without it Bitrix24 returns to the app's handler path (the site root) and sign-in loops.
+    expect(to.searchParams.get('redirect_uri')).toBe('https://dash.example/api/auth/callback');
     expect(String(res.headers['set-cookie'])).toContain(`${STATE_COOKIE}=`);
   });
 

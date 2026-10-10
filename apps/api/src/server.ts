@@ -128,6 +128,9 @@ export async function buildServer({
     sessionSecret: config.SESSION_SECRET,
     portalOrigin: new URL(config.BITRIX_INBOUND_URL).origin,
     secure: (config.PUBLIC_BASE_URL ?? '').startsWith('https://'),
+    callbackUrl: config.PUBLIC_BASE_URL
+      ? new URL('/api/auth/callback', config.PUBLIC_BASE_URL).toString()
+      : undefined,
     findUser: async (id) => (await ds()).users.get(id),
     ...auth,
   });

@@ -24,6 +24,8 @@ export interface AuthOptions {
   portalOrigin: string;
   /** Secure cookies (HTTPS). */
   secure: boolean;
+  /** Public URL of /api/auth/callback, sent as redirect_uri (e.g. https://host/api/auth/callback). */
+  callbackUrl?: string;
   /** An active portal user from our users table. */
   findUser: (id: number) => Promise<{ id: number; name: string; active: boolean } | undefined>;
   /** Defaults to the real code exchange; tests pass a stub. */
@@ -70,7 +72,7 @@ export function authRoutes(app: FastifyInstance, opts: AuthOptions) {
       'Set-Cookie',
       cookie(STATE_COOKIE, sign({ state }, secret), STATE_TTL_SEC, opts.secure),
     );
-    return reply.redirect(authorizeUrl(opts.portalOrigin, clientId, state));
+    return reply.redirect(authorizeUrl(opts.portalOrigin, clientId, state, opts.callbackUrl));
   });
 
   app.get<{ Querystring: { code?: string; state?: string } }>(
