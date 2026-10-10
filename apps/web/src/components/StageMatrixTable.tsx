@@ -1,6 +1,6 @@
 // Stage x assignee (or project) heat matrix, shared by the Development tab (DEV-05) and the QA
 // tab (QA-03): stage colour bars, cells shaded by count and split into not overdue and overdue
-// (red); every number opens its tasks.
+// (red), each stage's total in its colour bar; every number opens its tasks.
 import type { StageTitle } from '@nural/shared';
 import { heatShade } from '../features/dev/format';
 import { CountButton } from './CountButton';
@@ -25,6 +25,8 @@ interface Props {
 }
 
 export function StageMatrixTable({ data, rowLabel, noun, onName, onOpen }: Props) {
+  // Each stage's total over all rows, shown inside its colour bar.
+  const stageTotal = (stage: StageTitle) => data.rows.reduce((n, r) => n + r.cells[stage], 0);
   return (
     <div className="max-h-[420px] overflow-auto">
       <table className="w-full border-separate border-spacing-0.5 text-table">
@@ -40,7 +42,13 @@ export function StageMatrixTable({ data, rowLabel, noun, onName, onOpen }: Props
                 className="sticky top-0 z-10 min-w-[4.5rem] bg-surface px-1 py-1 align-bottom font-heading text-label font-bold text-text"
               >
                 <span className="flex flex-col items-center gap-1">
-                  <span className="h-1.5 w-full rounded-full" style={{ background: s.color }} />
+                  <span
+                    className="w-full rounded-full text-center font-heading text-label font-bold leading-4 text-white"
+                    style={{ background: s.color, textShadow: '0 0 2px rgb(0 0 0 / 0.45)' }}
+                    title={`${s.stage}: ${stageTotal(s.stage)} ${noun}`}
+                  >
+                    {stageTotal(s.stage).toLocaleString('en-IN')}
+                  </span>
                   <span className="leading-tight">{s.stage}</span>
                 </span>
               </th>

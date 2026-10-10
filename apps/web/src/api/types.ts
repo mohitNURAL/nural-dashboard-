@@ -104,6 +104,7 @@ export interface AssigneeRow extends Named {
   done: number;
   dueToday: number;
   completedToday: number;
+  completedYesterday: number;
 }
 
 export const AGEING_BUCKETS = ['notDue', '0-2', '3-7', '8-14', '15-30', '30+'] as const;
@@ -157,6 +158,8 @@ export interface QaSummary {
   resolvedPct: number;
   openPct: number;
   lastFiled: { date: string; isToday: boolean; count: number } | null;
+  /** Latest day issues were pushed to QA Backlog, and how many that day. */
+  lastResolved: { date: string; isToday: boolean; count: number } | null;
   /** Issues with at least one rework; reworkTotal counts every reopen. */
   reworkIssues: number;
   reworkPct: number;
@@ -183,7 +186,13 @@ export interface QaIssues {
     resolved: number;
     bug: number;
     feedback: number;
+    openBug: number;
+    openFeedback: number;
+    resolvedBug: number;
+    resolvedFeedback: number;
   })[];
+  /** QA-02 table view: the DEV-02 assignee-wise table, for issues. */
+  table: { rows: AssigneeRow[]; totals: Omit<AssigneeRow, 'person' | 'name'> };
   /** Issue ageing (as DEV-03): open issues by days past deadline, per assignee or project. */
   ageing: {
     rows: (Named & { total: number; buckets: AgeingCounts })[];

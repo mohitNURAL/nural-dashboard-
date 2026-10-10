@@ -10,6 +10,7 @@ const PRESET_RULE: Record<Drill['preset'], string> = {
   deployed: INFO.deployed,
   overdue: INFO.overdue,
   doneToday: INFO.doneToday,
+  doneYesterday: INFO.colCompYesterday,
   dueToday: INFO.dueToday,
 };
 

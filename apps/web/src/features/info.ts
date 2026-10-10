@@ -20,25 +20,29 @@ export const INFO = {
   colDone: 'Sent to QA: QA Backlog, In QA, Issue Raised, Done or LIVE.',
   colDueToday: 'Deadline is today, not yet LIVE.',
   colCompToday: 'Reached QA Backlog for the first time today.',
+  colCompYesterday: 'Reached QA Backlog for the first time yesterday (IST).',
   pendingVsDone: 'Pending vs sent-to-QA tasks per person or project, top 15 by total.',
   ageing: 'Open tasks by days past deadline. On Hold counts here but not as Overdue.',
   ranking:
     'Tasks sent to QA with a deadline. Ranked by on-time %, then average days early. Fewer than 3: not ranked.',
-  matrix: 'Tasks per Kanban stage. The red part of a cell is overdue.',
+  matrix:
+    'Tasks per Kanban stage; the colour bar shows each stage total. The red part of a cell is overdue.',
   allTasks: 'Every task in the filters, or the number you clicked.',
   alerts:
     'Overdue tasks, and tasks over 5 days in one stage (LIVE aside). QA stages name the tester or QA lead.',
 
   // QA tiles (QA-01)
-  qaTotal:
-    'Tasks tagged bug or feedback, assigned to the Development department (same as the Development tab).',
+  qaTotal: 'Every task tagged bug or feedback in the filters, whoever it is assigned to.',
   qaOpen: 'Issues not in Done or LIVE, so also those waiting in QA. The ring shows the resolved %.',
   qaLastFiled: 'Latest day an issue was created, and how many that day.',
+  qaLastResolved:
+    'Latest day issues were pushed to QA Backlog (a fix handed to QA), and how many that day.',
   qaRework:
     'Issues QA sent back after testing: from QA Backlog, In QA or Done to Issue Raised, To do or In progress. Stage flow only.',
 
   // QA cards
-  issuesByAssignee: 'Open vs resolved (Done or LIVE), or bug vs feedback, per person or project.',
+  issuesByAssignee:
+    'Open vs resolved, each split into bug and feedback (or the reverse), per person or project. Table: the assignee-wise table.',
   issuesByStage:
     'Issues per stage and person (or project). Red = overdue part. Bug / Feedback narrows it.',
   testing:
@@ -48,5 +52,6 @@ export const INFO = {
   rework:
     'QA send-backs per person or project, and the % of their issues sent back. First Issue Raised to To do is not counted.',
   latestFiled: 'Issues created on the Last filed date.',
+  latestResolved: 'Issues pushed to QA Backlog on the Last resolved date.',
   allIssues: 'Every bug or feedback in the filters, or the number you clicked.',
 } as const;

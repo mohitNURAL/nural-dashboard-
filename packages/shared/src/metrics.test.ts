@@ -21,6 +21,8 @@ import {
   issues,
   issuesByAssignee,
   issuesByStage,
+  isCompletedYesterday,
+  lastResolved,
   lastFiled,
   presetPredicate,
   qaSummary,
@@ -257,6 +259,18 @@ describe('Development tab', () => {
       ['feedback', 1, 1],
     ]);
     expect(devSummaryParts(list, ctx, 'dev')).toEqual([]);
+  });
+
+  it('counts tasks that first reached QA Backlog yesterday (IST)', () => {
+    // NOW = 10 Oct 12:00 IST; yesterday = 9 Oct IST.
+    const at = (iso: string) =>
+      task({ stage: 'QA Backlog', events: [ev('In progress', 'QA Backlog', iso)] });
+    expect(isCompletedYesterday(at('2026-10-09T10:00:00Z'), ctx)).toBe(true);
+    expect(isCompletedYesterday(at('2026-10-09T20:00:00Z'), ctx)).toBe(false); // 10 Oct 01:30 IST
+    expect(isCompletedYesterday(at('2026-10-08T10:00:00Z'), ctx)).toBe(false);
+    const row = assigneeTable([at('2026-10-09T10:00:00Z')], ctx).rows[0]!;
+    expect(row.completedYesterday).toBe(1);
+    expect(presetPredicate('doneYesterday', ctx)(at('2026-10-09T10:00:00Z'))).toBe(true);
   });
 
   it('builds the assignee table with totals', () => {
@@ -532,6 +546,8 @@ describe('QA tab', () => {
       resolvedPct: 20,
       openPct: 80,
       lastFiled: { date: '2026-10-10', isToday: true, count: 1 },
+      // Last push to QA Backlog: issue 405 on 7 Oct (402 was pushed on 2 Oct).
+      lastResolved: { date: '2026-10-07', isToday: false, count: 1 },
       // Only the issue QA sent back twice (402) is rework.
       reworkIssues: 1,
       reworkPct: 20,
@@ -548,6 +564,10 @@ describe('QA tab', () => {
       resolved: 1,
       bug: 2,
       feedback: 0,
+      openBug: 1,
+      openFeedback: 0,
+      resolvedBug: 1,
+      resolvedFeedback: 0,
     });
     const byStage = issuesByStage(list);
     expect(byStage.stages.find((s) => s.stage === 'In QA')?.count).toBe(1);
@@ -612,6 +632,15 @@ describe('QA tab', () => {
     }
     expect(t.stages.every((s) => t.totals.cells[s] > 0)).toBe(true);
     expect(issueStageTable(list, 'project').rows.map((r) => r.id)).toEqual([154]);
+  });
+
+  it('lists the issues pushed to QA Backlog on the Last resolved day', () => {
+    const day = lastResolved(list, ctx)!.date;
+    expect(
+      list.filter(presetPredicate('lastResolved', ctx, { lastResolvedDate: day })).map((t) => t.id),
+    ).toEqual([405]);
+    const parts = qaSummaryParts(list, ctx);
+    expect(parts.reduce((n, p) => n + p.lastResolved, 0)).toBe(1);
   });
 
   it('groups issues waiting for retest by creator', () => {

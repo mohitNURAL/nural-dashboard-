@@ -18,7 +18,7 @@ import { INFO } from '../info';
 
 const col = createColumnHelper<AssigneeRow>();
 
-type CountKey = 'total' | 'pending' | 'done' | 'dueToday' | 'completedToday';
+type CountKey = 'total' | 'pending' | 'done' | 'dueToday' | 'completedToday' | 'completedYesterday';
 /** Which task list each column opens ("Done" = sent to QA). */
 const COUNT_PRESET: Record<CountKey, DevPreset> = {
   total: 'total',
@@ -26,6 +26,7 @@ const COUNT_PRESET: Record<CountKey, DevPreset> = {
   done: 'completed',
   dueToday: 'dueToday',
   completedToday: 'doneToday',
+  completedYesterday: 'doneYesterday',
 };
 const CHART_ROWS = 15;
 
@@ -88,6 +89,7 @@ export function AssigneeTableCard({ className }: { className?: string }) {
       count('done', 'Done', INFO.colDone),
       count('dueToday', 'Due today', INFO.colDueToday),
       count('completedToday', 'Comp. today', INFO.colCompToday),
+      count('completedYesterday', 'Comp. yesterday', INFO.colCompYesterday),
     ] as Columns<AssigneeRow>;
   }, [by, data, drill, focus]);
 

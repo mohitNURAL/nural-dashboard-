@@ -169,6 +169,20 @@ export function isCompletedToday(t: MetricTask, ctx: MetricContext): boolean {
   return !!at && dayKey(at, ctx.tz) === dayKey(ctx.now, ctx.tz);
 }
 
+/** Calendar day before today in the app time zone (YYYY-MM-DD). */
+const yesterdayKey = (ctx: MetricContext) =>
+  dayKey(new Date(ctx.now.getTime() - 86_400_000), ctx.tz);
+
+/** Reached QA Backlog for the first time yesterday (IST): DEV-02 "Comp. yesterday". */
+export function isCompletedYesterday(t: MetricTask, ctx: MetricContext): boolean {
+  const at = completedAt(t);
+  return !!at && dayKey(at, ctx.tz) === yesterdayKey(ctx);
+}
+
+/** Days (YYYY-MM-DD, app time zone) on which the task was pushed to QA Backlog. */
+const qaBacklogDays = (t: MetricTask, tz: string) =>
+  t.events.filter((e) => e.to === 'QA Backlog').map((e) => dayKey(e.at, tz));
+
 /** Today minus deadline in calendar days; negative = not yet due; null without deadline. */
 export const ageingDays = (t: MetricTask, ctx: MetricContext): number | null =>
   t.deadline ? daysBetween(t.deadline, ctx.now, ctx.tz) : null;
@@ -359,6 +373,7 @@ export interface AssigneeRow {
   done: number;
   dueToday: number;
   completedToday: number;
+  completedYesterday: number;
 }
 
 function assigneeRow(id: number, list: readonly MetricTask[], ctx: MetricContext): AssigneeRow {
@@ -369,6 +384,7 @@ function assigneeRow(id: number, list: readonly MetricTask[], ctx: MetricContext
     done: list.filter(isSentToQa).length,
     dueToday: list.filter((t) => isDueToday(t, ctx)).length,
     completedToday: list.filter((t) => isCompletedToday(t, ctx)).length,
+    completedYesterday: list.filter((t) => isCompletedYesterday(t, ctx)).length,
   };
 }
 
@@ -524,6 +540,21 @@ export function lastFiled(list: readonly MetricTask[], ctx: MetricContext) {
   };
 }
 
+/**
+ * QA-01 Last resolved: the latest day issues were pushed to QA Backlog (a developer's fix handed to
+ * QA), and how many issues were pushed that day (re-pushes after a send-back included).
+ */
+export function lastResolved(list: readonly MetricTask[], ctx: MetricContext) {
+  let date: string | null = null;
+  for (const t of list) for (const d of qaBacklogDays(t, ctx.tz)) if (!date || d > date) date = d;
+  if (!date) return null;
+  return {
+    date,
+    isToday: date === dayKey(ctx.now, ctx.tz),
+    count: list.filter((t) => qaBacklogDays(t, ctx.tz).includes(date)).length,
+  };
+}
+
 /** QA-01 tiles. Pass issues already filtered. */
 /** One part of the QA-01 tile breakdown. */
 export interface QaSummaryPart {
@@ -532,12 +563,15 @@ export interface QaSummaryPart {
   open: number;
   /** Issues of this type filed on the overall Last filed day (not this type's own latest day). */
   lastFiled: number;
+  /** Issues of this type pushed to QA Backlog on the overall Last resolved day. */
+  lastResolved: number;
   rework: number;
 }
 
 /** QA-01 tile breakdown: every tile split into Bug and Feedback; the parts add up to the tile. */
 export function qaSummaryParts(list: readonly MetricTask[], ctx: MetricContext): QaSummaryPart[] {
   const day = lastFiled(list, ctx)?.date;
+  const resolvedDay = lastResolved(list, ctx)?.date;
   return (['bug', 'feedback'] as const).map((key) => {
     const sub = list.filter((t) => t.issueType === key);
     return {
@@ -545,6 +579,9 @@ export function qaSummaryParts(list: readonly MetricTask[], ctx: MetricContext):
       total: sub.length,
       open: sub.filter(isOpenIssue).length,
       lastFiled: day ? sub.filter((t) => dayKey(t.createdAt, ctx.tz) === day).length : 0,
+      lastResolved: resolvedDay
+        ? sub.filter((t) => qaBacklogDays(t, ctx.tz).includes(resolvedDay)).length
+        : 0,
       rework: sub.filter((t) => reworkCount(t) > 0).length,
     };
   });
@@ -561,6 +598,7 @@ export function qaSummary(list: readonly MetricTask[], ctx: MetricContext) {
     resolvedPct: pct(resolved, list.length),
     openPct: list.length ? round1(100 - pct(resolved, list.length)) : 0,
     lastFiled: lastFiled(list, ctx),
+    lastResolved: lastResolved(list, ctx),
     reworkIssues,
     reworkPct: pct(reworkIssues, list.length),
     reworkTotal: rework.reduce((a, b) => a + b, 0),
@@ -572,6 +610,8 @@ export function issuesByAssignee(list: readonly MetricTask[], by: GroupBy = 'ass
   return [...groupBy(list, groupKey(by))]
     .map(([id, l]) => {
       const open = l.filter(isOpenIssue).length;
+      const n = (o: boolean, type: IssueType) =>
+        l.filter((t) => isOpenIssue(t) === o && t.issueType === type).length;
       return {
         id,
         total: l.length,
@@ -579,6 +619,11 @@ export function issuesByAssignee(list: readonly MetricTask[], by: GroupBy = 'ass
         resolved: l.length - open,
         bug: l.filter((t) => t.issueType === 'bug').length,
         feedback: l.filter((t) => t.issueType === 'feedback').length,
+        // Cross split, so the chart can show bug / feedback inside open / resolved and back.
+        openBug: n(true, 'bug'),
+        openFeedback: n(true, 'feedback'),
+        resolvedBug: n(false, 'bug'),
+        resolvedFeedback: n(false, 'feedback'),
       };
     })
     .sort((a, b) => b.total - a.total || a.id - b.id);
@@ -848,9 +893,18 @@ export const DEV_PRESETS = [
   'deployed',
   'overdue',
   'doneToday',
+  'doneYesterday',
   'dueToday',
 ] as const;
-export const ISSUE_PRESETS = ['all', 'open', 'resolved', 'lastFiled', 'rework', 'retest'] as const;
+export const ISSUE_PRESETS = [
+  'all',
+  'open',
+  'resolved',
+  'lastFiled',
+  'lastResolved',
+  'rework',
+  'retest',
+] as const;
 export type DevPreset = (typeof DEV_PRESETS)[number];
 export type IssuePreset = (typeof ISSUE_PRESETS)[number];
 
@@ -858,7 +912,10 @@ export type IssuePreset = (typeof ISSUE_PRESETS)[number];
 export function presetPredicate(
   preset: DevPreset | IssuePreset,
   ctx: MetricContext,
-  { lastFiledDate }: { lastFiledDate?: string | null } = {},
+  {
+    lastFiledDate,
+    lastResolvedDate,
+  }: { lastFiledDate?: string | null; lastResolvedDate?: string | null } = {},
 ): (t: MetricTask) => boolean {
   switch (preset) {
     case 'total':
@@ -876,6 +933,8 @@ export function presetPredicate(
       return (t) => isOverdue(t, ctx);
     case 'doneToday':
       return (t) => isCompletedToday(t, ctx);
+    case 'doneYesterday':
+      return (t) => isCompletedYesterday(t, ctx);
     case 'dueToday':
       return (t) => isDueToday(t, ctx);
     case 'open':
@@ -884,6 +943,8 @@ export function presetPredicate(
       return (t) => !isOpenIssue(t);
     case 'lastFiled':
       return (t) => !!lastFiledDate && dayKey(t.createdAt, ctx.tz) === lastFiledDate;
+    case 'lastResolved':
+      return (t) => !!lastResolvedDate && qaBacklogDays(t, ctx.tz).includes(lastResolvedDate);
     case 'rework':
       return (t) => reworkCount(t) > 0;
     case 'retest':

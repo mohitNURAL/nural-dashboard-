@@ -10,6 +10,7 @@ import {
   ISSUE_PRESETS,
   issues,
   lastFiled,
+  lastResolved,
   presetPredicate,
   reopenEvents,
   isOverdue,
@@ -49,6 +50,11 @@ const listParams = {
   ranked: z.enum(['true']).optional(),
   // QA-07: the issues one tester filed (waiting for retest, by creator).
   createdBy: z.coerce.number().int().positive().optional(),
+  // Last resolved part (Bug / Feedback): the overall last-resolved day, so parts add up.
+  day: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
   ...scopeParam,
 };
 
@@ -86,7 +92,8 @@ export function taskRoutes(
     const ctx = contextOf(ds, opts);
     const base =
       query.kind === 'issues'
-        ? issues(ds.tasks, ctx)
+        ? // QA tab: every bug and feedback, whoever it is assigned to.
+          issues(ds.tasks)
         : query.kind === 'testing'
           ? testingTasks(ds.tasks, ctx)
           : devTasks(ds.tasks, ctx, query.scope);
@@ -108,7 +115,11 @@ export function taskRoutes(
     }
     if (query.preset) {
       const last = query.preset === 'lastFiled' ? lastFiled(list, ctx)?.date : undefined;
-      list = list.filter(presetPredicate(query.preset, ctx, { lastFiledDate: last }));
+      const resolved =
+        query.preset === 'lastResolved' ? (query.day ?? lastResolved(list, ctx)?.date) : undefined;
+      list = list.filter(
+        presetPredicate(query.preset, ctx, { lastFiledDate: last, lastResolvedDate: resolved }),
+      );
     }
     if (query.q) {
       const q = query.q.toLowerCase();

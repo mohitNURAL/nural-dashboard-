@@ -1,4 +1,4 @@
-// QA-01: one row of 4 tiles. Each opens the matching issue list; under each number the Bug and
+// QA-01: one row of 5 tiles. Each opens the matching issue list; under each number the Bug and
 // Feedback parts (adding up to it) open their own list. No other counts on the tiles.
 import type { IssuePreset, QaSummaryPart } from '@nural/shared';
 import { StatTile } from '../../components/StatTile';
@@ -37,7 +37,7 @@ export function QaTiles({ active, onSelect, onPart }: Props) {
     : ({} as Record<string, string>);
 
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
       <StatTile
         label="Total issues filed"
         info={INFO.qaTotal}
@@ -51,7 +51,11 @@ export function QaTiles({ active, onSelect, onPart }: Props) {
         label="Open / waiting"
         info={INFO.qaOpen}
         value={data?.open}
-        sub="Not in Done or LIVE"
+        sub={
+          data
+            ? `Resolved ${data.resolved.toLocaleString('en-IN')} · ${data.resolvedPct}%`
+            : undefined
+        }
         parts={parts('Open', 'open', 'open')}
         active={active === 'open'}
         onClick={() => onSelect('open')}
@@ -65,6 +69,20 @@ export function QaTiles({ active, onSelect, onPart }: Props) {
         parts={parts('Last filed', 'lastFiled', 'all', lastDay)}
         active={active === 'lastFiled'}
         onClick={() => onSelect('lastFiled')}
+      />
+      <StatTile
+        label="Last resolved"
+        info={INFO.qaLastResolved}
+        value={data && lastFiledText(data.lastResolved ?? null)}
+        sub="Latest day fixes reached QA Backlog"
+        parts={parts(
+          'Last resolved',
+          'lastResolved',
+          'lastResolved',
+          data?.lastResolved ? { day: data.lastResolved.date } : {},
+        )}
+        active={active === 'lastResolved'}
+        onClick={() => onSelect('lastResolved')}
       />
       <StatTile
         label="Rework issues"

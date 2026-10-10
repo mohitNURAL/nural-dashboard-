@@ -16,7 +16,7 @@ import { QaTiles } from './QaTiles';
 import { RetestCard, TestingCard } from './TeamCards';
 import { INFO } from '../info';
 
-type Section = 'latest' | 'all';
+type Section = 'latest' | 'resolved' | 'all';
 
 /** The "i" of "All issues" follows the tile that narrowed it. */
 const ISSUE_LIST_INFO: Record<IssuePreset, string> = {
@@ -24,6 +24,7 @@ const ISSUE_LIST_INFO: Record<IssuePreset, string> = {
   open: INFO.qaOpen,
   resolved: 'Issues in Done or LIVE.',
   lastFiled: INFO.latestFiled,
+  lastResolved: INFO.latestResolved,
   rework: INFO.qaRework,
   retest: INFO.retest,
 };
@@ -38,7 +39,11 @@ export function QaTab() {
   const showing = useFilterSummary('qa');
   const { data: summary } = useQaSummary();
   const { data: issues } = useQaIssues();
-  const [open, setOpen] = useState<Record<Section, boolean>>({ latest: false, all: false });
+  const [open, setOpen] = useState<Record<Section, boolean>>({
+    latest: false,
+    resolved: false,
+    all: false,
+  });
   // "All issues" follows the last tile, tile part (Bug / Feedback) or table number clicked.
   const { list, reveal: revealList, reset, revealed } = useIssueList();
   const openIssues = useOpenIssues();
@@ -48,7 +53,11 @@ export function QaTab() {
   const allPreset: IssuePreset = testing ? 'all' : (list.preset as IssuePreset);
   const listNoun = testing ? 'Testing tasks' : 'All issues';
   const allRef = useRef<HTMLElement>(null);
-  const refs = { latest: useRef<HTMLElement>(null), all: allRef };
+  const refs = {
+    latest: useRef<HTMLElement>(null),
+    resolved: useRef<HTMLElement>(null),
+    all: allRef,
+  };
 
   // A number clicked anywhere on the tab opens and scrolls to "All issues".
   const stopFollow = useRef<() => void>(undefined);
@@ -82,7 +91,11 @@ export function QaTab() {
   const showAll = (preset: IssuePreset, part?: Omit<IssueList, 'preset'>) =>
     openIssues({ preset, ...part });
   const onTile = (preset: IssuePreset) =>
-    preset === 'lastFiled' ? reveal('latest') : showAll(preset);
+    preset === 'lastFiled'
+      ? reveal('latest')
+      : preset === 'lastResolved'
+        ? reveal('resolved')
+        : showAll(preset);
 
   const allCount = list.params
     ? listTotal
@@ -92,6 +105,7 @@ export function QaTab() {
         open: summary.open,
         resolved: summary.resolved,
         lastFiled: summary.lastFiled?.count ?? 0,
+        lastResolved: summary.lastResolved?.count ?? 0,
         rework: summary.reworkIssues,
         retest: issues?.waitingForRetest.total,
       }[allPreset];
@@ -129,6 +143,25 @@ export function QaTab() {
             kind="issues"
             preset="lastFiled"
             exportName="Latest filed issues"
+            defaultSort="-created"
+            columns={LATEST_COLUMNS}
+          />
+        </Accordion>
+
+        <Accordion
+          ref={refs.resolved}
+          title="Latest resolved issues"
+          info={INFO.latestResolved}
+          hint="Pushed to QA Backlog on the Last resolved date"
+          count={summary?.lastResolved?.count}
+          open={open.resolved}
+          onOpenChange={(o) => setOpen((p) => ({ ...p, resolved: o }))}
+        >
+          <TaskList
+            filterParams={params}
+            kind="issues"
+            preset="lastResolved"
+            exportName="Latest resolved issues"
             defaultSort="-created"
             columns={LATEST_COLUMNS}
           />

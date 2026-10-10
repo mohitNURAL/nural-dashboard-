@@ -122,7 +122,7 @@ Under each tile's number, a breakdown follows the All / Dev / Issues switch (DEV
 
 **DEV-02 Assignee-wise (or project-wise) table and chart**
 
-- Table: one row per assignee (or project) with Total, Pending, Done, Due today, Completed today. Sortable, sticky header, totals row.
+- Table: one row per assignee (or project) with Total, Pending, Done, Due today, Completed today, **Completed yesterday** (first reached QA Backlog yesterday, IST). Sortable, sticky header, totals row.
 - Chart beside it: horizontal stacked bars per assignee (or project) (Pending vs Done), sorted by Total.
 - Clicking a name sets the Assignee (or Project) filter.
 
@@ -139,6 +139,7 @@ Under each tile's number, a breakdown follows the All / Dev / Issues switch (DEV
 **DEV-05 Stage x assignee x tag counts**
 
 - A matrix: rows are assignees (or projects), columns are the 11 Kanban stages, each cell is a count; a tag toggle above it splits or filters by tag (new development, client feedback, testing and so on). Heat shading by count.
+- Each stage's colour bar at the top shows that stage's total (both tabs).
 - Each cell is split into not overdue and **overdue** (shown in red). Only pending stages can have overdue tasks. Both parts, and the row total, open those tasks (drill-down, including the selected tag).
 
 **DEV-06 Accordion: Tasks due today** (closed by default)
@@ -162,14 +163,15 @@ The QA tab shows how many bugs and feedback items were filed, how many are still
 
 | # | Tile | Shows |
 | --- | --- | --- |
-| 1 | Total issues filed | All tasks tagged bug or feedback in the filters (project and assignee), assigned to the Development department |
+| 1 | Total issues filed | All tasks tagged bug or feedback in the filters (project and assignee), whoever they are assigned to |
 | 2 | Open / waiting | Open count with a ring showing Resolved % vs Open % |
 | 3 | Last filed | If issues were filed today: "Today" and today's count. Otherwise the most recent filing date and that day's count |
+| 3a | Last resolved | The most recent day issues were **pushed to QA Backlog** (a fix handed to QA, re-pushes included), and how many that day; opens the "Latest resolved issues" accordion |
 | 4 | Rework issues | Count of issues that count as rework (section 5) |
 
-Under each tile's number the count is split into **Bug | Feedback**; the parts add up to the tile (for Last filed: that day's bugs and feedback). Each part opens "All issues" narrowed to it, e.g. "All issues: Open · Bug". The tiles show no other counts (no percentages, no "issues that day" or reopen counts); the ring on Open / waiting still shows the resolved share, and the ⓘ explains each rule.
+Under each tile's number the count is split into **Bug | Feedback**; the parts add up to the tile (for Last filed: that day's bugs and feedback). Each part opens "All issues" narrowed to it, e.g. "All issues: Open · Bug". Apart from that, Open / waiting also shows **Resolved n · p%** (issues in Done or LIVE); the ring shows the same share.
 
-**QA-02 Issues by assignee**: stacked bars (Open vs Resolved) per developer or per project, plus Bug vs Feedback split.
+**QA-02 Issues by assignee**: per developer or per project, three views. **Open / Resolved**: stacked bars split four ways (open bugs, open feedback, resolved bugs, resolved feedback); the tooltip shows e.g. "Open 54 (Bug 50, Feedback 4)". **Bug / Feedback**: the reverse split. **Table**: the DEV-02 assignee-wise table for issues (Total, Pending, Done, Due today, Comp. today, Comp. yesterday, totals row). Every bar segment and number opens those issues.
 
 **QA-03 Issue status by Kanban stage**: the same stage heat matrix as DEV-05, for issues: rows are assignees (or projects, Assignee / Project switch), columns the 11 Kanban stages with their board colours, cells shaded by count and split into not overdue and **overdue** (red), row totals. A **Bug / Feedback** selector (in place of DEV-05's tag) narrows it. Every number opens those issues in "All issues" and sets the Assignee or Project filter. Alternate views: **Table** (Bug, Feedback, Total and a column per stage, totals row, sortable) and **Chart** (issues per stage in board order and colours). Full width.
 
@@ -216,7 +218,7 @@ A task with stage ID 0 (Bitrix24's default for a task never moved on the board) 
 - Issue = a task tagged `bug` or `feedback` (case-insensitive). Every other task in a development workgroup is a Task.
 - Issues are only ever assigned to the Development department; both tabs count only those (an issue assigned elsewhere is a data error to fix in Bitrix24).
 - An issue is linked to a task when its Parent task is set, or when the task is in its Related tasks. Otherwise it is independent and counts against its assignee.
-- The Development tab counts Tasks, Issues or both, by its All / Dev / Issues switch (DEV-00a), for the Development department only. The QA tab counts Issues only, with the same Development department rule, so the issue totals match on both tabs. Note that Development "Pending" (still with developers) and QA "Open / waiting" (not yet Done or LIVE, so also waiting in QA) are different measures.
+- The Development tab counts Tasks, Issues or both, by its All / Dev / Issues switch (DEV-00a), for the Development department only. The QA tab counts **every** issue, whoever it is assigned to (e.g. Tech Support), so its issue total can be higher than the Development tab's Issues total (changed back 2026-10-10). Note that Development "Pending" (still with developers) and QA "Open / waiting" (not yet Done or LIVE, so also waiting in QA) are different measures.
 
 **Formulas**
 

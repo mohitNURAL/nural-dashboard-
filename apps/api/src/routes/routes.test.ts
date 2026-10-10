@@ -250,6 +250,17 @@ describe('metrics API', () => {
     expect(byCreator.body.rows.map((r: { id: number }) => r.id)).toEqual([5]);
   });
 
+  it('GET /api/qa/issues returns the assignee-wise table; lastResolved lists work', async () => {
+    const q = (await get('/api/qa/issues')).body;
+    const summary = (await get('/api/qa/summary')).body;
+    expect(q.table.totals.total).toBe(summary.total);
+    expect(q.table.rows[0]).toMatchObject({ name: 'Neha Gautam', completedYesterday: 0 });
+    expect(q.byAssignee[0]).toHaveProperty('openBug');
+    // No issue in the fixture was pushed to QA Backlog: no Last resolved day, empty list.
+    expect(summary.lastResolved).toBeNull();
+    expect((await get('/api/tasks?kind=issues&preset=lastResolved')).body.total).toBe(0);
+  });
+
   it('GET /api/qa/issues returns the stage table with names and totals', async () => {
     const t = (await get('/api/qa/issues')).body.stageTable;
     expect(t.totals).toMatchObject({ total: 2, bug: 1, feedback: 1 });

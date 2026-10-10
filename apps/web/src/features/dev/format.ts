@@ -87,6 +87,7 @@ export const TILE_LABELS: Record<DevPreset, string> = {
   deployed: 'Deployed',
   overdue: 'Overdue',
   doneToday: 'Done today',
+  doneYesterday: 'Done yesterday',
   dueToday: 'Due today',
 };
 

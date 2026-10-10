@@ -1,6 +1,8 @@
-// QA tab endpoints (SRS 4, QA-01..07).
+// QA tab endpoints (SRS 4, QA-01..07). The QA tab counts every bug and feedback, whoever it is
+// assigned to (the Development tab counts only the Development department's).
 import {
   ageingByAssignee,
+  assigneeTable,
   applyFilters,
   issueAgeByAssignee,
   issues,
@@ -31,7 +33,7 @@ export function qaRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts
 
   app.get('/api/qa/summary', async (req) => {
     const { filters, ds, ctx } = await scope(req.query);
-    const list = applyFilters(issues(ds.tasks, ctx), filters, ctx.tz);
+    const list = applyFilters(issues(ds.tasks), filters, ctx.tz);
     return {
       ...qaSummary(list, ctx),
       // Tile breakdown: every QA tile split into Bug and Feedback.
@@ -46,7 +48,7 @@ export function qaRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts
     const by = query.groupBy;
     const ds = await getDataset();
     const ctx = contextOf(ds, opts);
-    const list = applyFilters(issues(ds.tasks, ctx), filters, ctx.tz);
+    const list = applyFilters(issues(ds.tasks), filters, ctx.tz);
     const age = issueAgeByAssignee(list, ctx, by);
     const byStage = issuesByStage(list);
     const retest = waitingForRetest(list, ctx);
@@ -76,6 +78,11 @@ export function qaRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts
         unmapped: byStage.unmapped,
       },
       age: { rows: withGroupNames(ds, age.rows, by), totals: age.totals },
+      // QA-02 table view: the assignee-wise table of DEV-02, for issues.
+      table: (() => {
+        const t = assigneeTable(list, ctx, by);
+        return { rows: withGroupNames(ds, t.rows, by), totals: t.totals };
+      })(),
       // Issue ageing (same as DEV-03 task ageing): open issues by days past deadline.
       ageing: (() => {
         const g = ageingByAssignee(list, ctx, by);
