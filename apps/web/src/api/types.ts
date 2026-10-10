@@ -168,6 +168,13 @@ export interface QaSummary {
 
 export type IssueAgeBucket = '0-2' | '3-7' | '8-14' | '15+';
 
+export interface IssueStageCounts {
+  total: number;
+  bug: number;
+  feedback: number;
+  cells: Record<StageTitle, number>;
+}
+
 export interface QaIssues {
   groupBy: GroupBy;
   byAssignee: (Named & {
@@ -177,6 +184,22 @@ export interface QaIssues {
     bug: number;
     feedback: number;
   })[];
+  /** QA-03 heat matrix (as DEV-05): per assignee or project, overdue part of each cell. */
+  matrix: {
+    stages: { stage: StageTitle; color: string }[];
+    rows: (Named & {
+      total: number;
+      cells: Record<StageTitle, number>;
+      overdue: Record<StageTitle, number>;
+    })[];
+    max: number;
+  };
+  /** QA-03 table: per assignee (or project), stage columns, bug / feedback split. */
+  stageTable: {
+    stages: { stage: StageTitle; color: string }[];
+    rows: (Named & IssueStageCounts)[];
+    totals: IssueStageCounts;
+  };
   byStage: { stages: { stage: StageTitle; count: number; color: string }[]; unmapped: number };
   age: {
     rows: (Named & { total: number; buckets: Record<IssueAgeBucket, number> })[];

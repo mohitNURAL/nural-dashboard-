@@ -39,7 +39,8 @@ export const INFO = {
 
   // QA cards
   issuesByAssignee: 'Open vs resolved (Done or LIVE), or bug vs feedback, per person or project.',
-  issuesByStage: 'Issues per Kanban stage, in board order and colours.',
+  issuesByStage:
+    'Issues per stage and person (or project). Red = overdue part. Bug / Feedback narrows it.',
   testing:
     'Tasks tagged testing or re-testing, or assigned to QA Testing. Late = pending past deadline.',
   retest: 'Issues in QA Backlog or In QA, by who filed them. Oldest = days waiting.',

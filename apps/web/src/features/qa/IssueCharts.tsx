@@ -1,5 +1,6 @@
-// QA-02 issues by assignee, QA-03 issues by Kanban stage, QA-04 age of open issues,
-// QA-05 rework by developer. QA-02, 04 and 05 can also be grouped by project.
+// QA-02 issues by assignee, QA-04 age of open issues,
+// QA-05 rework by developer (QA-03 is IssueStageCard). QA-02, 04 and 05 can also be grouped by
+// project.
 import { useMemo, useState } from 'react';
 import type { GroupBy, IssueAgeBucket } from '../../api/types';
 import { BucketCard, type Bucket } from '../../components/BucketCard';
@@ -9,7 +10,6 @@ import { token } from '../../components/chartTheme';
 import { GROUP_LABEL } from '../dev/format';
 import { useFocusRow } from '../filters/useFilters';
 import { useQaIssues } from './api';
-import { shadeSteps } from './format';
 import { INFO } from '../info';
 
 const CHART_ROWS = 15;
@@ -96,57 +96,6 @@ export function IssuesByAssigneeCard({ className }: { className?: string }) {
           })),
         }}
       />
-    </Card>
-  );
-}
-
-export function IssuesByStageCard({ className }: { className?: string }) {
-  const { data, isLoading } = useQaIssues();
-  const stages = data?.byStage.stages ?? [];
-  const colors = shadeSteps(stages.map((s) => s.color));
-
-  return (
-    <Card
-      title="Issues by Kanban stage"
-      info={INFO.issuesByStage}
-      className={className}
-      loading={isLoading}
-      empty={!!data && stages.every((s) => s.count === 0)}
-      action={<span className="text-table text-text-muted">Board order, board colours</span>}
-    >
-      <Chart
-        label="Issues per Kanban stage"
-        height={260}
-        option={{
-          grid: { left: 8, right: 8, top: 24, bottom: 8, containLabel: true },
-          tooltip: { trigger: 'item' },
-          xAxis: {
-            type: 'category',
-            data: stages.map((s) => s.stage),
-            axisTick: { show: false },
-            axisLabel: { interval: 0, rotate: 35, fontSize: 9 },
-            axisLine: { lineStyle: { color: token('--border') } },
-          },
-          yAxis: { type: 'value', show: false },
-          series: [
-            {
-              type: 'bar',
-              name: 'Issues',
-              barMaxWidth: 36,
-              label: { show: true, position: 'top', fontFamily: 'Manrope', fontWeight: 700 },
-              data: stages.map((s, i) => ({
-                value: s.count,
-                itemStyle: { color: colors[i], borderRadius: [4, 4, 0, 0] },
-              })),
-            },
-          ],
-        }}
-      />
-      {data && data.byStage.unmapped > 0 && (
-        <p className="text-table text-text-muted">
-          {data.byStage.unmapped} issues are in a stage the dashboard does not know.
-        </p>
-      )}
     </Card>
   );
 }

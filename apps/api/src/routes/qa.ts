@@ -5,8 +5,10 @@ import {
   issues,
   issuesByAssignee,
   issuesByStage,
+  issueStageTable,
   qaSummary,
   qaSummaryParts,
+  stageMatrix,
   reworkByDeveloper,
   STAGE_COLORS,
   testingTasks,
@@ -50,6 +52,24 @@ export function qaRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts
     return {
       groupBy: by,
       byAssignee: withGroupNames(ds, issuesByAssignee(list, by), by),
+      // QA-03 as the stage heat matrix (same as DEV-05): per assignee or project, overdue split.
+      matrix: (() => {
+        const m = stageMatrix(list, { by, ctx });
+        return {
+          stages: m.stages.map((s) => ({ stage: s, color: STAGE_COLORS[s] })),
+          rows: withGroupNames(ds, m.rows, by),
+          max: m.max,
+        };
+      })(),
+      // QA-03 as a table: per assignee (or project), stage columns, bug / feedback split.
+      stageTable: (() => {
+        const t = issueStageTable(list, by);
+        return {
+          stages: t.stages.map((s) => ({ stage: s, color: STAGE_COLORS[s] })),
+          rows: withGroupNames(ds, t.rows, by),
+          totals: t.totals,
+        };
+      })(),
       byStage: {
         stages: byStage.stages.map((s) => ({ ...s, color: STAGE_COLORS[s.stage] })),
         unmapped: byStage.unmapped,

@@ -11,8 +11,10 @@ export function useQaParams() {
 }
 
 export const useQaSummary = () => useApi<QaSummary>('/api/qa/summary', useQaParams());
-export function useQaIssues(by: GroupBy = 'assignee') {
-  return useApi<QaIssues>('/api/qa/issues', withGroupBy(useQaParams(), by));
+/** `type` narrows one card to bugs or feedback, over the filter bar's choice. */
+export function useQaIssues(by: GroupBy = 'assignee', type: 'bug' | 'feedback' | null = null) {
+  const params = withGroupBy(useQaParams(), by);
+  return useApi<QaIssues>('/api/qa/issues', type ? { ...params, type } : params);
 }
 
 /** Testing work is not bug or feedback, so the Bug or Feedback filter does not apply (QA-06). */

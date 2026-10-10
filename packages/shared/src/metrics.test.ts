@@ -26,6 +26,7 @@ import {
   presetPredicate,
   qaSummary,
   qaSummaryParts,
+  issueStageTable,
   reworkByDeveloper,
   reworkCount,
   speedRanking,
@@ -574,6 +575,19 @@ describe('QA tab', () => {
       // Feedback's own latest day is 1 Oct, but the tile is about 9 Oct: 0.
       expect.objectContaining({ key: 'feedback', lastFiled: 0 }),
     ]);
+  });
+
+  it('tabulates issues by stage per assignee or project, bug and feedback split', () => {
+    const t = issueStageTable(list);
+    expect(t.totals.total).toBe(list.length);
+    expect(t.totals.bug + t.totals.feedback).toBe(list.length);
+    // Each row adds up: stages = total = bug + feedback.
+    for (const r of t.rows) {
+      expect(Object.values(r.cells).reduce((a, b) => a + b, 0)).toBe(r.total);
+      expect(r.bug + r.feedback).toBe(r.total);
+    }
+    expect(t.stages.every((s) => t.totals.cells[s] > 0)).toBe(true);
+    expect(issueStageTable(list, 'project').rows.map((r) => r.id)).toEqual([154]);
   });
 
   it('groups issues waiting for retest by creator', () => {

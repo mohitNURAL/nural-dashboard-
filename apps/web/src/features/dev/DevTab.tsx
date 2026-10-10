@@ -4,6 +4,7 @@ import type { DevPreset, DevScope } from '@nural/shared';
 import clsx from 'clsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Accordion } from '../../components/Accordion';
+import { keepInView } from '../../components/keepInView';
 import { InfoContext } from '../../components/infoContext';
 import { useDevScope, useFilterSummary, useFilters } from '../filters/useFilters';
 import { taskColumns } from '../tasks/columns';
@@ -204,30 +205,6 @@ export function DevTab() {
     </InfoContext.Provider>
   );
 }
-
-const SETTLE_MS = 2500;
-
-/**
- * Scrolls to the element and keeps it at the top while the page settles: a new filter makes
- * the cards above reload and change height, which would push the list out of view. Stops after
- * SETTLE_MS or as soon as the user scrolls.
- */
-function keepInView(ref: React.RefObject<HTMLElement | null>) {
-  const snap = () => ref.current?.scrollIntoView({ block: 'start' });
-  const frame = requestAnimationFrame(snap);
-  const observer = new ResizeObserver(snap);
-  observer.observe(document.body);
-  const stop = () => {
-    observer.disconnect();
-    cancelAnimationFrame(frame);
-    for (const e of USER_SCROLL) window.removeEventListener(e, stop);
-    clearTimeout(timer);
-  };
-  const timer = setTimeout(stop, SETTLE_MS);
-  for (const e of USER_SCROLL) window.addEventListener(e, stop, { passive: true });
-  return stop;
-}
-const USER_SCROLL = ['wheel', 'touchstart', 'keydown', 'mousedown'] as const;
 
 const SCOPES: { value: DevScope; label: string; hint: string }[] = [
   { value: 'all', label: 'All', hint: 'Tasks and issues' },

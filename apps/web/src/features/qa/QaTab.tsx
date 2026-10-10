@@ -1,26 +1,22 @@
 // QA tab (SRS 4, wireframe in SRS 6): issues filed, what is open, what waits for retest.
 import type { IssuePreset } from '@nural/shared';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Accordion } from '../../components/Accordion';
 import { InfoContext } from '../../components/infoContext';
-import { useFilterSummary } from '../filters/useFilters';
+import { keepInView } from '../../components/keepInView';
+import { useFilterSummary, useFilters } from '../filters/useFilters';
+import { qaFilterKey, useIssueList, useOpenIssues, type IssueList } from './issueList';
 import { issueColumns } from '../tasks/columns';
 import { TaskList } from '../tasks/TaskList';
 import { useQaIssues, useQaParams, useQaSummary } from './api';
 import { ISSUE_PRESET_LABELS } from './format';
-import { IssueAgeCard, IssuesByAssigneeCard, IssuesByStageCard, ReworkCard } from './IssueCharts';
+import { IssueAgeCard, IssuesByAssigneeCard, ReworkCard } from './IssueCharts';
+import { IssueStageCard } from './IssueStageCard';
 import { QaTiles } from './QaTiles';
 import { RetestCard, TestingCard } from './TeamCards';
 import { INFO } from '../info';
 
 type Section = 'latest' | 'all';
-
-/** What "All issues" shows: a tile's preset, optionally narrowed (e.g. to Bug) and relabelled. */
-interface IssueList {
-  preset: IssuePreset;
-  label?: string;
-  params?: Record<string, string>;
-}
 
 /** The "i" of "All issues" follows the tile that narrowed it. */
 const ISSUE_LIST_INFO: Record<IssuePreset, string> = {
@@ -42,11 +38,36 @@ export function QaTab() {
   const { data: summary } = useQaSummary();
   const { data: issues } = useQaIssues();
   const [open, setOpen] = useState<Record<Section, boolean>>({ latest: false, all: false });
-  // "All issues" follows the last tile, or tile part (Bug / Feedback), clicked (QA-01).
-  const [list, setList] = useState<IssueList>({ preset: 'all' });
+  // "All issues" follows the last tile, tile part (Bug / Feedback) or table number clicked.
+  const { list, reveal: revealList, reset, revealed } = useIssueList();
+  const openIssues = useOpenIssues();
   const [listTotal, setListTotal] = useState<number>();
   const allPreset = list.preset;
-  const refs = { latest: useRef<HTMLElement>(null), all: useRef<HTMLElement>(null) };
+  const allRef = useRef<HTMLElement>(null);
+  const refs = { latest: useRef<HTMLElement>(null), all: allRef };
+
+  // A number clicked anywhere on the tab opens and scrolls to "All issues".
+  const stopFollow = useRef<() => void>(undefined);
+  useEffect(() => {
+    if (!revealList) return;
+    revealed();
+    setOpen((prev) => ({ ...prev, all: true }));
+    stopFollow.current?.();
+    stopFollow.current = keepInView(allRef);
+  }, [revealList, revealed]);
+  useEffect(() => () => stopFollow.current?.(), []);
+
+  // Clearing or changing the filters returns "All issues" to its default, unless the new
+  // filters are the ones the click itself set.
+  const { filters } = useFilters();
+  const currentKey = qaFilterKey(filters);
+  const lastKey = useRef(currentKey);
+  useEffect(() => {
+    if (currentKey === lastKey.current) return;
+    lastKey.current = currentKey;
+    const l = useIssueList.getState().list;
+    if (l.filterKey !== currentKey) reset();
+  }, [currentKey, reset]);
 
   const reveal = (s: Section) => {
     setOpen((prev) => ({ ...prev, [s]: true }));
@@ -54,10 +75,8 @@ export function QaTab() {
       refs[s].current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
     );
   };
-  const showAll = (preset: IssuePreset, part?: Omit<IssueList, 'preset'>) => {
-    setList({ preset, ...part });
-    reveal('all');
-  };
+  const showAll = (preset: IssuePreset, part?: Omit<IssueList, 'preset'>) =>
+    openIssues({ preset, ...part });
   const onTile = (preset: IssuePreset) =>
     preset === 'lastFiled' ? reveal('latest') : showAll(preset);
 
@@ -84,11 +103,12 @@ export function QaTab() {
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
           <IssuesByAssigneeCard className="lg:col-span-6" />
-          <IssuesByStageCard className="lg:col-span-6" />
+          <ReworkCard className="lg:col-span-6" />
           <TestingCard className="lg:col-span-6" />
           <RetestCard className="lg:col-span-6" onShow={() => showAll('retest')} />
-          <IssueAgeCard className="lg:col-span-6" />
-          <ReworkCard className="lg:col-span-6" />
+          <IssueAgeCard className="lg:col-span-12" />
+          {/* Full width like the Development tab's stage matrix. */}
+          <IssueStageCard className="lg:col-span-12" />
         </div>
 
         <Accordion
@@ -128,7 +148,7 @@ export function QaTab() {
           {(allPreset !== 'all' || list.params) && (
             <button
               type="button"
-              onClick={() => setList({ preset: 'all' })}
+              onClick={reset}
               className="mb-3 font-heading text-button text-primary hover:underline"
             >
               Show all issues

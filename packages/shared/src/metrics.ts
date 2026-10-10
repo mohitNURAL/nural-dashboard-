@@ -598,6 +598,37 @@ export function issuesByAssignee(list: readonly MetricTask[], by: GroupBy = 'ass
     .sort((a, b) => b.total - a.total || a.id - b.id);
 }
 
+/** QA-03 table: one row per assignee (or project): bug, feedback, total and a count per stage. */
+export interface IssueStageRow {
+  id: number;
+  total: number;
+  bug: number;
+  feedback: number;
+  cells: Record<StageTitle, number>;
+}
+
+/** QA-03 as a table, like the assignee-wise table: rows by assignee or project, totals row. */
+export function issueStageTable(list: readonly MetricTask[], by: GroupBy = 'assignee') {
+  const row = (id: number, l: readonly MetricTask[]): IssueStageRow => {
+    const cells = Object.fromEntries(STAGE_TITLES.map((s) => [s, 0])) as Record<StageTitle, number>;
+    for (const t of l) if (t.stage) cells[t.stage]++;
+    return {
+      id,
+      total: l.length,
+      bug: l.filter((t) => t.issueType === 'bug').length,
+      feedback: l.filter((t) => t.issueType === 'feedback').length,
+      cells,
+    };
+  };
+  const rows = [...groupBy(list, groupKey(by))]
+    .map(([id, l]) => row(id, l))
+    .sort((a, b) => b.total - a.total || a.id - b.id);
+  const totals = row(0, list);
+  // Only stages that hold issues, in board order, so the table stays narrow.
+  const stages = STAGE_TITLES.filter((s) => totals.cells[s] > 0);
+  return { stages, rows, totals };
+}
+
 /** QA-03: issues per stage in board order, plus unmapped. */
 export function issuesByStage(list: readonly MetricTask[]) {
   const stages = STAGE_TITLES.map((stage) => ({

@@ -239,6 +239,20 @@ describe('metrics API', () => {
     expect((await get('/api/dev/assignees?groupBy=team')).status).toBe(400);
   });
 
+  it('GET /api/qa/issues returns the stage table with names and totals', async () => {
+    const t = (await get('/api/qa/issues')).body.stageTable;
+    expect(t.totals).toMatchObject({ total: 2, bug: 1, feedback: 1 });
+    expect(t.stages.map((s: { stage: string }) => s.stage)).toEqual(['In QA', 'Done']);
+    expect(t.rows[0]).toMatchObject({ name: 'Neha Gautam', total: 2 });
+    const m = (await get('/api/qa/issues')).body.matrix;
+    expect(m.stages).toHaveLength(11);
+    expect(m.rows[0]).toMatchObject({ name: 'Neha Gautam', total: 2 });
+    expect(m.rows[0].cells['In QA']).toBe(1);
+    expect((await get('/api/qa/issues?type=bug')).body.matrix.rows[0].total).toBe(1);
+    const p = (await get('/api/qa/issues?groupBy=project')).body.stageTable;
+    expect(p.rows[0]).toMatchObject({ id: 154, name: 'Support Tool', person: null });
+  });
+
   it('GET /api/qa/summary and /api/qa/issues', async () => {
     const s = await get('/api/qa/summary');
     expect(s.body.parts).toEqual([

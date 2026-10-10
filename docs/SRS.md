@@ -171,7 +171,7 @@ Under each tile's number the count is split into **Bug | Feedback**; the parts a
 
 **QA-02 Issues by assignee**: stacked bars (Open vs Resolved) per developer or per project, plus Bug vs Feedback split.
 
-**QA-03 Issue status by Kanban stage**: count of issues per stage, in board order and board colours.
+**QA-03 Issue status by Kanban stage**: the same stage heat matrix as DEV-05, for issues: rows are assignees (or projects, Assignee / Project switch), columns the 11 Kanban stages with their board colours, cells shaded by count and split into not overdue and **overdue** (red), row totals. A **Bug / Feedback** selector (in place of DEV-05's tag) narrows it. Every number opens those issues in "All issues" and sets the Assignee or Project filter. Alternate views: **Table** (Bug, Feedback, Total and a column per stage, totals row, sortable) and **Chart** (issues per stage in board order and colours). Full width.
 
 **QA-04 Age of open issues**: buckets 0 to 2, 3 to 7, 8 to 14, over 14 days since created, per assignee or per project.
 
