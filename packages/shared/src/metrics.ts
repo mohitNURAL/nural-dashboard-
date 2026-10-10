@@ -16,7 +16,6 @@ import type { Filters, IssueType, MetricContext, MetricTask } from './types';
 
 // ---------------------------------------------------------------- selection
 
-/** Development tab: workgroup tasks that are not issues and not assigned to testers. */
 /** Development tab switch: All, Dev (tasks) or Issues (bug and feedback). */
 export const DEV_SCOPES = ['all', 'dev', 'issues'] as const;
 export type DevScope = (typeof DEV_SCOPES)[number];
@@ -665,6 +664,116 @@ export function waitingForRetest(list: readonly MetricTask[], ctx: MetricContext
     }))
     .sort((a, b) => b.count - a.count || b.oldestDays - a.oldestDays || a.id - b.id);
   return { total: waiting.length, byCreator };
+}
+
+// ---------------------------------------------------------------- alerts
+
+/** A task sitting longer than this many days in one stage (LIVE aside) raises an alert. */
+export const STUCK_DAYS = 5;
+
+/**
+ * When the task entered its current stage: the last move into it from the stage log. A task
+ * never moved on the board has been in To do since it was created; with no matching move
+ * (history not recorded), the last change is the best guess.
+ */
+export function stageEnteredAt(t: MetricTask): Date {
+  for (let i = t.events.length - 1; i >= 0; i--) {
+    if (t.events[i]!.to === t.stage) return t.events[i]!.at;
+  }
+  return t.stage === 'To do' ? t.createdAt : t.changedAt;
+}
+
+/** Whole calendar days in the current stage (app time zone). */
+export const daysInStage = (t: MetricTask, ctx: MetricContext): number =>
+  Math.max(0, daysBetween(stageEnteredAt(t), ctx.now, ctx.tz));
+
+/** In a stage other than LIVE for more than STUCK_DAYS days. */
+export const isStuck = (t: MetricTask, ctx: MetricContext): boolean =>
+  t.stage !== null && t.stage !== DEPLOYED_STAGE && daysInStage(t, ctx) > STUCK_DAYS;
+
+/** Who an alert names: the assignee, or for work waiting in QA the tester who must act. */
+export interface AlertOwner {
+  id: number;
+  role: 'assignee' | 'tester' | 'qaLead';
+}
+
+/**
+ * In QA Backlog or In QA the next step is the tester's: the creator when they are in the QA
+ * Testing team, otherwise the QA lead. In every other stage it is the assignee.
+ */
+export function alertOwner(t: MetricTask, ctx: MetricContext): AlertOwner {
+  if (t.stage === 'QA Backlog' || t.stage === 'In QA') {
+    if (ctx.testers.has(t.createdBy)) return { id: t.createdBy, role: 'tester' };
+    if (ctx.qaLead) return { id: ctx.qaLead, role: 'qaLead' };
+  }
+  return { id: t.responsibleId, role: 'assignee' };
+}
+
+export interface OverdueAlert {
+  /** The assignee (overdue tasks are always in developer stages). */
+  personId: number;
+  role: AlertOwner['role'];
+  projectId: number;
+  count: number;
+  /** Days past deadline of the latest task in the group. */
+  oldestDays: number;
+}
+
+export interface StuckAlert {
+  /** alertOwner(): the assignee, or the tester / QA lead for QA Backlog and In QA. */
+  personId: number;
+  /** 'qaLead' when any task in the group reached this person as QA lead. */
+  role: AlertOwner['role'];
+  projectId: number;
+  stage: StageTitle;
+  count: number;
+  /** Days in the stage of the longest-waiting task. */
+  oldestDays: number;
+}
+
+/**
+ * Header alerts: overdue tasks per assignee and project, and tasks stuck more than STUCK_DAYS
+ * days in a stage (LIVE aside) per person (alertOwner), project and stage. Largest groups first.
+ */
+export function alerts(tasks: readonly MetricTask[], ctx: MetricContext) {
+  const key = (...parts: (string | number)[]) => parts.join('|');
+  const overdue = new Map<string, OverdueAlert>();
+  const stuck = new Map<string, StuckAlert>();
+  for (const t of tasks) {
+    if (isOverdue(t, ctx)) {
+      const k = key(t.responsibleId, t.groupId);
+      const a = overdue.get(k) ?? {
+        personId: t.responsibleId,
+        role: 'assignee' as const,
+        projectId: t.groupId,
+        count: 0,
+        oldestDays: 0,
+      };
+      a.count++;
+      a.oldestDays = Math.max(a.oldestDays, ageingDays(t, ctx) ?? 0);
+      overdue.set(k, a);
+    }
+    if (isStuck(t, ctx)) {
+      const owner = alertOwner(t, ctx);
+      // One line per person: a QA lead who also filed some of the issues is listed once.
+      const k = key(owner.id, t.groupId, t.stage!);
+      const a = stuck.get(k) ?? {
+        personId: owner.id,
+        role: owner.role,
+        projectId: t.groupId,
+        stage: t.stage!,
+        count: 0,
+        oldestDays: 0,
+      };
+      a.count++;
+      a.oldestDays = Math.max(a.oldestDays, daysInStage(t, ctx));
+      if (owner.role === 'qaLead') a.role = 'qaLead';
+      stuck.set(k, a);
+    }
+  }
+  const order = <A extends { count: number; oldestDays: number }>(list: A[]) =>
+    list.sort((a, b) => b.count - a.count || b.oldestDays - a.oldestDays);
+  return { overdue: order([...overdue.values()]), stuck: order([...stuck.values()]) };
 }
 
 // ---------------------------------------------------------------- lists

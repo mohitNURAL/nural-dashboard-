@@ -51,6 +51,8 @@ export interface MetricContext {
    * assigned to them; when absent (older callers, tests), anyone but testers counts.
    */
   developers?: ReadonlySet<number>;
+  /** Head of the QA Testing department (QA lead), for alerts on issues waiting in QA. */
+  qaLead?: number | null;
 }
 
 export interface Filters {

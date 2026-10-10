@@ -1,8 +1,10 @@
-// Top bar (SRS 6): Nural logo, app name, Development and QA tabs, Live indicator, user menu.
+// Top bar (SRS 6): Nural logo, app name, Development and QA tabs, alerts, Live indicator, user
+// menu.
 import * as Popover from '@radix-ui/react-popover';
 import clsx from 'clsx';
 import type { Tab } from '../features/filters/toParams';
 import { useLive } from '../store/live';
+import { AlertsBell } from './AlertsBell';
 import { LiveIndicator } from './LiveIndicator';
 
 const TABS: { id: Tab; label: string }[] = [
@@ -45,6 +47,7 @@ export function TopBar({ tab, onTab }: Props) {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-4">
+          <AlertsBell onTab={onTab} />
           <LiveIndicator />
           <UserMenu />
         </div>

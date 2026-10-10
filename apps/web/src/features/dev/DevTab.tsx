@@ -2,7 +2,7 @@
 // people next, detail in accordions. Any count drills into "All tasks".
 import type { DevPreset, DevScope } from '@nural/shared';
 import clsx from 'clsx';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Accordion } from '../../components/Accordion';
 import { useDevScope } from '../filters/useFilters';
 import { taskColumns } from '../tasks/columns';
@@ -10,7 +10,7 @@ import { TaskList } from '../tasks/TaskList';
 import { AgeingCard } from './AgeingCard';
 import { useDevAssignees, useDevParams, useDevSummary } from './api';
 import { AssigneeTableCard, PendingDoneCard } from './AssigneeCards';
-import { DrillContext, type Drill } from './drill';
+import { useDrillStore } from './drill';
 import { TILE_LABELS } from './format';
 import { RankingCard } from './RankingCard';
 import { StageMatrixCard } from './StageMatrixCard';
@@ -30,8 +30,8 @@ export function DevTab() {
     overdue: false,
     all: false,
   });
-  // "All tasks" follows the last tile or count clicked (DEV-01..05).
-  const [drill, setDrill] = useState<Drill | null>(null);
+  // "All tasks" follows the last tile, count or header alert clicked (DEV-01..05).
+  const { drill, reveal: revealDrill, open: openDrill, clear, revealed } = useDrillStore();
   const [listTotal, setListTotal] = useState<number>();
   const allRef = useRef<HTMLElement>(null);
   const refs = {
@@ -48,90 +48,97 @@ export function DevTab() {
     );
   };
 
-  const openDrill = useCallback((d: Drill) => {
-    setDrill(d);
+  // A drill from anywhere (this tab or the header bell) opens and scrolls to "All tasks".
+  useEffect(() => {
+    if (!revealDrill) return;
+    revealed();
     setOpen((prev) => ({ ...prev, all: true }));
     requestAnimationFrame(() =>
       allRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
     );
-  }, []);
+  }, [revealDrill, revealed]);
 
   const onTile = (preset: DevPreset) => {
     if (preset === 'overdue') return reveal('overdue');
     openDrill({ label: TILE_LABELS[preset], preset });
   };
 
-  const listParams = useMemo(() => ({ ...params, ...drill?.params }), [params, drill]);
+  // Header alerts ignore the filter bar, so their lists do too (keeping only the switch).
+  const listParams = useMemo(
+    () =>
+      drill?.replaceFilters
+        ? { scope: params.scope!, ...drill.params }
+        : { ...params, ...drill?.params },
+    [params, drill],
+  );
   const allCount = drill ? listTotal : summary?.total;
   const tilePreset = drill && !drill.params ? drill.preset : null;
 
   return (
-    <DrillContext.Provider value={openDrill}>
-      <div className="space-y-4">
-        <ScopeSwitch />
-        <SummaryTiles
-          active={open.all && tilePreset !== 'total' ? tilePreset : null}
-          onSelect={onTile}
-        />
+    <div className="space-y-4">
+      <ScopeSwitch />
+      <SummaryTiles
+        active={open.all && tilePreset !== 'total' ? tilePreset : null}
+        onSelect={onTile}
+      />
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-          <AssigneeTableCard className="lg:col-span-7" />
-          <PendingDoneCard className="lg:col-span-5" />
-          <AgeingCard className="lg:col-span-6" />
-          <RankingCard className="lg:col-span-6" />
-          <StageMatrixCard className="lg:col-span-12" />
-        </div>
-
-        <Accordion
-          ref={refs.dueToday}
-          title="Tasks due today"
-          hint="Latest deadline first"
-          count={assignees?.totals.dueToday}
-          open={open.dueToday}
-          onOpenChange={toggle('dueToday')}
-        >
-          <TaskList filterParams={params} preset="dueToday" columns={LIST_COLUMNS} />
-        </Accordion>
-
-        <Accordion
-          ref={refs.overdue}
-          title="Overdue tasks"
-          hint="Pending tasks past their deadline"
-          count={summary?.overdue}
-          tone="bad"
-          open={open.overdue}
-          onOpenChange={toggle('overdue')}
-        >
-          <TaskList filterParams={params} preset="overdue" columns={LIST_COLUMNS} />
-        </Accordion>
-
-        <Accordion
-          ref={refs.all}
-          title={drill ? `All tasks: ${drill.label}` : 'All tasks'}
-          hint="Row click opens the task"
-          count={allCount}
-          open={open.all}
-          onOpenChange={toggle('all')}
-        >
-          {drill && (
-            <button
-              type="button"
-              onClick={() => setDrill(null)}
-              className="mb-3 font-heading text-button text-primary hover:underline"
-            >
-              Show all tasks
-            </button>
-          )}
-          <TaskList
-            filterParams={listParams}
-            preset={drill?.preset ?? 'total'}
-            columns={ALL_COLUMNS}
-            searchable
-            onTotal={setListTotal}
-          />
-        </Accordion>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <AssigneeTableCard className="lg:col-span-7" />
+        <PendingDoneCard className="lg:col-span-5" />
+        <AgeingCard className="lg:col-span-6" />
+        <RankingCard className="lg:col-span-6" />
+        <StageMatrixCard className="lg:col-span-12" />
       </div>
-    </DrillContext.Provider>
+
+      <Accordion
+        ref={refs.dueToday}
+        title="Tasks due today"
+        hint="Latest deadline first"
+        count={assignees?.totals.dueToday}
+        open={open.dueToday}
+        onOpenChange={toggle('dueToday')}
+      >
+        <TaskList filterParams={params} preset="dueToday" columns={LIST_COLUMNS} />
+      </Accordion>
+
+      <Accordion
+        ref={refs.overdue}
+        title="Overdue tasks"
+        hint="Pending tasks past their deadline"
+        count={summary?.overdue}
+        tone="bad"
+        open={open.overdue}
+        onOpenChange={toggle('overdue')}
+      >
+        <TaskList filterParams={params} preset="overdue" columns={LIST_COLUMNS} />
+      </Accordion>
+
+      <Accordion
+        ref={refs.all}
+        title={drill ? `All tasks: ${drill.label}` : 'All tasks'}
+        hint="Row click opens the task"
+        count={allCount}
+        open={open.all}
+        onOpenChange={toggle('all')}
+      >
+        {drill && (
+          <button
+            type="button"
+            onClick={clear}
+            className="mb-3 font-heading text-button text-primary hover:underline"
+          >
+            Show all tasks
+          </button>
+        )}
+        <TaskList
+          filterParams={listParams}
+          preset={drill?.preset ?? 'total'}
+          columns={ALL_COLUMNS}
+          searchable
+          onTotal={setListTotal}
+        />
+      </Accordion>
+    </div>
   );
 }
 

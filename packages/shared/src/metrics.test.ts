@@ -7,6 +7,11 @@ import {
   completedAt,
   devSummary,
   devSummaryParts,
+  alertOwner,
+  alerts,
+  daysInStage,
+  isStuck,
+  stageEnteredAt,
   devTasks,
   filterOptions,
   indexTasks,
@@ -323,6 +328,104 @@ describe('Development tab', () => {
     expect(devOnly.map((x) => [x.id, x.rank])).toEqual([
       [40, 1],
       [42, null],
+    ]);
+  });
+});
+
+describe('alerts', () => {
+  // NOW = 10 Oct 2026, 12:00 IST.
+  it('dates the current stage from the last move into it', () => {
+    const moved = task({
+      stage: 'In progress',
+      events: [
+        ev('To do', 'In progress', '2026-10-01T05:00:00Z'),
+        ev('In progress', 'In QA', '2026-10-02T05:00:00Z'),
+        ev('In QA', 'In progress', '2026-10-06T05:00:00Z'),
+      ],
+    });
+    expect(stageEnteredAt(moved)).toEqual(new Date('2026-10-06T05:00:00Z'));
+    expect(daysInStage(moved, ctx)).toBe(4);
+    // Never moved: in To do since it was created.
+    expect(stageEnteredAt(task({ createdAt: new Date('2026-09-01T05:00:00Z') }))).toEqual(
+      new Date('2026-09-01T05:00:00Z'),
+    );
+  });
+
+  it('flags more than 5 days in a stage, never in LIVE', () => {
+    const since = (d: string, stage: MetricTask['stage']) =>
+      task({ stage, events: [ev('To do', stage, d)] });
+    expect(isStuck(since('2026-10-05T05:00:00Z', 'In progress'), ctx)).toBe(false); // 5 days
+    expect(isStuck(since('2026-10-04T05:00:00Z', 'In progress'), ctx)).toBe(true); // 6 days
+    expect(isStuck(since('2026-09-01T05:00:00Z', 'LIVE'), ctx)).toBe(false);
+  });
+
+  it('groups overdue by assignee and project, stuck also by stage', () => {
+    const late = (who: number, project: number) =>
+      task({
+        responsibleId: who,
+        groupId: project,
+        stage: 'In progress',
+        deadline: new Date('2026-10-01T05:00:00Z'),
+        events: [ev('To do', 'In progress', '2026-10-09T05:00:00Z')],
+      });
+    const stuckTask = (who: number, stage: MetricTask['stage'], d: string) =>
+      task({ responsibleId: who, stage, events: [ev('To do', stage, d)] });
+    const a = alerts(
+      [
+        late(30, 148),
+        late(30, 148),
+        late(30, 154),
+        stuckTask(28, 'Done', '2026-09-20T05:00:00Z'),
+        stuckTask(28, 'Done', '2026-10-01T05:00:00Z'),
+        stuckTask(28, 'LIVE', '2026-09-01T05:00:00Z'),
+      ],
+      ctx,
+    );
+    expect(a.overdue.map((o) => [o.personId, o.projectId, o.count, o.oldestDays])).toEqual([
+      [30, 148, 2, 9],
+      [30, 154, 1, 9],
+    ]);
+    expect(a.stuck).toEqual([
+      { personId: 28, role: 'assignee', projectId: 154, stage: 'Done', count: 2, oldestDays: 20 },
+    ]);
+  });
+});
+
+describe('alert owner', () => {
+  const qaCtx = { ...ctx, qaLead: TESTER };
+  const inQa = (stage: MetricTask['stage'], createdBy: number) =>
+    task({ stage, createdBy, responsibleId: 30 });
+
+  it('names the creator for work waiting in QA when the creator is a tester', () => {
+    expect(alertOwner(inQa('QA Backlog', 16), qaCtx)).toEqual({ id: 16, role: 'tester' });
+    expect(alertOwner(inQa('In QA', 16), qaCtx)).toEqual({ id: 16, role: 'tester' });
+  });
+
+  it('falls back to the QA lead when the creator is not a tester', () => {
+    expect(alertOwner(inQa('QA Backlog', 10), qaCtx)).toEqual({ id: TESTER, role: 'qaLead' });
+  });
+
+  it('names the assignee in every other stage', () => {
+    expect(alertOwner(inQa('In progress', 16), qaCtx)).toEqual({ id: 30, role: 'assignee' });
+    expect(alertOwner(inQa('Done', 16), qaCtx)).toEqual({ id: 30, role: 'assignee' });
+  });
+
+  it('groups stuck QA work under the tester', () => {
+    const waiting = task({
+      stage: 'QA Backlog',
+      createdBy: 16,
+      events: [ev('In progress', 'QA Backlog', '2026-09-20T05:00:00Z')],
+    });
+    expect(alerts([waiting], qaCtx).stuck[0]).toMatchObject({ personId: 16, role: 'tester' });
+    // The QA lead's own issues and the ones routed to them make one line.
+    const lead = (createdBy: number) =>
+      task({
+        stage: 'QA Backlog',
+        createdBy,
+        events: [ev('In progress', 'QA Backlog', '2026-09-20T05:00:00Z')],
+      });
+    expect(alerts([lead(TESTER), lead(10)], qaCtx).stuck).toEqual([
+      expect.objectContaining({ personId: TESTER, role: 'qaLead', count: 2 }),
     ]);
   });
 });

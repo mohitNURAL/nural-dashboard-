@@ -27,6 +27,8 @@ export interface Dataset {
   testers: Set<number>;
   /** Development department members (Development tab scope); absent in older fixtures. */
   developers?: Set<number>;
+  /** Head of the QA Testing department, named on alerts for work waiting in QA. */
+  qaLead?: number | null;
   users: Map<number, UserInfo>;
   projects: Map<number, { id: number; name: string }>;
   /** Board colours etc. are fixed; this is just the portal origin for "Open in Bitrix24". */
@@ -118,6 +120,10 @@ export async function loadDataset(): Promise<Dataset> {
   }));
 
   const testingDepts = departmentTree(deptRows, TESTING_DEPT);
+  // The top QA Testing department's head in the company structure.
+  const qaLead =
+    deptRows.find((d) => TESTING_DEPT.test(d.name) && !testingDepts.has(d.parentId ?? -1))
+      ?.headId ?? null;
   const devDepts = departmentTree(deptRows, DEVELOPMENT_DEPT);
   const users = new Map<number, UserInfo>();
   const testers = new Set<number>();
@@ -145,6 +151,7 @@ export async function loadDataset(): Promise<Dataset> {
     byId: indexTasks(tasks),
     testers,
     developers,
+    qaLead,
     users,
     projects: new Map(groupRows.map((g) => [g.id, { id: g.id, name: g.name }])),
     portalOrigin: new URL(config.BITRIX_INBOUND_URL).origin,

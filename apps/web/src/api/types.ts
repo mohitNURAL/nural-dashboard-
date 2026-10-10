@@ -201,3 +201,24 @@ export interface QaTesting {
   total: number;
   rows: TestingRow[];
 }
+
+// ---------------------------------------------------------------- header alerts (routes/alerts.ts)
+
+export type AlertRole = 'assignee' | 'tester' | 'qaLead';
+
+interface AlertBase {
+  personId: number;
+  role: AlertRole;
+  person: Person;
+  projectId: number;
+  project: { id: number; name: string } | null;
+  count: number;
+  oldestDays: number;
+}
+
+export interface AlertsResponse {
+  stuckDays: number;
+  overdue: AlertBase[];
+  stuck: (AlertBase & { stage: StageTitle })[];
+  total: number;
+}

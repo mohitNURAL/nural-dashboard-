@@ -243,6 +243,12 @@ Each reopen counts once, so an issue reopened twice adds 2 to the rework count. 
 
 **Testing team.** Members of the QA Testing department (today Mohit Srivastava, Team Lead QA, and Ramprawesh, QA) plus anyone added to that department later, read from the company structure. A task belongs to Testing when it is tagged `testing` or `re-testing`, or its assignee is in the testing team.
 
+**Header alerts (bell).** Computed for the Development department's tasks and issues (the Development tab on All), ignoring the filter bar.
+
+- *Overdue*: overdue tasks (rule above) grouped by assignee and project, with the count and the most days past deadline.
+- *Stuck*: a task in any stage except LIVE for more than **5 days** (`STUCK_DAYS`), grouped by person, project and stage, with the count and the longest wait. Days in stage = calendar days since the last move into the current stage in the stage-move log; a task never moved has been in To do since it was created; with no recorded move, the last change date is used. Done counts too (only LIVE is left out, as requested).
+- *Who is named*: the assignee, except in **QA Backlog and In QA**, where the next step is the tester's. There the alert names the **creator** when the creator is in the QA Testing team, otherwise the **QA lead** (the head of the QA Testing department in the company structure, today Mohit Srivastava). A person's own issues and those routed to them as QA lead make one line, marked "QA lead".
+
 ## 6. UI design (Nural theme)
 
 The dashboard is one page with a top bar, two tabs, a sticky filter bar, then cards in a 12-column grid, styled with the Nural design tokens read from the Figma file (Nural ISP Web, node 2188-72215): a blue scale with B500 as primary, teal as accent, Manrope for headings and labels, Work Sans for body and table text. Stage colours are the real Bitrix24 board colours.
@@ -290,7 +296,8 @@ Three stages share #FDB051 on the board, so charts add a pattern or a shade step
 
 **Components (to match from the Figma component library)**
 
-- Top bar: Nural logo, app name, Development and QA tabs, Live indicator, user menu.
+- Top bar: Nural logo, app name, Development and QA tabs, alerts bell, Live indicator, user menu.
+- Alerts bell (top bar, right): a red badge with the number of alert lines; it opens a panel with two lists, Overdue and Over 5 days in a stage (section 5, Header alerts). Each line shows the count, person, project and stage. Clicking one switches to the Development tab and opens "All tasks" with exactly those tasks (ignoring the filter bar).
 - Filter bar: contextual search Combobox (multi-select, chips, "Clear" inside and a × on the closed control), date range picker (with ×), "Reset filters".
 - Stat tile: label, big number, sub-line (delta or split), optional status colour; clickable.
 - Card: title, optional toggle (table or chart), body, empty state and loading skeleton.
@@ -346,7 +353,7 @@ SSE is chosen over WebSocket because the browser only receives; filters are sent
 2. **Sync worker**: takes events, fetches the full task through the inbound webhook (batched), compares with the stored snapshot, writes the stage-move log, and publishes a change message.
 3. **Reconciler**: every 10 minutes, pulls tasks changed since the last run, to recover any missed webhook. Nightly full resync of open tasks.
 4. **Directory sync**: hourly, users, departments and workgroups, and the stage list of each workgroup.
-5. **Metrics API**: `GET /api/dev/summary`, `/api/dev/assignees`, `/api/dev/ranking`, `/api/dev/matrix`, `/api/tasks`, `/api/qa/summary`, `/api/qa/issues`, `/api/qa/testing`, `/api/filters/options`, all taking the same filter parameters. `/api/dev/assignees`, `/api/dev/matrix` and `/api/qa/issues` also take `groupBy=assignee|project` for the Assignee / Project switch. The Development endpoints, `/api/filters/options?tab=dev` and `/api/tasks?kind=tasks` take `scope=all|dev|issues` (API default `dev`). `/api/tasks` also takes `stage`, `overdue=true|false` and `ageing=<bucket>` for drill-downs. `/api/dev/summary` returns `parts`, the tile breakdown for the switch.
+5. **Metrics API**: `GET /api/dev/summary`, `/api/dev/assignees`, `/api/dev/ranking`, `/api/dev/matrix`, `/api/tasks`, `/api/qa/summary`, `/api/qa/issues`, `/api/qa/testing`, `/api/filters/options`, all taking the same filter parameters. `/api/dev/assignees`, `/api/dev/matrix` and `/api/qa/issues` also take `groupBy=assignee|project` for the Assignee / Project switch. The Development endpoints, `/api/filters/options?tab=dev` and `/api/tasks?kind=tasks` take `scope=all|dev|issues` (API default `dev`). `/api/tasks` also takes `stage`, `overdue=true|false` and `ageing=<bucket>` for drill-downs. `/api/dev/summary` returns `parts`, the tile breakdown for the switch. `GET /api/alerts` returns the header alerts; `/api/tasks` takes `stuck=true` and `owner=<user id>` (the alert's person) to open an alert's tasks.
 6. **SSE endpoint** `GET /api/stream`: sends `task.changed` with the task ID, stage group and project, so the browser refetches only the queries that include it.
 
 **Data model (PostgreSQL)**

@@ -54,6 +54,7 @@ const dataset: Dataset = {
   byId: indexTasks(tasks),
   testers: new Set([14]),
   developers: new Set([30, 28, 10]),
+  qaLead: 14,
   users: new Map([
     [
       30,
@@ -173,6 +174,37 @@ describe('metrics API', () => {
     const neha = m.body.rows.find((r: { id: number }) => r.id === 30);
     expect(neha.overdue['To do']).toBe(1);
     expect(neha.cells['To do']).toBe(1);
+  });
+
+  it('GET /api/alerts lists overdue and stuck groups with names', async () => {
+    const a = (await get('/api/alerts')).body;
+    expect(a.stuckDays).toBe(5);
+    // Task 1: Neha, Support Tool, overdue since 8 Oct.
+    expect(a.overdue).toEqual([
+      expect.objectContaining({
+        personId: 30,
+        role: 'assignee',
+        projectId: 154,
+        count: 1,
+        person: expect.objectContaining({ name: 'Neha Gautam' }),
+        project: { id: 154, name: 'Support Tool' },
+      }),
+    ]);
+    // Tasks 1 and 5 (To do since 1 Oct, In QA last changed 5 Oct) are stuck; LIVE task 3 is not.
+    const stuckStages = a.stuck.map((s: { stage: string }) => s.stage).sort();
+    expect(stuckStages).not.toContain('LIVE');
+    expect(stuckStages).toContain('To do');
+    const ids = (await get('/api/tasks?scope=all&preset=total&stuck=true')).body.rows
+      .map((r: { id: number }) => r.id)
+      .sort();
+    expect(ids).toContain(1);
+    expect(ids).not.toContain(3);
+    // Task 5 waits In QA (exactly 5 days, so not stuck yet) and was filed by tester 14:
+    // its alert person is the tester, not its assignee.
+    expect(a.stuck.map((s: { stage: string }) => s.stage)).not.toContain('In QA');
+    const owned = (await get('/api/tasks?scope=all&preset=total&owner=14')).body.rows;
+    // Task 2 waits in QA Backlog but was filed by a developer: it goes to the QA lead (14).
+    expect(owned.map((r: { id: number }) => r.id).sort()).toEqual([2, 5]);
   });
 
   it('groups breakdowns by project with groupBy=project', async () => {

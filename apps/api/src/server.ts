@@ -7,6 +7,7 @@ import { config } from './config';
 import { cachedDataset, loadDataset, type DatasetProvider } from './data/dataset';
 import { createMemoryBus, type EventBus } from './events/bus';
 import { hookRoutes, type ReceiverDeps } from './hooks/receiver';
+import { alertRoutes } from './routes/alerts';
 import { devRoutes } from './routes/dev';
 import { filterRoutes } from './routes/filters';
 import { qaRoutes } from './routes/qa';
@@ -94,6 +95,7 @@ export async function buildServer({
   qaRoutes(app, dataset, opts);
   taskRoutes(app, dataset, opts, { describe });
   filterRoutes(app, dataset, opts);
+  alertRoutes(app, dataset, opts);
   streamRoutes(app, bus, config.WEB_ORIGIN);
   await hookRoutes(app, {
     token: config.BITRIX_OUTBOUND_TOKEN,

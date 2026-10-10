@@ -25,6 +25,7 @@ export const contextOf = (ds: Dataset, opts: AppOptions): MetricContext => ({
   tz: opts.tz,
   testers: ds.testers,
   developers: ds.developers,
+  qaLead: ds.qaLead,
 });
 
 export interface PersonRef {

@@ -2,6 +2,7 @@
 import {
   AGEING_BUCKETS,
   ageingBucket,
+  alertOwner,
   applyFilters,
   DEV_PRESETS,
   devTasks,
@@ -12,6 +13,7 @@ import {
   reopenEvents,
   isOverdue,
   isPending,
+  isStuck,
   STAGE_TITLES,
   testingTasks,
   type MetricTask,
@@ -35,6 +37,10 @@ const listParams = {
   stage: z.enum(STAGE_TITLES).optional(),
   overdue: z.enum(['true', 'false']).optional(),
   ageing: z.enum(AGEING_BUCKETS).optional(),
+  // Header alert: more than STUCK_DAYS days in the current stage (LIVE aside).
+  stuck: z.enum(['true']).optional(),
+  // Header alert person: the assignee, or the tester / QA lead for work waiting in QA.
+  owner: z.coerce.number().int().positive().optional(),
   ...scopeParam,
 };
 
@@ -81,6 +87,8 @@ export function taskRoutes(
       const want = query.overdue === 'true';
       list = list.filter((t) => isOverdue(t, ctx) === want);
     }
+    if (query.stuck) list = list.filter((t) => isStuck(t, ctx));
+    if (query.owner) list = list.filter((t) => alertOwner(t, ctx).id === query.owner);
     // Ageing buckets describe open (pending) tasks only, as in DEV-03.
     if (query.ageing) {
       list = list.filter((t) => isPending(t) && ageingBucket(t, ctx) === query.ageing);
