@@ -38,6 +38,21 @@ export function AlertDetails() {
   const [kind, setKind] = useState<Kind>('overdue');
   const [by, setBy] = useState<GroupBy>('project');
   const [stages, setStages] = useState<string[]>([]);
+  // Groups start collapsed; a new view (kind, grouping or stage filter) collapses them again.
+  const viewKey = `${kind}|${by}|${stages.join(',')}`;
+  const [expanded, setExpanded] = useState<{ view: string; ids: Set<number> }>({
+    view: viewKey,
+    ids: new Set(),
+  });
+  const openIds = expanded.view === viewKey ? expanded.ids : new Set<number>();
+  const toggleGroup = (id: number) => {
+    const ids = new Set(openIds);
+    if (ids.has(id)) ids.delete(id);
+    else ids.add(id);
+    setExpanded({ view: viewKey, ids });
+  };
+  const setAll = (open: boolean, groupIds: number[]) =>
+    setExpanded({ view: viewKey, ids: new Set(open ? groupIds : []) });
 
   const stuckDays = data?.stuckDays ?? 5;
   const stageOptions = useMemo(() => {
@@ -117,6 +132,20 @@ export function AlertDetails() {
           ]}
         />
         <GroupToggle value={by} onChange={setBy} />
+        {groups.length > 0 && (
+          <button
+            type="button"
+            onClick={() =>
+              setAll(
+                openIds.size < groups.length,
+                groups.map((g) => g.id),
+              )
+            }
+            className="font-heading text-button text-primary hover:underline"
+          >
+            {openIds.size < groups.length ? 'Expand all' : 'Collapse all'}
+          </button>
+        )}
         {kind === 'stuck' && (
           <SearchCombobox
             label={stages.length ? 'Stage' : 'Stage: all'}
@@ -154,14 +183,35 @@ export function AlertDetails() {
             {groups.map((g) => (
               <tbody key={g.id}>
                 <tr className="bg-primary-soft-100">
-                  <td
-                    colSpan={kind === 'stuck' ? 2 : 1}
-                    className="border-b border-border px-3 py-2 font-heading font-bold text-primary-dark"
-                  >
-                    {g.name}
-                    <span className="ml-2 font-normal text-text-muted">
-                      {g.lines.length} {g.lines.length === 1 ? 'line' : 'lines'}
-                    </span>
+                  <td colSpan={kind === 'stuck' ? 2 : 1} className="border-b border-border p-0">
+                    <button
+                      type="button"
+                      aria-expanded={openIds.has(g.id)}
+                      onClick={() => toggleGroup(g.id)}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left font-heading font-bold text-primary-dark hover:bg-primary-soft"
+                    >
+                      <svg
+                        width="10"
+                        height="10"
+                        viewBox="0 0 12 12"
+                        aria-hidden
+                        className={clsx(
+                          'shrink-0 transition-transform',
+                          openIds.has(g.id) && 'rotate-90',
+                        )}
+                      >
+                        <path
+                          d="M4.5 2.5 8 6l-3.5 3.5"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                        />
+                      </svg>
+                      {g.name}
+                      <span className="font-normal text-text-muted">
+                        {g.lines.length} {g.lines.length === 1 ? 'line' : 'lines'}
+                      </span>
+                    </button>
                   </td>
                   <td className="border-b border-border px-3 py-2 text-right font-bold">
                     <CountButton
@@ -173,15 +223,16 @@ export function AlertDetails() {
                   </td>
                   <td colSpan={kind === 'stuck' ? 3 : 2} className="border-b border-border" />
                 </tr>
-                {g.lines.map((l) => (
-                  <LineRow
-                    key={`${l.personId}-${l.projectId}-${'stage' in l ? l.stage : ''}`}
-                    line={l}
-                    by={by}
-                    stuckDays={stuckDays}
-                    onOpen={openAlert}
-                  />
-                ))}
+                {openIds.has(g.id) &&
+                  g.lines.map((l) => (
+                    <LineRow
+                      key={`${l.personId}-${l.projectId}-${'stage' in l ? l.stage : ''}`}
+                      line={l}
+                      by={by}
+                      stuckDays={stuckDays}
+                      onOpen={openAlert}
+                    />
+                  ))}
               </tbody>
             ))}
           </table>
