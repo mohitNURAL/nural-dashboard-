@@ -121,3 +121,67 @@ export interface DevMatrix {
   max: number;
   tags: { value: string; count: number }[];
 }
+
+// ---------------------------------------------------------------- QA tab (routes/qa.ts)
+
+export interface QaSummary {
+  total: number;
+  open: number;
+  resolved: number;
+  resolvedPct: number;
+  openPct: number;
+  lastFiled: { date: string; isToday: boolean; count: number } | null;
+  /** Issues with at least one rework; reworkTotal counts every reopen. */
+  reworkIssues: number;
+  reworkPct: number;
+  reworkTotal: number;
+  asOf: string;
+}
+
+export type IssueAgeBucket = '0-2' | '3-7' | '8-14' | '15+';
+
+export interface QaIssues {
+  byAssignee: {
+    id: number;
+    total: number;
+    open: number;
+    resolved: number;
+    bug: number;
+    feedback: number;
+    person: Person;
+  }[];
+  byStage: { stages: { stage: StageTitle; count: number; color: string }[]; unmapped: number };
+  age: {
+    rows: { id: number; total: number; buckets: Record<IssueAgeBucket, number>; person: Person }[];
+    totals: Record<IssueAgeBucket, number>;
+  };
+  rework: {
+    id: number;
+    issues: number;
+    rework: number;
+    reworkIssues: number;
+    reworkPct: number;
+    person: Person;
+  }[];
+  waitingForRetest: {
+    total: number;
+    byCreator: { id: number; count: number; oldestDays: number; person: Person }[];
+  };
+}
+
+export interface TestingRow {
+  id: number;
+  isTester: boolean;
+  total: number;
+  pending: number;
+  done: number;
+  dueToday: number;
+  overdue: number;
+  nextDeadline: string | null;
+  person: Person;
+}
+
+export interface QaTesting {
+  total: number;
+  rows: TestingRow[];
+}

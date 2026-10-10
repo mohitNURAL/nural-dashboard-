@@ -1,16 +1,19 @@
-// Paginated, server-sorted task list for accordions (DEV-06..08). Row click opens the drawer.
-import { useEffect, useMemo, useState } from 'react';
-import { DataTable, type SortingState } from '../../components/DataTable';
+// Paginated, server-sorted task list for accordions (DEV-06..08, QA-08..09). Row click opens
+// the drawer.
+import { useEffect, useState } from 'react';
+import type { TaskRow } from '../../api/types';
+import { DataTable, type Columns, type SortingState } from '../../components/DataTable';
 import { useOpenTask, useTaskList, type TaskListKind, type TaskSort } from './api';
-import { SORTABLE, taskColumns } from './columns';
+import { SORTABLE } from './columns';
 
 interface Props {
   filterParams: Record<string, string>;
   kind?: TaskListKind;
   preset: string;
-  /** Default order: deadline, latest first (DEV-06..08). */
+  /** Default order: deadline, latest first (DEV-06..08); issue lists pass '-created'. */
   defaultSort?: TaskSort;
-  withCreator?: boolean;
+  /** Stable reference (module constant or useMemo). */
+  columns: Columns<TaskRow>;
   searchable?: boolean;
   onTotal?: (n: number) => void;
 }
@@ -28,7 +31,7 @@ export function TaskList({
   kind = 'tasks',
   preset,
   defaultSort = '-deadline',
-  withCreator,
+  columns,
   searchable,
   onTotal,
 }: Props) {
@@ -58,8 +61,6 @@ export function TaskList({
   useEffect(() => {
     if (data) onTotal?.(data.total);
   }, [data, onTotal]);
-
-  const columns = useMemo(() => taskColumns({ withCreator }), [withCreator]);
 
   return (
     <div className="space-y-3">

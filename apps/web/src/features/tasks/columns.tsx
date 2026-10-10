@@ -1,11 +1,12 @@
-// Task table columns (DEV-06..08): Bitrix ID, Title, Assignee, Project, Stage, Tags, Priority,
-// Deadline, Ageing; "All tasks" adds Creator and Created.
+// Task table columns. DEV-06..08: Bitrix ID, Title, Assignee, Project, Stage, Tags, Priority,
+// Deadline, Ageing ("All tasks" adds Creator and Created). QA-08..09: see issueColumns.
 import { createColumnHelper } from '@tanstack/react-table';
 import clsx from 'clsx';
 import type { TaskRow } from '../../api/types';
 import { PriorityBadge, StageChip, TagChips } from '../../components/chips';
 import type { Columns } from '../../components/DataTable';
 import { ageingText, fmtDate } from '../dev/format';
+import { LinkedTask } from './LinkedTask';
 
 const col = createColumnHelper<TaskRow>();
 
@@ -105,6 +106,84 @@ export function taskColumns({ withCreator = false } = {}): Columns<TaskRow> {
         </span>
       ),
     }),
+  ];
+  return cols as Columns<TaskRow>;
+}
+
+const TYPE_STYLE = {
+  bug: 'bg-bad-soft text-bad-dark',
+  feedback: 'bg-primary-soft text-primary-dark',
+} as const;
+
+/**
+ * QA-08: ID, Title, Type, Assignee, Creator, Priority, Stage, Linked task, Created.
+ * QA-09 (`full`) adds Rework and Age.
+ */
+export function issueColumns({ full = false } = {}): Columns<TaskRow> {
+  const base = taskColumns();
+  const pick = (id: string) =>
+    base.find((c) => c.id === id || ('accessorKey' in c && c.accessorKey === id))!;
+  const cols = [
+    pick('id'),
+    pick('title'),
+    col.accessor('issueType', {
+      header: 'Type',
+      enableSorting: false,
+      cell: (c) => {
+        const t = c.getValue();
+        return t ? (
+          <span
+            className={clsx(
+              'rounded px-1.5 py-0.5 font-heading text-label font-bold uppercase',
+              TYPE_STYLE[t],
+            )}
+          >
+            {t}
+          </span>
+        ) : null;
+      },
+    }),
+    pick('assignee'),
+    col.accessor((r) => r.creator.name, { id: 'creator', header: 'Creator', enableSorting: false }),
+    pick('priority'),
+    pick('stage'),
+    col.accessor('linkedTaskId', {
+      header: 'Linked task',
+      enableSorting: false,
+      cell: (c) => <LinkedTask id={c.getValue()} />,
+    }),
+    col.accessor('createdAt', {
+      header: 'Created',
+      cell: (c) => <span className="whitespace-nowrap">{fmtDate(c.getValue())}</span>,
+    }),
+    ...(full
+      ? [
+          col.accessor('rework', {
+            header: 'Rework',
+            enableSorting: false,
+            meta: { align: 'right' },
+            cell: (c) =>
+              c.getValue() ? (
+                <span className="font-bold text-bad">{c.getValue()}</span>
+              ) : (
+                <span className="text-text-muted">0</span>
+              ),
+          }),
+          col.accessor('ageDays', {
+            header: 'Age',
+            enableSorting: false,
+            meta: { align: 'right' },
+            cell: (c) => {
+              const d = c.getValue();
+              return d === null || d === undefined ? (
+                <span className="text-text-muted">closed</span>
+              ) : (
+                <span className="whitespace-nowrap">{d} d</span>
+              );
+            },
+          }),
+        ]
+      : []),
   ];
   return cols as Columns<TaskRow>;
 }

@@ -3,7 +3,7 @@ import { TopBar } from './components/TopBar';
 import { DevTab } from './features/dev/DevTab';
 import { FilterBar } from './features/filters/FilterBar';
 import { useTab } from './features/filters/useFilters';
-import { TabPlaceholder } from './features/TabPlaceholder';
+import { QaTab } from './features/qa/QaTab';
 import { useLiveUpdates } from './hooks/useLiveUpdates';
 
 export default function App() {
@@ -15,7 +15,7 @@ export default function App() {
       <TopBar tab={tab} onTab={setTab} />
       <FilterBar tab={tab} />
       <main className="mx-auto max-w-page px-4 py-4 lg:px-6">
-        {tab === 'dev' ? <DevTab /> : <TabPlaceholder tab="qa" />}
+        {tab === 'dev' ? <DevTab /> : <QaTab />}
       </main>
       <TaskDrawer />
     </div>

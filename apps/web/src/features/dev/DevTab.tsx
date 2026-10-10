@@ -2,6 +2,7 @@
 import type { DevPreset } from '@nural/shared';
 import { useRef, useState } from 'react';
 import { Accordion } from '../../components/Accordion';
+import { taskColumns } from '../tasks/columns';
 import { TaskList } from '../tasks/TaskList';
 import { AgeingCard } from './AgeingCard';
 import { useDevAssignees, useDevParams, useDevSummary } from './api';
@@ -12,6 +13,9 @@ import { StageMatrixCard } from './StageMatrixCard';
 import { SummaryTiles } from './SummaryTiles';
 
 type Section = 'dueToday' | 'overdue' | 'all';
+
+const LIST_COLUMNS = taskColumns();
+const ALL_COLUMNS = taskColumns({ withCreator: true });
 
 export function DevTab() {
   const params = useDevParams();
@@ -72,7 +76,7 @@ export function DevTab() {
         open={open.dueToday}
         onOpenChange={toggle('dueToday')}
       >
-        <TaskList filterParams={params} preset="dueToday" />
+        <TaskList filterParams={params} preset="dueToday" columns={LIST_COLUMNS} />
       </Accordion>
 
       <Accordion
@@ -84,7 +88,7 @@ export function DevTab() {
         open={open.overdue}
         onOpenChange={toggle('overdue')}
       >
-        <TaskList filterParams={params} preset="overdue" />
+        <TaskList filterParams={params} preset="overdue" columns={LIST_COLUMNS} />
       </Accordion>
 
       <Accordion
@@ -104,7 +108,7 @@ export function DevTab() {
             Show all tasks
           </button>
         )}
-        <TaskList filterParams={params} preset={allPreset} withCreator searchable />
+        <TaskList filterParams={params} preset={allPreset} columns={ALL_COLUMNS} searchable />
       </Accordion>
     </div>
   );
