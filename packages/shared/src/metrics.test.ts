@@ -277,6 +277,7 @@ describe('Development tab', () => {
     expect(isCompletedYesterday(at('2026-10-08T10:00:00Z'), ctx)).toBe(false);
     const row = assigneeTable([at('2026-10-09T10:00:00Z')], ctx).rows[0]!;
     expect(row.completedYesterday).toBe(1);
+    expect(row.doneSplit).toEqual({ dev: 1, bug: 0, feedback: 0 });
     expect(presetPredicate('doneYesterday', ctx)(at('2026-10-09T10:00:00Z'))).toBe(true);
   });
 
@@ -587,7 +588,15 @@ describe('QA tab', () => {
     });
     expect(reworkByDeveloper(list)).toEqual([
       // 28's issues are linked / tagged only: not rework under the flow rule.
-      { id: 30, issues: 2, rework: 2, reworkIssues: 1, reworkPct: 50 },
+      {
+        id: 30,
+        issues: 2,
+        rework: 2,
+        reworkIssues: 1,
+        reworkPct: 50,
+        bug: { issues: 2, rework: 2, reworkIssues: 1 },
+        feedback: { issues: 0, rework: 0, reworkIssues: 0 },
+      },
     ]);
   });
 
@@ -602,7 +611,15 @@ describe('QA tab', () => {
     expect(byProject[1]).toMatchObject({ open: 1, bug: 0, feedback: 1 });
     expect(issueAgeByAssignee(all, ctx, 'project').rows.find((r) => r.id === 148)?.total).toBe(1);
     expect(reworkByDeveloper(all, 'project')).toEqual([
-      { id: 154, issues: list.length, rework: 2, reworkIssues: 1, reworkPct: 20 },
+      {
+        id: 154,
+        issues: list.length,
+        rework: 2,
+        reworkIssues: 1,
+        reworkPct: 20,
+        bug: { issues: 4, rework: 2, reworkIssues: 1 },
+        feedback: { issues: 1, rework: 0, reworkIssues: 0 },
+      },
     ]);
   });
 

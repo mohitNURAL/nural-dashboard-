@@ -105,6 +105,22 @@ export interface AssigneeRow extends Named {
   dueToday: number;
   completedToday: number;
   completedYesterday: number;
+  /** Pending and Done split into dev tasks, bugs and feedback. */
+  pendingSplit: WorkSplit;
+  doneSplit: WorkSplit;
+}
+
+/** Rework of one issue type: send-backs, issues with any, and the issues of that type. */
+export interface ReworkSplit {
+  rework: number;
+  reworkIssues: number;
+  issues: number;
+}
+
+export interface WorkSplit {
+  dev: number;
+  bug: number;
+  feedback: number;
 }
 
 export const AGEING_BUCKETS = ['notDue', '0-2', '3-7', '8-14', '15-30', '30+'] as const;
@@ -224,6 +240,8 @@ export interface QaIssues {
     rework: number;
     reworkIssues: number;
     reworkPct: number;
+    bug: ReworkSplit;
+    feedback: ReworkSplit;
   })[];
   waitingForRetest: {
     total: number;

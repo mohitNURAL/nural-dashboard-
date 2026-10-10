@@ -21,7 +21,8 @@ export const INFO = {
   colDueToday: 'Deadline is today, not yet LIVE.',
   colCompToday: 'Reached QA Backlog for the first time today.',
   colCompYesterday: 'Reached QA Backlog for the first time yesterday (IST).',
-  pendingVsDone: 'Pending vs sent-to-QA tasks per person or project, top 15 by total.',
+  pendingVsDone:
+    'Pending vs sent-to-QA tasks per person or project, top 15 by total. Tooltip splits Dev / Issues (Bug / Feedback on Issues).',
   ageing: 'Open tasks by days past deadline. On Hold counts here but not as Overdue.',
   ranking:
     'Tasks sent to QA with a deadline. Ranked by on-time %, then average days early. Fewer than 3: not ranked.',
@@ -50,7 +51,7 @@ export const INFO = {
   retest: 'Issues in QA Backlog or In QA, by who filed them. Oldest = days waiting.',
   issueAge: 'Open issues by days past deadline (same as task ageing). On Hold counts here.',
   rework:
-    'QA send-backs per person or project, and the % of their issues sent back. First Issue Raised to To do is not counted.',
+    'QA send-backs per person or project, split into bug and feedback, and the % of their issues sent back. First Issue Raised to To do is not counted.',
   latestFiled: 'Issues created on the Last filed date.',
   latestResolved: 'Issues pushed to QA Backlog on the Last resolved date.',
   allIssues: 'Every bug or feedback in the filters, or the number you clicked.',

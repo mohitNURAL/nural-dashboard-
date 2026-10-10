@@ -4,13 +4,13 @@
 import { createColumnHelper } from '@tanstack/react-table';
 import type { DevPreset } from '@nural/shared';
 import { useMemo, useState } from 'react';
-import type { AssigneeRow, GroupBy } from '../../api/types';
+import type { AssigneeRow, GroupBy, WorkSplit } from '../../api/types';
 import { Card, GroupToggle } from '../../components/Card';
 import { Chart } from '../../components/Chart';
 import { CountButton } from '../../components/CountButton';
 import { token } from '../../components/chartTheme';
 import { DataTable, type Columns } from '../../components/DataTable';
-import { useFocusRow } from '../filters/useFilters';
+import { useDevScope, useFocusRow } from '../filters/useFilters';
 import { useDevAssignees } from './api';
 import { rowParams, useDrillTo } from './drill';
 import { GROUP_LABEL } from './format';
@@ -115,9 +115,24 @@ export function AssigneeTableCard({ className }: { className?: string }) {
   );
 }
 
+/**
+ * Tooltip line of Pending vs Done, split like the tiles: Dev and Issues (All), Bug and Feedback
+ * (Issues), no split (Dev). E.g. "Pending 12 (Dev 9, Issues 3)".
+ */
+function splitLine(label: string, n: number, s: WorkSplit, scope: string): string {
+  const parts =
+    scope === 'all'
+      ? `Dev ${s.dev}, Issues ${s.bug + s.feedback}`
+      : scope === 'issues'
+        ? `Bug ${s.bug}, Feedback ${s.feedback}`
+        : '';
+  return `${label} <b>${n}</b>${parts ? ` (${parts})` : ''}`;
+}
+
 export function PendingDoneCard({ className }: { className?: string }) {
   const [by, setBy] = useState<GroupBy>('assignee');
   const { data, isLoading } = useDevAssignees(by);
+  const [scope] = useDevScope();
   const drill = useDrillTo();
   // API rows are sorted by total; ECharts draws the first category at the bottom.
   const rows = useMemo(() => (data?.rows ?? []).slice(0, CHART_ROWS).reverse(), [data]);
@@ -150,7 +165,19 @@ export function PendingDoneCard({ className }: { className?: string }) {
         option={{
           grid: { left: 8, right: 16, top: 8, bottom: 28, containLabel: true },
           legend: { bottom: 0, itemWidth: 10, itemHeight: 10, icon: 'rect' },
-          tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+          tooltip: {
+            trigger: 'axis',
+            axisPointer: { type: 'shadow' },
+            formatter: (params: unknown) => {
+              const r = rows[(params as { dataIndex: number }[])[0]?.dataIndex ?? -1];
+              if (!r) return '';
+              return [
+                `<b>${r.name}</b>`,
+                splitLine('Pending', r.pending, r.pendingSplit, scope),
+                splitLine('Done', r.done, r.doneSplit, scope),
+              ].join('<br/>');
+            },
+          },
           xAxis: {
             type: 'value',
             splitLine: { lineStyle: { color: token('--primary-soft-100') } },

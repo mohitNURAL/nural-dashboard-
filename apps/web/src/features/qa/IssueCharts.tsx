@@ -313,6 +313,8 @@ export function IssueAgeingCard({ className }: { className?: string }) {
   );
 }
 
+const REWORK_KINDS = ['bug', 'feedback'] as const;
+
 export function ReworkCard({ className }: { className?: string }) {
   const [by, setBy] = useState<GroupBy>('assignee');
   const { data, isLoading } = useQaIssues(by);
@@ -341,19 +343,33 @@ export function ReworkCard({ className }: { className?: string }) {
         height={barHeight(rows.length)}
         onClick={(p) => {
           const row = rows[p.dataIndex];
-          if (!row) return;
+          const k = REWORK_KINDS.find((x) => KIND_LABEL[x] === p.seriesName);
+          if (!row || !k) return;
           openIssues(
-            { preset: 'rework', label: `${row.name} · Rework`, params: { [by]: String(row.id) } },
+            {
+              preset: 'rework',
+              label: `${row.name} · Rework · ${KIND_LABEL[k]}`,
+              params: { [by]: String(row.id), type: k },
+            },
             { by, id: row.id },
           );
         }}
         option={{
-          grid: { left: 8, right: 96, top: 8, bottom: 8, containLabel: true },
+          grid: { left: 8, right: 96, top: 8, bottom: 28, containLabel: true },
           tooltip: {
-            trigger: 'item',
-            formatter: (p: unknown) => {
-              const r = rows[(p as { dataIndex: number }).dataIndex]!;
-              return `${r.name}<br/>${r.rework} reopens on ${r.reworkIssues} of ${r.issues} issues (${r.reworkPct}%)`;
+            trigger: 'axis',
+            axisPointer: { type: 'shadow' },
+            formatter: (params: unknown) => {
+              const r = rows[(params as { dataIndex: number }[])[0]?.dataIndex ?? -1];
+              if (!r) return '';
+              return [
+                `<b>${r.name}</b>`,
+                `Rework <b>${r.rework}</b> on ${r.reworkIssues} of ${r.issues} issues (${r.reworkPct}%)`,
+                ...REWORK_KINDS.map(
+                  (k) =>
+                    `${KIND_LABEL[k]} <b>${r[k].rework}</b> on ${r[k].reworkIssues} of ${r[k].issues}`,
+                ),
+              ].join('<br/>');
             },
           },
           xAxis: { type: 'value', show: false },
@@ -364,23 +380,27 @@ export function ReworkCard({ className }: { className?: string }) {
             axisLabel: { width: 140, overflow: 'truncate' },
             axisLine: { lineStyle: { color: token('--border') } },
           },
-          series: [
-            {
-              type: 'bar',
-              name: 'Rework',
-              barMaxWidth: 14,
-              itemStyle: { color: token('--bad'), borderRadius: [0, 3, 3, 0] },
-              label: {
-                show: true,
-                position: 'right',
-                formatter: (p: unknown) => {
-                  const r = rows[(p as { dataIndex: number }).dataIndex]!;
-                  return `${r.rework} · ${r.reworkPct}%`;
-                },
-              },
-              data: rows.map((r) => r.rework),
+          legend: { bottom: 0, itemWidth: 10, itemHeight: 10, icon: 'rect' },
+          // Bug and Feedback stacked; the total and % sit after the last segment.
+          series: REWORK_KINDS.map((k, i) => ({
+            type: 'bar',
+            name: KIND_LABEL[k],
+            stack: 'n',
+            barMaxWidth: 14,
+            itemStyle: {
+              color: k === 'bug' ? token('--bad') : token('--bad-soft'),
+              borderRadius: i === REWORK_KINDS.length - 1 ? [0, 3, 3, 0] : 0,
             },
-          ],
+            label: {
+              show: i === REWORK_KINDS.length - 1,
+              position: 'right',
+              formatter: (p: unknown) => {
+                const r = rows[(p as { dataIndex: number }).dataIndex]!;
+                return `${r.rework} · ${r.reworkPct}%`;
+              },
+            },
+            data: rows.map((r) => r[k].rework || (i === REWORK_KINDS.length - 1 ? 0 : null)),
+          })),
         }}
       />
       <p className="text-table text-text-muted">

@@ -123,7 +123,7 @@ Under each tile's number, a breakdown follows the All / Dev / Issues switch (DEV
 **DEV-02 Assignee-wise (or project-wise) table and chart**
 
 - Table: one row per assignee (or project) with Total, Pending, Done, Due today, Completed today, **Completed yesterday** (first reached QA Backlog yesterday, IST). Sortable, sticky header, totals row.
-- Chart beside it: horizontal stacked bars per assignee (or project) (Pending vs Done), sorted by Total.
+- Chart beside it: horizontal stacked bars per assignee (or project) (Pending vs Done), sorted by Total. The tooltip splits Pending and Done the same way as the tiles: Dev tasks and Issues (All), Bug and Feedback (Issues), no split (Dev).
 - Clicking a name sets the Assignee (or Project) filter.
 
 **DEV-03 Task ageing**
@@ -177,7 +177,7 @@ Under each tile's number the count is split into **Bug | Feedback**; the parts a
 
 **QA-04 Issue ageing**: the same card as DEV-03 task ageing, for open issues: buckets Not due, 0 to 2, 3 to 7, 8 to 14, 15 to 30, over 30 days **past deadline**, and No deadline; a stacked bar per assignee (or project) with bucket totals, a table view, Assignee / Project switch; every count opens those issues (replaces "age since created", 2026-10-10).
 
-**QA-05 Rework by developer**: bar per developer (or per project) with rework count and rework % of their issues.
+**QA-05 Rework by developer**: bar per developer (or per project) with rework count and rework % of their issues, stacked into Bug and Feedback. The tooltip gives the send-backs, reworked issues and issues of each type; clicking a segment opens that type's rework issues.
 
 **Drill-down on the QA tab.** As on the Development tab, every number and chart bar opens the "All issues" accordion narrowed to it, with the accordion title taking its label, and a number of one assignee or project also sets that filter; clearing or changing the filters returns the list to its default. This covers the tiles and their Bug / Feedback parts, Issues by assignee (Open, Resolved, Bug, Feedback bars), the stage matrix and table, Issue ageing, Rework by developer, Testing team workload (opens that tester's testing tasks, titled "Testing tasks: …") and Waiting for retest (opens the issues that tester filed, `createdBy`).
 

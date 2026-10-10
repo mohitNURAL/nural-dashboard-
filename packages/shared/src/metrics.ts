@@ -376,14 +376,33 @@ export interface AssigneeRow {
   dueToday: number;
   completedToday: number;
   completedYesterday: number;
+  /** Pending and Done split into dev tasks, bugs and feedback (the Pending vs Done tooltip). */
+  pendingSplit: WorkSplit;
+  doneSplit: WorkSplit;
 }
 
+export interface WorkSplit {
+  dev: number;
+  bug: number;
+  feedback: number;
+}
+
+const workSplit = (list: readonly MetricTask[]): WorkSplit => ({
+  dev: list.filter((t) => !t.isIssue).length,
+  bug: list.filter((t) => t.isIssue && t.issueType === 'bug').length,
+  feedback: list.filter((t) => t.isIssue && t.issueType === 'feedback').length,
+});
+
 function assigneeRow(id: number, list: readonly MetricTask[], ctx: MetricContext): AssigneeRow {
+  const pending = list.filter(isPending);
+  const done = list.filter(isSentToQa);
   return {
     id,
     total: list.length,
-    pending: list.filter(isPending).length,
-    done: list.filter(isSentToQa).length,
+    pending: pending.length,
+    done: done.length,
+    pendingSplit: workSplit(pending),
+    doneSplit: workSplit(done),
     dueToday: list.filter((t) => isDueToday(t, ctx)).length,
     completedToday: list.filter((t) => isCompletedToday(t, ctx)).length,
     completedYesterday: list.filter((t) => isCompletedYesterday(t, ctx)).length,
@@ -692,18 +711,30 @@ export function issueAgeByAssignee(
   return { rows, totals };
 }
 
-/** QA-05: rework count and % of each developer's (or project's) issues that are rework. */
+/** Rework of one issue type: send-backs, issues with any, and the issues of that type. */
+function reworkOf(l: readonly MetricTask[]) {
+  const counts = l.map((t) => reworkCount(t));
+  return {
+    rework: counts.reduce((a, b) => a + b, 0),
+    reworkIssues: counts.filter((n) => n > 0).length,
+    issues: l.length,
+  };
+}
+
+/**
+ * QA-05: rework count and % of each developer's (or project's) issues that are rework, with the
+ * same numbers split into bugs and feedback.
+ */
 export function reworkByDeveloper(list: readonly MetricTask[], by: GroupBy = 'assignee') {
   return [...groupBy(list, groupKey(by))]
     .map(([id, l]) => {
-      const counts = l.map((t) => reworkCount(t));
-      const reworkIssues = counts.filter((n) => n > 0).length;
+      const all = reworkOf(l);
       return {
         id,
-        issues: l.length,
-        rework: counts.reduce((a, b) => a + b, 0),
-        reworkIssues,
-        reworkPct: pct(reworkIssues, l.length),
+        ...all,
+        reworkPct: pct(all.reworkIssues, all.issues),
+        bug: reworkOf(l.filter((t) => t.issueType === 'bug')),
+        feedback: reworkOf(l.filter((t) => t.issueType === 'feedback')),
       };
     })
     .filter((r) => r.rework > 0)
