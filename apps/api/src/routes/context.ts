@@ -63,8 +63,14 @@ const PRIORITY = ['low', 'normal', 'high'] as const;
 export interface BoardFilter {
   responsibleId?: number;
   createdBy?: number;
-  stage?: StageTitle;
+  /** One stage, or several (e.g. every pending stage for an overdue alert). */
+  stages?: readonly StageTitle[];
+  /** Bitrix24's own "Overdue" status (deadline passed, not completed). */
+  overdue?: boolean;
 }
+
+/** Bitrix24 task status filter value for "Overdue". */
+const BITRIX_OVERDUE_STATUS = '-1';
 
 /**
  * A workgroup's task board in Bitrix24, opened with its filter set (`apply_filter=Y`), where
@@ -76,9 +82,10 @@ export function boardUrl(ds: Dataset, groupId: number, f: BoardFilter = {}): str
   const q = new URLSearchParams({ apply_filter: 'Y' });
   if (f.responsibleId) q.append('RESPONSIBLE_ID', String(f.responsibleId));
   if (f.createdBy) q.append('CREATED_BY', String(f.createdBy));
-  if (f.stage) {
-    const ids = ds.stageIds?.get(groupId)?.get(f.stage) ?? [];
-    for (const id of f.stage === 'To do' ? [0, ...ids] : ids) q.append('STAGE_ID[]', String(id));
+  if (f.overdue) q.append('STATUS[]', BITRIX_OVERDUE_STATUS);
+  for (const stage of f.stages ?? []) {
+    const ids = ds.stageIds?.get(groupId)?.get(stage) ?? [];
+    for (const id of stage === 'To do' ? [0, ...ids] : ids) q.append('STAGE_ID[]', String(id));
   }
   return `${ds.portalOrigin}/workgroups/group/${groupId}/tasks/?${q.toString().replaceAll('%5B%5D', '[]')}`;
 }

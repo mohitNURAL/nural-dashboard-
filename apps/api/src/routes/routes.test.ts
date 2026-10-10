@@ -189,8 +189,9 @@ describe('metrics API', () => {
         count: 1,
         person: expect.objectContaining({ name: 'Neha Gautam' }),
         project: { id: 154, name: 'Support Tool' },
+        // Overdue status plus the pending stages (only To do is known here: 0 and 1088).
         boardUrl:
-          'https://portal.example/workgroups/group/154/tasks/?apply_filter=Y&RESPONSIBLE_ID=30',
+          'https://portal.example/workgroups/group/154/tasks/?apply_filter=Y&RESPONSIBLE_ID=30&STATUS[]=-1&STAGE_ID[]=0&STAGE_ID[]=1088',
       }),
     ]);
     // Tasks 1 and 5 (To do since 1 Oct, In QA last changed 5 Oct) are stuck; LIVE task 3 is not.
