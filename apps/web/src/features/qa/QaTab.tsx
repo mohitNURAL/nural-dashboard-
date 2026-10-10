@@ -6,11 +6,11 @@ import { InfoContext } from '../../components/infoContext';
 import { keepInView } from '../../components/keepInView';
 import { useFilterSummary, useFilters } from '../filters/useFilters';
 import { qaFilterKey, useIssueList, useOpenIssues, type IssueList } from './issueList';
-import { issueColumns } from '../tasks/columns';
+import { issueColumns, taskColumns } from '../tasks/columns';
 import { TaskList } from '../tasks/TaskList';
 import { useQaIssues, useQaParams, useQaSummary } from './api';
 import { ISSUE_PRESET_LABELS } from './format';
-import { IssueAgeCard, IssuesByAssigneeCard, ReworkCard } from './IssueCharts';
+import { IssueAgeingCard, IssuesByAssigneeCard, ReworkCard } from './IssueCharts';
 import { IssueStageCard } from './IssueStageCard';
 import { QaTiles } from './QaTiles';
 import { RetestCard, TestingCard } from './TeamCards';
@@ -30,6 +30,7 @@ const ISSUE_LIST_INFO: Record<IssuePreset, string> = {
 
 const LATEST_COLUMNS = issueColumns();
 const ALL_COLUMNS = issueColumns({ full: true });
+const TESTING_COLUMNS = taskColumns({ withCreator: true });
 
 export function QaTab() {
   const params = useQaParams();
@@ -42,7 +43,10 @@ export function QaTab() {
   const { list, reveal: revealList, reset, revealed } = useIssueList();
   const openIssues = useOpenIssues();
   const [listTotal, setListTotal] = useState<number>();
-  const allPreset = list.preset;
+  // Testing-workload numbers open the testers' own tasks in this accordion (QA-06).
+  const testing = list.kind === 'testing';
+  const allPreset: IssuePreset = testing ? 'all' : (list.preset as IssuePreset);
+  const listNoun = testing ? 'Testing tasks' : 'All issues';
   const allRef = useRef<HTMLElement>(null);
   const refs = { latest: useRef<HTMLElement>(null), all: allRef };
 
@@ -106,7 +110,7 @@ export function QaTab() {
           <ReworkCard className="lg:col-span-6" />
           <TestingCard className="lg:col-span-6" />
           <RetestCard className="lg:col-span-6" onShow={() => showAll('retest')} />
-          <IssueAgeCard className="lg:col-span-12" />
+          <IssueAgeingCard className="lg:col-span-12" />
           {/* Full width like the Development tab's stage matrix. */}
           <IssueStageCard className="lg:col-span-12" />
         </div>
@@ -132,10 +136,10 @@ export function QaTab() {
 
         <Accordion
           ref={refs.all}
-          info={ISSUE_LIST_INFO[allPreset]}
+          info={testing ? INFO.testing : ISSUE_LIST_INFO[allPreset]}
           title={
             list.label
-              ? `All issues: ${list.label}`
+              ? `${listNoun}: ${list.label}`
               : allPreset === 'all'
                 ? 'All issues (bug and feedback)'
                 : `All issues: ${ISSUE_PRESET_LABELS[allPreset]}`
@@ -145,7 +149,7 @@ export function QaTab() {
           open={open.all}
           onOpenChange={(o) => setOpen((p) => ({ ...p, all: o }))}
         >
-          {(allPreset !== 'all' || list.params) && (
+          {(allPreset !== 'all' || list.params || testing) && (
             <button
               type="button"
               onClick={reset}
@@ -156,17 +160,17 @@ export function QaTab() {
           )}
           <TaskList
             filterParams={list.params ? { ...params, ...list.params } : params}
-            kind="issues"
-            preset={allPreset}
+            kind={list.kind ?? 'issues'}
+            preset={list.preset}
             exportName={
               list.label
-                ? `All issues · ${list.label}`
+                ? `${listNoun} · ${list.label}`
                 : allPreset === 'all'
                   ? 'All issues'
                   : `All issues · ${ISSUE_PRESET_LABELS[allPreset]}`
             }
-            defaultSort="-created"
-            columns={ALL_COLUMNS}
+            defaultSort={testing ? '-deadline' : '-created'}
+            columns={testing ? TESTING_COLUMNS : ALL_COLUMNS}
             searchable
             onTotal={setListTotal}
           />

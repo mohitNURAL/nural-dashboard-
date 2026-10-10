@@ -47,6 +47,8 @@ const listParams = {
   owner: z.coerce.number().int().positive().optional(),
   // DEV-04: the tasks behind a speed ranking row (sent to QA, with a deadline).
   ranked: z.enum(['true']).optional(),
+  // QA-07: the issues one tester filed (waiting for retest, by creator).
+  createdBy: z.coerce.number().int().positive().optional(),
   ...scopeParam,
 };
 
@@ -98,6 +100,8 @@ export function taskRoutes(
     if (query.stuck) list = list.filter((t) => isStuck(t, ctx));
     if (query.owner) list = list.filter((t) => alertOwner(t, ctx).id === query.owner);
     if (query.ranked) list = list.filter(isRankedTask);
+    const creator = query.createdBy;
+    if (creator) list = list.filter((t) => t.createdBy === creator);
     // Ageing buckets describe open (pending) tasks only, as in DEV-03.
     if (query.ageing) {
       list = list.filter((t) => isPending(t) && ageingBucket(t, ctx) === query.ageing);

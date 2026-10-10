@@ -184,6 +184,11 @@ export interface QaIssues {
     bug: number;
     feedback: number;
   })[];
+  /** Issue ageing (as DEV-03): open issues by days past deadline, per assignee or project. */
+  ageing: {
+    rows: (Named & { total: number; buckets: AgeingCounts })[];
+    totals: AgeingCounts;
+  };
   /** QA-03 heat matrix (as DEV-05): per assignee or project, overdue part of each cell. */
   matrix: {
     stages: { stage: StageTitle; color: string }[];

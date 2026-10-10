@@ -1,13 +1,15 @@
 // What the QA tab's "All issues" accordion shows: a tile's preset, optionally narrowed (e.g. to
 // Bug, or to one developer's issues in a stage) and relabelled. A store, so any card can open it.
-import type { GroupBy, IssuePreset } from '@nural/shared';
+import type { DevPreset, GroupBy, IssuePreset } from '@nural/shared';
 import { useCallback } from 'react';
 import { create } from 'zustand';
 import { toParams, type FilterState } from '../filters/toParams';
 import { useFilters } from '../filters/useFilters';
 
 export interface IssueList {
-  preset: IssuePreset;
+  /** Issues (default), or the testers' own testing tasks (QA-06). */
+  kind?: 'issues' | 'testing';
+  preset: IssuePreset | DevPreset;
   label?: string;
   params?: Record<string, string>;
   /** Filter state this list belongs to; any other filter change resets "All issues". */

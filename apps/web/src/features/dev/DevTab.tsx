@@ -9,7 +9,7 @@ import { InfoContext } from '../../components/infoContext';
 import { useDevScope, useFilterSummary, useFilters } from '../filters/useFilters';
 import { taskColumns } from '../tasks/columns';
 import { TaskList } from '../tasks/TaskList';
-import { AgeingCard } from './AgeingCard';
+import { TaskAgeingCard } from './AgeingCard';
 import { AlertDetails } from './AlertDetails';
 import { useAlerts } from './alerts';
 import { useDevAssignees, useDevParams, useDevSummary } from './api';
@@ -121,7 +121,7 @@ export function DevTab() {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
           <AssigneeTableCard className="lg:col-span-7" />
           <PendingDoneCard className="lg:col-span-5" />
-          <AgeingCard className="lg:col-span-6" />
+          <TaskAgeingCard className="lg:col-span-6" />
           <RankingCard className="lg:col-span-6" />
           <StageMatrixCard className="lg:col-span-12" />
         </div>

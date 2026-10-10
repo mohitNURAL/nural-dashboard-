@@ -1,5 +1,6 @@
 // QA tab endpoints (SRS 4, QA-01..07).
 import {
+  ageingByAssignee,
   applyFilters,
   issueAgeByAssignee,
   issues,
@@ -75,6 +76,11 @@ export function qaRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts
         unmapped: byStage.unmapped,
       },
       age: { rows: withGroupNames(ds, age.rows, by), totals: age.totals },
+      // Issue ageing (same as DEV-03 task ageing): open issues by days past deadline.
+      ageing: (() => {
+        const g = ageingByAssignee(list, ctx, by);
+        return { rows: withGroupNames(ds, g.rows, by), totals: g.totals };
+      })(),
       rework: withGroupNames(ds, reworkByDeveloper(list, ds.byId, by), by),
       waitingForRetest: { total: retest.total, byCreator: withPeople(ds, retest.byCreator) },
     };

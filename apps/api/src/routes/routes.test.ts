@@ -239,6 +239,17 @@ describe('metrics API', () => {
     expect((await get('/api/dev/assignees?groupBy=team')).status).toBe(400);
   });
 
+  it('GET /api/qa/issues returns issue ageing like task ageing; lists filter by creator', async () => {
+    const q = (await get('/api/qa/issues')).body;
+    expect(Object.keys(q.ageing.totals).sort()).toEqual(
+      ['0-2', '15-30', '30+', '3-7', '8-14', 'noDeadline', 'notDue'].sort(),
+    );
+    // Issue 5 (In QA) is not pending; issue 6 is Done: no open issues to age.
+    expect(Object.values(q.ageing.totals).reduce((a: number, b) => a + (b as number), 0)).toBe(0);
+    const byCreator = await get('/api/tasks?kind=issues&preset=all&createdBy=14');
+    expect(byCreator.body.rows.map((r: { id: number }) => r.id)).toEqual([5]);
+  });
+
   it('GET /api/qa/issues returns the stage table with names and totals', async () => {
     const t = (await get('/api/qa/issues')).body.stageTable;
     expect(t.totals).toMatchObject({ total: 2, bug: 1, feedback: 1 });

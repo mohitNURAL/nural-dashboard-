@@ -1,24 +1,33 @@
-// QA-02 issues by assignee, QA-04 age of open issues,
+// QA-02 issues by assignee, QA-04 issue ageing,
 // QA-05 rework by developer (QA-03 is IssueStageCard). QA-02, 04 and 05 can also be grouped by
 // project.
 import { useMemo, useState } from 'react';
-import type { GroupBy, IssueAgeBucket } from '../../api/types';
-import { BucketCard, type Bucket } from '../../components/BucketCard';
+import type { IssuePreset } from '@nural/shared';
+import type { GroupBy } from '../../api/types';
+import { AgeingCard } from '../../components/AgeingCard';
 import { Actions, Card, GroupToggle, ViewToggle } from '../../components/Card';
 import { Chart } from '../../components/Chart';
 import { token } from '../../components/chartTheme';
 import { GROUP_LABEL } from '../dev/format';
-import { useFocusRow } from '../filters/useFilters';
 import { useQaIssues } from './api';
+import { useOpenIssues } from './issueList';
 import { INFO } from '../info';
 
 const CHART_ROWS = 15;
+
+/** What a bar of "Issues by assignee" opens, by its series. */
+const SERIES_TARGET: Record<string, { preset: IssuePreset; params: Record<string, string> }> = {
+  Open: { preset: 'open', params: {} },
+  Resolved: { preset: 'resolved', params: {} },
+  Bug: { preset: 'all', params: { type: 'bug' } },
+  Feedback: { preset: 'all', params: { type: 'feedback' } },
+};
 const barHeight = (n: number) => Math.max(160, n * 22 + 50);
 
 export function IssuesByAssigneeCard({ className }: { className?: string }) {
   const [by, setBy] = useState<GroupBy>('assignee');
   const { data, isLoading } = useQaIssues(by);
-  const focus = useFocusRow();
+  const openIssues = useOpenIssues();
   const [view, setView] = useState<'status' | 'type'>('status');
   // Most issues on top; ECharts draws the first category at the bottom.
   const rows = useMemo(
@@ -66,7 +75,18 @@ export function IssuesByAssigneeCard({ className }: { className?: string }) {
         height={barHeight(rows.length)}
         onClick={(p) => {
           const row = rows[p.dataIndex];
-          if (row) focus(by, row.id);
+          if (!row) return;
+          // Open / Resolved open those issues; Bug / Feedback narrow by type.
+          const series = SERIES_TARGET[p.seriesName ?? ''];
+          if (!series) return;
+          openIssues(
+            {
+              preset: series.preset,
+              label: `${row.name} · ${p.seriesName}`,
+              params: { [by]: String(row.id), ...series.params },
+            },
+            { by, id: row.id },
+          );
         }}
         option={{
           grid: { left: 8, right: 16, top: 8, bottom: 28, containLabel: true },
@@ -100,31 +120,31 @@ export function IssuesByAssigneeCard({ className }: { className?: string }) {
   );
 }
 
-/** Lighter to darker red as open issues get older. */
-const AGE_BUCKETS: Bucket<IssueAgeBucket>[] = [
-  { key: '0-2', label: '0 to 2', color: '--bad-soft' },
-  { key: '3-7', label: '3 to 7', color: '#EE7C7E' },
-  { key: '8-14', label: '8 to 14', color: '--bad' },
-  { key: '15+', label: 'over 14', color: '--bad-dark' },
-];
-
-export function IssueAgeCard({ className }: { className?: string }) {
+/** Issue ageing: the same card as DEV-03 task ageing, for open issues. */
+export function IssueAgeingCard({ className }: { className?: string }) {
   const [by, setBy] = useState<GroupBy>('assignee');
   const { data, isLoading } = useQaIssues(by);
+  const openIssues = useOpenIssues();
   return (
-    <BucketCard
-      title="Age of open issues"
+    <AgeingCard
+      title="Issue ageing, days past deadline"
       info={INFO.issueAge}
-      chartLabel="Open issues by days since created"
+      noun="issues"
       className={className}
-      buckets={AGE_BUCKETS}
-      totals={data?.age.totals}
-      rows={data?.age.rows}
+      by={by}
+      onBy={setBy}
+      data={data?.ageing}
       loading={isLoading}
-      rowLabel={GROUP_LABEL[by]}
-      extraAction={<GroupToggle value={by} onChange={setBy} />}
-      emptyText="No open issues in these filters."
-      footnote={<p className="text-table text-text-muted">Days since the issue was created.</p>}
+      onOpen={(key, label, row) =>
+        openIssues(
+          {
+            preset: 'open',
+            label,
+            params: { ageing: key, ...(row ? { [by]: String(row.id) } : {}) },
+          },
+          row ? { by, id: row.id } : undefined,
+        )
+      }
     />
   );
 }
@@ -132,7 +152,7 @@ export function IssueAgeCard({ className }: { className?: string }) {
 export function ReworkCard({ className }: { className?: string }) {
   const [by, setBy] = useState<GroupBy>('assignee');
   const { data, isLoading } = useQaIssues(by);
-  const focus = useFocusRow();
+  const openIssues = useOpenIssues();
   const rows = useMemo(
     () =>
       (data?.rework ?? [])
@@ -157,7 +177,11 @@ export function ReworkCard({ className }: { className?: string }) {
         height={barHeight(rows.length)}
         onClick={(p) => {
           const row = rows[p.dataIndex];
-          if (row) focus(by, row.id);
+          if (!row) return;
+          openIssues(
+            { preset: 'rework', label: `${row.name} · Rework`, params: { [by]: String(row.id) } },
+            { by, id: row.id },
+          );
         }}
         option={{
           grid: { left: 8, right: 96, top: 8, bottom: 8, containLabel: true },
