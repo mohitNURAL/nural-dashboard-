@@ -21,6 +21,7 @@ import {
   issues,
   issuesByAssignee,
   issuesByStage,
+  issueTrend,
   isCompletedYesterday,
   lastResolved,
   lastFiled,
@@ -597,6 +598,44 @@ describe('QA tab', () => {
         bug: { issues: 2, rework: 2, reworkIssues: 1 },
         feedback: { issues: 0, rework: 0, reworkIssues: 0 },
       },
+    ]);
+  });
+
+  it('issue trend: filed (bug, feedback) and resolved per IST day, last 7 days', () => {
+    const filed = (iso: string, tag: string, responsibleId = 30) =>
+      task({ tags: [tag], createdAt: new Date(iso), responsibleId });
+    const trend = issueTrend(
+      [
+        filed('2026-10-09T20:00:00Z', 'bug'), // 10 Oct 01:30 IST = today
+        filed('2026-10-10T04:00:00Z', 'feedback', 31),
+        filed('2026-10-04T05:00:00Z', 'bug'), // first day of the seven
+        filed('2026-10-03T05:00:00Z', 'bug'), // too old
+        task({
+          tags: ['bug'],
+          responsibleId: 31,
+          events: [ev('In progress', 'QA Backlog', '2026-10-08T05:00:00Z')],
+        }),
+      ],
+      ctx,
+    );
+    expect(trend.days).toEqual([
+      '2026-10-04',
+      '2026-10-05',
+      '2026-10-06',
+      '2026-10-07',
+      '2026-10-08',
+      '2026-10-09',
+      '2026-10-10',
+    ]);
+    expect(trend.totals).toEqual({
+      bug: [1, 0, 0, 0, 0, 0, 1],
+      feedback: [0, 0, 0, 0, 0, 0, 1],
+      bugResolved: [0, 0, 0, 0, 1, 0, 0],
+      feedbackResolved: [0, 0, 0, 0, 0, 0, 0],
+    });
+    expect(trend.rows.map((r) => [r.id, r.total])).toEqual([
+      [30, 2],
+      [31, 2],
     ]);
   });
 

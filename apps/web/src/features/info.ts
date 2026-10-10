@@ -52,6 +52,8 @@ export const INFO = {
   issueAge: 'Open issues by days past deadline (same as task ageing). On Hold counts here.',
   rework:
     'QA send-backs per person or project, split into bug and feedback, and the % of their issues sent back. First Issue Raised to To do is not counted.',
+  issueTrend:
+    'Last 7 days (IST): bugs and feedback filed (created, light) and resolved (pushed to QA Backlog that day, dark). Pick one assignee or project, or see all.',
   latestFiled: 'Issues created on the Last filed date.',
   latestResolved: 'Issues pushed to QA Backlog on the Last resolved date.',
   allIssues: 'Every bug or feedback in the filters, or the number you clicked.',

@@ -12,6 +12,7 @@ import { useQaIssues, useQaParams, useQaSummary } from './api';
 import { ISSUE_PRESET_LABELS } from './format';
 import { IssueAgeingCard, IssuesByAssigneeCard, ReworkCard } from './IssueCharts';
 import { IssueStageCard } from './IssueStageCard';
+import { IssueTrendCard } from './IssueTrendCard';
 import { QaTiles } from './QaTiles';
 import { RetestCard, TestingCard } from './TeamCards';
 import { INFO } from '../info';
@@ -124,6 +125,7 @@ export function QaTab() {
           <ReworkCard className="lg:col-span-6" />
           <TestingCard className="lg:col-span-6" />
           <RetestCard className="lg:col-span-6" onShow={() => showAll('retest')} />
+          <IssueTrendCard className="lg:col-span-12" />
           <IssueAgeingCard className="lg:col-span-12" />
           {/* Full width like the Development tab's stage matrix. */}
           <IssueStageCard className="lg:col-span-12" />

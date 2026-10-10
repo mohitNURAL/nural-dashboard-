@@ -562,6 +562,65 @@ export function lastFiled(list: readonly MetricTask[], ctx: MetricContext) {
 }
 
 /**
+ * The issue trend lines, one value per day: bugs and feedback filed (created) that day, and bugs
+ * and feedback resolved that day (pushed to QA Backlog, as Last resolved; once per issue per day).
+ */
+export interface TrendSeries {
+  bug: number[];
+  feedback: number[];
+  bugResolved: number[];
+  feedbackResolved: number[];
+}
+
+const trendOf = (list: readonly MetricTask[], days: readonly string[], tz: string): TrendSeries => {
+  const zero = () => days.map(() => 0);
+  const out: TrendSeries = {
+    bug: zero(),
+    feedback: zero(),
+    bugResolved: zero(),
+    feedbackResolved: zero(),
+  };
+  for (const t of list) {
+    if (!t.issueType) continue;
+    const i = days.indexOf(dayKey(t.createdAt, tz));
+    if (i >= 0) out[t.issueType][i]! += 1;
+    const resolved = t.issueType === 'bug' ? out.bugResolved : out.feedbackResolved;
+    for (const d of qaBacklogDays(t, tz)) {
+      const j = days.indexOf(d);
+      if (j >= 0) resolved[j]! += 1;
+    }
+  }
+  return out;
+};
+
+/**
+ * QA issue trend: bugs and feedback filed, and issues resolved, on each of the last `n` days, today
+ * included (APP_TIMEZONE), overall and per assignee (or project). Rows with neither are left out.
+ */
+export function issueTrend(
+  list: readonly MetricTask[],
+  ctx: MetricContext,
+  by: GroupBy = 'assignee',
+  n = 7,
+) {
+  const days = Array.from({ length: n }, (_, i) =>
+    dayKey(new Date(ctx.now.getTime() - (n - 1 - i) * 86_400_000), ctx.tz),
+  );
+  const rows = [...groupBy(list, groupKey(by))]
+    .map(([id, l]) => ({ id, ...trendOf(l, days, ctx.tz) }))
+    .map((r) => ({
+      ...r,
+      total: [...r.bug, ...r.feedback, ...r.bugResolved, ...r.feedbackResolved].reduce(
+        (a, b) => a + b,
+        0,
+      ),
+    }))
+    .filter((r) => r.total > 0)
+    .sort((a, b) => b.total - a.total || a.id - b.id);
+  return { days, totals: trendOf(list, days, ctx.tz), rows };
+}
+
+/**
  * QA-01 Last resolved: the latest day issues were pushed to QA Backlog (a developer's fix handed to
  * QA), and how many issues were pushed that day (re-pushes after a send-back included).
  */

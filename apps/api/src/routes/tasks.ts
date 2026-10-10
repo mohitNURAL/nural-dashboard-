@@ -50,7 +50,7 @@ const listParams = {
   ranked: z.enum(['true']).optional(),
   // QA-07: the issues one tester filed (waiting for retest, by creator).
   createdBy: z.coerce.number().int().positive().optional(),
-  // Last resolved part (Bug / Feedback): the overall last-resolved day, so parts add up.
+  // The day of Last filed / Last resolved: the overall day (so tile parts add up), or a trend point.
   day: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -114,7 +114,8 @@ export function taskRoutes(
       list = list.filter((t) => isPending(t) && ageingBucket(t, ctx) === query.ageing);
     }
     if (query.preset) {
-      const last = query.preset === 'lastFiled' ? lastFiled(list, ctx)?.date : undefined;
+      const last =
+        query.preset === 'lastFiled' ? (query.day ?? lastFiled(list, ctx)?.date) : undefined;
       const resolved =
         query.preset === 'lastResolved' ? (query.day ?? lastResolved(list, ctx)?.date) : undefined;
       list = list.filter(

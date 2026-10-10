@@ -117,6 +117,14 @@ export interface ReworkSplit {
   issues: number;
 }
 
+/** Per day: bugs and feedback filed, and bugs and feedback resolved (pushed to QA Backlog). */
+export interface TrendSeries {
+  bug: number[];
+  feedback: number[];
+  bugResolved: number[];
+  feedbackResolved: number[];
+}
+
 export interface WorkSplit {
   dev: number;
   bug: number;
@@ -243,6 +251,12 @@ export interface QaIssues {
     bug: ReworkSplit;
     feedback: ReworkSplit;
   })[];
+  /** Issues filed and resolved on each of the last 7 days (YYYY-MM-DD, oldest first). */
+  trend: {
+    days: string[];
+    totals: TrendSeries;
+    rows: (Named & TrendSeries & { total: number })[];
+  };
   waitingForRetest: {
     total: number;
     byCreator: { id: number; count: number; oldestDays: number; person: Person }[];

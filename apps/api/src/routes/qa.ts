@@ -9,6 +9,7 @@ import {
   issuesByAssignee,
   issuesByStage,
   issueStageTable,
+  issueTrend,
   qaSummary,
   qaSummaryParts,
   stageMatrix,
@@ -89,6 +90,11 @@ export function qaRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts
         return { rows: withGroupNames(ds, g.rows, by), totals: g.totals };
       })(),
       rework: withGroupNames(ds, reworkByDeveloper(list, by), by),
+      // Issue trend: filed (bug, feedback) and resolved on each of the last 7 days, overall and per row.
+      trend: (() => {
+        const t = issueTrend(list, ctx, by);
+        return { days: t.days, totals: t.totals, rows: withGroupNames(ds, t.rows, by) };
+      })(),
       waitingForRetest: { total: retest.total, byCreator: withPeople(ds, retest.byCreator) },
     };
   });

@@ -1,5 +1,5 @@
 // Apache ECharts wrapper (SRS 7). Only the bar chart pieces are registered to keep the bundle small.
-import { BarChart } from 'echarts/charts';
+import { BarChart, LineChart } from 'echarts/charts';
 import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/components';
 import * as echarts from 'echarts/core';
 import { SVGRenderer } from 'echarts/renderers';
@@ -7,7 +7,7 @@ import type { EChartsOption } from 'echarts';
 import ReactEChartsCore from 'echarts-for-react/lib/core';
 import { chartText } from './chartTheme';
 
-echarts.use([BarChart, GridComponent, LegendComponent, TooltipComponent, SVGRenderer]);
+echarts.use([BarChart, LineChart, GridComponent, LegendComponent, TooltipComponent, SVGRenderer]);
 
 interface Props {
   option: EChartsOption;
