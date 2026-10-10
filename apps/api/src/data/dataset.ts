@@ -25,6 +25,8 @@ export interface Dataset {
   tasks: MetricTask[];
   byId: Map<number, MetricTask>;
   testers: Set<number>;
+  /** Development department members (Development tab scope); absent in older fixtures. */
+  developers?: Set<number>;
   users: Map<number, UserInfo>;
   projects: Map<number, { id: number; name: string }>;
   /** Board colours etc. are fixed; this is just the portal origin for "Open in Bitrix24". */
@@ -119,6 +121,7 @@ export async function loadDataset(): Promise<Dataset> {
   const devDepts = departmentTree(deptRows, DEVELOPMENT_DEPT);
   const users = new Map<number, UserInfo>();
   const testers = new Set<number>();
+  const developers = new Set<number>();
   for (const u of userRows) {
     // People in two departments use the testing or development one (SRS 1).
     const deptGroup: DeptGroup = u.departmentIds.some((d) => testingDepts.has(d))
@@ -127,6 +130,7 @@ export async function loadDataset(): Promise<Dataset> {
         ? 'Development'
         : 'Other';
     if (deptGroup === 'Testing') testers.add(u.id);
+    if (deptGroup === 'Development') developers.add(u.id);
     users.set(u.id, {
       id: u.id,
       name: u.name,
@@ -140,6 +144,7 @@ export async function loadDataset(): Promise<Dataset> {
     tasks,
     byId: indexTasks(tasks),
     testers,
+    developers,
     users,
     projects: new Map(groupRows.map((g) => [g.id, { id: g.id, name: g.name }])),
     portalOrigin: new URL(config.BITRIX_INBOUND_URL).origin,

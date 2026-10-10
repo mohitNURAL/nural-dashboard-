@@ -17,8 +17,29 @@ import type { Filters, IssueType, MetricContext, MetricTask } from './types';
 // ---------------------------------------------------------------- selection
 
 /** Development tab: workgroup tasks that are not issues and not assigned to testers. */
-export const devTasks = (tasks: readonly MetricTask[], ctx: MetricContext): MetricTask[] =>
-  tasks.filter((t) => t.groupId !== 0 && !t.isIssue && !ctx.testers.has(t.responsibleId));
+/** Development tab switch: All, Dev (tasks) or Issues (bug and feedback). */
+export const DEV_SCOPES = ['all', 'dev', 'issues'] as const;
+export type DevScope = (typeof DEV_SCOPES)[number];
+
+/** Assignee is in the Development department (or, without that list, not a tester). */
+const isDeveloperTask = (t: MetricTask, ctx: MetricContext) =>
+  ctx.developers ? ctx.developers.has(t.responsibleId) : !ctx.testers.has(t.responsibleId);
+
+/**
+ * Development tab: work in a workgroup assigned to the Development department. `dev` = tasks
+ * (not bug or feedback), `issues` = bugs and feedback, `all` = both.
+ */
+export const devTasks = (
+  tasks: readonly MetricTask[],
+  ctx: MetricContext,
+  scope: DevScope = 'dev',
+): MetricTask[] =>
+  tasks.filter(
+    (t) =>
+      t.groupId !== 0 &&
+      isDeveloperTask(t, ctx) &&
+      (scope === 'all' || (scope === 'issues') === t.isIssue),
+  );
 
 /** QA tab: tasks tagged bug or feedback (or Re-Open). */
 export const issues = (tasks: readonly MetricTask[]): MetricTask[] =>
@@ -144,17 +165,28 @@ export function isCompletedToday(t: MetricTask, ctx: MetricContext): boolean {
 export const ageingDays = (t: MetricTask, ctx: MetricContext): number | null =>
   t.deadline ? daysBetween(t.deadline, ctx.now, ctx.tz) : null;
 
-export const AGEING_BUCKETS = ['noDeadline', 'notDue', '0-2', '3-7', '8-14', '15+'] as const;
+export const AGEING_BUCKETS = [
+  'noDeadline',
+  'notDue',
+  '0-2',
+  '3-7',
+  '8-14',
+  '15-30',
+  '30+',
+] as const;
 export type AgeingBucket = (typeof AGEING_BUCKETS)[number];
 
 const dayBucket = (days: number): '0-2' | '3-7' | '8-14' | '15+' =>
   days <= 2 ? '0-2' : days <= 7 ? '3-7' : days <= 14 ? '8-14' : '15+';
 
-/** DEV-03 bucket for an open task, by days past deadline. */
+/** DEV-03 bucket for an open task, by days past deadline (15 to 30 and over 30 split). */
 export function ageingBucket(t: MetricTask, ctx: MetricContext): AgeingBucket {
   if (!t.deadline) return 'noDeadline';
   if (t.deadline >= ctx.now) return 'notDue';
-  return dayBucket(Math.max(0, ageingDays(t, ctx) ?? 0));
+  const days = Math.max(0, ageingDays(t, ctx) ?? 0);
+  if (days > 30) return '30+';
+  if (days >= 15) return '15-30';
+  return dayBucket(days) as AgeingBucket;
 }
 
 export const ISSUE_AGE_BUCKETS = ['0-2', '3-7', '8-14', '15+'] as const;
@@ -398,7 +430,7 @@ export function speedRanking(
  */
 export function stageMatrix(
   tasks: readonly MetricTask[],
-  { tag, by = 'assignee' }: { tag?: string; by?: GroupBy } = {},
+  { tag, by = 'assignee', ctx }: { tag?: string; by?: GroupBy; ctx?: MetricContext } = {},
 ) {
   const tagCounts = new Map<string, { value: string; count: number }>();
   for (const t of tasks) {
@@ -415,12 +447,17 @@ export function stageMatrix(
 
   const rows = [...groupBy(scoped, groupKey(by))]
     .map(([id, list]) => {
-      const cells = Object.fromEntries(STAGE_TITLES.map((s) => [s, 0])) as Record<
-        StageTitle,
-        number
-      >;
-      for (const t of list) if (t.stage) cells[t.stage]++;
-      return { id, total: list.length, cells };
+      const zero = () =>
+        Object.fromEntries(STAGE_TITLES.map((s) => [s, 0])) as Record<StageTitle, number>;
+      const cells = zero();
+      // Part of each cell that is overdue (only pending stages can be).
+      const overdue = zero();
+      for (const t of list) {
+        if (!t.stage) continue;
+        cells[t.stage]++;
+        if (ctx && isOverdue(t, ctx)) overdue[t.stage]++;
+      }
+      return { id, total: list.length, cells, overdue };
     })
     .sort((a, b) => b.total - a.total || a.id - b.id);
   const max = Math.max(0, ...rows.flatMap((r) => Object.values(r.cells)));

@@ -115,7 +115,11 @@ describe('per-task rules', () => {
     expect(ageingBucket(task({ deadline: new Date('2026-10-10T01:00:00Z') }), ctx)).toBe('0-2');
     expect(ageingBucket(task({ deadline: new Date('2026-10-05T06:00:00Z') }), ctx)).toBe('3-7');
     expect(ageingBucket(task({ deadline: new Date('2026-09-30T06:00:00Z') }), ctx)).toBe('8-14');
-    expect(ageingBucket(task({ deadline: new Date('2026-09-01T06:00:00Z') }), ctx)).toBe('15+');
+    // 15 to 30 days late, then over 30.
+    expect(ageingBucket(task({ deadline: new Date('2026-09-25T06:00:00Z') }), ctx)).toBe('15-30');
+    expect(ageingBucket(task({ deadline: new Date('2026-09-10T06:00:00Z') }), ctx)).toBe('15-30');
+    expect(ageingBucket(task({ deadline: new Date('2026-09-09T06:00:00Z') }), ctx)).toBe('30+');
+    expect(ageingBucket(task({ deadline: new Date('2026-09-01T06:00:00Z') }), ctx)).toBe('30+');
   });
 });
 
@@ -130,6 +134,16 @@ describe('selection', () => {
 
   it('development tab excludes issues, testers and tasks outside workgroups', () => {
     expect(devTasks(all, ctx).map((t) => t.id)).toEqual([101, 105]);
+  });
+
+  it('development tab scopes: dev, issues or all, Development department only', () => {
+    expect(devTasks(all, ctx, 'issues').map((t) => t.id)).toEqual([103]);
+    expect(devTasks(all, ctx, 'all').map((t) => t.id)).toEqual([101, 103, 105]);
+    // With the department list, someone outside Development (user 99) is left out.
+    const withOther = [...all, task({ id: 106, responsibleId: 99 })];
+    const devCtx = { ...ctx, developers: new Set([30]) };
+    expect(devTasks(withOther, devCtx, 'all').map((t) => t.id)).toEqual([101, 103, 105]);
+    expect(devTasks(withOther, ctx, 'all').map((t) => t.id)).toContain(106);
   });
 
   it('testing tasks = tagged testing/re-testing or assigned to a tester', () => {
@@ -233,6 +247,10 @@ describe('Development tab', () => {
     expect(m.rows).toEqual([expect.objectContaining({ id: 28, total: 1 })]);
     expect(m.rows[0]!.cells['In QA']).toBe(1);
     expect(m.tags).toEqual([{ value: 'API', count: 1 }]);
+    const late = task({ stage: 'In progress', deadline: new Date('2026-10-01T00:00:00Z') });
+    const withCtx = stageMatrix([late, task({ stage: 'In progress' })], { ctx });
+    expect(withCtx.rows[0]!.cells['In progress']).toBe(2);
+    expect(withCtx.rows[0]!.overdue['In progress']).toBe(1);
   });
 
   it('ranks by on-time % then average days early, min 3 tasks', () => {

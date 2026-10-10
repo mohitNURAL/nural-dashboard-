@@ -46,6 +46,11 @@ export interface MetricContext {
   tz: string;
   /** User IDs in the QA Testing department. */
   testers: ReadonlySet<number>;
+  /**
+   * User IDs in the Development department. When set, the Development tab only counts tasks
+   * assigned to them; when absent (older callers, tests), anyone but testers counts.
+   */
+  developers?: ReadonlySet<number>;
 }
 
 export interface Filters {

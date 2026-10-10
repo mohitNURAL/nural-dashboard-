@@ -1,11 +1,14 @@
 // DEV-05: tasks by stage and assignee (or project), heat-shaded by count; the tag toggle filters
-// the matrix.
+// the matrix. Each cell splits into not overdue and overdue (red); both open their tasks.
+import type { StageTitle } from '@nural/shared';
 import { useState } from 'react';
 import type { GroupBy } from '../../api/types';
 import { Actions, Card, GroupToggle } from '../../components/Card';
 import { SearchCombobox } from '../../components/SearchCombobox';
 import { useFocusRow } from '../filters/useFilters';
+import { CountButton } from '../../components/CountButton';
 import { useDevMatrix } from './api';
+import { rowParams, useDrill } from './drill';
 import { GROUP_LABEL, heatShade } from './format';
 
 export function StageMatrixCard({ className }: { className?: string }) {
@@ -13,6 +16,15 @@ export function StageMatrixCard({ className }: { className?: string }) {
   const [by, setBy] = useState<GroupBy>('assignee');
   const { data, isLoading } = useDevMatrix(tag, by);
   const focus = useFocusRow();
+  const drill = useDrill();
+  // The tag toggle narrows the drill-down too.
+  const tagParams: Record<string, string> = tag ? { tag } : {};
+  const open = (r: { id: number; name: string }, extra: Record<string, string>, what: string) =>
+    drill({
+      label: [r.name, what, tag].filter(Boolean).join(' · '),
+      preset: 'total',
+      params: { ...rowParams(by, r.id), ...tagParams, ...extra },
+    });
 
   return (
     <Card
@@ -79,26 +91,79 @@ export function StageMatrixCard({ className }: { className?: string }) {
                       {r.name}
                     </button>
                   </th>
-                  {data.stages.map((s) => {
-                    const n = r.cells[s.stage];
-                    return (
-                      <td
-                        key={s.stage}
-                        className="rounded px-1 py-1.5 text-center tabular-nums"
-                        style={heatShade(n, data.max)}
-                        title={`${r.name} · ${s.stage}: ${n}`}
-                      >
-                        {n || <span className="text-primary-soft-300">·</span>}
-                      </td>
-                    );
-                  })}
-                  <td className="px-2 py-1 text-right font-bold tabular-nums">{r.total}</td>
+                  {data.stages.map((s) => (
+                    <MatrixCell
+                      key={s.stage}
+                      stage={s.stage}
+                      n={r.cells[s.stage]}
+                      overdue={r.overdue[s.stage]}
+                      max={data.max}
+                      rowName={r.name}
+                      onOpen={(extra, what) => open(r, extra, what)}
+                    />
+                  ))}
+                  <td className="px-2 py-1 text-right font-bold">
+                    <CountButton n={r.total} onClick={() => open(r, {}, 'All stages')} />
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          <p className="mt-2 text-table text-text-muted">
+            Each cell: not overdue, then <span className="font-bold text-bad">overdue</span> in red.
+            Click a number to open those tasks.
+          </p>
         </div>
       )}
     </Card>
+  );
+}
+
+interface CellProps {
+  stage: StageTitle;
+  n: number;
+  overdue: number;
+  max: number;
+  rowName: string;
+  onOpen: (params: Record<string, string>, what: string) => void;
+}
+
+/** One stage x row cell: heat shade by count, split into not overdue and overdue. */
+function MatrixCell({ stage, n, overdue, max, rowName, onOpen }: CellProps) {
+  const onTime = n - overdue;
+  const shade = heatShade(n, max);
+  return (
+    <td
+      className="rounded px-1 py-1.5 text-center tabular-nums"
+      style={shade}
+      title={`${rowName} · ${stage}: ${n}${overdue ? ` (${overdue} overdue)` : ''}`}
+    >
+      {n === 0 ? (
+        <span className="text-primary-soft-300">·</span>
+      ) : (
+        <span className="inline-flex items-center gap-1">
+          {onTime > 0 && (
+            <button
+              type="button"
+              onClick={() =>
+                onOpen({ stage, overdue: 'false' }, overdue ? `${stage}, not overdue` : stage)
+              }
+              className="hover:underline"
+            >
+              {onTime}
+            </button>
+          )}
+          {overdue > 0 && (
+            <button
+              type="button"
+              onClick={() => onOpen({ stage, overdue: 'true' }, `${stage}, overdue`)}
+              className="rounded bg-bad px-1 font-bold text-white hover:bg-bad-dark"
+            >
+              {overdue}
+            </button>
+          )}
+        </span>
+      )}
+    </td>
   );
 }

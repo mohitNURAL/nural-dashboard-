@@ -97,7 +97,7 @@ export interface AssigneeRow extends Named {
   completedToday: number;
 }
 
-export const AGEING_BUCKETS = ['notDue', '0-2', '3-7', '8-14', '15+'] as const;
+export const AGEING_BUCKETS = ['notDue', '0-2', '3-7', '8-14', '15-30', '30+'] as const;
 export type AgeingBucket = (typeof AGEING_BUCKETS)[number];
 export type AgeingCounts = Record<AgeingBucket | 'noDeadline', number>;
 
@@ -129,7 +129,12 @@ export interface DevRanking {
 export interface DevMatrix {
   groupBy: GroupBy;
   stages: { stage: StageTitle; color: string }[];
-  rows: (Named & { total: number; cells: Record<StageTitle, number> })[];
+  rows: (Named & {
+    total: number;
+    cells: Record<StageTitle, number>;
+    /** Overdue part of each cell. */
+    overdue: Record<StageTitle, number>;
+  })[];
   max: number;
   tags: { value: string; count: number }[];
 }

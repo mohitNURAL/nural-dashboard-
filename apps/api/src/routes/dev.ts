@@ -1,4 +1,4 @@
-// Development tab endpoints (SRS 3, DEV-01..05).
+// Development tab endpoints (SRS 3, DEV-01..05). Every one takes `scope` (All / Dev / Issues).
 import {
   ageingByAssignee,
   applyFilters,
@@ -8,25 +8,27 @@ import {
   speedRanking,
   stageMatrix,
   STAGE_COLORS,
+  type DevScope,
   type GroupBy,
 } from '@nural/shared';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { DatasetProvider } from '../data/dataset';
 import { contextOf, person, project, withGroupNames, withPeople, type AppOptions } from './context';
-import { groupByParam, parseQuery } from './params';
+import { groupByParam, parseQuery, scopeParam } from './params';
 
 export function devRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts: AppOptions) {
   async function scope(query: unknown, extra?: z.ZodRawShape) {
-    const { query: q, filters } = parseQuery(query, extra);
+    const { query: q, filters } = parseQuery(query, { ...scopeParam, ...extra });
     const ds = await getDataset();
     const ctx = contextOf(ds, opts);
+    const sq = q as typeof q & { groupBy?: GroupBy; scope: DevScope };
     return {
-      q: q as typeof q & { groupBy?: GroupBy },
+      q: sq,
       filters,
       ds,
       ctx,
-      tasks: applyFilters(devTasks(ds.tasks, ctx), filters, ctx.tz),
+      tasks: applyFilters(devTasks(ds.tasks, ctx, sq.scope), filters, ctx.tz),
     };
   }
 
@@ -73,12 +75,12 @@ export function devRoutes(app: FastifyInstance, getDataset: DatasetProvider, opt
   });
 
   app.get('/api/dev/matrix', async (req) => {
-    const { ds, tasks, q } = await scope(req.query, {
+    const { ds, ctx, tasks, q } = await scope(req.query, {
       splitTag: z.string().min(1).optional(),
       ...groupByParam,
     });
     const by = q.groupBy ?? 'assignee';
-    const m = stageMatrix(tasks, { tag: (q as { splitTag?: string }).splitTag, by });
+    const m = stageMatrix(tasks, { tag: (q as { splitTag?: string }).splitTag, by, ctx });
     return {
       ...m,
       groupBy: by,

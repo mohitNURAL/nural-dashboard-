@@ -8,6 +8,7 @@ import {
   useQueryStates,
 } from 'nuqs';
 import { useCallback, useMemo } from 'react';
+import type { DevScope } from '@nural/shared';
 import { EMPTY_FILTERS, tabOnlyFacet, type FilterState, type Tab } from './toParams';
 
 const filterParsers = {
@@ -66,4 +67,15 @@ export function useFocusRow() {
     },
     [setFilters],
   );
+}
+
+const scopeParser = parseAsStringLiteral(['all', 'dev', 'issues'] as const).withDefault('all');
+
+/**
+ * Development tab switch: All, Dev or Issues (SRS DEV-00). Kept in the URL with the filters;
+ * "all" is the default and is left out of the URL.
+ */
+export function useDevScope() {
+  const [scope, setScope] = useQueryState('scope', scopeParser);
+  return [scope, (s: DevScope) => void setScope(s === 'all' ? null : s)] as const;
 }

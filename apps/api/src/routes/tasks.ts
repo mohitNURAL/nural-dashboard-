@@ -1,5 +1,7 @@
 // Task lists behind tiles and accordions (DEV-06..08, QA-08, QA-09) and the task drawer.
 import {
+  AGEING_BUCKETS,
+  ageingBucket,
   applyFilters,
   DEV_PRESETS,
   devTasks,
@@ -8,6 +10,9 @@ import {
   lastFiled,
   presetPredicate,
   reopenEvents,
+  isOverdue,
+  isPending,
+  STAGE_TITLES,
   testingTasks,
   type MetricTask,
 } from '@nural/shared';
@@ -15,7 +20,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { DatasetProvider } from '../data/dataset';
 import { contextOf, person, taskRow, type AppOptions } from './context';
-import { parseQuery } from './params';
+import { parseQuery, scopeParam } from './params';
 
 const SORTS = ['deadline', '-deadline', 'created', '-created', 'id', '-id'] as const;
 
@@ -26,6 +31,11 @@ const listParams = {
   sort: z.enum(SORTS).optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(200).default(50),
+  // Drill-downs from a clicked count: Kanban stage, overdue or not, ageing bucket.
+  stage: z.enum(STAGE_TITLES).optional(),
+  overdue: z.enum(['true', 'false']).optional(),
+  ageing: z.enum(AGEING_BUCKETS).optional(),
+  ...scopeParam,
 };
 
 const time = (d: Date | null) => d?.getTime() ?? null;
@@ -64,8 +74,17 @@ export function taskRoutes(
         ? issues(ds.tasks)
         : query.kind === 'testing'
           ? testingTasks(ds.tasks, ctx)
-          : devTasks(ds.tasks, ctx);
+          : devTasks(ds.tasks, ctx, query.scope);
     let list = applyFilters(base, filters, ctx.tz);
+    if (query.stage) list = list.filter((t) => t.stage === query.stage);
+    if (query.overdue) {
+      const want = query.overdue === 'true';
+      list = list.filter((t) => isOverdue(t, ctx) === want);
+    }
+    // Ageing buckets describe open (pending) tasks only, as in DEV-03.
+    if (query.ageing) {
+      list = list.filter((t) => isPending(t) && ageingBucket(t, ctx) === query.ageing);
+    }
     if (query.preset) {
       const last = query.preset === 'lastFiled' ? lastFiled(list, ctx)?.date : undefined;
       list = list.filter(

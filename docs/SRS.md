@@ -94,6 +94,14 @@ The Development tab answers three questions for the PM and team leads: how much 
 - Filters are kept in the URL so a filtered view can be shared as a link.
 - A "Live" indicator shows the time of the last change received from Bitrix24.
 
+**DEV-00a All / Dev / Issues switch (top of the Development tab)**
+
+- Three toggles: **All** (default), **Dev** and **Issues**. Dev = tasks (not tagged bug or feedback); Issues = bugs and feedback; All = both.
+- Whatever the switch, the tab only counts work assigned to people in the **Development department** (Software Development tree, read from the company structure). Tasks of QA Testing or other departments are left out, and so is work outside a workgroup.
+- Every tile, card, drop-down option and task list on the tab follows the switch. It is kept in the URL (`scope=dev|issues`; All is the default and is left out).
+
+**Drill-down from any count.** Every count on the Development tab opens the "All tasks" accordion (DEV-08) narrowed to exactly that count, and the accordion title takes the count's label, for example "All tasks: Neha Gautam · Pending" or "All tasks: Umang Singh · To do, overdue". This covers the tiles, every number and the totals row of the DEV-02 and DEV-03 tables, the bars of the DEV-02 and DEV-03 charts, and each part of a DEV-05 cell. "Show all tasks" clears it. Clicking a name (not a number) still sets the Assignee or Project filter.
+
 **DEV-01 Summary tiles (one row of 6)**
 
 | # | Tile | Counts |
@@ -107,7 +115,7 @@ The Development tab answers three questions for the PM and team leads: how much 
 
 Clicking a tile opens the "All tasks" accordion pre-filtered to that tile. The former "Completed (sent to QA)" tile was removed (2026-10-10) as not relevant to the Development tab; the sent-to-QA stage group still feeds the Done column of DEV-02 and the speed ranking.
 
-**Assignee / Project switch.** The breakdown cards DEV-02, DEV-03 (table view), DEV-05, QA-02, QA-04 (table view) and QA-05 each have an Assignee / Project switch in their header. "Assignee" (the default) gives one row or bar per person; "Project" gives one per workgroup, with the same columns and counts. Clicking a row or bar then sets the Assignee or the Project filter. Cards that are about people by nature (DEV-04 speed ranking, QA-06 testing workload, QA-07 retest by creator) have no switch.
+**Assignee / Project switch.** The breakdown cards DEV-02, DEV-03 (chart and table), DEV-05, QA-02, QA-04 (table view) and QA-05 each have an Assignee / Project switch in their header. "Assignee" (the default) gives one row or bar per person; "Project" gives one per workgroup, with the same columns and counts. Clicking a row or bar then sets the Assignee or the Project filter. Cards that are about people by nature (DEV-04 speed ranking, QA-06 testing workload, QA-07 retest by creator) have no switch.
 
 **DEV-02 Assignee-wise (or project-wise) table and chart**
 
@@ -117,7 +125,9 @@ Clicking a tile opens the "All tasks" accordion pre-filtered to that tile. The f
 
 **DEV-03 Task ageing**
 
-- Ageing buckets for open tasks by days past deadline: Not due, 0 to 2, 3 to 7, 8 to 14, over 14 days. Shown as a bar per bucket and as a table per assignee or per project.
+- Ageing buckets for open (pending) tasks by days past deadline: Not due, 0 to 2, 3 to 7, 8 to 14, 15 to 30, over 30 days, plus No deadline.
+- Chart: one stacked bar per assignee (or project), one segment per bucket; above it, the total of each bucket. Table: bucket counts per assignee (or project) with a totals row.
+- Every count, bar segment and bucket total opens those tasks (drill-down). On Hold tasks are pending, so they appear in the buckets, but they are not Overdue (open question 6).
 
 **DEV-04 Speed ranking**
 
@@ -126,6 +136,7 @@ Clicking a tile opens the "All tasks" accordion pre-filtered to that tile. The f
 **DEV-05 Stage x assignee x tag counts**
 
 - A matrix: rows are assignees (or projects), columns are the 11 Kanban stages, each cell is a count; a tag toggle above it splits or filters by tag (new development, client feedback, testing and so on). Heat shading by count.
+- Each cell is split into not overdue and **overdue** (shown in red). Only pending stages can have overdue tasks. Both parts, and the row total, open those tasks (drill-down, including the selected tag).
 
 **DEV-06 Accordion: Tasks due today** (closed by default)
 
@@ -197,7 +208,7 @@ A task with stage ID 0 (Bitrix24's default for a task never moved on the board) 
 
 - Issue = a task tagged `bug` or `feedback` (case-insensitive). Every other task in a development workgroup is a Task.
 - An issue is linked to a task when its Parent task is set, or when the task is in its Related tasks. Otherwise it is independent and counts against its assignee.
-- Development tiles count Tasks only; QA tiles count Issues only.
+- The Development tab counts Tasks, Issues or both, by its All / Dev / Issues switch (DEV-00a), for the Development department only. QA tiles count Issues only.
 
 **Formulas**
 
@@ -208,7 +219,7 @@ A task with stage ID 0 (Bitrix24's default for a task never moved on the board) 
 | Completed / Done today | Entered QA Backlog today (first entry), from the stage-move log; fallback: Bitrix24 closed date = today |
 | Open issue | Issue not in Done or LIVE |
 | Resolved % | Issues in Done or LIVE / all issues x 100 |
-| Ageing (open task) | Today minus deadline, in days; negative = not yet due |
+| Ageing (open task) | Today minus deadline, in days; negative = not yet due. Buckets: Not due, 0-2, 3-7, 8-14, 15-30, over 30, No deadline |
 | Age (open issue) | Today minus created date, in days |
 | Last filed | Max created date of issues; count = issues created on that date |
 
@@ -332,7 +343,7 @@ SSE is chosen over WebSocket because the browser only receives; filters are sent
 2. **Sync worker**: takes events, fetches the full task through the inbound webhook (batched), compares with the stored snapshot, writes the stage-move log, and publishes a change message.
 3. **Reconciler**: every 10 minutes, pulls tasks changed since the last run, to recover any missed webhook. Nightly full resync of open tasks.
 4. **Directory sync**: hourly, users, departments and workgroups, and the stage list of each workgroup.
-5. **Metrics API**: `GET /api/dev/summary`, `/api/dev/assignees`, `/api/dev/ranking`, `/api/dev/matrix`, `/api/tasks`, `/api/qa/summary`, `/api/qa/issues`, `/api/qa/testing`, `/api/filters/options`, all taking the same filter parameters. `/api/dev/assignees`, `/api/dev/matrix` and `/api/qa/issues` also take `groupBy=assignee|project` for the Assignee / Project switch.
+5. **Metrics API**: `GET /api/dev/summary`, `/api/dev/assignees`, `/api/dev/ranking`, `/api/dev/matrix`, `/api/tasks`, `/api/qa/summary`, `/api/qa/issues`, `/api/qa/testing`, `/api/filters/options`, all taking the same filter parameters. `/api/dev/assignees`, `/api/dev/matrix` and `/api/qa/issues` also take `groupBy=assignee|project` for the Assignee / Project switch. The Development endpoints, `/api/filters/options?tab=dev` and `/api/tasks?kind=tasks` take `scope=all|dev|issues` (API default `dev`). `/api/tasks` also takes `stage`, `overdue=true|false` and `ageing=<bucket>` for drill-downs.
 6. **SSE endpoint** `GET /api/stream`: sends `task.changed` with the task ID, stage group and project, so the browser refetches only the queries that include it.
 
 **Data model (PostgreSQL)**
@@ -514,7 +525,7 @@ Each question has the default this SRS already assumes; a one-word answer is eno
 | 2 | "Done today": entered QA Backlog today, or entered Done today? | Entered QA Backlog today (Complete pressed) |
 | 3 | Exact tag names for issues and testing? | `bug`, `feedback`,- for developers as assignee  created by testers.`t``e``s``t``i``n``g`, `r``e``-``t``e``s``t``i``n``g`, and other task as well such as Data creation/ Manual creation video creation etc. for testers as assignee case-in |
 | 4 | Old stage moves: rebuild from Bitrix24 history, or count rework and ranking from go-live? | Rebuild from history where Bitrix24 recorded it, otherwise from go-live |
-| 5 | Should Development "Total tasks" include bugs and feedback? | No; issues are counted on the QA tab only |
+| 5 | Should Development "Total tasks" include bugs and feedback? | Resolved: the All / Dev / Issues switch (DEV-00a) chooses; All is the default |
 | 6 | Is a task in On Hold overdue when its deadline passes? | No; On Hold is pending but left out of Overdue |
 | 7 | What can developers see? | Everyone sees all numbers (read-only); restrict later if needed |
 | 8 | Figma access: the file could not be opened from here | Resolved: section 6 now uses the Figma variables |

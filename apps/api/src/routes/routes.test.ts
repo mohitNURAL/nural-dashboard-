@@ -53,6 +53,7 @@ const dataset: Dataset = {
   tasks,
   byId: indexTasks(tasks),
   testers: new Set([14]),
+  developers: new Set([30, 28, 10]),
   users: new Map([
     [
       30,
@@ -135,6 +136,32 @@ describe('metrics API', () => {
     const m = await get('/api/dev/matrix?splitTag=API');
     expect(m.body.rows).toHaveLength(1);
     expect(m.body.stages[0]).toEqual({ stage: 'To do', color: '#00C4FB' });
+  });
+
+  it('scopes the Development tab to All, Dev or Issues', async () => {
+    expect((await get('/api/dev/summary')).body.total).toBe(3);
+    expect((await get('/api/dev/summary?scope=dev')).body.total).toBe(3);
+    expect((await get('/api/dev/summary?scope=issues')).body.total).toBe(2);
+    expect((await get('/api/dev/summary?scope=all')).body.total).toBe(5);
+    const list = await get('/api/tasks?scope=issues&preset=total');
+    expect(list.body.rows.map((r: { id: number }) => r.id).sort()).toEqual([5, 6]);
+    expect((await get('/api/dev/summary?scope=everything')).status).toBe(400);
+  });
+
+  it('drills task lists down by stage, overdue and ageing bucket', async () => {
+    const ids = async (q: string) =>
+      (await get(`/api/tasks?scope=all&preset=total&${q}`)).body.rows
+        .map((r: { id: number }) => r.id)
+        .sort();
+    expect(await ids('stage=To%20do')).toEqual([1]);
+    expect(await ids('stage=To%20do&overdue=true')).toEqual([1]);
+    expect(await ids('stage=To%20do&overdue=false')).toEqual([]);
+    expect(await ids('ageing=0-2')).toEqual([1]);
+    expect(await ids('ageing=notDue')).toEqual([]);
+    const m = await get('/api/dev/matrix?scope=all');
+    const neha = m.body.rows.find((r: { id: number }) => r.id === 30);
+    expect(neha.overdue['To do']).toBe(1);
+    expect(neha.cells['To do']).toBe(1);
   });
 
   it('groups breakdowns by project with groupBy=project', async () => {

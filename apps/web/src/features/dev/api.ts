@@ -3,11 +3,13 @@ import { useMemo } from 'react';
 import { useApi, withGroupBy } from '../../api/queries';
 import type { DevAssignees, DevMatrix, DevRanking, DevSummary, GroupBy } from '../../api/types';
 import { toParams } from '../filters/toParams';
-import { useFilters } from '../filters/useFilters';
+import { useDevScope, useFilters } from '../filters/useFilters';
 
+/** Filter bar params plus the All / Dev / Issues switch, sent on every Development request. */
 export function useDevParams() {
   const { filters } = useFilters();
-  return useMemo(() => toParams('dev', filters), [filters]);
+  const [scope] = useDevScope();
+  return useMemo(() => ({ ...toParams('dev', filters), scope }), [filters, scope]);
 }
 
 export const useDevSummary = () => useApi<DevSummary>('/api/dev/summary', useDevParams());

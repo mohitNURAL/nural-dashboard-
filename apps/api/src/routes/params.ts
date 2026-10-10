@@ -1,5 +1,5 @@
 // Query parameters shared by every metrics endpoint (DEV-00 filter bar).
-import { GROUP_BY, type Filters } from '@nural/shared';
+import { DEV_SCOPES, GROUP_BY, type Filters } from '@nural/shared';
 import { z } from 'zod';
 
 /** Accepts `a=1,2`, `a=1&a=2` or nothing. */
@@ -52,3 +52,6 @@ export function parseQuery<E extends z.ZodRawShape>(query: unknown, extra?: E) {
 
 /** Assignee / Project switch on the breakdown cards (DEV-02, 03, 05; QA-02, 04, 05). */
 export const groupByParam = { groupBy: z.enum(GROUP_BY).default('assignee') };
+
+/** Development tab switch: All, Dev or Issues (default dev keeps older links working). */
+export const scopeParam = { scope: z.enum(DEV_SCOPES).default('dev') };

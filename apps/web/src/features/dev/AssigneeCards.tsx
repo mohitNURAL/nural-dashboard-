@@ -1,17 +1,31 @@
 // DEV-02: assignee-wise (or project-wise) table, sortable with a totals row, and the Pending vs
-// Done chart beside it. Clicking a name sets the Assignee or Project filter.
+// Done chart beside it. A name sets the Assignee or Project filter; a count or a bar opens the
+// tasks behind it.
 import { createColumnHelper } from '@tanstack/react-table';
+import type { DevPreset } from '@nural/shared';
 import { useMemo, useState } from 'react';
 import type { AssigneeRow, GroupBy } from '../../api/types';
 import { Card, GroupToggle } from '../../components/Card';
 import { Chart } from '../../components/Chart';
+import { CountButton } from '../../components/CountButton';
 import { token } from '../../components/chartTheme';
 import { DataTable, type Columns } from '../../components/DataTable';
 import { useFocusRow } from '../filters/useFilters';
 import { useDevAssignees } from './api';
+import { rowParams, useDrill } from './drill';
 import { GROUP_LABEL } from './format';
 
 const col = createColumnHelper<AssigneeRow>();
+
+type CountKey = 'total' | 'pending' | 'done' | 'dueToday' | 'completedToday';
+/** Which task list each column opens ("Done" = sent to QA). */
+const COUNT_PRESET: Record<CountKey, DevPreset> = {
+  total: 'total',
+  pending: 'pending',
+  done: 'completed',
+  dueToday: 'dueToday',
+  completedToday: 'doneToday',
+};
 const num = { meta: { align: 'right' } } as const;
 const CHART_ROWS = 15;
 
@@ -20,39 +34,59 @@ export function AssigneeTableCard({ className }: { className?: string }) {
   const { data, isLoading } = useDevAssignees(by);
   const focus = useFocusRow();
 
-  const columns = useMemo(
-    () =>
-      [
-        col.accessor('name', {
-          header: GROUP_LABEL[by],
-          cell: (c) => (
-            <button
-              type="button"
-              title={`Show only this ${by}`}
-              onClick={() => focus(by, c.row.original.id)}
-              className="text-left font-bold text-primary-dark hover:text-primary hover:underline"
-            >
-              {c.getValue()}
-            </button>
-          ),
-          footer: 'Total',
-        }),
-        col.accessor('total', { header: 'Total', ...num, footer: () => data?.totals.total }),
-        col.accessor('pending', { header: 'Pending', ...num, footer: () => data?.totals.pending }),
-        col.accessor('done', { header: 'Done', ...num, footer: () => data?.totals.done }),
-        col.accessor('dueToday', {
-          header: 'Due today',
-          ...num,
-          footer: () => data?.totals.dueToday,
-        }),
-        col.accessor('completedToday', {
-          header: 'Comp. today',
-          ...num,
-          footer: () => data?.totals.completedToday,
-        }),
-      ] as Columns<AssigneeRow>,
-    [by, data, focus],
-  );
+  const drill = useDrill();
+
+  const columns = useMemo(() => {
+    // Each count opens "All tasks" for that row and column; the totals row for the column.
+    const count = (key: CountKey, header: string) =>
+      col.accessor(key, {
+        header,
+        ...num,
+        cell: (c) => {
+          const r = c.row.original;
+          return (
+            <CountButton
+              n={c.getValue()}
+              title={`Open ${r.name}: ${header}`}
+              onClick={() =>
+                drill({
+                  label: `${r.name} · ${header}`,
+                  preset: COUNT_PRESET[key],
+                  params: rowParams(by, r.id),
+                })
+              }
+            />
+          );
+        },
+        footer: () => (
+          <CountButton
+            n={data?.totals[key]}
+            onClick={() => drill({ label: header, preset: COUNT_PRESET[key] })}
+          />
+        ),
+      });
+    return [
+      col.accessor('name', {
+        header: GROUP_LABEL[by],
+        cell: (c) => (
+          <button
+            type="button"
+            title={`Show only this ${by}`}
+            onClick={() => focus(by, c.row.original.id)}
+            className="text-left font-bold text-primary-dark hover:text-primary hover:underline"
+          >
+            {c.getValue()}
+          </button>
+        ),
+        footer: 'Total',
+      }),
+      count('total', 'Total'),
+      count('pending', 'Pending'),
+      count('done', 'Done'),
+      count('dueToday', 'Due today'),
+      count('completedToday', 'Comp. today'),
+    ] as Columns<AssigneeRow>;
+  }, [by, data, drill, focus]);
 
   return (
     <Card
@@ -78,7 +112,7 @@ export function AssigneeTableCard({ className }: { className?: string }) {
 export function PendingDoneCard({ className }: { className?: string }) {
   const [by, setBy] = useState<GroupBy>('assignee');
   const { data, isLoading } = useDevAssignees(by);
-  const focus = useFocusRow();
+  const drill = useDrill();
   // API rows are sorted by total; ECharts draws the first category at the bottom.
   const rows = useMemo(() => (data?.rows ?? []).slice(0, CHART_ROWS).reverse(), [data]);
 
@@ -95,7 +129,13 @@ export function PendingDoneCard({ className }: { className?: string }) {
         height={Math.max(160, rows.length * 22 + 50)}
         onClick={(p) => {
           const row = rows[p.dataIndex];
-          if (row) focus(by, row.id);
+          if (!row) return;
+          const pending = p.seriesName === 'Pending';
+          drill({
+            label: `${row.name} · ${pending ? 'Pending' : 'Done'}`,
+            preset: pending ? 'pending' : 'completed',
+            params: rowParams(by, row.id),
+          });
         }}
         option={{
           grid: { left: 8, right: 16, top: 8, bottom: 28, containLabel: true },

@@ -41,5 +41,6 @@ export interface FilterOptionsResponse {
   issueTypes: { value: IssueType; count: number }[];
 }
 
-export const useFilterOptions = (tab: Tab, f: FilterState) =>
-  useApi<FilterOptionsResponse>('/api/filters/options', { tab, ...toParams(tab, f) });
+/** `extra` carries tab-specific params, e.g. the Development tab's scope. */
+export const useFilterOptions = (tab: Tab, f: FilterState, extra: Record<string, string> = {}) =>
+  useApi<FilterOptionsResponse>('/api/filters/options', { tab, ...toParams(tab, f), ...extra });

@@ -24,6 +24,7 @@ export const contextOf = (ds: Dataset, opts: AppOptions): MetricContext => ({
   now: opts.now?.() ?? new Date(),
   tz: opts.tz,
   testers: ds.testers,
+  developers: ds.developers,
 });
 
 export interface PersonRef {

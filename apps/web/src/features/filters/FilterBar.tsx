@@ -4,13 +4,15 @@ import { SearchCombobox } from '../../components/SearchCombobox';
 import { useFilterOptions } from '../../api/queries';
 import { DateRangePicker } from './DateRangePicker';
 import { hasFilters, type Tab } from './toParams';
-import { useFilters } from './useFilters';
+import { useDevScope, useFilters } from './useFilters';
 
 const ISSUE_TYPE_LABEL = { bug: 'Bug', feedback: 'Feedback' } as const;
 
 export function FilterBar({ tab }: { tab: Tab }) {
   const { filters, setFilters, reset } = useFilters();
-  const { data, isLoading } = useFilterOptions(tab, filters);
+  const [scope] = useDevScope();
+  // Development options follow its All / Dev / Issues switch.
+  const { data, isLoading } = useFilterOptions(tab, filters, tab === 'dev' ? { scope } : {});
   const ids = (v: number[]) => v.map(String);
   const nums = (v: string[]) => v.map(Number);
 

@@ -5,7 +5,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { DatasetProvider } from '../data/dataset';
 import { contextOf, person, project, type AppOptions } from './context';
-import { parseQuery } from './params';
+import { parseQuery, scopeParam } from './params';
 
 const GROUP_ORDER = { Development: 0, Testing: 1, Other: 2 } as const;
 
@@ -13,6 +13,7 @@ export function filterRoutes(app: FastifyInstance, getDataset: DatasetProvider, 
   app.get('/api/filters/options', async (req) => {
     const { query, filters } = parseQuery(req.query, {
       tab: z.enum(['dev', 'qa']).default('dev'),
+      ...scopeParam,
     });
     const ds = await getDataset();
     const ctx = contextOf(ds, opts);
@@ -20,7 +21,7 @@ export function filterRoutes(app: FastifyInstance, getDataset: DatasetProvider, 
     const universe =
       query.tab === 'qa'
         ? [...issues(ds.tasks), ...testingTasks(ds.tasks, ctx)]
-        : devTasks(ds.tasks, ctx);
+        : devTasks(ds.tasks, ctx, query.scope);
     const o = filterOptions(universe, filters, ctx.tz);
     return {
       projects: o.projects
