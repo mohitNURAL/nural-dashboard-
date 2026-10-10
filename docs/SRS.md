@@ -226,7 +226,7 @@ A task with stage ID 0 (Bitrix24's default for a task never moved on the board) 
 | --- | --- |
 | Overdue | Stage group = Pending AND deadline < now |
 | Due today | Deadline date = today (Asia/Kolkata), any stage group except Deployed |
-| Completed / Done today | Entered QA Backlog today (first entry), from the stage-move log; fallback: Bitrix24 closed date = today |
+| Completed / Done today | Entered QA Backlog today (first entry), from the stage-move log. A task whose history skips QA Backlog (e.g. a bulk move straight to Done or LIVE) is not completed. Only a task with no recorded stage moves falls back to its Bitrix24 closed date. Comp. yesterday uses the same rule for yesterday (APP_TIMEZONE) |
 | Open issue | Issue not in Done or LIVE |
 | Resolved % | Issues in Done or LIVE / all issues x 100 |
 | Ageing (open task) | Today minus deadline, in days; negative = not yet due. Buckets: Not due, 0-2, 3-7, 8-14, 15-30, over 30, No deadline |

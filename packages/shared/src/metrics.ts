@@ -4,7 +4,6 @@ import {
   DEPLOYED_STAGE,
   isReworkMove,
   READY_FOR_DEPLOYMENT_STAGE,
-  SENT_TO_QA_STAGES,
   STAGE_TITLES,
   stageGroupOf,
   type StageGroup,
@@ -148,12 +147,15 @@ export const isDeployed = (t: MetricTask) => t.stage === DEPLOYED_STAGE;
 export const isOpenIssue = (t: MetricTask) => !isReady(t) && !isDeployed(t);
 
 /**
- * When the task was completed: first move into any Sent-to-QA stage (Complete pressed),
- * else the Bitrix24 closed date. Many boards skip QA Backlog, hence "any" stage.
+ * When the task was completed (SRS 5): its first move into QA Backlog (the developer pressed
+ * Complete). Only a task with no recorded stage moves at all falls back to its Bitrix24 closed
+ * date; one whose history skips QA Backlog (e.g. a bulk clean-up straight to Done) is not a
+ * completion (changed 2026-10-10; it used to accept any sent-to-QA stage).
  */
 export function completedAt(t: MetricTask): Date | null {
-  const first = t.events.find((e) => e.to && SENT_TO_QA_STAGES.includes(e.to));
-  return first?.at ?? t.closedAt ?? null;
+  const first = t.events.find((e) => e.to === 'QA Backlog');
+  if (first) return first.at;
+  return t.events.length === 0 ? t.closedAt : null;
 }
 
 /** Pending (except On Hold, open question 6) with the deadline passed. */

@@ -102,7 +102,13 @@ describe('per-task rules', () => {
     ).toBe(false);
   });
 
-  it('completedAt = first move into any sent-to-QA stage, else closed date', () => {
+  it('completedAt = first move into QA Backlog; closed date only without any stage history', () => {
+    // A bulk clean-up straight to Done (closed the same day) is not a completion.
+    const cleanup = task({
+      events: [ev('To do', 'Done', '2026-10-09T05:00:00Z')],
+      closedAt: new Date('2026-10-09T05:00:00Z'),
+    });
+    expect(completedAt(cleanup)).toBeNull();
     const t = task({
       events: [
         ev('To do', 'In progress', '2026-10-02T05:00:00Z'),
@@ -112,7 +118,8 @@ describe('per-task rules', () => {
       ],
       closedAt: new Date('2026-10-07T05:00:00Z'),
     });
-    expect(completedAt(t)?.toISOString()).toBe('2026-10-03T05:00:00.000Z');
+    // The In progress -> Done jump on 3 Oct is not a completion; QA Backlog on 6 Oct is.
+    expect(completedAt(t)?.toISOString()).toBe('2026-10-06T05:00:00.000Z');
     expect(completedAt(task({ closedAt: new Date('2026-10-07T05:00:00Z') }))?.toISOString()).toBe(
       '2026-10-07T05:00:00.000Z',
     );
