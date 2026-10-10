@@ -212,6 +212,8 @@ interface AlertBase {
   person: Person;
   projectId: number;
   project: { id: number; name: string } | null;
+  /** The project's task board in Bitrix24. */
+  boardUrl: string | null;
   count: number;
   oldestDays: number;
 }

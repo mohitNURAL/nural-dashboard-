@@ -1,6 +1,8 @@
 // Header alerts (top bar, right): overdue tasks per assignee and project, and tasks more than
 // N days in a stage other than LIVE. Work waiting in QA Backlog or In QA names the tester who
-// filed it, or the QA lead. Clicking an alert opens those tasks on the Development tab.
+// filed it, or the QA lead. Clicking an alert opens those tasks on the Development tab; its
+// Bitrix24 link opens the project's board there, where the work is fixed (the alert then clears
+// on the next sync; the dashboard itself never writes to Bitrix24).
 import { STAGE_COLORS } from '@nural/shared';
 import * as Popover from '@radix-ui/react-popover';
 import clsx from 'clsx';
@@ -8,7 +10,8 @@ import { useState } from 'react';
 import { useApi } from '../api/queries';
 import type { AlertRole, AlertsResponse } from '../api/types';
 import { useDrill, type Drill } from '../features/dev/drill';
-import type { Tab } from '../features/filters/toParams';
+import { EMPTY_FILTERS, type Tab } from '../features/filters/toParams';
+import { useDevScope, useFilters } from '../features/filters/useFilters';
 import { ViewToggle } from './Card';
 
 const ROLE_NOTE: Record<AlertRole, string | null> = {
@@ -26,9 +29,22 @@ export function AlertsBell({ onTab }: { onTab: (t: Tab) => void }) {
   const [list, setList] = useState<'overdue' | 'stuck'>('overdue');
   const total = data?.total ?? 0;
 
-  const go = (d: Drill) => {
+  const { setFilters } = useFilters();
+  const [, setScope] = useDevScope();
+
+  /**
+   * Go to the alert: the filter bar is set to its project (and assignee, when the alert names
+   * the assignee), the switch to All, and "All tasks" opens with exactly the alert's tasks.
+   */
+  const go = (d: Drill, projectId: number, assigneeId: number | null) => {
     setOpen(false);
     onTab('dev');
+    setScope('all');
+    setFilters({
+      ...EMPTY_FILTERS,
+      project: projectId ? [projectId] : [],
+      assignee: assigneeId ? [assigneeId] : [],
+    });
     drill({ ...d, replaceFilters: true });
   };
 
@@ -57,6 +73,9 @@ export function AlertsBell({ onTab }: { onTab: (t: Tab) => void }) {
         <Popover.Content
           align="end"
           sideOffset={8}
+          // Returning focus to the bell would scroll the page back to the top, away from the
+          // task list an alert just opened.
+          onCloseAutoFocus={(e) => e.preventDefault()}
           className="z-50 flex max-h-[75vh] w-[440px] max-w-[calc(100vw-32px)] flex-col rounded-card border border-border bg-surface text-text shadow-pop"
         >
           <header className="flex items-center justify-between gap-3 border-b border-border p-3">
@@ -95,16 +114,21 @@ export function AlertsBell({ onTab }: { onTab: (t: Tab) => void }) {
                   count={a.count}
                   what="overdue"
                   detail={`most overdue ${days(a.oldestDays)}`}
+                  boardUrl={a.boardUrl}
                   onClick={() =>
-                    go({
-                      label: `${a.person.name} · ${a.project?.name ?? 'No project'} · overdue`,
-                      preset: 'overdue',
-                      params: {
-                        scope: 'all',
-                        assignee: String(a.personId),
-                        project: String(a.projectId),
+                    go(
+                      {
+                        label: `${a.person.name} · ${a.project?.name ?? 'No project'} · overdue`,
+                        preset: 'overdue',
+                        params: {
+                          scope: 'all',
+                          assignee: String(a.personId),
+                          project: String(a.projectId),
+                        },
                       },
-                    })
+                      a.projectId,
+                      a.personId,
+                    )
                   }
                 />
               ))}
@@ -120,18 +144,23 @@ export function AlertsBell({ onTab }: { onTab: (t: Tab) => void }) {
                   what={a.stage}
                   stageColor={STAGE_COLORS[a.stage]}
                   detail={`longest ${days(a.oldestDays)} in ${a.stage}`}
+                  boardUrl={a.boardUrl}
                   onClick={() =>
-                    go({
-                      label: `${a.person.name} · ${a.project?.name ?? 'No project'} · ${a.stage} over ${days(data.stuckDays)}`,
-                      preset: 'total',
-                      params: {
-                        scope: 'all',
-                        owner: String(a.personId),
-                        project: String(a.projectId),
-                        stage: a.stage,
-                        stuck: 'true',
+                    go(
+                      {
+                        label: `${a.person.name} · ${a.project?.name ?? 'No project'} · ${a.stage} over ${days(data.stuckDays)}`,
+                        preset: 'total',
+                        params: {
+                          scope: 'all',
+                          owner: String(a.personId),
+                          project: String(a.projectId),
+                          stage: a.stage,
+                          stuck: 'true',
+                        },
                       },
-                    })
+                      a.projectId,
+                      a.role === 'assignee' ? a.personId : null,
+                    )
                   }
                 />
               ))}
@@ -150,6 +179,7 @@ function AlertRow({
   what,
   stageColor,
   detail,
+  boardUrl,
   onClick,
 }: {
   name: string;
@@ -159,14 +189,16 @@ function AlertRow({
   what: string;
   stageColor?: string;
   detail: string;
+  boardUrl: string | null;
   onClick: () => void;
 }) {
   return (
-    <li>
+    <li className="flex items-start gap-1 rounded-control hover:bg-primary-soft-100">
       <button
         type="button"
         onClick={onClick}
-        className="flex w-full items-start gap-3 rounded-control px-2 py-2 text-left hover:bg-primary-soft-100"
+        title="Show these tasks on the Development tab"
+        className="flex min-w-0 flex-1 items-start gap-3 rounded-control px-2 py-2 text-left"
       >
         <span
           className={clsx(
@@ -195,6 +227,25 @@ function AlertRow({
           </span>
         </span>
       </button>
+      {boardUrl && (
+        <a
+          href={boardUrl}
+          target="_blank"
+          rel="noreferrer"
+          title={`Open the ${project ?? ''} task board in Bitrix24 to clear this`}
+          className="mr-1 mt-2 inline-flex shrink-0 items-center gap-1 rounded-control border border-border bg-surface px-2 py-1 font-heading text-label font-bold text-primary hover:border-primary"
+        >
+          Bitrix24
+          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden>
+            <path
+              d="M4 1h5v5M9 1 4.5 5.5M7 6.5V9H1V3h2.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.3"
+            />
+          </svg>
+        </a>
+      )}
     </li>
   );
 }

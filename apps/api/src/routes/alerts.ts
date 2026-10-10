@@ -5,7 +5,7 @@
 import { alerts, devTasks, STUCK_DAYS } from '@nural/shared';
 import type { FastifyInstance } from 'fastify';
 import type { DatasetProvider } from '../data/dataset';
-import { contextOf, person, project, type AppOptions } from './context';
+import { boardUrl, contextOf, person, project, type AppOptions } from './context';
 
 export function alertRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts: AppOptions) {
   app.get('/api/alerts', async () => {
@@ -16,6 +16,8 @@ export function alertRoutes(app: FastifyInstance, getDataset: DatasetProvider, o
       ...r,
       person: person(ds, r.personId),
       project: project(ds, r.projectId),
+      // Fix it in Bitrix24; the alert clears here on the next sync.
+      boardUrl: boardUrl(ds, r.projectId),
     });
     return {
       stuckDays: STUCK_DAYS,

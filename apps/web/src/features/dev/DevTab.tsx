@@ -49,14 +49,15 @@ export function DevTab() {
   };
 
   // A drill from anywhere (this tab or the header bell) opens and scrolls to "All tasks".
+  const stopFollow = useRef<() => void>(undefined);
   useEffect(() => {
     if (!revealDrill) return;
     revealed();
     setOpen((prev) => ({ ...prev, all: true }));
-    requestAnimationFrame(() =>
-      allRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
-    );
+    stopFollow.current?.();
+    stopFollow.current = keepInView(allRef);
   }, [revealDrill, revealed]);
+  useEffect(() => () => stopFollow.current?.(), []);
 
   const onTile = (preset: DevPreset) => {
     if (preset === 'overdue') return reveal('overdue');
@@ -141,6 +142,30 @@ export function DevTab() {
     </div>
   );
 }
+
+const SETTLE_MS = 2500;
+
+/**
+ * Scrolls to the element and keeps it at the top while the page settles: a new filter makes
+ * the cards above reload and change height, which would push the list out of view. Stops after
+ * SETTLE_MS or as soon as the user scrolls.
+ */
+function keepInView(ref: React.RefObject<HTMLElement | null>) {
+  const snap = () => ref.current?.scrollIntoView({ block: 'start' });
+  const frame = requestAnimationFrame(snap);
+  const observer = new ResizeObserver(snap);
+  observer.observe(document.body);
+  const stop = () => {
+    observer.disconnect();
+    cancelAnimationFrame(frame);
+    for (const e of USER_SCROLL) window.removeEventListener(e, stop);
+    clearTimeout(timer);
+  };
+  const timer = setTimeout(stop, SETTLE_MS);
+  for (const e of USER_SCROLL) window.addEventListener(e, stop, { passive: true });
+  return stop;
+}
+const USER_SCROLL = ['wheel', 'touchstart', 'keydown', 'mousedown'] as const;
 
 const SCOPES: { value: DevScope; label: string; hint: string }[] = [
   { value: 'all', label: 'All', hint: 'Tasks and issues' },

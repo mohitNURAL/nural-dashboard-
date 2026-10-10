@@ -188,6 +188,7 @@ describe('metrics API', () => {
         count: 1,
         person: expect.objectContaining({ name: 'Neha Gautam' }),
         project: { id: 154, name: 'Support Tool' },
+        boardUrl: 'https://portal.example/workgroups/group/154/tasks/',
       }),
     ]);
     // Tasks 1 and 5 (To do since 1 Oct, In QA last changed 5 Oct) are stuck; LIVE task 3 is not.

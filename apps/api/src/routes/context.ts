@@ -59,6 +59,10 @@ export const withGroupNames = <R extends { id: number }>(ds: Dataset, rows: R[],
 
 const PRIORITY = ['low', 'normal', 'high'] as const;
 
+/** A workgroup's task board in Bitrix24, where alerts are acted on. */
+export const boardUrl = (ds: Dataset, groupId: number) =>
+  groupId ? `${ds.portalOrigin}/workgroups/group/${groupId}/tasks/` : null;
+
 export const taskUrl = (ds: Dataset, t: MetricTask) =>
   t.groupId
     ? `${ds.portalOrigin}/workgroups/group/${t.groupId}/tasks/task/view/${t.id}/`
