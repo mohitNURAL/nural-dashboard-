@@ -28,7 +28,7 @@ export function qaRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts
 
   app.get('/api/qa/summary', async (req) => {
     const { filters, ds, ctx } = await scope(req.query);
-    const list = applyFilters(issues(ds.tasks), filters, ctx.tz);
+    const list = applyFilters(issues(ds.tasks, ctx), filters, ctx.tz);
     return {
       ...qaSummary(list, ctx, ds.byId),
       // Tile breakdown: every QA tile split into Bug and Feedback.
@@ -43,7 +43,7 @@ export function qaRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts
     const by = query.groupBy;
     const ds = await getDataset();
     const ctx = contextOf(ds, opts);
-    const list = applyFilters(issues(ds.tasks), filters, ctx.tz);
+    const list = applyFilters(issues(ds.tasks, ctx), filters, ctx.tz);
     const age = issueAgeByAssignee(list, ctx, by);
     const byStage = issuesByStage(list);
     const retest = waitingForRetest(list, ctx);

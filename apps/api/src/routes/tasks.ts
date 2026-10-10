@@ -81,7 +81,7 @@ export function taskRoutes(
     const ctx = contextOf(ds, opts);
     const base =
       query.kind === 'issues'
-        ? issues(ds.tasks)
+        ? issues(ds.tasks, ctx)
         : query.kind === 'testing'
           ? testingTasks(ds.tasks, ctx)
           : devTasks(ds.tasks, ctx, query.scope);

@@ -3,7 +3,7 @@
 export const INFO = {
   // Development tiles (DEV-01)
   total:
-    'Dev = tasks of the Development department. Issues = every bug and feedback (same as the QA tab).',
+    'All tasks in the filters for the switch (Dev, Issues or both), Development department only.',
   pending:
     'Still with developers: To do, In progress, On Hold, Pushed to Master, Merged to Development, Pending for QA.',
   ready: 'In the Done stage, ready to go live.',
@@ -30,7 +30,8 @@ export const INFO = {
     'Overdue tasks, and tasks over 5 days in one stage (LIVE aside). QA stages name the tester or QA lead.',
 
   // QA tiles (QA-01)
-  qaTotal: 'Tasks tagged bug or feedback in the filters.',
+  qaTotal:
+    'Tasks tagged bug or feedback, assigned to the Development department (same as the Development tab).',
   qaOpen: 'Issues not in Done or LIVE, so also those waiting in QA. The ring shows the resolved %.',
   qaLastFiled: 'Latest day an issue was created, and how many that day.',
   qaRework:

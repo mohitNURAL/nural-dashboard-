@@ -20,7 +20,7 @@ export function filterRoutes(app: FastifyInstance, getDataset: DatasetProvider, 
     // QA tab covers issues plus testing work (QA-06); the Development tab its own tasks.
     const universe =
       query.tab === 'qa'
-        ? [...issues(ds.tasks), ...testingTasks(ds.tasks, ctx)]
+        ? [...issues(ds.tasks, ctx), ...testingTasks(ds.tasks, ctx)]
         : devTasks(ds.tasks, ctx, query.scope);
     const o = filterOptions(universe, filters, ctx.tz);
     return {

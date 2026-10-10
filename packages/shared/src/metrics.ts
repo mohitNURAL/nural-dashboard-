@@ -25,22 +25,33 @@ const isDeveloperTask = (t: MetricTask, ctx: MetricContext) =>
   ctx.developers ? ctx.developers.has(t.responsibleId) : !ctx.testers.has(t.responsibleId);
 
 /**
- * Development tab. `dev` = tasks (not bug or feedback) in a workgroup, assigned to the
- * Development department. `issues` = every bug and feedback, whoever it is assigned to, the same
- * set as the QA tab, so both tabs show the same issue count. `all` = both.
+ * Work the dashboard counts: in a workgroup and assigned to the Development department. Bugs and
+ * feedback are only ever assigned to developers, so this one rule picks the issues for both the
+ * Development and the QA tab, and their counts match.
+ */
+const isDevelopmentWork = (t: MetricTask, ctx: MetricContext) =>
+  t.groupId !== 0 && isDeveloperTask(t, ctx);
+
+/**
+ * Development tab, Development department only. `dev` = tasks (not bug or feedback), `issues` =
+ * bugs and feedback (the same set as the QA tab), `all` = both.
  */
 export const devTasks = (
   tasks: readonly MetricTask[],
   ctx: MetricContext,
   scope: DevScope = 'dev',
 ): MetricTask[] =>
-  tasks.filter((t) =>
-    t.isIssue ? scope !== 'dev' : scope !== 'issues' && t.groupId !== 0 && isDeveloperTask(t, ctx),
+  tasks.filter(
+    (t) => isDevelopmentWork(t, ctx) && (scope === 'all' || (scope === 'issues') === t.isIssue),
   );
 
-/** QA tab: tasks tagged bug or feedback (or Re-Open). */
-export const issues = (tasks: readonly MetricTask[]): MetricTask[] =>
-  tasks.filter((t) => t.isIssue);
+/**
+ * QA tab: tasks tagged bug or feedback (or Re-Open). With a context, only those assigned to the
+ * Development department (as on the Development tab, so both tabs' issue counts match); without
+ * one, every issue (used where the assignee does not matter, e.g. linked issues).
+ */
+export const issues = (tasks: readonly MetricTask[], ctx?: MetricContext): MetricTask[] =>
+  tasks.filter((t) => t.isIssue && (!ctx || isDevelopmentWork(t, ctx)));
 
 /** QA-06: tagged testing / re-testing, or assigned to the QA Testing department. */
 export const testingTasks = (tasks: readonly MetricTask[], ctx: MetricContext): MetricTask[] =>
