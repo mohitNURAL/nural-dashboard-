@@ -20,6 +20,10 @@ export const TASK_SELECT = [
   'CHANGED_DATE',
   'PARENT_ID',
   'TAGS',
+  // KPI tab (SRS 13.2): planned start / end and when the task was first started.
+  'START_DATE_PLAN',
+  'END_DATE_PLAN',
+  'DATE_START',
 ];
 
 export interface BitrixTask {
@@ -40,6 +44,9 @@ export interface BitrixTask {
   /** Only on tasks.task.get. */
   relatedTasks?: (string | number)[] | Record<string, unknown> | null;
   changedBy?: string | null;
+  startDatePlan?: string | null;
+  endDatePlan?: string | null;
+  dateStart?: string | null;
 }
 
 export type TaskRow = typeof schema.tasks.$inferInsert;
@@ -86,6 +93,9 @@ export function mapTask(t: BitrixTask, stages: StageMap): TaskRow {
     deadline: toDate(t.deadline),
     closedAt: toDate(t.closedDate),
     changedAt: toDate(t.changedDate) ?? new Date(0),
+    startDatePlan: toDate(t.startDatePlan),
+    endDatePlan: toDate(t.endDatePlan),
+    dateStart: toDate(t.dateStart),
     parentId: parentId || null,
     tags,
     isIssue: issueType !== null,

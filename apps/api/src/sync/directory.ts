@@ -25,6 +25,7 @@ interface BitrixDepartment {
 interface BitrixGroup {
   ID: string;
   NAME: string;
+  OWNER_ID?: string;
 }
 
 interface BitrixStage {
@@ -96,6 +97,7 @@ export async function syncDirectory(call: Call): Promise<DirectorySummary> {
           name: g.NAME,
           // Empty DEV_GROUP_IDS = every workgroup is a development project.
           isDevProject: scope.size === 0 || scope.has(Number(g.ID)),
+          ownerId: Number(g.OWNER_ID) || null,
         })),
       )
       .onConflictDoUpdate({

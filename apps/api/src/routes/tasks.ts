@@ -17,6 +17,9 @@ import {
   isPending,
   isRankedTask,
   isStuck,
+  KPI_LIST_PRESETS,
+  kpiList,
+  OVERDUE_BUCKETS,
   STAGE_TITLES,
   testingTasks,
   type MetricTask,
@@ -25,13 +28,20 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { DatasetProvider } from '../data/dataset';
 import { contextOf, person, taskRow, type AppOptions } from './context';
+import { kpiContext } from './kpi';
 import { contentDisposition, tasksWorkbook } from './export';
 import { list as listParam, parseQuery, scopeParam } from './params';
 
 const SORTS = ['deadline', '-deadline', 'created', '-created', 'id', '-id'] as const;
 
 const listParams = {
-  kind: z.enum(['tasks', 'issues', 'testing']).default('tasks'),
+  kind: z.enum(['tasks', 'issues', 'testing', 'kpi']).default('tasks'),
+  // KPI tab (SRS 13): every task in every workgroup, picked by the KPI rules.
+  kpi: z.enum(KPI_LIST_PRESETS).optional(),
+  dept: z.enum(['all', 'dev', 'qa', 'support']).optional(),
+  period: z.enum(['day', 'week', 'month']).optional(),
+  kpiAgeing: z.enum(OVERDUE_BUCKETS).optional(),
+  noProject: z.enum(['true']).optional(),
   preset: z.enum([...DEV_PRESETS, ...ISSUE_PRESETS]).optional(),
   q: z.string().trim().max(200).optional(),
   sort: z.enum(SORTS).optional(),
@@ -96,8 +106,19 @@ export function taskRoutes(
           issues(ds.tasks)
         : query.kind === 'testing'
           ? testingTasks(ds.tasks, ctx)
-          : devTasks(ds.tasks, ctx, query.scope);
+          : query.kind === 'kpi'
+            ? ds.tasks
+            : devTasks(ds.tasks, ctx, query.scope);
     let list = applyFilters(base, filters, ctx.tz);
+    if (query.kind === 'kpi') {
+      list = kpiList(list, kpiContext(ds, ctx.now, ctx.tz), {
+        preset: query.kpi,
+        dept: query.dept,
+        period: query.period,
+        ageing: query.kpiAgeing,
+        noProject: query.noProject === 'true',
+      });
+    }
     const stages = query.stage;
     if (stages) list = list.filter((t) => t.stage !== null && stages.includes(t.stage));
     if (query.overdue) {

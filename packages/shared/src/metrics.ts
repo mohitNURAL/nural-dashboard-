@@ -255,7 +255,10 @@ function countBy(tasks: readonly MetricTask[], key: (t: MetricTask) => number): 
   return [...m].map(([id, count]) => ({ id, count })).sort((a, b) => b.count - a.count);
 }
 
-function groupBy<K>(tasks: readonly MetricTask[], key: (t: MetricTask) => K): Map<K, MetricTask[]> {
+export function groupBy<K>(
+  tasks: readonly MetricTask[],
+  key: (t: MetricTask) => K,
+): Map<K, MetricTask[]> {
   const m = new Map<K, MetricTask[]>();
   for (const t of tasks) {
     const k = key(t);
@@ -274,7 +277,8 @@ export const GROUP_BY = ['assignee', 'project'] as const;
 const groupKey = (by: GroupBy) =>
   by === 'project' ? (t: MetricTask) => t.groupId : (t: MetricTask) => t.responsibleId;
 
-const pct = (part: number, whole: number) => (whole ? Math.round((part / whole) * 1000) / 10 : 0);
+export const pct = (part: number, whole: number) =>
+  whole ? Math.round((part / whole) * 1000) / 10 : 0;
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
 // ---------------------------------------------------------------- Development tab

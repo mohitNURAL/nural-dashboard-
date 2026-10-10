@@ -38,6 +38,9 @@ export interface MetricTask {
   issueType: IssueType | null;
   /** Stage moves, oldest first. */
   events: StageEvent[];
+  /** Bitrix24 planned start and first start (KPI tab, SRS 13.2); absent in older fixtures. */
+  startDatePlan?: Date | null;
+  dateStart?: Date | null;
 }
 
 export interface MetricContext {

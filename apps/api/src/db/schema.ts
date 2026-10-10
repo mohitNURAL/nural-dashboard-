@@ -35,6 +35,10 @@ export const tasks = pgTable(
     deadline: tz('deadline'),
     closedAt: tz('closed_at'),
     changedAt: tz('changed_at').notNull(),
+    /** KPI tab (SRS 13.2): Bitrix24 planned start / end and first start. */
+    startDatePlan: tz('start_date_plan'),
+    endDatePlan: tz('end_date_plan'),
+    dateStart: tz('date_start'),
     parentId: integer('parent_id'),
     tags: text('tags')
       .array()
@@ -108,6 +112,8 @@ export const workgroups = pgTable('workgroups', {
   id: integer('id').primaryKey(),
   name: text('name').notNull(),
   isDevProject: boolean('is_dev_project').notNull(),
+  /** Bitrix24 group owner, the KPI tab's project owner fallback (SRS 13.3, KPI-02). */
+  ownerId: integer('owner_id'),
 });
 
 export const stages = pgTable(

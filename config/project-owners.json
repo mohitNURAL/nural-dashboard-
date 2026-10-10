@@ -1,0 +1,4 @@
+{
+  "_note": "KPI-02 project owner per workgroup ID, e.g. \"154\": 30 (Bitrix24 user ID). Projects not listed use the Bitrix24 group owner.",
+  "owners": {}
+}

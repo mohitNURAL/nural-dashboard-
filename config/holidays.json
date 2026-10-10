@@ -1,0 +1,14 @@
+{
+  "_note": "KPI working calendar (SRS 13.1): public holidays, not counted as working time. Add the company's own holidays here (date YYYY-MM-DD).",
+  "workDays": [1, 2, 3, 4, 5],
+  "start": "09:30",
+  "end": "18:30",
+  "holidays": [
+    { "date": "2026-01-26", "name": "Republic Day" },
+    { "date": "2026-08-15", "name": "Independence Day" },
+    { "date": "2026-10-02", "name": "Gandhi Jayanti" },
+    { "date": "2027-01-26", "name": "Republic Day" },
+    { "date": "2027-08-15", "name": "Independence Day" },
+    { "date": "2027-10-02", "name": "Gandhi Jayanti" }
+  ]
+}

@@ -11,6 +11,8 @@ COPY apps/web/package.json apps/web/
 RUN pnpm install --frozen-lockfile --filter "@nural/api..."
 COPY packages/shared packages/shared
 COPY apps/api apps/api
+# KPI calendar, holidays, project owners, department mapping (SRS 13.5).
+COPY config config
 WORKDIR /app/apps/api
 ENV NODE_ENV=production
 EXPOSE 4000

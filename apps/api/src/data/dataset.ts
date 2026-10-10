@@ -3,14 +3,16 @@
 import {
   canonicalStage,
   indexTasks,
+  type Dept,
   type IssueType,
   type StageTitle,
   type MetricTask,
   type StageEvent,
 } from '@nural/shared';
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq, gte } from 'drizzle-orm';
 import { config } from '../config';
 import { db, schema } from '../db/client';
+import { kpiConfig } from './kpiConfig';
 
 export type DeptGroup = 'Development' | 'Testing' | 'Other';
 
@@ -34,6 +36,10 @@ export interface Dataset {
   stageIds?: Map<number, Map<StageTitle, number[]>>;
   users: Map<number, UserInfo>;
   projects: Map<number, { id: number; name: string }>;
+  /** KPI tab (SRS 13): department per user, project owner per workgroup, recent comments. */
+  kpiDept?: Map<number, Dept>;
+  owners?: Map<number, number>;
+  comments?: { taskId: number; at: Date }[];
   /** Board colours etc. are fixed; this is just the portal origin for "Open in Bitrix24". */
   portalOrigin: string;
   loadedAt: Date;
@@ -46,8 +52,12 @@ interface Department {
 }
 
 /** IDs of the departments matching `pattern` and all their sub-departments. */
-export function departmentTree(depts: Department[], pattern: RegExp): Set<number> {
-  const ids = new Set(depts.filter((d) => pattern.test(d.name)).map((d) => d.id));
+export function departmentTree(
+  depts: Department[],
+  pattern: RegExp | ((name: string) => boolean),
+): Set<number> {
+  const match = typeof pattern === 'function' ? pattern : (n: string) => pattern.test(n);
+  const ids = new Set(depts.filter((d) => match(d.name)).map((d) => d.id));
   for (let grew = true; grew;) {
     grew = false;
     for (const d of depts) {
@@ -64,7 +74,8 @@ export const TESTING_DEPT = /\bqa\b|testing/i;
 export const DEVELOPMENT_DEPT = /software development/i;
 
 export async function loadDataset(): Promise<Dataset> {
-  const [taskRows, eventRows, relationRows, userRows, deptRows, groupRows, stageRows] =
+  const commentsSince = new Date(Date.now() - 15 * 86_400_000);
+  const [taskRows, eventRows, relationRows, userRows, deptRows, groupRows, stageRows, commentRows] =
     await Promise.all([
       db.select().from(schema.tasks).where(eq(schema.tasks.deleted, false)),
       db
@@ -76,6 +87,15 @@ export async function loadDataset(): Promise<Dataset> {
       db.select().from(schema.departments),
       db.select().from(schema.workgroups),
       db.select().from(schema.stages),
+      db
+        .select({ taskId: schema.webhookEvents.taskId, at: schema.webhookEvents.receivedAt })
+        .from(schema.webhookEvents)
+        .where(
+          and(
+            eq(schema.webhookEvents.event, 'ONTASKCOMMENTADD'),
+            gte(schema.webhookEvents.receivedAt, commentsSince),
+          ),
+        ),
     ]);
 
   // Several Bitrix24 columns can share one dashboard stage (e.g. Figma Review and To Do).
@@ -132,6 +152,8 @@ export async function loadDataset(): Promise<Dataset> {
     isIssue: t.isIssue,
     issueType: t.issueType as IssueType | null,
     events: events.get(t.id) ?? [],
+    startDatePlan: t.startDatePlan,
+    dateStart: t.dateStart,
   }));
 
   const testingDepts = departmentTree(deptRows, TESTING_DEPT);
@@ -170,9 +192,39 @@ export async function loadDataset(): Promise<Dataset> {
     stageIds,
     users,
     projects: new Map(groupRows.map((g) => [g.id, { id: g.id, name: g.name }])),
+    kpiDept: kpiDepartments(userRows, deptRows),
+    owners: new Map(
+      groupRows.flatMap((g) => {
+        const owner = kpiConfig().owners.get(g.id) ?? g.ownerId;
+        return owner ? [[g.id, owner] as const] : [];
+      }),
+    ),
+    comments: commentRows.flatMap((c) => (c.taskId ? [{ taskId: c.taskId, at: c.at }] : [])),
     portalOrigin: new URL(config.BITRIX_INBOUND_URL).origin,
     loadedAt: new Date(),
   };
+}
+
+/** KPI department of each user from config/departments.json (sub-departments included). */
+function kpiDepartments(
+  users: { id: number; departmentIds: number[] }[],
+  depts: Department[],
+): Map<number, Dept> {
+  const names = kpiConfig().departments;
+  // Exact department names (case and spaces ignored); departmentTree adds sub-departments.
+  const exact = (list: string[]) => {
+    const wanted = new Set(list.map((n) => n.trim().toLowerCase()));
+    return (name: string) => wanted.has(name.trim().toLowerCase());
+  };
+  const trees = (['dev', 'qa', 'support'] as const).map(
+    (d) => [d, departmentTree(depts, exact(names[d]))] as const,
+  );
+  const out = new Map<number, Dept>();
+  for (const u of users) {
+    const hit = trees.find(([, ids]) => u.departmentIds.some((id) => ids.has(id)));
+    out.set(u.id, hit?.[0] ?? 'other');
+  }
+  return out;
 }
 
 export type DatasetProvider = () => Promise<Dataset>;

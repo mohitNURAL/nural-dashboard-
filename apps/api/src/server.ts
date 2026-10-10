@@ -12,6 +12,7 @@ import { hookRoutes, type ReceiverDeps } from './hooks/receiver';
 import { alertRoutes } from './routes/alerts';
 import { devRoutes } from './routes/dev';
 import { filterRoutes } from './routes/filters';
+import { kpiRoutes } from './routes/kpi';
 import { qaRoutes } from './routes/qa';
 import { streamRoutes } from './routes/stream';
 import { taskRoutes } from './routes/tasks';
@@ -140,6 +141,7 @@ export async function buildServer({
   taskRoutes(app, dataset, opts, { describe });
   filterRoutes(app, dataset, opts);
   alertRoutes(app, dataset, opts);
+  kpiRoutes(app, dataset, opts);
   streamRoutes(app, bus, config.WEB_ORIGIN);
   await hookRoutes(app, {
     token: config.BITRIX_OUTBOUND_TOKEN,
