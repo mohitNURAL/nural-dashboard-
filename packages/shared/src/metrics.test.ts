@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ageingBucket,
   applyFilters,
+  ageingByAssignee,
   assigneeTable,
   completedAt,
   devSummary,
@@ -210,6 +211,21 @@ describe('Development tab', () => {
     expect(totals).toMatchObject({ total: 7, pending: 3, done: 3 });
   });
 
+  it('groups the assignee table, ageing and matrix by project', () => {
+    const list = [...tasks, task({ groupId: 148, responsibleId: 30 })];
+    const { rows, totals } = assigneeTable(list, ctx, 'project');
+    expect(rows.map((r) => [r.id, r.total])).toEqual([
+      [154, 7],
+      [148, 1],
+    ]);
+    expect(totals.total).toBe(8);
+    expect(ageingByAssignee(list, ctx, 'project').rows.map((r) => r.id)).toEqual([154, 148]);
+    expect(stageMatrix(list, { by: 'project' }).rows.map((r) => [r.id, r.total])).toEqual([
+      [154, 7],
+      [148, 1],
+    ]);
+  });
+
   it('builds the stage matrix and tag toggle', () => {
     const m = stageMatrix([...tasks, task({ stage: 'In QA', tags: ['API'], responsibleId: 28 })], {
       tag: 'api',
@@ -349,6 +365,21 @@ describe('QA tab', () => {
       // Equal rework counts: ties break by user ID.
       { id: 28, issues: 2, rework: 2, reworkIssues: 2, reworkPct: 100 },
       { id: 30, issues: 2, rework: 2, reworkIssues: 1, reworkPct: 50 },
+    ]);
+  });
+
+  it('breaks issues down by project', () => {
+    const other = task({ groupId: 148, tags: ['feedback'] });
+    const all = [...list, other];
+    const byProject = issuesByAssignee(all, 'project');
+    expect(byProject.map((r) => [r.id, r.total])).toEqual([
+      [154, list.length],
+      [148, 1],
+    ]);
+    expect(byProject[1]).toMatchObject({ open: 1, bug: 0, feedback: 1 });
+    expect(issueAgeByAssignee(all, ctx, 'project').rows.find((r) => r.id === 148)?.total).toBe(1);
+    expect(reworkByDeveloper(all, byId, 'project')).toEqual([
+      { id: 154, issues: list.length, rework: 4, reworkIssues: 3, reworkPct: 60 },
     ]);
   });
 

@@ -1,34 +1,35 @@
-// DEV-02: assignee-wise table (sortable, totals row; a name sets the Assignee filter) and the
-// Pending vs Done chart beside it.
+// DEV-02: assignee-wise (or project-wise) table, sortable with a totals row, and the Pending vs
+// Done chart beside it. Clicking a name sets the Assignee or Project filter.
 import { createColumnHelper } from '@tanstack/react-table';
-import { useMemo } from 'react';
-import type { AssigneeRow } from '../../api/types';
-import { Card } from '../../components/Card';
+import { useMemo, useState } from 'react';
+import type { AssigneeRow, GroupBy } from '../../api/types';
+import { Card, GroupToggle } from '../../components/Card';
 import { Chart } from '../../components/Chart';
 import { token } from '../../components/chartTheme';
 import { DataTable, type Columns } from '../../components/DataTable';
-import { useFilters } from '../filters/useFilters';
+import { useFocusRow } from '../filters/useFilters';
 import { useDevAssignees } from './api';
+import { GROUP_LABEL } from './format';
 
 const col = createColumnHelper<AssigneeRow>();
 const num = { meta: { align: 'right' } } as const;
 const CHART_ROWS = 15;
 
 export function AssigneeTableCard({ className }: { className?: string }) {
-  const { data, isLoading } = useDevAssignees();
-  const { setFilters } = useFilters();
+  const [by, setBy] = useState<GroupBy>('assignee');
+  const { data, isLoading } = useDevAssignees(by);
+  const focus = useFocusRow();
 
   const columns = useMemo(
     () =>
       [
-        col.accessor((r) => r.person.name, {
-          id: 'name',
-          header: 'Assignee',
+        col.accessor('name', {
+          header: GROUP_LABEL[by],
           cell: (c) => (
             <button
               type="button"
-              title="Show only this assignee"
-              onClick={() => setFilters({ assignee: [c.row.original.id] })}
+              title={`Show only this ${by}`}
+              onClick={() => focus(by, c.row.original.id)}
               className="text-left font-bold text-primary-dark hover:text-primary hover:underline"
             >
               {c.getValue()}
@@ -50,15 +51,16 @@ export function AssigneeTableCard({ className }: { className?: string }) {
           footer: () => data?.totals.completedToday,
         }),
       ] as Columns<AssigneeRow>,
-    [data, setFilters],
+    [by, data, focus],
   );
 
   return (
     <Card
-      title="Assignee-wise tasks"
+      title={by === 'project' ? 'Project-wise tasks' : 'Assignee-wise tasks'}
       className={className}
       loading={isLoading}
       empty={data?.rows.length === 0}
+      action={<GroupToggle value={by} onChange={setBy} />}
     >
       <DataTable
         columns={columns}
@@ -74,8 +76,9 @@ export function AssigneeTableCard({ className }: { className?: string }) {
 }
 
 export function PendingDoneCard({ className }: { className?: string }) {
-  const { data, isLoading } = useDevAssignees();
-  const { setFilters } = useFilters();
+  const [by, setBy] = useState<GroupBy>('assignee');
+  const { data, isLoading } = useDevAssignees(by);
+  const focus = useFocusRow();
   // API rows are sorted by total; ECharts draws the first category at the bottom.
   const rows = useMemo(() => (data?.rows ?? []).slice(0, CHART_ROWS).reverse(), [data]);
 
@@ -85,18 +88,14 @@ export function PendingDoneCard({ className }: { className?: string }) {
       className={className}
       loading={isLoading}
       empty={rows.length === 0}
-      action={
-        data && data.rows.length > CHART_ROWS ? (
-          <span className="text-table text-text-muted">Top {CHART_ROWS} by total</span>
-        ) : undefined
-      }
+      action={<GroupToggle value={by} onChange={setBy} />}
     >
       <Chart
-        label="Pending and done tasks per assignee"
+        label={`Pending and done tasks per ${by}`}
         height={Math.max(160, rows.length * 22 + 50)}
         onClick={(p) => {
           const row = rows[p.dataIndex];
-          if (row) setFilters({ assignee: [row.id] });
+          if (row) focus(by, row.id);
         }}
         option={{
           grid: { left: 8, right: 16, top: 8, bottom: 28, containLabel: true },
@@ -108,8 +107,9 @@ export function PendingDoneCard({ className }: { className?: string }) {
           },
           yAxis: {
             type: 'category',
-            data: rows.map((r) => r.person.name),
+            data: rows.map((r) => r.name),
             axisTick: { show: false },
+            axisLabel: { width: 140, overflow: 'truncate' },
             axisLine: { lineStyle: { color: token('--border') } },
           },
           series: [
@@ -132,6 +132,11 @@ export function PendingDoneCard({ className }: { className?: string }) {
           ],
         }}
       />
+      {data && data.rows.length > CHART_ROWS && (
+        <p className="text-table text-text-muted">
+          Top {CHART_ROWS} of {data.rows.length} by total.
+        </p>
+      )}
     </Card>
   );
 }

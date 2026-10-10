@@ -1,8 +1,9 @@
-// Age buckets as a bar chart, with a per-assignee table view (DEV-03 ageing, QA-04 issue age).
+// Age buckets as a bar chart, with a per-assignee or per-project table view (DEV-03 ageing,
+// QA-04 issue age).
 import { createColumnHelper } from '@tanstack/react-table';
 import { useMemo, useState, type ReactNode } from 'react';
-import type { Person } from '../api/types';
-import { Card, ViewToggle } from './Card';
+import type { Named } from '../api/types';
+import { Actions, Card, ViewToggle } from './Card';
 import { Chart } from './Chart';
 import { token } from './chartTheme';
 import { DataTable, type Columns } from './DataTable';
@@ -14,10 +15,8 @@ export interface Bucket<K extends string> {
   color: string;
 }
 
-interface Row<K extends string> {
-  id: number;
+interface Row<K extends string> extends Named {
   buckets: Record<K, number>;
-  person: Person;
 }
 
 interface Props<K extends string> {
@@ -32,6 +31,10 @@ interface Props<K extends string> {
   emptyText: string;
   footnote?: ReactNode;
   className?: string;
+  /** Header of the name column ("Assignee" or "Project"). */
+  rowLabel?: string;
+  /** Extra header control for the table view, e.g. the Assignee / Project switch. */
+  extraAction?: ReactNode;
 }
 
 const resolve = (c: string) => (c.startsWith('--') ? token(c) : c);
@@ -47,6 +50,8 @@ export function BucketCard<K extends string>({
   emptyText,
   footnote,
   className,
+  rowLabel = 'Assignee',
+  extraAction,
 }: Props<K>) {
   const [view, setView] = useState<'chart' | 'table'>('chart');
   const all = useMemo(() => [...buckets, ...extraColumns], [buckets, extraColumns]);
@@ -55,7 +60,7 @@ export function BucketCard<K extends string>({
   const columns = useMemo(() => {
     const col = createColumnHelper<Row<K>>();
     return [
-      col.accessor((r) => r.person.name, { id: 'name', header: 'Assignee' }),
+      col.accessor('name', { header: rowLabel }),
       ...all.map((b) =>
         col.accessor((r) => r.buckets[b.key], {
           id: b.key,
@@ -65,7 +70,7 @@ export function BucketCard<K extends string>({
         }),
       ),
     ] as Columns<Row<K>>;
-  }, [all]);
+  }, [all, rowLabel]);
 
   return (
     <Card
@@ -75,14 +80,17 @@ export function BucketCard<K extends string>({
       empty={!!totals && sum === 0}
       emptyText={emptyText}
       action={
-        <ViewToggle
-          value={view}
-          onChange={setView}
-          options={[
-            { value: 'chart', label: 'Chart' },
-            { value: 'table', label: 'Table' },
-          ]}
-        />
+        <Actions>
+          {view === 'table' && extraAction}
+          <ViewToggle
+            value={view}
+            onChange={setView}
+            options={[
+              { value: 'chart', label: 'Chart' },
+              { value: 'table', label: 'Table' },
+            ]}
+          />
+        </Actions>
       }
     >
       {totals && view === 'chart' && (

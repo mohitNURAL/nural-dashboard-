@@ -56,3 +56,14 @@ export function useFilters() {
   );
   return { filters, setFilters, reset };
 }
+
+/** Clicking a breakdown row narrows the filter to that assignee or project (0 = no project). */
+export function useFocusRow() {
+  const { setFilters } = useFilters();
+  return useCallback(
+    (by: 'assignee' | 'project', id: number) => {
+      if (id) setFilters({ [by]: [id] });
+    },
+    [setFilters],
+  );
+}

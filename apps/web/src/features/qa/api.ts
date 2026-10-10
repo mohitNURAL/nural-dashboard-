@@ -1,7 +1,7 @@
 // QA tab queries (SRS 7 module 5). All take the filter bar's params.
 import { useMemo } from 'react';
-import { useApi } from '../../api/queries';
-import type { QaIssues, QaSummary, QaTesting } from '../../api/types';
+import { useApi, withGroupBy } from '../../api/queries';
+import type { GroupBy, QaIssues, QaSummary, QaTesting } from '../../api/types';
 import { toParams } from '../filters/toParams';
 import { useFilters } from '../filters/useFilters';
 
@@ -11,7 +11,9 @@ export function useQaParams() {
 }
 
 export const useQaSummary = () => useApi<QaSummary>('/api/qa/summary', useQaParams());
-export const useQaIssues = () => useApi<QaIssues>('/api/qa/issues', useQaParams());
+export function useQaIssues(by: GroupBy = 'assignee') {
+  return useApi<QaIssues>('/api/qa/issues', withGroupBy(useQaParams(), by));
+}
 
 /** Testing work is not bug or feedback, so the Bug or Feedback filter does not apply (QA-06). */
 export function useQaTesting() {

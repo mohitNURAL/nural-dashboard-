@@ -1,11 +1,23 @@
 // Response shapes of apps/api (routes/*.ts). Dates arrive as ISO strings.
-import type { IssueType, StageGroup, StageTitle } from '@nural/shared';
+import type { GroupBy, IssueType, StageGroup, StageTitle } from '@nural/shared';
 import type { DeptGroup } from './queries';
 
 export interface Person {
   id: number;
   name: string;
   deptGroup: DeptGroup;
+}
+
+export type { GroupBy } from '@nural/shared';
+
+/**
+ * A breakdown row keyed by assignee or project (Assignee / Project switch). `id` is the user
+ * or workgroup id (0 = no project); `person` is set only when grouped by assignee.
+ */
+export interface Named {
+  id: number;
+  name: string;
+  person: Person | null;
 }
 
 export type Priority = 'low' | 'normal' | 'high';
@@ -77,14 +89,12 @@ export interface DevSummary {
   asOf: string;
 }
 
-export interface AssigneeRow {
-  id: number;
+export interface AssigneeRow extends Named {
   total: number;
   pending: number;
   done: number;
   dueToday: number;
   completedToday: number;
-  person: Person;
 }
 
 export const AGEING_BUCKETS = ['notDue', '0-2', '3-7', '8-14', '15+'] as const;
@@ -92,10 +102,11 @@ export type AgeingBucket = (typeof AGEING_BUCKETS)[number];
 export type AgeingCounts = Record<AgeingBucket | 'noDeadline', number>;
 
 export interface DevAssignees {
+  groupBy: GroupBy;
   rows: AssigneeRow[];
-  totals: Omit<AssigneeRow, 'person'>;
+  totals: Omit<AssigneeRow, 'person' | 'name'>;
   ageing: {
-    rows: { id: number; total: number; buckets: AgeingCounts; person: Person }[];
+    rows: (Named & { total: number; buckets: AgeingCounts })[];
     totals: AgeingCounts;
   };
 }
@@ -116,8 +127,9 @@ export interface DevRanking {
 }
 
 export interface DevMatrix {
+  groupBy: GroupBy;
   stages: { stage: StageTitle; color: string }[];
-  rows: { id: number; total: number; cells: Record<StageTitle, number>; person: Person }[];
+  rows: (Named & { total: number; cells: Record<StageTitle, number> })[];
   max: number;
   tags: { value: string; count: number }[];
 }
@@ -141,28 +153,25 @@ export interface QaSummary {
 export type IssueAgeBucket = '0-2' | '3-7' | '8-14' | '15+';
 
 export interface QaIssues {
-  byAssignee: {
-    id: number;
+  groupBy: GroupBy;
+  byAssignee: (Named & {
     total: number;
     open: number;
     resolved: number;
     bug: number;
     feedback: number;
-    person: Person;
-  }[];
+  })[];
   byStage: { stages: { stage: StageTitle; count: number; color: string }[]; unmapped: number };
   age: {
-    rows: { id: number; total: number; buckets: Record<IssueAgeBucket, number>; person: Person }[];
+    rows: (Named & { total: number; buckets: Record<IssueAgeBucket, number> })[];
     totals: Record<IssueAgeBucket, number>;
   };
-  rework: {
-    id: number;
+  rework: (Named & {
     issues: number;
     rework: number;
     reworkIssues: number;
     reworkPct: number;
-    person: Person;
-  }[];
+  })[];
   waitingForRetest: {
     total: number;
     byCreator: { id: number; count: number; oldestDays: number; person: Person }[];

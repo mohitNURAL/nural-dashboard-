@@ -1,5 +1,6 @@
 // Card (SRS 6): title, optional toggle (table or chart), body, empty state and loading skeleton.
 import clsx from 'clsx';
+import type { GroupBy } from '@nural/shared';
 import type { ReactNode } from 'react';
 
 interface Props {
@@ -76,4 +77,29 @@ export function ViewToggle<V extends string>({
       ))}
     </div>
   );
+}
+
+/** Assignee / Project switch on the breakdown cards (DEV-02, 03, 05; QA-02, 04, 05). */
+export function GroupToggle({
+  value,
+  onChange,
+}: {
+  value: GroupBy;
+  onChange: (v: GroupBy) => void;
+}) {
+  return (
+    <ViewToggle
+      value={value}
+      onChange={onChange}
+      options={[
+        { value: 'assignee', label: 'Assignee' },
+        { value: 'project', label: 'Project' },
+      ]}
+    />
+  );
+}
+
+/** Card header controls side by side. */
+export function Actions({ children }: { children: ReactNode }) {
+  return <div className="flex flex-wrap items-center justify-end gap-2">{children}</div>;
 }

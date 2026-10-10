@@ -8,6 +8,7 @@ import {
   reworkCount,
   STAGE_COLORS,
   stageGroup,
+  type GroupBy,
   type MetricContext,
   type MetricTask,
 } from '@nural/shared';
@@ -42,6 +43,17 @@ export const project = (ds: Dataset, id: number) =>
 /** Adds `person` to rows keyed by a user `id`. */
 export const withPeople = <R extends { id: number }>(ds: Dataset, rows: R[]) =>
   rows.map((r) => ({ ...r, person: person(ds, r.id) }));
+
+/**
+ * Names rows keyed by assignee or project (the cards' Assignee / Project switch). Every row
+ * gets `name`; assignee rows keep `person` for the department group.
+ */
+export const withGroupNames = <R extends { id: number }>(ds: Dataset, rows: R[], by: GroupBy) =>
+  rows.map((r) =>
+    by === 'project'
+      ? { ...r, name: project(ds, r.id)?.name ?? 'No project', person: null }
+      : { ...r, name: person(ds, r.id).name, person: person(ds, r.id) },
+  );
 
 const PRIORITY = ['low', 'normal', 'high'] as const;
 

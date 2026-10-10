@@ -1,7 +1,10 @@
 // DEV-03: open tasks by days past deadline. Chart: one bar per bucket; Table: buckets per assignee.
-import type { AgeingBucket } from '../../api/types';
+import { useState } from 'react';
+import type { AgeingBucket, GroupBy } from '../../api/types';
 import { BucketCard, type Bucket } from '../../components/BucketCard';
+import { GroupToggle } from '../../components/Card';
 import { useDevAssignees } from './api';
+import { GROUP_LABEL } from './format';
 
 /** Teal for not due, then deepening reds as tasks get later. */
 const BUCKETS: Bucket<AgeingBucket | 'noDeadline'>[] = [
@@ -16,7 +19,8 @@ const EXTRA: Bucket<AgeingBucket | 'noDeadline'>[] = [
 ];
 
 export function AgeingCard({ className }: { className?: string }) {
-  const { data, isLoading } = useDevAssignees();
+  const [by, setBy] = useState<GroupBy>('assignee');
+  const { data, isLoading } = useDevAssignees(by);
   const noDeadline = data?.ageing.totals.noDeadline ?? 0;
 
   return (
@@ -29,6 +33,8 @@ export function AgeingCard({ className }: { className?: string }) {
       totals={data?.ageing.totals}
       rows={data?.ageing.rows}
       loading={isLoading}
+      rowLabel={GROUP_LABEL[by]}
+      extraAction={<GroupToggle value={by} onChange={setBy} />}
       emptyText="No open tasks in these filters."
       footnote={
         noDeadline > 0 && (

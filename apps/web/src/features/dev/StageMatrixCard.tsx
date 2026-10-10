@@ -1,35 +1,41 @@
-// DEV-05: tasks by stage and assignee, heat-shaded by count; the tag toggle filters the matrix.
+// DEV-05: tasks by stage and assignee (or project), heat-shaded by count; the tag toggle filters
+// the matrix.
 import { useState } from 'react';
-import { Card } from '../../components/Card';
+import type { GroupBy } from '../../api/types';
+import { Actions, Card, GroupToggle } from '../../components/Card';
 import { SearchCombobox } from '../../components/SearchCombobox';
-import { useFilters } from '../filters/useFilters';
+import { useFocusRow } from '../filters/useFilters';
 import { useDevMatrix } from './api';
-import { heatShade } from './format';
+import { GROUP_LABEL, heatShade } from './format';
 
 export function StageMatrixCard({ className }: { className?: string }) {
   const [tag, setTag] = useState<string | null>(null);
-  const { data, isLoading } = useDevMatrix(tag);
-  const { setFilters } = useFilters();
+  const [by, setBy] = useState<GroupBy>('assignee');
+  const { data, isLoading } = useDevMatrix(tag, by);
+  const focus = useFocusRow();
 
   return (
     <Card
-      title="Tasks by stage and assignee"
+      title={`Tasks by stage and ${by}`}
       className={className}
       loading={isLoading}
       empty={data?.rows.length === 0}
       action={
-        <SearchCombobox
-          label={tag ? 'Tag' : 'Tag: all'}
-          single
-          className="h-8 w-56"
-          options={(data?.tags ?? []).map((t) => ({
-            value: t.value,
-            label: t.value,
-            count: t.count,
-          }))}
-          selected={tag ? [tag] : []}
-          onChange={(v) => setTag(v[0] ?? null)}
-        />
+        <Actions>
+          <GroupToggle value={by} onChange={setBy} />
+          <SearchCombobox
+            label={tag ? 'Tag' : 'Tag: all'}
+            single
+            className="h-8 w-56"
+            options={(data?.tags ?? []).map((t) => ({
+              value: t.value,
+              label: t.value,
+              count: t.count,
+            }))}
+            selected={tag ? [tag] : []}
+            onChange={(v) => setTag(v[0] ?? null)}
+          />
+        </Actions>
       }
     >
       {data && (
@@ -38,7 +44,7 @@ export function StageMatrixCard({ className }: { className?: string }) {
             <thead>
               <tr>
                 <th className="sticky left-0 top-0 z-20 bg-surface px-2 py-1 text-left font-heading text-label font-bold uppercase text-text-muted">
-                  Assignee
+                  {GROUP_LABEL[by]}
                 </th>
                 {data.stages.map((s) => (
                   <th
@@ -66,11 +72,11 @@ export function StageMatrixCard({ className }: { className?: string }) {
                   >
                     <button
                       type="button"
-                      title="Show only this assignee"
-                      onClick={() => setFilters({ assignee: [r.id] })}
+                      title={`Show only this ${by}`}
+                      onClick={() => focus(by, r.id)}
                       className="hover:text-primary hover:underline"
                     >
-                      {r.person.name}
+                      {r.name}
                     </button>
                   </th>
                   {data.stages.map((s) => {
@@ -80,7 +86,7 @@ export function StageMatrixCard({ className }: { className?: string }) {
                         key={s.stage}
                         className="rounded px-1 py-1.5 text-center tabular-nums"
                         style={heatShade(n, data.max)}
-                        title={`${r.person.name} · ${s.stage}: ${n}`}
+                        title={`${r.name} · ${s.stage}: ${n}`}
                       >
                         {n || <span className="text-primary-soft-300">·</span>}
                       </td>

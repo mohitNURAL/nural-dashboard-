@@ -89,3 +89,6 @@ export const TILE_LABELS: Record<DevPreset, string> = {
   doneToday: 'Done today',
   dueToday: 'Due today',
 };
+
+/** Column and title word for the Assignee / Project switch. */
+export const GROUP_LABEL = { assignee: 'Assignee', project: 'Project' } as const;

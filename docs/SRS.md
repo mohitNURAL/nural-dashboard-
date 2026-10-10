@@ -94,29 +94,30 @@ The Development tab answers three questions for the PM and team leads: how much 
 - Filters are kept in the URL so a filtered view can be shared as a link.
 - A "Live" indicator shows the time of the last change received from Bitrix24.
 
-**DEV-01 Summary tiles (one row of 7)**
+**DEV-01 Summary tiles (one row of 6)**
 
 | # | Tile | Counts |
 | --- | --- | --- |
 | 1 | Total tasks | All tasks in scope, with a sub-line split by project or by employee when that filter is set |
-| 2 | Completed (sent to QA) | Tasks in QA Backlog, In QA, Issue Raised, Done or LIVE |
-| 3 | Pending | Tasks in To do, In progress, On Hold, Pushed to Master, Merged to Development or Pending for QA |
-| 4 | Ready for deployment | Tasks in Done |
-| 5 | Deployed to live | Tasks in LIVE |
-| 6 | Overdue | Pending tasks whose deadline has passed (a subset of tile 3, shown in red) |
-| 7 | Done today | Tasks completed today (Complete pressed, moved to QA Backlog) |
+| 2 | Pending | Tasks in To do, In progress, On Hold, Pushed to Master, Merged to Development or Pending for QA |
+| 3 | Ready for deployment | Tasks in Done |
+| 4 | Deployed to live | Tasks in LIVE |
+| 5 | Overdue | Pending tasks whose deadline has passed (a subset of tile 2, shown in red) |
+| 6 | Done today | Tasks completed today (Complete pressed, moved to QA Backlog) |
 
-Clicking a tile opens the "All tasks" accordion pre-filtered to that tile.
+Clicking a tile opens the "All tasks" accordion pre-filtered to that tile. The former "Completed (sent to QA)" tile was removed (2026-10-10) as not relevant to the Development tab; the sent-to-QA stage group still feeds the Done column of DEV-02 and the speed ranking.
 
-**DEV-02 Assignee-wise table and chart**
+**Assignee / Project switch.** The breakdown cards DEV-02, DEV-03 (table view), DEV-05, QA-02, QA-04 (table view) and QA-05 each have an Assignee / Project switch in their header. "Assignee" (the default) gives one row or bar per person; "Project" gives one per workgroup, with the same columns and counts. Clicking a row or bar then sets the Assignee or the Project filter. Cards that are about people by nature (DEV-04 speed ranking, QA-06 testing workload, QA-07 retest by creator) have no switch.
 
-- Table: one row per assignee with Total, Pending, Done, Due today, Completed today. Sortable, sticky header, totals row.
-- Chart beside it: horizontal stacked bars per assignee (Pending vs Done), sorted by Total.
-- Clicking a name sets the Assignee filter.
+**DEV-02 Assignee-wise (or project-wise) table and chart**
+
+- Table: one row per assignee (or project) with Total, Pending, Done, Due today, Completed today. Sortable, sticky header, totals row.
+- Chart beside it: horizontal stacked bars per assignee (or project) (Pending vs Done), sorted by Total.
+- Clicking a name sets the Assignee (or Project) filter.
 
 **DEV-03 Task ageing**
 
-- Ageing buckets for open tasks by days past deadline: Not due, 0 to 2, 3 to 7, 8 to 14, over 14 days. Shown as a stacked bar per assignee and as a table.
+- Ageing buckets for open tasks by days past deadline: Not due, 0 to 2, 3 to 7, 8 to 14, over 14 days. Shown as a bar per bucket and as a table per assignee or per project.
 
 **DEV-04 Speed ranking**
 
@@ -124,7 +125,7 @@ Clicking a tile opens the "All tasks" accordion pre-filtered to that tile.
 
 **DEV-05 Stage x assignee x tag counts**
 
-- A matrix: rows are assignees, columns are the 11 Kanban stages, each cell is a count; a tag toggle above it splits or filters by tag (new development, client feedback, testing and so on). Heat shading by count.
+- A matrix: rows are assignees (or projects), columns are the 11 Kanban stages, each cell is a count; a tag toggle above it splits or filters by tag (new development, client feedback, testing and so on). Heat shading by count.
 
 **DEV-06 Accordion: Tasks due today** (closed by default)
 
@@ -152,13 +153,13 @@ The QA tab shows how many bugs and feedback items were filed, how many are still
 | 3 | Last filed | If issues were filed today: "Today" and today's count. Otherwise the most recent filing date and that day's count |
 | 4 | Rework issues | Count of issues that count as rework (section 5), with % of all issues |
 
-**QA-02 Issues by assignee**: stacked bars (Open vs Resolved) per developer, plus Bug vs Feedback split.
+**QA-02 Issues by assignee**: stacked bars (Open vs Resolved) per developer or per project, plus Bug vs Feedback split.
 
 **QA-03 Issue status by Kanban stage**: count of issues per stage, in board order and board colours.
 
-**QA-04 Age of open issues**: buckets 0 to 2, 3 to 7, 8 to 14, over 14 days since created, per assignee.
+**QA-04 Age of open issues**: buckets 0 to 2, 3 to 7, 8 to 14, over 14 days since created, per assignee or per project.
 
-**QA-05 Rework by developer**: bar per developer with rework count and rework % of their issues.
+**QA-05 Rework by developer**: bar per developer (or per project) with rework count and rework % of their issues.
 
 **QA-06 Testing team workload**
 
@@ -290,7 +291,7 @@ The wireframes below show the order of cards on each tab at 1440 px. On screens 
 
 ![Development tab wireframe](images/wireframe-development.png)
 
-Grey blocks stand for live numbers; Overdue is the only tile with a status border. The same top bar and filter bar sit on the QA tab.
+Grey blocks stand for live numbers; Overdue is the only tile with a status border. The wireframe still shows the "Sent to QA" tile, which was removed (see DEV-01). The same top bar and filter bar sit on the QA tab.
 
 ![QA tab wireframe](images/wireframe-qa.png)
 
@@ -331,7 +332,7 @@ SSE is chosen over WebSocket because the browser only receives; filters are sent
 2. **Sync worker**: takes events, fetches the full task through the inbound webhook (batched), compares with the stored snapshot, writes the stage-move log, and publishes a change message.
 3. **Reconciler**: every 10 minutes, pulls tasks changed since the last run, to recover any missed webhook. Nightly full resync of open tasks.
 4. **Directory sync**: hourly, users, departments and workgroups, and the stage list of each workgroup.
-5. **Metrics API**: `GET /api/dev/summary`, `/api/dev/assignees`, `/api/dev/ranking`, `/api/dev/matrix`, `/api/tasks`, `/api/qa/summary`, `/api/qa/issues`, `/api/qa/testing`, `/api/filters/options`, all taking the same filter parameters.
+5. **Metrics API**: `GET /api/dev/summary`, `/api/dev/assignees`, `/api/dev/ranking`, `/api/dev/matrix`, `/api/tasks`, `/api/qa/summary`, `/api/qa/issues`, `/api/qa/testing`, `/api/filters/options`, all taking the same filter parameters. `/api/dev/assignees`, `/api/dev/matrix` and `/api/qa/issues` also take `groupBy=assignee|project` for the Assignee / Project switch.
 6. **SSE endpoint** `GET /api/stream`: sends `task.changed` with the task ID, stage group and project, so the browser refetches only the queries that include it.
 
 **Data model (PostgreSQL)**

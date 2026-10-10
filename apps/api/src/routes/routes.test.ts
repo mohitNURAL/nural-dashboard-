@@ -137,6 +137,21 @@ describe('metrics API', () => {
     expect(m.body.stages[0]).toEqual({ stage: 'To do', color: '#00C4FB' });
   });
 
+  it('groups breakdowns by project with groupBy=project', async () => {
+    const a = await get('/api/dev/assignees?groupBy=project');
+    expect(a.body.groupBy).toBe('project');
+    expect(a.body.rows[0]).toMatchObject({ name: expect.any(String), person: null });
+    expect(a.body.rows.map((r: { id: number }) => r.id)).toEqual(expect.arrayContaining([148]));
+    expect(a.body.rows.find((r: { id: number }) => r.id === 148).name).toBe(
+      'Bitrix Project for testing.',
+    );
+    const m = await get('/api/dev/matrix?groupBy=project');
+    expect(m.body.rows.every((r: { person: unknown }) => r.person === null)).toBe(true);
+    const q = await get('/api/qa/issues?groupBy=project');
+    expect(q.body.byAssignee[0]).toMatchObject({ name: expect.any(String), person: null });
+    expect((await get('/api/dev/assignees?groupBy=team')).status).toBe(400);
+  });
+
   it('GET /api/qa/summary and /api/qa/issues', async () => {
     const s = await get('/api/qa/summary');
     expect(s.body).toMatchObject({

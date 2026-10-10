@@ -1,7 +1,7 @@
 // Development tab queries (SRS 7 module 5). All take the filter bar's params.
 import { useMemo } from 'react';
-import { useApi } from '../../api/queries';
-import type { DevAssignees, DevMatrix, DevRanking, DevSummary } from '../../api/types';
+import { useApi, withGroupBy } from '../../api/queries';
+import type { DevAssignees, DevMatrix, DevRanking, DevSummary, GroupBy } from '../../api/types';
 import { toParams } from '../filters/toParams';
 import { useFilters } from '../filters/useFilters';
 
@@ -11,10 +11,14 @@ export function useDevParams() {
 }
 
 export const useDevSummary = () => useApi<DevSummary>('/api/dev/summary', useDevParams());
-export const useDevAssignees = () => useApi<DevAssignees>('/api/dev/assignees', useDevParams());
+
+export function useDevAssignees(by: GroupBy = 'assignee') {
+  const params = useDevParams();
+  return useApi<DevAssignees>('/api/dev/assignees', withGroupBy(params, by));
+}
 export const useDevRanking = () => useApi<DevRanking>('/api/dev/ranking', useDevParams());
 
-export function useDevMatrix(splitTag: string | null) {
-  const params = useDevParams();
+export function useDevMatrix(splitTag: string | null, by: GroupBy = 'assignee') {
+  const params = withGroupBy(useDevParams(), by);
   return useApi<DevMatrix>('/api/dev/matrix', splitTag ? { ...params, splitTag } : params);
 }

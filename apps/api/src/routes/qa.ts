@@ -14,8 +14,8 @@ import {
 } from '@nural/shared';
 import type { FastifyInstance } from 'fastify';
 import type { DatasetProvider } from '../data/dataset';
-import { contextOf, withPeople, type AppOptions } from './context';
-import { parseQuery } from './params';
+import { contextOf, withGroupNames, withPeople, type AppOptions } from './context';
+import { groupByParam, parseQuery } from './params';
 
 export function qaRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts: AppOptions) {
   async function scope(query: unknown) {
@@ -32,19 +32,23 @@ export function qaRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts
   });
 
   app.get('/api/qa/issues', async (req) => {
-    const { filters, ds, ctx } = await scope(req.query);
+    const { query, filters } = parseQuery(req.query, groupByParam);
+    const by = query.groupBy;
+    const ds = await getDataset();
+    const ctx = contextOf(ds, opts);
     const list = applyFilters(issues(ds.tasks), filters, ctx.tz);
-    const age = issueAgeByAssignee(list, ctx);
+    const age = issueAgeByAssignee(list, ctx, by);
     const byStage = issuesByStage(list);
     const retest = waitingForRetest(list, ctx);
     return {
-      byAssignee: withPeople(ds, issuesByAssignee(list)),
+      groupBy: by,
+      byAssignee: withGroupNames(ds, issuesByAssignee(list, by), by),
       byStage: {
         stages: byStage.stages.map((s) => ({ ...s, color: STAGE_COLORS[s.stage] })),
         unmapped: byStage.unmapped,
       },
-      age: { rows: withPeople(ds, age.rows), totals: age.totals },
-      rework: withPeople(ds, reworkByDeveloper(list, ds.byId)),
+      age: { rows: withGroupNames(ds, age.rows, by), totals: age.totals },
+      rework: withGroupNames(ds, reworkByDeveloper(list, ds.byId, by), by),
       waitingForRetest: { total: retest.total, byCreator: withPeople(ds, retest.byCreator) },
     };
   });

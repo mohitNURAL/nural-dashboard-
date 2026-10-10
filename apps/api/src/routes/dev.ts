@@ -8,19 +8,26 @@ import {
   speedRanking,
   stageMatrix,
   STAGE_COLORS,
+  type GroupBy,
 } from '@nural/shared';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { DatasetProvider } from '../data/dataset';
-import { contextOf, person, project, withPeople, type AppOptions } from './context';
-import { parseQuery } from './params';
+import { contextOf, person, project, withGroupNames, withPeople, type AppOptions } from './context';
+import { groupByParam, parseQuery } from './params';
 
 export function devRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts: AppOptions) {
   async function scope(query: unknown, extra?: z.ZodRawShape) {
     const { query: q, filters } = parseQuery(query, extra);
     const ds = await getDataset();
     const ctx = contextOf(ds, opts);
-    return { q, filters, ds, ctx, tasks: applyFilters(devTasks(ds.tasks, ctx), filters, ctx.tz) };
+    return {
+      q: q as typeof q & { groupBy?: GroupBy },
+      filters,
+      ds,
+      ctx,
+      tasks: applyFilters(devTasks(ds.tasks, ctx), filters, ctx.tz),
+    };
   }
 
   app.get('/api/dev/summary', async (req) => {
@@ -41,13 +48,15 @@ export function devRoutes(app: FastifyInstance, getDataset: DatasetProvider, opt
   });
 
   app.get('/api/dev/assignees', async (req) => {
-    const { ds, ctx, tasks } = await scope(req.query);
-    const table = assigneeTable(tasks, ctx);
-    const ageing = ageingByAssignee(tasks, ctx);
+    const { ds, ctx, tasks, q } = await scope(req.query, groupByParam);
+    const by = q.groupBy ?? 'assignee';
+    const table = assigneeTable(tasks, ctx, by);
+    const ageing = ageingByAssignee(tasks, ctx, by);
     return {
-      rows: withPeople(ds, table.rows),
+      groupBy: by,
+      rows: withGroupNames(ds, table.rows, by),
       totals: table.totals,
-      ageing: { rows: withPeople(ds, ageing.rows), totals: ageing.totals },
+      ageing: { rows: withGroupNames(ds, ageing.rows, by), totals: ageing.totals },
     };
   });
 
@@ -64,12 +73,17 @@ export function devRoutes(app: FastifyInstance, getDataset: DatasetProvider, opt
   });
 
   app.get('/api/dev/matrix', async (req) => {
-    const { ds, tasks, q } = await scope(req.query, { splitTag: z.string().min(1).optional() });
-    const m = stageMatrix(tasks, { tag: (q as { splitTag?: string }).splitTag });
+    const { ds, tasks, q } = await scope(req.query, {
+      splitTag: z.string().min(1).optional(),
+      ...groupByParam,
+    });
+    const by = q.groupBy ?? 'assignee';
+    const m = stageMatrix(tasks, { tag: (q as { splitTag?: string }).splitTag, by });
     return {
       ...m,
+      groupBy: by,
       stages: m.stages.map((s) => ({ stage: s, color: STAGE_COLORS[s] })),
-      rows: withPeople(ds, m.rows),
+      rows: withGroupNames(ds, m.rows, by),
     };
   });
 }

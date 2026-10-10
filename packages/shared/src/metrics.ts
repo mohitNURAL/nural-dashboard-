@@ -220,6 +220,14 @@ function groupBy<K>(tasks: readonly MetricTask[], key: (t: MetricTask) => K): Ma
   return m;
 }
 
+/** Rows of the people-or-project breakdowns (DEV-02, 03, 05; QA-02, 04, 05). */
+export type GroupBy = 'assignee' | 'project';
+export const GROUP_BY = ['assignee', 'project'] as const;
+
+/** Row key: the assignee's user id, or the workgroup id (0 = no project). */
+const groupKey = (by: GroupBy) =>
+  by === 'project' ? (t: MetricTask) => t.groupId : (t: MetricTask) => t.responsibleId;
+
 const pct = (part: number, whole: number) => (whole ? Math.round((part / whole) * 1000) / 10 : 0);
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
@@ -283,9 +291,13 @@ function assigneeRow(id: number, list: readonly MetricTask[], ctx: MetricContext
   };
 }
 
-/** DEV-02: one row per assignee, sorted by total, plus a totals row. */
-export function assigneeTable(tasks: readonly MetricTask[], ctx: MetricContext) {
-  const rows = [...groupBy(tasks, (t) => t.responsibleId)]
+/** DEV-02: one row per assignee (or project), sorted by total, plus a totals row. */
+export function assigneeTable(
+  tasks: readonly MetricTask[],
+  ctx: MetricContext,
+  by: GroupBy = 'assignee',
+) {
+  const rows = [...groupBy(tasks, groupKey(by))]
     .map(([id, list]) => assigneeRow(id, list, ctx))
     .sort((a, b) => b.total - a.total || a.id - b.id);
   return { rows, totals: { ...assigneeRow(0, tasks, ctx), id: 0 } };
@@ -296,11 +308,15 @@ export type BucketCounts<B extends string> = Record<B, number>;
 const zeroBuckets = <B extends string>(keys: readonly B[]) =>
   Object.fromEntries(keys.map((k) => [k, 0])) as BucketCounts<B>;
 
-/** DEV-03: open (pending) tasks per assignee by days past deadline. */
-export function ageingByAssignee(tasks: readonly MetricTask[], ctx: MetricContext) {
+/** DEV-03: open (pending) tasks per assignee (or project) by days past deadline. */
+export function ageingByAssignee(
+  tasks: readonly MetricTask[],
+  ctx: MetricContext,
+  by: GroupBy = 'assignee',
+) {
   const open = tasks.filter(isPending);
   const totals = zeroBuckets(AGEING_BUCKETS);
-  const rows = [...groupBy(open, (t) => t.responsibleId)]
+  const rows = [...groupBy(open, groupKey(by))]
     .map(([id, list]) => {
       const buckets = zeroBuckets(AGEING_BUCKETS);
       for (const t of list) {
@@ -376,8 +392,14 @@ export function speedRanking(
   return [...ranked, ...unranked];
 }
 
-/** DEV-05: assignee x stage counts, optionally narrowed to one tag; tags listed for the toggle. */
-export function stageMatrix(tasks: readonly MetricTask[], { tag }: { tag?: string } = {}) {
+/**
+ * DEV-05: assignee (or project) x stage counts, optionally narrowed to one tag; tags listed
+ * for the toggle.
+ */
+export function stageMatrix(
+  tasks: readonly MetricTask[],
+  { tag, by = 'assignee' }: { tag?: string; by?: GroupBy } = {},
+) {
   const tagCounts = new Map<string, { value: string; count: number }>();
   for (const t of tasks) {
     for (const raw of t.tags) {
@@ -391,7 +413,7 @@ export function stageMatrix(tasks: readonly MetricTask[], { tag }: { tag?: strin
     ? tasks.filter((t) => t.tags.some((x) => normalizeTag(x) === normalizeTag(tag)))
     : tasks;
 
-  const rows = [...groupBy(scoped, (t) => t.responsibleId)]
+  const rows = [...groupBy(scoped, groupKey(by))]
     .map(([id, list]) => {
       const cells = Object.fromEntries(STAGE_TITLES.map((s) => [s, 0])) as Record<
         StageTitle,
@@ -443,9 +465,9 @@ export function qaSummary(list: readonly MetricTask[], ctx: MetricContext, byId:
   };
 }
 
-/** QA-02: open vs resolved and bug vs feedback per developer. */
-export function issuesByAssignee(list: readonly MetricTask[]) {
-  return [...groupBy(list, (t) => t.responsibleId)]
+/** QA-02: open vs resolved and bug vs feedback per developer (or project). */
+export function issuesByAssignee(list: readonly MetricTask[], by: GroupBy = 'assignee') {
+  return [...groupBy(list, groupKey(by))]
     .map(([id, l]) => {
       const open = l.filter(isOpenIssue).length;
       return {
@@ -469,10 +491,14 @@ export function issuesByStage(list: readonly MetricTask[]) {
   return { stages, unmapped: list.filter((t) => t.stage === null).length };
 }
 
-/** QA-04: open issues per assignee by days since created. */
-export function issueAgeByAssignee(list: readonly MetricTask[], ctx: MetricContext) {
+/** QA-04: open issues per assignee (or project) by days since created. */
+export function issueAgeByAssignee(
+  list: readonly MetricTask[],
+  ctx: MetricContext,
+  by: GroupBy = 'assignee',
+) {
   const totals = zeroBuckets(ISSUE_AGE_BUCKETS);
-  const rows = [...groupBy(list.filter(isOpenIssue), (t) => t.responsibleId)]
+  const rows = [...groupBy(list.filter(isOpenIssue), groupKey(by))]
     .map(([id, l]) => {
       const buckets = zeroBuckets(ISSUE_AGE_BUCKETS);
       for (const t of l) {
@@ -486,9 +512,13 @@ export function issueAgeByAssignee(list: readonly MetricTask[], ctx: MetricConte
   return { rows, totals };
 }
 
-/** QA-05: rework count and % of each developer's issues that are rework. */
-export function reworkByDeveloper(list: readonly MetricTask[], byId: TaskIndex) {
-  return [...groupBy(list, (t) => t.responsibleId)]
+/** QA-05: rework count and % of each developer's (or project's) issues that are rework. */
+export function reworkByDeveloper(
+  list: readonly MetricTask[],
+  byId: TaskIndex,
+  by: GroupBy = 'assignee',
+) {
+  return [...groupBy(list, groupKey(by))]
     .map(([id, l]) => {
       const counts = l.map((t) => reworkCount(t, byId));
       const reworkIssues = counts.filter((n) => n > 0).length;

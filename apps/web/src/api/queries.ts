@@ -1,6 +1,6 @@
 // TanStack Query setup. Every API query key starts with 'api' so a live update can
 // invalidate them all in one call (useLiveUpdates).
-import type { IssueType } from '@nural/shared';
+import type { GroupBy, IssueType } from '@nural/shared';
 import { keepPreviousData, QueryClient, useQuery } from '@tanstack/react-query';
 import { toParams, type FilterState, type Tab } from '../features/filters/toParams';
 import { apiGet } from './client';
@@ -26,6 +26,10 @@ export function useApi<T>(
     enabled,
   });
 }
+
+/** Adds `groupBy` only when it is not the default, so default requests share one cache entry. */
+export const withGroupBy = (params: Record<string, string>, by: GroupBy) =>
+  by === 'assignee' ? params : { ...params, groupBy: by };
 
 export type DeptGroup = 'Development' | 'Testing' | 'Other';
 
