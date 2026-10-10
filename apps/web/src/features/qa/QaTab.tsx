@@ -15,6 +15,13 @@ import { INFO } from '../info';
 
 type Section = 'latest' | 'all';
 
+/** What "All issues" shows: a tile's preset, optionally narrowed (e.g. to Bug) and relabelled. */
+interface IssueList {
+  preset: IssuePreset;
+  label?: string;
+  params?: Record<string, string>;
+}
+
 /** The "i" of "All issues" follows the tile that narrowed it. */
 const ISSUE_LIST_INFO: Record<IssuePreset, string> = {
   all: INFO.allIssues,
@@ -35,8 +42,10 @@ export function QaTab() {
   const { data: summary } = useQaSummary();
   const { data: issues } = useQaIssues();
   const [open, setOpen] = useState<Record<Section, boolean>>({ latest: false, all: false });
-  // "All issues" follows the last tile clicked (QA-01).
-  const [allPreset, setAllPreset] = useState<IssuePreset>('all');
+  // "All issues" follows the last tile, or tile part (Bug / Feedback), clicked (QA-01).
+  const [list, setList] = useState<IssueList>({ preset: 'all' });
+  const [listTotal, setListTotal] = useState<number>();
+  const allPreset = list.preset;
   const refs = { latest: useRef<HTMLElement>(null), all: useRef<HTMLElement>(null) };
 
   const reveal = (s: Section) => {
@@ -45,28 +54,33 @@ export function QaTab() {
       refs[s].current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
     );
   };
-  const showAll = (preset: IssuePreset) => {
-    setAllPreset(preset);
+  const showAll = (preset: IssuePreset, part?: Omit<IssueList, 'preset'>) => {
+    setList({ preset, ...part });
     reveal('all');
   };
   const onTile = (preset: IssuePreset) =>
     preset === 'lastFiled' ? reveal('latest') : showAll(preset);
 
-  const allCount =
-    summary &&
-    {
-      all: summary.total,
-      open: summary.open,
-      resolved: summary.resolved,
-      lastFiled: summary.lastFiled?.count ?? 0,
-      rework: summary.reworkIssues,
-      retest: issues?.waitingForRetest.total,
-    }[allPreset];
+  const allCount = list.params
+    ? listTotal
+    : summary &&
+      {
+        all: summary.total,
+        open: summary.open,
+        resolved: summary.resolved,
+        lastFiled: summary.lastFiled?.count ?? 0,
+        rework: summary.reworkIssues,
+        retest: issues?.waitingForRetest.total,
+      }[allPreset];
 
   return (
     <InfoContext.Provider value={showing}>
       <div className="space-y-4">
-        <QaTiles active={open.all && allPreset !== 'all' ? allPreset : null} onSelect={onTile} />
+        <QaTiles
+          active={open.all && allPreset !== 'all' && !list.params ? allPreset : null}
+          onSelect={onTile}
+          onPart={(preset, label, params) => showAll(preset, { label, params })}
+        />
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
           <IssuesByAssigneeCard className="lg:col-span-6" />
@@ -99,31 +113,34 @@ export function QaTab() {
           ref={refs.all}
           info={ISSUE_LIST_INFO[allPreset]}
           title={
-            allPreset === 'all'
-              ? 'All issues (bug and feedback)'
-              : `All issues: ${ISSUE_PRESET_LABELS[allPreset]}`
+            list.label
+              ? `All issues: ${list.label}`
+              : allPreset === 'all'
+                ? 'All issues (bug and feedback)'
+                : `All issues: ${ISSUE_PRESET_LABELS[allPreset]}`
           }
           hint="Row click opens the issue"
           count={allCount}
           open={open.all}
           onOpenChange={(o) => setOpen((p) => ({ ...p, all: o }))}
         >
-          {allPreset !== 'all' && (
+          {(allPreset !== 'all' || list.params) && (
             <button
               type="button"
-              onClick={() => setAllPreset('all')}
+              onClick={() => setList({ preset: 'all' })}
               className="mb-3 font-heading text-button text-primary hover:underline"
             >
               Show all issues
             </button>
           )}
           <TaskList
-            filterParams={params}
+            filterParams={list.params ? { ...params, ...list.params } : params}
             kind="issues"
             preset={allPreset}
             defaultSort="-created"
             columns={ALL_COLUMNS}
             searchable
+            onTotal={setListTotal}
           />
         </Accordion>
       </div>

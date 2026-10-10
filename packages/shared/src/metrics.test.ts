@@ -25,6 +25,7 @@ import {
   lastFiled,
   presetPredicate,
   qaSummary,
+  qaSummaryParts,
   reworkByDeveloper,
   reworkCount,
   speedRanking,
@@ -541,6 +542,28 @@ describe('QA tab', () => {
     expect(issueAgeByAssignee(all, ctx, 'project').rows.find((r) => r.id === 148)?.total).toBe(1);
     expect(reworkByDeveloper(all, byId, 'project')).toEqual([
       { id: 154, issues: list.length, rework: 4, reworkIssues: 3, reworkPct: 60 },
+    ]);
+  });
+
+  it('splits every QA tile into bug and feedback, adding up to the tile', () => {
+    const s = qaSummary(list, ctx, byId);
+    const parts = qaSummaryParts(list, ctx, byId);
+    expect(parts.map((p) => p.key)).toEqual(['bug', 'feedback']);
+    const sum = (k: 'total' | 'open' | 'lastFiled' | 'rework') =>
+      parts.reduce((n, p) => n + p[k], 0);
+    expect(sum('total')).toBe(s.total);
+    expect(sum('open')).toBe(s.open);
+    expect(sum('lastFiled')).toBe(s.lastFiled?.count ?? 0);
+    expect(sum('rework')).toBe(s.reworkIssues);
+  });
+
+  it('counts last filed parts on the overall last filed day', () => {
+    const late = task({ tags: ['Bug'], createdAt: new Date('2026-10-09T05:00:00Z') });
+    const early = task({ tags: ['Feedback'], createdAt: new Date('2026-10-01T05:00:00Z') });
+    expect(qaSummaryParts([late, early], ctx, indexTasks([late, early]))).toEqual([
+      expect.objectContaining({ key: 'bug', lastFiled: 1 }),
+      // Feedback's own latest day is 1 Oct, but the tile is about 9 Oct: 0.
+      expect.objectContaining({ key: 'feedback', lastFiled: 0 }),
     ]);
   });
 

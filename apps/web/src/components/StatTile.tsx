@@ -45,7 +45,11 @@ export function StatTile({ label, value, sub, tone, active, onClick, aside, part
         type="button"
         onClick={onClick}
         aria-pressed={active}
-        className="flex w-full items-center gap-2 rounded-card p-3 pb-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+        className={clsx(
+          'flex w-full items-center gap-2 rounded-card p-3 pb-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary',
+          // Room for the "i" in the corner, so an aside (the ring) does not sit under it.
+          info && 'pr-7',
+        )}
       >
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate font-heading text-label uppercase text-text-muted">

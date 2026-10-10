@@ -240,6 +240,10 @@ describe('metrics API', () => {
 
   it('GET /api/qa/summary and /api/qa/issues', async () => {
     const s = await get('/api/qa/summary');
+    expect(s.body.parts).toEqual([
+      expect.objectContaining({ key: 'bug', total: 1 }),
+      expect.objectContaining({ key: 'feedback', total: 1 }),
+    ]);
     expect(s.body).toMatchObject({
       total: 2,
       open: 1,

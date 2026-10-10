@@ -6,6 +6,7 @@ import {
   issuesByAssignee,
   issuesByStage,
   qaSummary,
+  qaSummaryParts,
   reworkByDeveloper,
   STAGE_COLORS,
   testingTasks,
@@ -28,7 +29,13 @@ export function qaRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts
   app.get('/api/qa/summary', async (req) => {
     const { filters, ds, ctx } = await scope(req.query);
     const list = applyFilters(issues(ds.tasks), filters, ctx.tz);
-    return { ...qaSummary(list, ctx, ds.byId), asOf: ctx.now, dataLoadedAt: ds.loadedAt };
+    return {
+      ...qaSummary(list, ctx, ds.byId),
+      // Tile breakdown: every QA tile split into Bug and Feedback.
+      parts: qaSummaryParts(list, ctx, ds.byId),
+      asOf: ctx.now,
+      dataLoadedAt: ds.loadedAt,
+    };
   });
 
   app.get('/api/qa/issues', async (req) => {

@@ -165,7 +165,9 @@ The QA tab shows how many bugs and feedback items were filed, how many are still
 | 1 | Total issues filed | All tasks tagged bug or feedback in the filters (project and assignee) |
 | 2 | Open / waiting | Open count with a ring showing Resolved % vs Open % |
 | 3 | Last filed | If issues were filed today: "Today" and today's count. Otherwise the most recent filing date and that day's count |
-| 4 | Rework issues | Count of issues that count as rework (section 5), with % of all issues |
+| 4 | Rework issues | Count of issues that count as rework (section 5) |
+
+Under each tile's number the count is split into **Bug | Feedback**; the parts add up to the tile (for Last filed: that day's bugs and feedback). Each part opens "All issues" narrowed to it, e.g. "All issues: Open · Bug". The tiles show no other counts (no percentages, no "issues that day" or reopen counts); the ring on Open / waiting still shows the resolved share, and the ⓘ explains each rule.
 
 **QA-02 Issues by assignee**: stacked bars (Open vs Resolved) per developer or per project, plus Bug vs Feedback split.
 
@@ -355,7 +357,7 @@ SSE is chosen over WebSocket because the browser only receives; filters are sent
 2. **Sync worker**: takes events, fetches the full task through the inbound webhook (batched), compares with the stored snapshot, writes the stage-move log, and publishes a change message.
 3. **Reconciler**: every 10 minutes, pulls tasks changed since the last run, to recover any missed webhook. Nightly full resync of open tasks.
 4. **Directory sync**: hourly, users, departments and workgroups, and the stage list of each workgroup.
-5. **Metrics API**: `GET /api/dev/summary`, `/api/dev/assignees`, `/api/dev/ranking`, `/api/dev/matrix`, `/api/tasks`, `/api/qa/summary`, `/api/qa/issues`, `/api/qa/testing`, `/api/filters/options`, all taking the same filter parameters. `/api/dev/assignees`, `/api/dev/matrix` and `/api/qa/issues` also take `groupBy=assignee|project` for the Assignee / Project switch. The Development endpoints, `/api/filters/options?tab=dev` and `/api/tasks?kind=tasks` take `scope=all|dev|issues` (API default `dev`). `/api/tasks` also takes `stage` (one or a comma list), `overdue=true|false` and `ageing=<bucket>` for drill-downs. `/api/dev/summary` returns `parts`, the tile breakdown for the switch. `GET /api/alerts` returns the header alerts (with each line's filtered `boardUrl`, and for stuck lines `boardCount`, what that Bitrix24 board will list); `/api/tasks` takes `stuck=true` and `owner=<user id>` (the alert's person) to open an alert's tasks.
+5. **Metrics API**: `GET /api/dev/summary`, `/api/dev/assignees`, `/api/dev/ranking`, `/api/dev/matrix`, `/api/tasks`, `/api/qa/summary`, `/api/qa/issues`, `/api/qa/testing`, `/api/filters/options`, all taking the same filter parameters. `/api/dev/assignees`, `/api/dev/matrix` and `/api/qa/issues` also take `groupBy=assignee|project` for the Assignee / Project switch. The Development endpoints, `/api/filters/options?tab=dev` and `/api/tasks?kind=tasks` take `scope=all|dev|issues` (API default `dev`). `/api/tasks` also takes `stage` (one or a comma list), `overdue=true|false` and `ageing=<bucket>` for drill-downs. `/api/dev/summary` returns `parts`, the tile breakdown for the switch. `/api/qa/summary` returns `parts`, each QA tile split into bug and feedback. `GET /api/alerts` returns the header alerts (with each line's filtered `boardUrl`, and for stuck lines `boardCount`, what that Bitrix24 board will list); `/api/tasks` takes `stuck=true` and `owner=<user id>` (the alert's person) to open an alert's tasks.
 6. **SSE endpoint** `GET /api/stream`: sends `task.changed` with the task ID, stage group and project, so the browser refetches only the queries that include it.
 
 **Data model (PostgreSQL)**

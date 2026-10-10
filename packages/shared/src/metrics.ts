@@ -526,6 +526,35 @@ export function lastFiled(list: readonly MetricTask[], ctx: MetricContext) {
 }
 
 /** QA-01 tiles. Pass issues already filtered. `byId` must index all tasks (for rework links). */
+/** One part of the QA-01 tile breakdown. */
+export interface QaSummaryPart {
+  key: IssueType;
+  total: number;
+  open: number;
+  /** Issues of this type filed on the overall Last filed day (not this type's own latest day). */
+  lastFiled: number;
+  rework: number;
+}
+
+/** QA-01 tile breakdown: every tile split into Bug and Feedback; the parts add up to the tile. */
+export function qaSummaryParts(
+  list: readonly MetricTask[],
+  ctx: MetricContext,
+  byId: TaskIndex,
+): QaSummaryPart[] {
+  const day = lastFiled(list, ctx)?.date;
+  return (['bug', 'feedback'] as const).map((key) => {
+    const sub = list.filter((t) => t.issueType === key);
+    return {
+      key,
+      total: sub.length,
+      open: sub.filter(isOpenIssue).length,
+      lastFiled: day ? sub.filter((t) => dayKey(t.createdAt, ctx.tz) === day).length : 0,
+      rework: sub.filter((t) => reworkCount(t, byId) > 0).length,
+    };
+  });
+}
+
 export function qaSummary(list: readonly MetricTask[], ctx: MetricContext, byId: TaskIndex) {
   const resolved = list.filter((t) => !isOpenIssue(t)).length;
   const rework = list.map((t) => reworkCount(t, byId));

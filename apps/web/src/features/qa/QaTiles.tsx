@@ -1,5 +1,6 @@
-// QA-01: one row of 4 tiles. Each opens the matching issue list.
-import type { IssuePreset } from '@nural/shared';
+// QA-01: one row of 4 tiles. Each opens the matching issue list; under each number the Bug and
+// Feedback parts (adding up to it) open their own list. No other counts on the tiles.
+import type { IssuePreset, QaSummaryPart } from '@nural/shared';
 import { StatTile } from '../../components/StatTile';
 import { useQaSummary } from './api';
 import { lastFiledText } from './format';
@@ -8,11 +9,32 @@ import { INFO } from '../info';
 interface Props {
   active: IssuePreset | null;
   onSelect: (preset: IssuePreset) => void;
+  /** A Bug / Feedback part: opens "All issues" narrowed to it. */
+  onPart: (preset: IssuePreset, label: string, params: Record<string, string>) => void;
 }
 
-export function QaTiles({ active, onSelect }: Props) {
+type PartCount = Exclude<keyof QaSummaryPart, 'key'>;
+const TYPE_LABEL = { bug: 'Bug', feedback: 'Feedback' } as const;
+
+export function QaTiles({ active, onSelect, onPart }: Props) {
   const { data } = useQaSummary();
   const last = data?.lastFiled;
+  /** The Bug | Feedback parts of one tile. */
+  const parts = (
+    tile: string,
+    count: PartCount,
+    preset: IssuePreset,
+    extra: Record<string, string> = {},
+  ) =>
+    data?.parts.map((p) => ({
+      label: TYPE_LABEL[p.key],
+      value: p[count],
+      onClick: () => onPart(preset, `${tile} · ${TYPE_LABEL[p.key]}`, { type: p.key, ...extra }),
+    }));
+  // Last filed parts: that day's issues of each type (created on the Last filed date).
+  const lastDay = last
+    ? { dateField: 'created', from: last.date, to: last.date }
+    : ({} as Record<string, string>);
 
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -21,6 +43,7 @@ export function QaTiles({ active, onSelect }: Props) {
         info={INFO.qaTotal}
         value={data?.total}
         sub="Tagged bug or feedback"
+        parts={parts('Total', 'total', 'all')}
         active={active === 'all'}
         onClick={() => onSelect('all')}
       />
@@ -28,7 +51,8 @@ export function QaTiles({ active, onSelect }: Props) {
         label="Open / waiting"
         info={INFO.qaOpen}
         value={data?.open}
-        sub={data && `${data.resolvedPct}% resolved · ${data.openPct}% open`}
+        sub="Not in Done or LIVE"
+        parts={parts('Open', 'open', 'open')}
         active={active === 'open'}
         onClick={() => onSelect('open')}
         aside={data && <Ring resolvedPct={data.resolvedPct} />}
@@ -37,7 +61,8 @@ export function QaTiles({ active, onSelect }: Props) {
         label="Last filed"
         info={INFO.qaLastFiled}
         value={data && lastFiledText(last ?? null)}
-        sub={last ? `${last.count} ${last.count === 1 ? 'issue' : 'issues'} that day` : undefined}
+        sub="Latest day an issue was filed"
+        parts={parts('Last filed', 'lastFiled', 'all', lastDay)}
         active={active === 'lastFiled'}
         onClick={() => onSelect('lastFiled')}
       />
@@ -45,10 +70,8 @@ export function QaTiles({ active, onSelect }: Props) {
         label="Rework issues"
         info={INFO.qaRework}
         value={data?.reworkIssues}
-        sub={
-          data &&
-          `${data.reworkPct}% of issues · ${data.reworkTotal} ${data.reworkTotal === 1 ? 'reopen' : 'reopens'}`
-        }
+        sub="Sent back from QA for a fix"
+        parts={parts('Rework', 'rework', 'rework')}
         tone="bad"
         active={active === 'rework'}
         onClick={() => onSelect('rework')}

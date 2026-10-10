@@ -1,5 +1,12 @@
 // Response shapes of apps/api (routes/*.ts). Dates arrive as ISO strings.
-import type { GroupBy, IssueType, StageGroup, StageTitle, SummaryPart } from '@nural/shared';
+import type {
+  GroupBy,
+  IssueType,
+  QaSummaryPart,
+  StageGroup,
+  StageTitle,
+  SummaryPart,
+} from '@nural/shared';
 import type { DeptGroup } from './queries';
 
 export interface Person {
@@ -154,6 +161,8 @@ export interface QaSummary {
   reworkIssues: number;
   reworkPct: number;
   reworkTotal: number;
+  /** Every tile split into Bug and Feedback. */
+  parts: QaSummaryPart[];
   asOf: string;
 }
 
