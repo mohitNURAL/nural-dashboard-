@@ -85,11 +85,22 @@ describe('diffTask', () => {
     });
   });
 
-  it('is a plain stage change when moving forward', () => {
+  it('flags a QA send-back to Issue Raised as reopened (rework)', () => {
     const d = diffTask(stored, {
       id: 1,
       stageId: '1070',
       stage: 'Issue Raised',
+      groupId: 148,
+      changedAt: new Date(),
+    });
+    expect(d).toMatchObject({ stageChanged: true, reopened: true });
+  });
+
+  it('is a plain stage change when moving forward', () => {
+    const d = diffTask(stored, {
+      id: 1,
+      stageId: '1072',
+      stage: 'Done',
       groupId: 148,
       changedAt: new Date(),
     });

@@ -209,7 +209,7 @@ export const issueAgeBucket = (t: MetricTask, ctx: MetricContext): IssueAgeBucke
 
 // ---------------------------------------------------------------- rework
 
-/** Moves from QA Backlog, In QA or Done back to To do or In progress (sent back, reopened). */
+/** QA send-backs: moves from QA Backlog, In QA or Done back to Issue Raised, To do or In progress. */
 export const reopenEvents = (t: MetricTask) => t.events.filter((e) => isReworkMove(e.from, e.to));
 
 export type TaskIndex = ReadonlyMap<number, MetricTask>;

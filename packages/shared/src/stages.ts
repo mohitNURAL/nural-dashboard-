@@ -44,14 +44,17 @@ export const READY_FOR_DEPLOYMENT_STAGE: StageTitle = 'Done';
 export const DEPLOYED_STAGE: StageTitle = 'LIVE';
 
 /**
- * Stages from which a move back to To do / In progress counts as a reopen (rework): sent back
- * from QA Backlog, In QA or Done. A move from Issue Raised back to To do is not rework.
+ * Rework (SRS 5) is QA sending an issue back after it was fixed and came for testing: a move from
+ * QA Backlog, In QA or Done back to Issue Raised, To do or In progress. Each send-back counts once.
+ *
+ * Not rework: the first cycle (tester files the bug, Issue Raised, the PM / lead reviews it and
+ * moves it to To do), nor that PM step after a send-back, so moves from Issue Raised never count.
  */
 export const REWORK_FROM_STAGES: readonly StageTitle[] = ['QA Backlog', 'In QA', 'Done'];
+export const REWORK_TO_STAGES: readonly StageTitle[] = ['Issue Raised', 'To do', 'In progress'];
 
-/** A stage move that counts as rework (SRS 5): from REWORK_FROM_STAGES to To do or In progress. */
 export const isReworkMove = (from: StageTitle | null, to: StageTitle | null): boolean =>
-  !!from && REWORK_FROM_STAGES.includes(from) && (to === 'To do' || to === 'In progress');
+  !!from && !!to && REWORK_FROM_STAGES.includes(from) && REWORK_TO_STAGES.includes(to);
 
 export const STAGE_COLORS: Record<StageTitle, string> = {
   'To do': '#00C4FB',

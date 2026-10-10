@@ -492,15 +492,31 @@ describe('QA tab', () => {
   const byId = indexTasks(all);
   const list = issues(all);
 
-  it('counts moves back from QA Backlog, In QA or Done as rework, not from Issue Raised', () => {
-    const moved = (from: MetricTask['stage'], to: MetricTask['stage']) =>
-      reworkCount(task({ tags: ['Bug'], events: [ev(from, to, '2026-10-05T05:00:00Z')] }), byId);
-    expect(moved('QA Backlog', 'To do')).toBe(1);
-    expect(moved('In QA', 'In progress')).toBe(1);
-    expect(moved('Done', 'To do')).toBe(1);
-    expect(moved('Issue Raised', 'To do')).toBe(0);
-    expect(moved('LIVE', 'To do')).toBe(0);
-    expect(moved('QA Backlog', 'Pending for QA')).toBe(0);
+  it('counts a QA send-back once, not the first Issue Raised to To do cycle', () => {
+    const cycle = (...stages: NonNullable<MetricTask['stage']>[]) =>
+      reworkCount(
+        task({
+          tags: ['Bug'],
+          events: stages.slice(1).map((to, k) => ev(stages[k]!, to, `2026-10-0${k + 1}T05:00:00Z`)),
+        }),
+        byId,
+      );
+    // Tester files the bug, PM sends it to the developer: not rework.
+    expect(cycle('Issue Raised', 'To do', 'In progress', 'QA Backlog')).toBe(0);
+    // Fixed, failed in QA, back via Issue Raised to To do: one rework.
+    expect(cycle('Issue Raised', 'To do', 'QA Backlog', 'In QA', 'Issue Raised', 'To do')).toBe(1);
+    // Straight back to To do or In progress from QA, or reopened after Done: rework.
+    expect(cycle('QA Backlog', 'To do')).toBe(1);
+    expect(cycle('In QA', 'In progress')).toBe(1);
+    expect(cycle('Done', 'To do')).toBe(1);
+    // Two failed QA cycles: two.
+    expect(
+      cycle('To do', 'QA Backlog', 'Issue Raised', 'To do', 'In QA', 'Issue Raised', 'To do'),
+    ).toBe(2);
+    // Not send-backs.
+    expect(cycle('Issue Raised', 'To do')).toBe(0);
+    expect(cycle('LIVE', 'To do')).toBe(0);
+    expect(cycle('QA Backlog', 'Pending for QA')).toBe(0);
   });
 
   it('counts rework without double counting', () => {
