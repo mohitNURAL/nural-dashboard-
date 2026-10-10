@@ -283,8 +283,9 @@ describe('metrics API', () => {
     ]);
     expect(s.body).toMatchObject({
       total: 2,
-      open: 1,
-      resolved: 1,
+      // Both issues are in QA Backlog / In QA or beyond: completed.
+      open: 0,
+      resolved: 2,
       reworkIssues: 1,
       reworkTotal: 1,
     });

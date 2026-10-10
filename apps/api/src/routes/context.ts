@@ -8,6 +8,7 @@ import {
   reworkCount,
   STAGE_COLORS,
   stageGroup,
+  taskStatus,
   type GroupBy,
   type MetricContext,
   type MetricTask,
@@ -111,6 +112,8 @@ export function taskRow(ds: Dataset, ctx: MetricContext, t: MetricTask) {
     stageTitle: t.stageTitle,
     stageColor: t.stage ? STAGE_COLORS[t.stage] : null,
     stageGroup: group,
+    /** Completed (QA Backlog, In QA, Done, LIVE) or pending (any stage behind), SRS 5. */
+    status: taskStatus(t),
     tags: t.tags,
     priority: PRIORITY[t.priority] ?? 'normal',
     deadline: t.deadline,

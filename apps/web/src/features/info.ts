@@ -5,7 +5,7 @@ export const INFO = {
   total:
     'All tasks in the filters for the switch (Dev, Issues or both), Development department only.',
   pending:
-    'Still with developers: To do, In progress, On Hold, Pushed to Master, Merged to Development, Pending for QA.',
+    'Behind QA Backlog: To do, In progress, On Hold, Pushed to Master, Merged to Development, Pending for QA, Issue Raised.',
   ready: 'In the Done stage, ready to go live.',
   deployed: 'In the LIVE stage.',
   overdue: 'Pending, not On Hold, and the deadline has passed.',
@@ -16,13 +16,13 @@ export const INFO = {
   assigneeTable:
     'Per person or project. Done = sent to QA (QA Backlog to LIVE). Comp. today = reached QA Backlog today.',
   colTotal: 'All tasks of this row.',
-  colPending: 'In a pending stage (To do to Pending for QA).',
-  colDone: 'Sent to QA: QA Backlog, In QA, Issue Raised, Done or LIVE.',
+  colPending: 'Pending: any stage behind QA Backlog, Issue Raised included.',
+  colDone: 'Completed: in QA Backlog, In QA, Done or LIVE.',
   colDueToday: 'Deadline is today, not yet LIVE.',
   colCompToday: 'Reached QA Backlog for the first time today.',
   colCompYesterday: 'Reached QA Backlog for the first time yesterday (IST).',
   pendingVsDone:
-    'Pending vs sent-to-QA tasks per person or project, top 15 by total. Tooltip splits Dev / Issues (Bug / Feedback on Issues).',
+    'Pending vs completed (QA Backlog, In QA, Done, LIVE) per person or project, top 15 by total. Tooltip splits Dev / Issues (Bug / Feedback on Issues).',
   ageing: 'Open tasks by days past deadline. On Hold counts here but not as Overdue.',
   ranking:
     'Tasks sent to QA with a deadline. Ranked by on-time %, then average days early. Fewer than 3: not ranked.',
@@ -34,7 +34,8 @@ export const INFO = {
 
   // QA tiles (QA-01)
   qaTotal: 'Every task tagged bug or feedback in the filters, whoever it is assigned to.',
-  qaOpen: 'Issues not in Done or LIVE, so also those waiting in QA. The ring shows the resolved %.',
+  qaOpen:
+    'Open = pending: any stage behind QA Backlog (Issue Raised included). Resolved = QA Backlog, In QA, Done or LIVE. The ring shows the resolved %.',
   qaLastFiled: 'Latest day an issue was created, and how many that day.',
   qaLastResolved:
     'Latest day issues were pushed to QA Backlog (a fix handed to QA), and how many that day.',
@@ -55,6 +56,10 @@ export const INFO = {
   issueTrend:
     'Last 7 days (IST): bugs and feedback filed (created, light) and resolved (pushed to QA Backlog that day, dark). Pick one assignee or project, or see all.',
   latestFiled: 'Issues created on the Last filed date.',
+  retestAwaited:
+    'Every task waiting for QA: in QA Backlog or In QA, split into dev tasks and issues (bug or feedback).',
+  retestByGroup:
+    'Tasks and issues in QA Backlog and In QA per assignee or project. Every number opens its tasks.',
   latestResolved: 'Issues pushed to QA Backlog on the Last resolved date.',
   allIssues: 'Every bug or feedback in the filters, or the number you clicked.',
 } as const;

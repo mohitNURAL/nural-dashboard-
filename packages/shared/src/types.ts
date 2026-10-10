@@ -38,6 +38,11 @@ export interface MetricTask {
   issueType: IssueType | null;
   /** Stage moves, oldest first. */
   events: StageEvent[];
+  /**
+   * Whether its board has a QA Backlog stage. False: a closed task is completed wherever its
+   * card is (SRS 5). Absent (older fixtures, no workgroup): the stage alone decides.
+   */
+  qaFlow?: boolean;
   /** Bitrix24 planned start and first start (KPI tab, SRS 13.2); absent in older fixtures. */
   startDatePlan?: Date | null;
   dateStart?: Date | null;

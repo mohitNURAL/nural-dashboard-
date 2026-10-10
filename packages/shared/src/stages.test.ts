@@ -45,6 +45,6 @@ describe('stages', () => {
 
   it('groups stages', () => {
     expect(stageGroupOf('On Hold')).toBe('pending');
-    expect(stageGroupOf('Issue Raised')).toBe('sentToQa');
+    expect(stageGroupOf('Issue Raised')).toBe('pending');
   });
 });

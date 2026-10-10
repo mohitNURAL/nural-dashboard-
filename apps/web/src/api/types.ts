@@ -41,6 +41,8 @@ export interface TaskRow {
   stageTitle: string | null;
   stageColor: string | null;
   stageGroup: StageGroup | null;
+  /** Completed (QA Backlog, In QA, Done, LIVE) or pending (any stage behind). */
+  status: 'completed' | 'pending';
   tags: string[];
   priority: Priority;
   deadline: string | null;
@@ -416,4 +418,23 @@ export interface KpiActivity {
 
 export interface KpiInsights {
   insights: { id: string; text: string; params: Record<string, string> }[];
+}
+
+/** QA tab "Retesting awaited": tasks in QA Backlog or In QA, dev tasks and issues. */
+export interface RetestCounts {
+  total: number;
+  dev: number;
+  issues: number;
+  qaBacklog: number;
+  inQa: number;
+  qaBacklogDev: number;
+  qaBacklogIssues: number;
+  inQaDev: number;
+  inQaIssues: number;
+}
+
+export interface QaRetest {
+  groupBy: GroupBy;
+  totals: RetestCounts;
+  rows: (Named & RetestCounts)[];
 }

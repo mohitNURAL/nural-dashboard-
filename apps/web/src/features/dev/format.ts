@@ -81,7 +81,7 @@ export const initials = (name: string) =>
 /** Tile and task-list names for each DEV preset (DEV-01). */
 export const TILE_LABELS: Record<DevPreset, string> = {
   total: 'Total tasks',
-  completed: 'Sent to QA',
+  completed: 'Completed',
   pending: 'Pending',
   ready: 'Ready',
   deployed: 'Deployed',

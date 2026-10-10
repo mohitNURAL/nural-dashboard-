@@ -33,13 +33,15 @@ const ctx: KpiContext = {
 };
 
 let nextId = 1;
+/** A task; with a closed date and no stage given, it sits in Done (completed). */
 function task(over: Partial<MetricTask> = {}): MetricTask {
+  const stage = over.closedAt ? 'Done' : 'To do';
   return {
     id: nextId++,
     title: 'T',
     groupId: 10,
-    stage: 'To do',
-    stageTitle: 'To do',
+    stage,
+    stageTitle: stage,
     status: 2,
     priority: 1,
     responsibleId: 1,
@@ -65,7 +67,7 @@ const ev = (from: StageEvent['from'], to: StageEvent['to'], at: Date): StageEven
 });
 
 describe('KPI per task (SRS 13.2)', () => {
-  it('closed = first QA Backlog, else the closed date; on time against the deadline', () => {
+  it('closed = completed stage, dated by its last move there, else the closed date', () => {
     const k = kpiTask(
       task({
         deadline: ist('2026-10-08T18:30'),
@@ -75,12 +77,41 @@ describe('KPI per task (SRS 13.2)', () => {
       ctx,
     );
     expect(k.actualEnd).toEqual(ist('2026-10-07T18:30'));
-    expect(k.endFromClose).toBe(false);
+    expect(k.endKey).toBe('10|2026-10-07|1|In progress>QA Backlog');
     expect(k.onTime).toBe(true);
     expect(k.open).toBe(false);
     const support = kpiTask(task({ closedAt: ist('2026-10-06T09:30') }), ctx);
-    expect(support.endFromClose).toBe(true);
+    expect(support.endKey).toBe('10|2026-10-06|close');
     expect(support.onTime).toBeNull(); // no deadline
+  });
+
+  it('pending stages are open even after a past completion; sent back = open again', () => {
+    const sentBack = kpiTask(
+      task({
+        stage: 'Issue Raised',
+        closedAt: ist('2026-10-06T10:00'),
+        events: [
+          ev('In progress', 'QA Backlog', ist('2026-10-06T10:00')),
+          ev('In QA', 'Issue Raised', ist('2026-10-07T10:00')),
+        ],
+      }),
+      ctx,
+    );
+    expect(sentBack.open).toBe(true);
+    expect(sentBack.actualEnd).toBeNull();
+    // Re-completed: dated by the latest move into a completed stage.
+    const again = kpiTask(
+      task({
+        stage: 'QA Backlog',
+        events: [
+          ev('In progress', 'QA Backlog', ist('2026-10-06T10:00')),
+          ev('In QA', 'Issue Raised', ist('2026-10-07T10:00')),
+          ev('To do', 'QA Backlog', ist('2026-10-08T10:00')),
+        ],
+      }),
+      ctx,
+    );
+    expect(again.actualEnd).toEqual(ist('2026-10-08T10:00'));
   });
 
   it('open, overdue and days late', () => {
@@ -109,7 +140,7 @@ describe('periods and rates', () => {
     const day = ist('2026-10-12T10:00');
     const bulk = Array.from({ length: 30 }, () => kpiTask(task({ closedAt: day }), ctx));
     const few = Array.from({ length: 5 }, () => kpiTask(task({ groupId: 11, closedAt: day }), ctx));
-    const ids = bulkClosedIds([...bulk, ...few], 'Asia/Kolkata');
+    const ids = bulkClosedIds([...bulk, ...few]);
     expect(ids.size).toBe(30);
     expect(rates([...bulk, ...few], periodBounds(NOW, 'day', cal), ids).closed).toBe(5);
   });

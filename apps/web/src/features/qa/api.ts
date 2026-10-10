@@ -1,7 +1,7 @@
 // QA tab queries (SRS 7 module 5). All take the filter bar's params.
 import { useMemo } from 'react';
 import { useApi, withGroupBy } from '../../api/queries';
-import type { GroupBy, QaIssues, QaSummary, QaTesting } from '../../api/types';
+import type { GroupBy, QaIssues, QaRetest, QaSummary, QaTesting } from '../../api/types';
 import { toParams } from '../filters/toParams';
 import { useFilters } from '../filters/useFilters';
 
@@ -26,3 +26,7 @@ export function useQaTesting() {
   );
   return useApi<QaTesting>('/api/qa/testing', rest);
 }
+
+/** Retesting awaited: every task in QA Backlog or In QA, per assignee or project. */
+export const useQaRetest = (by: GroupBy = 'assignee') =>
+  useApi<QaRetest>('/api/qa/retest', withGroupBy(useQaParams(), by));

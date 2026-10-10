@@ -30,6 +30,9 @@ import {
   qaSummaryParts,
   issueStageTable,
   reworkByDeveloper,
+  isSentToQa,
+  isPending,
+  retestBreakdown,
   reworkCount,
   speedRanking,
   stageMatrix,
@@ -232,7 +235,8 @@ describe('Development tab', () => {
     expect(devSummary(tasks, ctx)).toMatchObject({
       total: 7,
       completed: 3,
-      pending: 3,
+      // Everything not completed is pending (the unmapped task too): 3 + 4 = 7.
+      pending: 4,
       ready: 1,
       deployed: 1,
       overdue: 1,
@@ -284,8 +288,8 @@ describe('Development tab', () => {
 
   it('builds the assignee table with totals', () => {
     const { rows, totals } = assigneeTable(tasks, ctx);
-    expect(rows[0]).toMatchObject({ id: 30, total: 5, pending: 2, done: 2, completedToday: 1 });
-    expect(totals).toMatchObject({ total: 7, pending: 3, done: 3 });
+    expect(rows[0]).toMatchObject({ id: 30, total: 5, pending: 3, done: 2, completedToday: 1 });
+    expect(totals).toMatchObject({ total: 7, pending: 4, done: 3 });
   });
 
   it('groups the assignee table, ageing and matrix by project', () => {
@@ -550,10 +554,11 @@ describe('QA tab', () => {
   it('computes the 4 tiles', () => {
     expect(qaSummary(list, ctx)).toEqual({
       total: 5,
-      open: 4,
-      resolved: 1,
-      resolvedPct: 20,
-      openPct: 80,
+      // Issues in QA Backlog or In QA count as resolved (completed), like tasks.
+      open: 2,
+      resolved: 3,
+      resolvedPct: 60,
+      openPct: 40,
       lastFiled: { date: '2026-10-10', isToday: true, count: 1 },
       // Last push to QA Backlog: issue 405 on 7 Oct (402 was pushed on 2 Oct).
       lastResolved: { date: '2026-10-07', isToday: false, count: 1 },
@@ -582,9 +587,10 @@ describe('QA tab', () => {
     expect(byStage.stages.find((s) => s.stage === 'In QA')?.count).toBe(1);
     expect(byStage.stages.map((s) => s.stage)[0]).toBe('To do');
     expect(issueAgeByAssignee(list, ctx).totals).toEqual({
-      '0-2': 1,
+      // Open (pending) issues only: those waiting in QA are resolved.
+      '0-2': 0,
       '3-7': 0,
-      '8-14': 3,
+      '8-14': 2,
       '15+': 0,
     });
     expect(reworkByDeveloper(list)).toEqual([
@@ -747,5 +753,46 @@ describe('QA tab', () => {
     ).toEqual([405]);
     expect(list.filter(presetPredicate('rework', ctx)).map((t) => t.id)).toEqual([402]);
     expect(list.filter(presetPredicate('retest', ctx)).map((t) => t.id)).toEqual([404, 405]);
+  });
+});
+
+describe('Retesting awaited (QA tab)', () => {
+  it('counts dev tasks and issues in QA Backlog and In QA, per assignee and project', () => {
+    const list = [
+      task({ id: 1, stage: 'QA Backlog', responsibleId: 30 }),
+      task({ id: 2, stage: 'QA Backlog', responsibleId: 30, tags: ['bug'] }),
+      task({ id: 3, stage: 'In QA', responsibleId: 28, groupId: 148, tags: ['feedback'] }),
+      task({ id: 4, stage: 'Done', responsibleId: 30 }),
+      task({ id: 5, stage: 'Issue Raised', responsibleId: 30, tags: ['bug'] }),
+    ];
+    const r = retestBreakdown(list);
+    expect(r.totals).toMatchObject({ total: 3, dev: 1, issues: 2, qaBacklog: 2, inQa: 1 });
+    expect(r.rows.map((x) => [x.id, x.qaBacklogDev, x.qaBacklogIssues, x.inQaIssues])).toEqual([
+      [30, 1, 1, 0],
+      [28, 0, 0, 1],
+    ]);
+    expect(retestBreakdown(list, 'project').rows.map((x) => [x.id, x.total])).toEqual([
+      [154, 2],
+      [148, 1],
+    ]);
+  });
+});
+
+describe('pending vs completed (SRS 5)', () => {
+  it('completed = QA Backlog, In QA, Done, LIVE; Issue Raised and the rest are pending', () => {
+    const at = (stage: MetricTask['stage']) => isSentToQa(task({ stage }));
+    expect(
+      ['QA Backlog', 'In QA', 'Done', 'LIVE'].map((s) => at(s as MetricTask['stage'])),
+    ).toEqual([true, true, true, true]);
+    expect(at('Issue Raised')).toBe(false);
+    expect(at('Pending for QA')).toBe(false);
+    expect(isPending(task({ stage: 'Issue Raised' }))).toBe(true);
+  });
+
+  it('a board without QA stages completes by closing; a QA board by stage only', () => {
+    const closed = new Date('2026-10-05T05:00:00Z');
+    expect(isSentToQa(task({ stage: 'To do', closedAt: closed, qaFlow: false }))).toBe(true);
+    expect(isSentToQa(task({ stage: 'To do', closedAt: closed, qaFlow: true }))).toBe(false);
+    expect(isSentToQa(task({ stage: 'To do', qaFlow: false }))).toBe(false);
   });
 });

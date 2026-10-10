@@ -2,8 +2,8 @@
 // project health, workload, activity and silent projects, for every task in every workgroup.
 // Hours, efficiency and scores wait for real effort data (section 12 stage clocks).
 import { addWorkingHours, dayHours, workingHours, type WorkCalendar } from './calendar';
-import { groupBy, pct } from './metrics';
-import { isReworkMove } from './stages';
+import { groupBy, isSentToQa, pct } from './metrics';
+import { COMPLETED_STAGES, isReworkMove, type StageTitle } from './stages';
 import { dayKey, daysBetween } from './time';
 import type { MetricTask } from './types';
 
@@ -43,10 +43,13 @@ const DAY_MS = 86_400_000;
 export interface KpiTask {
   t: MetricTask;
   dept: Dept;
-  /** First move into QA Backlog, else the Bitrix24 closed date ("closed" on this tab). */
+  /**
+   * When a completed task got there: its last move from a pending stage into QA Backlog, In QA,
+   * Done or LIVE; without such a move, its Bitrix24 closed date, else its last change.
+   */
   actualEnd: Date | null;
-  /** Actual end came from the closed date (not QA Backlog). */
-  endFromClose: boolean;
+  /** Bulk key of that completion: the move (project, day, person, from → to) or the close day. */
+  endKey: string | null;
   open: boolean;
   overdue: boolean;
   /** Calendar days past the deadline (open, overdue tasks). */
@@ -56,16 +59,27 @@ export interface KpiTask {
   reworkCycles: number;
 }
 
+const isDoneStage = (s: StageTitle | null) => !!s && COMPLETED_STAGES.includes(s);
+
+/** Open = pending, closed = completed (QA Backlog, In QA, Done, LIVE): the rule of every tab. */
 export function kpiTask(t: MetricTask, ctx: KpiContext): KpiTask {
-  const qaBacklog = t.events.find((e) => e.to === 'QA Backlog')?.at ?? null;
-  const actualEnd = qaBacklog ?? t.closedAt ?? null;
-  const open = actualEnd === null;
+  const open = !isSentToQa(t);
+  let actualEnd: Date | null = null;
+  let endKey: string | null = null;
+  if (!open) {
+    const move = [...t.events].reverse().find((e) => isDoneStage(e.to) && !isDoneStage(e.from));
+    actualEnd = move?.at ?? t.closedAt ?? t.changedAt;
+    const day = dayKey(actualEnd, ctx.tz);
+    endKey = move
+      ? `${t.groupId}|${day}|${move.by ?? 0}|${move.from ?? ''}>${move.to ?? ''}`
+      : `${t.groupId}|${day}|close`;
+  }
   const overdue = open && !!t.deadline && t.deadline < ctx.now;
   return {
     t,
     dept: ctx.deptOf(t.responsibleId),
     actualEnd,
-    endFromClose: !open && !qaBacklog,
+    endKey,
     open,
     overdue,
     daysOverdue: overdue ? Math.max(0, daysBetween(t.deadline!, ctx.now, ctx.tz)) : 0,
@@ -75,15 +89,17 @@ export function kpiTask(t: MetricTask, ctx: KpiContext): KpiTask {
 }
 
 /**
- * Tasks closed in bulk: 30 or more tasks of one project closed (Bitrix24 closed date) the same
- * day. That is a clean-up, not delivery, so they stay out of closed counts and on-time %.
+ * Tasks completed in bulk: 30 or more tasks of one project completed by the same move (person,
+ * day, from → to stage), or closed the same day without a move. That is a clean-up, not
+ * delivery, so they stay out of closed counts and on-time %.
  */
-export function bulkClosedIds(list: readonly KpiTask[], tz: string): Set<number> {
+export function bulkClosedIds(list: readonly KpiTask[]): Set<number> {
   const byDay = new Map<string, number[]>();
   for (const k of list) {
-    if (!k.endFromClose || !k.t.groupId) continue;
-    const key = `${k.t.groupId}|${dayKey(k.actualEnd!, tz)}`;
-    byDay.set(key, [...(byDay.get(key) ?? []), k.t.id]);
+    if (!k.endKey || !k.t.groupId) continue;
+    const ids = byDay.get(k.endKey) ?? [];
+    ids.push(k.t.id);
+    byDay.set(k.endKey, ids);
   }
   const out = new Set<number>();
   for (const ids of byDay.values()) {
@@ -179,7 +195,7 @@ export function kpiScope(
     all,
     inProjects: all.filter((k) => k.t.groupId > 0),
     noProject: all.filter((k) => k.t.groupId <= 0),
-    bulk: bulkClosedIds(all, ctx.tz),
+    bulk: bulkClosedIds(all),
   };
 }
 

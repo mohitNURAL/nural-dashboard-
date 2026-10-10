@@ -7,7 +7,7 @@ import type { taskRow } from './context';
 
 type Row = ReturnType<typeof taskRow>;
 
-const GROUP_LABEL = { pending: 'Pending', sentToQa: 'Sent to QA' } as const;
+const STATUS_LABEL = { pending: 'Pending', completed: 'Completed' } as const;
 
 /** A calendar date in the app time zone, as an Excel date (no time part). */
 const asDate = (d: Date | string | null, tz: string) => {
@@ -28,7 +28,7 @@ export async function tasksWorkbook(rows: Row[], title: string, tz: string): Pro
     { header: 'Project', key: 'project', width: 26 },
     { header: 'Stage', key: 'stage', width: 20 },
     { header: 'Bitrix24 stage', key: 'stageTitle', width: 20 },
-    { header: 'Stage group', key: 'group', width: 12 },
+    { header: 'Status', key: 'group', width: 12 },
     { header: 'Assignee ID', key: 'assigneeId', width: 10 },
     { header: 'Assignee', key: 'assignee', width: 20 },
     { header: 'Assignee department', key: 'dept', width: 16 },
@@ -56,7 +56,7 @@ export async function tasksWorkbook(rows: Row[], title: string, tz: string): Pro
       project: r.project?.name ?? '',
       stage: r.stage ?? '',
       stageTitle: r.stageTitle ?? '',
-      group: r.stageGroup ? GROUP_LABEL[r.stageGroup] : '',
+      group: STATUS_LABEL[r.status],
       assigneeId: r.assignee.id,
       assignee: r.assignee.name,
       dept: r.assignee.deptGroup,

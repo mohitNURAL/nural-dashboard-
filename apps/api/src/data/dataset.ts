@@ -108,6 +108,11 @@ export async function loadDataset(): Promise<Dataset> {
     stageIds.set(st.groupId, byTitle);
   }
 
+  // Boards with a QA Backlog column follow the QA flow; others complete by closing (SRS 5).
+  const qaFlowGroups = new Set(
+    stageRows.filter((s) => canonicalStage(s.canonical) === 'QA Backlog').map((s) => s.groupId),
+  );
+
   const events = new Map<number, StageEvent[]>();
   for (const e of eventRows) {
     const list = events.get(e.taskId) ?? [];
@@ -154,6 +159,7 @@ export async function loadDataset(): Promise<Dataset> {
     events: events.get(t.id) ?? [],
     startDatePlan: t.startDatePlan,
     dateStart: t.dateStart,
+    ...(t.groupId > 0 && { qaFlow: qaFlowGroups.has(t.groupId) }),
   }));
 
   const testingDepts = departmentTree(deptRows, TESTING_DEPT);

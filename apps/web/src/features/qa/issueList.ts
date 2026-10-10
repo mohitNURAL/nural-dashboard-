@@ -7,8 +7,8 @@ import { toParams, type FilterState } from '../filters/toParams';
 import { useFilters } from '../filters/useFilters';
 
 export interface IssueList {
-  /** Issues (default), or the testers' own testing tasks (QA-06). */
-  kind?: 'issues' | 'testing';
+  /** Issues (default), the testers' own testing tasks (QA-06), or every task (Retesting awaited). */
+  kind?: 'issues' | 'testing' | 'all';
   preset: IssuePreset | DevPreset;
   label?: string;
   params?: Record<string, string>;

@@ -22,6 +22,12 @@ export const DEFAULT_STAGE_ID = '0';
 
 export type StageGroup = 'pending' | 'sentToQa';
 
+/**
+ * Pending vs completed (SRS 5, changed 2026-10-10): a task or issue is **completed** while it is
+ * in QA Backlog, In QA, Done or LIVE, and **pending** in every stage behind QA Backlog,
+ * including Issue Raised (sent back by QA) and On Hold. The same rule on every tab, so pending
+ * + completed = total everywhere.
+ */
 export const PENDING_STAGES: readonly StageTitle[] = [
   'To do',
   'In progress',
@@ -29,15 +35,12 @@ export const PENDING_STAGES: readonly StageTitle[] = [
   'Pushed to Master',
   'Merged to Development',
   'Pending for QA',
+  'Issue Raised',
 ];
 
-export const SENT_TO_QA_STAGES: readonly StageTitle[] = [
-  'QA Backlog',
-  'In QA',
-  'Issue Raised',
-  'Done',
-  'LIVE',
-];
+/** Completed stages ("sent to QA" and beyond). */
+export const SENT_TO_QA_STAGES: readonly StageTitle[] = ['QA Backlog', 'In QA', 'Done', 'LIVE'];
+export const COMPLETED_STAGES = SENT_TO_QA_STAGES;
 
 /** Subsets of "sent to QA" shown as their own tiles. */
 export const READY_FOR_DEPLOYMENT_STAGE: StageTitle = 'Done';

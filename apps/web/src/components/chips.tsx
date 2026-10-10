@@ -89,3 +89,17 @@ export function CountBadge({ n, tone }: { n: number | undefined; tone?: 'bad' })
     </span>
   );
 }
+
+/** Completed / Pending (SRS 5). */
+export function StatusChip({ status }: { status: 'completed' | 'pending' }) {
+  return (
+    <span
+      className={clsx(
+        'whitespace-nowrap rounded px-1.5 py-0.5 font-heading text-label font-bold',
+        status === 'completed' ? 'bg-accent-soft text-accent-darker' : 'bg-warn/15 text-[#92400E]',
+      )}
+    >
+      {status === 'completed' ? 'Completed' : 'Pending'}
+    </span>
+  );
+}

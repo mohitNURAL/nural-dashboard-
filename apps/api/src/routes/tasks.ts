@@ -35,7 +35,9 @@ import { list as listParam, parseQuery, scopeParam } from './params';
 const SORTS = ['deadline', '-deadline', 'created', '-created', 'id', '-id'] as const;
 
 const listParams = {
-  kind: z.enum(['tasks', 'issues', 'testing', 'kpi']).default('tasks'),
+  kind: z.enum(['tasks', 'issues', 'testing', 'kpi', 'all']).default('tasks'),
+  // kind=all: every task; `issue=true|false` keeps issues or dev tasks (QA tab, Retesting awaited).
+  issue: z.enum(['true', 'false']).optional(),
   // KPI tab (SRS 13): every task in every workgroup, picked by the KPI rules.
   kpi: z.enum(KPI_LIST_PRESETS).optional(),
   dept: z.enum(['all', 'dev', 'qa', 'support']).optional(),
@@ -106,10 +108,11 @@ export function taskRoutes(
           issues(ds.tasks)
         : query.kind === 'testing'
           ? testingTasks(ds.tasks, ctx)
-          : query.kind === 'kpi'
+          : query.kind === 'kpi' || query.kind === 'all'
             ? ds.tasks
             : devTasks(ds.tasks, ctx, query.scope);
     let list = applyFilters(base, filters, ctx.tz);
+    if (query.issue) list = list.filter((t) => t.isIssue === (query.issue === 'true'));
     if (query.kind === 'kpi') {
       list = kpiList(list, kpiContext(ds, ctx.now, ctx.tz), {
         preset: query.kpi,

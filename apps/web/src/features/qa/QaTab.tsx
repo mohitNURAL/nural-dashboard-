@@ -14,6 +14,7 @@ import { IssueAgeingCard, IssuesByAssigneeCard, ReworkCard } from './IssueCharts
 import { IssueStageCard } from './IssueStageCard';
 import { IssueTrendCard } from './IssueTrendCard';
 import { QaTiles } from './QaTiles';
+import { RetestByGroupCard } from './RetestByGroupCard';
 import { RetestCard, TestingCard } from './TeamCards';
 import { INFO } from '../info';
 
@@ -23,7 +24,7 @@ type Section = 'latest' | 'resolved' | 'all';
 const ISSUE_LIST_INFO: Record<IssuePreset, string> = {
   all: INFO.allIssues,
   open: INFO.qaOpen,
-  resolved: 'Issues in Done or LIVE.',
+  resolved: 'Issues in QA Backlog, In QA, Done or LIVE.',
   lastFiled: INFO.latestFiled,
   lastResolved: INFO.latestResolved,
   rework: INFO.qaRework,
@@ -33,6 +34,7 @@ const ISSUE_LIST_INFO: Record<IssuePreset, string> = {
 const LATEST_COLUMNS = issueColumns();
 const ALL_COLUMNS = issueColumns({ full: true });
 const TESTING_COLUMNS = taskColumns({ withCreator: true });
+const ALL_TASK_COLUMNS = taskColumns({ withCreator: true });
 
 export function QaTab() {
   const params = useQaParams();
@@ -51,8 +53,10 @@ export function QaTab() {
   const [listTotal, setListTotal] = useState<number>();
   // Testing-workload numbers open the testers' own tasks in this accordion (QA-06).
   const testing = list.kind === 'testing';
+  // Retesting awaited lists every task (dev tasks and issues) waiting for QA.
+  const everyTask = list.kind === 'all';
   const allPreset: IssuePreset = testing ? 'all' : (list.preset as IssuePreset);
-  const listNoun = testing ? 'Testing tasks' : 'All issues';
+  const listNoun = testing ? 'Testing tasks' : everyTask ? 'Tasks' : 'All issues';
   const allRef = useRef<HTMLElement>(null);
   const refs = {
     latest: useRef<HTMLElement>(null),
@@ -118,6 +122,13 @@ export function QaTab() {
           active={open.all && allPreset !== 'all' && !list.params ? allPreset : null}
           onSelect={onTile}
           onPart={(preset, label, params) => showAll(preset, { label, params })}
+          onRetest={(label, issue) =>
+            showAll('retest', {
+              kind: 'all',
+              label,
+              params: issue === undefined ? {} : { issue: String(issue) },
+            })
+          }
         />
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
@@ -125,6 +136,7 @@ export function QaTab() {
           <ReworkCard className="lg:col-span-6" />
           <TestingCard className="lg:col-span-6" />
           <RetestCard className="lg:col-span-6" onShow={() => showAll('retest')} />
+          <RetestByGroupCard className="lg:col-span-12" />
           <IssueTrendCard className="lg:col-span-12" />
           <IssueAgeingCard className="lg:col-span-12" />
           {/* Full width like the Development tab's stage matrix. */}
@@ -171,7 +183,9 @@ export function QaTab() {
 
         <Accordion
           ref={refs.all}
-          info={testing ? INFO.testing : ISSUE_LIST_INFO[allPreset]}
+          info={
+            testing ? INFO.testing : everyTask ? INFO.retestAwaited : ISSUE_LIST_INFO[allPreset]
+          }
           title={
             list.label
               ? `${listNoun}: ${list.label}`
@@ -184,7 +198,7 @@ export function QaTab() {
           open={open.all}
           onOpenChange={(o) => setOpen((p) => ({ ...p, all: o }))}
         >
-          {(allPreset !== 'all' || list.params || testing) && (
+          {(allPreset !== 'all' || list.params || testing || everyTask) && (
             <button
               type="button"
               onClick={reset}
@@ -204,8 +218,8 @@ export function QaTab() {
                   ? 'All issues'
                   : `All issues · ${ISSUE_PRESET_LABELS[allPreset]}`
             }
-            defaultSort={testing ? '-deadline' : '-created'}
-            columns={testing ? TESTING_COLUMNS : ALL_COLUMNS}
+            defaultSort={testing || everyTask ? '-deadline' : '-created'}
+            columns={testing ? TESTING_COLUMNS : everyTask ? ALL_TASK_COLUMNS : ALL_COLUMNS}
             searchable
             onTotal={setListTotal}
           />

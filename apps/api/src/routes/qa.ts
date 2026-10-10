@@ -14,6 +14,7 @@ import {
   qaSummaryParts,
   stageMatrix,
   reworkByDeveloper,
+  retestBreakdown,
   STAGE_COLORS,
   testingTasks,
   testingWorkload,
@@ -96,6 +97,19 @@ export function qaRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts
         return { days: t.days, totals: t.totals, rows: withGroupNames(ds, t.rows, by) };
       })(),
       waitingForRetest: { total: retest.total, byCreator: withPeople(ds, retest.byCreator) },
+    };
+  });
+
+  // Retesting awaited: every task in QA Backlog or In QA, dev tasks and issues, per row.
+  app.get('/api/qa/retest', async (req) => {
+    const { query, filters } = parseQuery(req.query, groupByParam);
+    const ds = await getDataset();
+    const ctx = contextOf(ds, opts);
+    const r = retestBreakdown(applyFilters(ds.tasks, filters, ctx.tz), query.groupBy);
+    return {
+      groupBy: query.groupBy,
+      totals: r.totals,
+      rows: withGroupNames(ds, r.rows, query.groupBy),
     };
   });
 

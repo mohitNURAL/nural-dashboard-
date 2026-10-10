@@ -109,7 +109,7 @@ The Development tab answers three questions for the PM and team leads: how much 
 | # | Tile | Counts |
 | --- | --- | --- |
 | 1 | Total tasks | All tasks in scope, with a sub-line split by project or by employee when that filter is set |
-| 2 | Pending | Tasks in To do, In progress, On Hold, Pushed to Master, Merged to Development or Pending for QA |
+| 2 | Pending | Tasks in To do, In progress, On Hold, Pushed to Master, Merged to Development, Pending for QA or Issue Raised (anything behind QA Backlog) |
 | 3 | Ready for deployment | Tasks in Done |
 | 4 | Deployed to live | Tasks in LIVE |
 | 5 | Overdue | Pending tasks whose deadline has passed (a subset of tile 2, shown in red) |
@@ -117,7 +117,7 @@ The Development tab answers three questions for the PM and team leads: how much 
 
 Clicking a tile opens the "All tasks" accordion pre-filtered to that tile.
 
-Under each tile's number, a breakdown follows the All / Dev / Issues switch (DEV-00a): **All** splits it into Dev and Issues, **Issues** into Bug and Feedback, and **Dev** shows the number alone. The parts add up to the tile, and each part opens its own list, e.g. "All tasks: Pending · Bug". The former "Completed (sent to QA)" tile was removed (2026-10-10) as not relevant to the Development tab; the sent-to-QA stage group still feeds the Done column of DEV-02 and the speed ranking.
+Under each tile's number, a breakdown follows the All / Dev / Issues switch (DEV-00a): **All** splits it into Dev and Issues, **Issues** into Bug and Feedback, and **Dev** shows the number alone. The parts add up to the tile, and each part opens its own list, e.g. "All tasks: Pending · Bug". The former "Completed (sent to QA)" tile was removed (2026-10-10) as not relevant to the Development tab; the completed stage group still feeds the Done column of DEV-02 and the speed ranking.
 
 **Assignee / Project switch.** The breakdown cards DEV-02, DEV-03 (chart and table), DEV-05, QA-02, QA-04 (table view) and QA-05 each have an Assignee / Project switch in their header. "Assignee" (the default) gives one row or bar per person; "Project" gives one per workgroup, with the same columns and counts. Clicking a row or bar then sets the Assignee or the Project filter. Cards that are about people by nature (DEV-04 speed ranking, QA-06 testing workload, QA-07 retest by creator) have no switch.
 
@@ -165,12 +165,14 @@ The QA tab shows how many bugs and feedback items were filed, how many are still
 | # | Tile | Shows |
 | --- | --- | --- |
 | 1 | Total issues filed | All tasks tagged bug or feedback in the filters (project and assignee), whoever they are assigned to |
-| 2 | Open / waiting | Open count with a ring showing Resolved % vs Open % |
+| 2 | Open / pending | Open (pending) issues with a ring showing Resolved % vs Open % |
 | 3 | Last filed | If issues were filed today: "Today" and today's count. Otherwise the most recent filing date and that day's count |
 | 3a | Last resolved | The most recent day issues were **pushed to QA Backlog** (a fix handed to QA, re-pushes included), and how many that day; opens the "Latest resolved issues" accordion |
 | 4 | Rework issues | Count of issues that count as rework (section 5) |
 
-Under each tile's number the count is split into **Bug | Feedback**; the parts add up to the tile (for Last filed: that day's bugs and feedback). Each part opens "All issues" narrowed to it, e.g. "All issues: Open · Bug". Apart from that, Open / waiting also shows **Resolved n · p%** (issues in Done or LIVE); the ring shows the same share.
+Under each tile's number the count is split into **Bug | Feedback**; the parts add up to the tile (for Last filed: that day's bugs and feedback). Each part opens "All issues" narrowed to it, e.g. "All issues: Open · Bug". Apart from that, Open / pending also shows **Resolved n · p%** (issues in QA Backlog, In QA, Done or LIVE); the ring shows the same share.
+
+**Retesting awaited** (sixth tile): every task waiting for QA, in QA Backlog or In QA, split into **Dev tasks | Issues**; each part opens that list ("Tasks: Retesting awaited · Dev tasks"). **Retesting awaited by assignee / project** (card, Assignee / Project switch): per row QA Backlog (Dev, Issues, total), In QA (Dev, Issues, total) and Total, with a totals row; every number opens those tasks and a row's number sets that filter (`GET /api/qa/retest?groupBy=`, tasks via `/api/tasks?kind=all&preset=retest&stage=&issue=true|false`).
 
 **QA-02 Issues by assignee**: per developer or per project, three views. **Open / Resolved**: stacked bars split four ways (open bugs, open feedback, resolved bugs, resolved feedback); the tooltip shows e.g. "Open 54 (Bug 50, Feedback 4)". **Bug / Feedback**: the reverse split. **Table**: the DEV-02 assignee-wise table for issues (Total, Pending, Done, Due today, Comp. today, Comp. yesterday, totals row). Every bar segment and number opens those issues.
 
@@ -209,8 +211,8 @@ Every number on the dashboard is computed on the backend from stage names, tags,
 
 | Group | Stages |
 | --- | --- |
-| Pending | To do, In progress, On Hold, Pushed to Master, Merged to Development, Pending for QA |
-| Sent to QA (completed) | QA Backlog, In QA, Issue Raised, Done, LIVE |
+| Pending | Any stage behind QA Backlog: To do, In progress, On Hold, Pushed to Master, Merged to Development, Pending for QA, Issue Raised |
+| Completed (sent to QA) | QA Backlog, In QA, Done, LIVE; on a board without QA stages, also any task closed in Bitrix24 |
 | Ready for deployment | Done |
 | Deployed | LIVE |
 
@@ -221,13 +223,13 @@ A task with stage ID 0 (Bitrix24's default for a task never moved on the board) 
 - Issue = a task tagged `bug` or `feedback` (case-insensitive). Every other task in a development workgroup is a Task.
 - Issues are only ever assigned to the Development department; both tabs count only those (an issue assigned elsewhere is a data error to fix in Bitrix24).
 - An issue is linked to a task when its Parent task is set, or when the task is in its Related tasks. Otherwise it is independent and counts against its assignee.
-- The Development tab counts Tasks, Issues or both, by its All / Dev / Issues switch (DEV-00a), for the Development department only. The QA tab counts **every** issue, whoever it is assigned to (e.g. Tech Support), so its issue total can be higher than the Development tab's Issues total (changed back 2026-10-10). Note that Development "Pending" (still with developers) and QA "Open / waiting" (not yet Done or LIVE, so also waiting in QA) are different measures.
+- The Development tab counts Tasks, Issues or both, by its All / Dev / Issues switch (DEV-00a), for the Development department only. The QA tab counts **every** issue, whoever it is assigned to (e.g. Tech Support), so its issue total can be higher than the Development tab's Issues total (changed back 2026-10-10). Pending / Done (Development tab), Open / Resolved (QA tab) and Open / Closed (KPI tab) use one rule: **Completed** = in QA Backlog, In QA, Done or LIVE; **pending** = any stage behind QA Backlog (To do, In progress, On Hold, Pushed to Master, Merged to Development, Pending for QA, Issue Raised), even if the task was completed before and sent back. On a board without QA stages (e.g. New / In progress / Finished), a task closed in Bitrix24 is completed. Pending + completed = total on every tab (changed 2026-10-10). For Development-department issues the two tabs give the same numbers (2,107 completed, 68 pending on 2026-10-10).
 
 **Formulas**
 
 | Metric | Definition |
 | --- | --- |
-| Overdue | Stage group = Pending AND deadline < now |
+| Overdue | Pending AND deadline < now |
 | Due today | Deadline date = today (Asia/Kolkata), any stage group except Deployed |
 | Completed / Done today | Entered QA Backlog today (first entry), from the stage-move log. A task whose history skips QA Backlog (e.g. a bulk move straight to Done or LIVE) is not completed. Only a task with no recorded stage moves falls back to its Bitrix24 closed date. Comp. yesterday uses the same rule for yesterday (APP_TIMEZONE) |
 | Open issue | Issue not in Done or LIVE |
@@ -306,7 +308,8 @@ Three stages share #FDB051 on the board, so charts add a pattern or a shade step
 **Components (to match from the Figma component library)**
 
 - Top bar: Nural logo, app name, Development and QA tabs, alerts bell, Live indicator, user menu.
-- Export to Excel: every task-list accordion (Tasks due today, Overdue tasks, All tasks, Latest filed issues, All issues) has an **Excel** icon that downloads the list exactly as shown (filters, the clicked number, search and order; all pages, not only the visible 50). One row per task with every detail the dashboard holds: Task ID (linked to Bitrix24), title, type, Project ID and name, stage (dashboard and Bitrix24 names), stage group, Assignee ID, name and department, Creator ID and name, priority, tags, created, deadline, closed, days past deadline, overdue, issue age, rework, linked task and an "Open in Bitrix24" link; an About sheet names the list. Descriptions are not included (read live from Bitrix24 per task). The file is named after the accordion, e.g. "All tasks · Umang Singh · Pending 2026-10-10.xlsx" (`GET /api/tasks/export`, same parameters as `/api/tasks`).
+- Every task list (all tabs) has a **Status** column: Completed or Pending, by the rule in section 5.
+- Export to Excel: every task-list accordion (Tasks due today, Overdue tasks, All tasks, Latest filed issues, All issues) has an **Excel** icon that downloads the list exactly as shown (filters, the clicked number, search and order; all pages, not only the visible 50). One row per task with every detail the dashboard holds: Task ID (linked to Bitrix24), title, type, Project ID and name, stage (dashboard and Bitrix24 names), status (Completed / Pending), Assignee ID, name and department, Creator ID and name, priority, tags, created, deadline, closed, days past deadline, overdue, issue age, rework, linked task and an "Open in Bitrix24" link; an About sheet names the list. Descriptions are not included (read live from Bitrix24 per task). The file is named after the accordion, e.g. "All tasks · Umang Singh · Pending 2026-10-10.xlsx" (`GET /api/tasks/export`, same parameters as `/api/tasks`).
 - Info icon (ⓘ): every tile, card title, main table column and accordion has a small "i". Hovering or focusing it shows a one-line explanation of how the number is worked out (wording kept in `apps/web/src/features/info.ts`), and under it what the current filters and switch cover, e.g. "Showing: Dev tasks · Moto India · Umang Singh". For "All tasks" / "All issues" the explanation follows the list that is open, e.g. "Umang Singh · To do, overdue: In To do. Overdue only."
 - Alerts bell (top bar, right): a red badge with the number of projects that have alerts (section 5, Header alerts). Clicking it opens a short **project-wise** summary, one line per project, e.g. "Nural Edge: 194 overdue · 376 over 5 days"; each number opens those tasks (filter bar set to the project). "See alert details" switches to the Development tab and opens the **Alert details** accordion (DEV-09) for the person and stage breakdown.
 - **DEV-09 Accordion: Alert details** (bottom of the Development tab, closed by default, opened by the bell). Toggles: **Overdue | Over 5 days in a stage**, and **Project-wise | Assignee-wise**; on the stage view a **Stage** filter (one or more stages). Rows are grouped under each project (or person) with a subtotal; groups are **collapsed by default** and open when clicked ("Expand all / Collapse all" opens or closes every group; changing the view collapses them again); each line shows the other dimension (person, marked tester or QA lead, under a project; project under a person), the stage, the count, the most overdue or longest wait, and, for stage alerts, how many Bitrix24 will list. Every subtotal and count opens exactly those tasks in "All tasks" and sets the filter bar to the project (and the assignee when the alert names the assignee), with the switch on All. Each line also has a **Bitrix24** link to that project's task board with the Bitrix24 filter already applied (`apply_filter=Y`): Overdue lines filter by responsible person (`RESPONSIBLE_ID`), Bitrix24's Overdue status (`STATUS[]=-1`) and the pending stages except On Hold (`STAGE_ID[]`), matching the dashboard's Overdue rule; "over 5 days" lines also filter by the Kanban stage (`STAGE_ID[]`, that project's own stage IDs for the stage, plus 0 for To do, Bitrix24's stage for tasks never moved). Tester lines filter by creator (`CREATED_BY`) and QA lead lines by stage only. Bitrix24's filter has no "days in this stage" field (the stage-entry date exists only in the dashboard's stage-move log), so for "over 5 days" lines the Bitrix24 board lists every task in that stage, including ones that entered it in the last 5 days. The table therefore shows both numbers, e.g. 479 over 5 days and 508 "In stage in Bitrix24"; the dashboard's own list (clicking the count) is the exact set, each task ID linking to Bitrix24. The work is fixed there; the alert then clears by itself on the next sync (the dashboard stays read-only).
@@ -755,11 +758,11 @@ Hours return when section 12's stage clocks measure real working time.
 | Term | Rule |
 | --- | --- |
 | Department of a task | The assignee's department, from `config/departments.json`: Development (Software Development and its sub-departments), QA (QA Testing), Support (Tech Support), else Other |
-| Closed | First move into QA Backlog; for tasks that never went there (support, QA, boards without these stages), the Bitrix24 closed date |
-| Open | Not closed |
+| Closed | Completed by the rule of every tab: in QA Backlog, In QA, Done or LIVE (on a board without QA stages, closed in Bitrix24). Dated by its last move from a pending stage into a completed one; without such a move, the Bitrix24 closed date |
+| Open | Pending: any stage behind QA Backlog, Issue Raised included, even after an earlier completion |
 | Overdue | Open, with a deadline before now. Days late = calendar days past the deadline |
 | On time | Closed on or before its deadline (closed tasks with a deadline only) |
-| Bulk clean-up | 30 or more tasks of one project closed the same day by the Bitrix24 close date, or moved in one identical move (same person, project, day and from → to stage). Left out of closed counts, on-time % and activity, with the automatic comments Bitrix24 adds to those tasks that day. On 2026-10-10 this was 3,943 closed tasks. |
+| Bulk clean-up | 30 or more tasks of one project completed by one identical move, or closed the same day without one, or moved in one identical move (same person, project, day and from → to stage). Left out of closed counts, on-time % and activity, with the automatic comments Bitrix24 adds to those tasks that day. On 2026-10-10 this was 3,943 closed tasks. |
 | Last action | Latest task change or comment on any of a project's tasks |
 | Silent project | Open tasks and no action for 10 or more working days |
 | Active project | Open tasks and an action in the last 30 days |
@@ -827,5 +830,5 @@ Every card and tile has an "i" note with its rule.
 
   The same rules as the cards decide every list (`kpiList` in `packages/shared/src/kpi.ts`).
 - Computed per request from the in-memory dataset: about 0.1 s for 8,600 tasks, cached for a minute per query.
-- Checked on 2026-10-10 against independent SQL on the full database. Open 338 (Dev 301, QA 13, Support 23, Other 1), overdue 224 (167 over 30 days), no deadline 81, closed this week 172 and on-time 33 % all matched.
+- Checked on 2026-10-10 against independent SQL on the full database, after the pending / completed rule was unified across tabs. Open 507 (Development 468, matching the Development tab's Pending), overdue 391 and no deadline 83 all matched.
 - Who sees it: everyone who signs in, for now. Roles (NFR-4) come later.

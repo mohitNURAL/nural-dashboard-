@@ -1,8 +1,8 @@
-// QA-01: one row of 5 tiles. Each opens the matching issue list; under each number the Bug and
-// Feedback parts (adding up to it) open their own list. No other counts on the tiles.
+// QA-01: one row of 6 tiles. Each opens the matching list; under each number its parts (Bug and
+// Feedback, or for Retesting awaited Dev tasks and Issues) add up to it and open their own list.
 import type { IssuePreset, QaSummaryPart } from '@nural/shared';
 import { StatTile } from '../../components/StatTile';
-import { useQaSummary } from './api';
+import { useQaRetest, useQaSummary } from './api';
 import { lastFiledText } from './format';
 import { INFO } from '../info';
 
@@ -11,13 +11,16 @@ interface Props {
   onSelect: (preset: IssuePreset) => void;
   /** A Bug / Feedback part: opens "All issues" narrowed to it. */
   onPart: (preset: IssuePreset, label: string, params: Record<string, string>) => void;
+  /** Retesting awaited: every task in QA Backlog or In QA; `issue` narrows to issues or dev tasks. */
+  onRetest: (label: string, issue?: boolean) => void;
 }
 
 type PartCount = Exclude<keyof QaSummaryPart, 'key'>;
 const TYPE_LABEL = { bug: 'Bug', feedback: 'Feedback' } as const;
 
-export function QaTiles({ active, onSelect, onPart }: Props) {
+export function QaTiles({ active, onSelect, onPart, onRetest }: Props) {
   const { data } = useQaSummary();
+  const { data: retest } = useQaRetest();
   const last = data?.lastFiled;
   /** The Bug | Feedback parts of one tile. */
   const parts = (
@@ -37,7 +40,7 @@ export function QaTiles({ active, onSelect, onPart }: Props) {
     : ({} as Record<string, string>);
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
       <StatTile
         label="Total issues filed"
         info={INFO.qaTotal}
@@ -48,7 +51,7 @@ export function QaTiles({ active, onSelect, onPart }: Props) {
         onClick={() => onSelect('all')}
       />
       <StatTile
-        label="Open / waiting"
+        label="Open / pending"
         info={INFO.qaOpen}
         value={data?.open}
         sub={
@@ -93,6 +96,27 @@ export function QaTiles({ active, onSelect, onPart }: Props) {
         tone="bad"
         active={active === 'rework'}
         onClick={() => onSelect('rework')}
+      />
+      <StatTile
+        label="Retesting awaited"
+        info={INFO.retestAwaited}
+        value={retest?.totals.total}
+        sub="In QA Backlog or In QA"
+        parts={
+          retest && [
+            {
+              label: 'Dev tasks',
+              value: retest.totals.dev,
+              onClick: () => onRetest('Retesting awaited · Dev tasks', false),
+            },
+            {
+              label: 'Issues',
+              value: retest.totals.issues,
+              onClick: () => onRetest('Retesting awaited · Issues', true),
+            },
+          ]
+        }
+        onClick={() => onRetest('Retesting awaited')}
       />
     </div>
   );

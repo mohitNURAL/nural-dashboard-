@@ -139,12 +139,22 @@ export function filterOptions(tasks: readonly MetricTask[], f: Filters, tz: stri
 export const stageGroup = (t: MetricTask): StageGroup | null =>
   t.stage ? stageGroupOf(t.stage) : null;
 
-export const isPending = (t: MetricTask) => stageGroup(t) === 'pending';
-export const isSentToQa = (t: MetricTask) => stageGroup(t) === 'sentToQa';
+/**
+ * Completed (SRS 5): in QA Backlog, In QA, Done or LIVE. On a board without QA stages (e.g.
+ * New / In progress / Finished), a task closed in Bitrix24 is completed too, wherever its card.
+ */
+export const isSentToQa = (t: MetricTask) =>
+  stageGroup(t) === 'sentToQa' || (t.qaFlow === false && !!t.closedAt);
+export const isCompleted = isSentToQa;
+/** Pending: anything not completed, so pending + completed = total (unmapped stages too). */
+export const isPending = (t: MetricTask) => !isSentToQa(t);
 export const isReady = (t: MetricTask) => t.stage === READY_FOR_DEPLOYMENT_STAGE;
 export const isDeployed = (t: MetricTask) => t.stage === DEPLOYED_STAGE;
-/** Issue not in Done or LIVE (unmapped stages count as open). */
-export const isOpenIssue = (t: MetricTask) => !isReady(t) && !isDeployed(t);
+/** An open issue is a pending one (QA tab "Open"); resolved = completed. Same rule as tasks. */
+export const isOpenIssue = isPending;
+/** "completed" / "pending", shown in every task list (SRS 5). */
+export const taskStatus = (t: MetricTask): 'completed' | 'pending' =>
+  isSentToQa(t) ? 'completed' : 'pending';
 
 /**
  * When the task was completed (SRS 5): its first move into QA Backlog (the developer pressed
@@ -847,6 +857,51 @@ export function waitingForRetest(list: readonly MetricTask[], ctx: MetricContext
     }))
     .sort((a, b) => b.count - a.count || b.oldestDays - a.oldestDays || a.id - b.id);
   return { total: waiting.length, byCreator };
+}
+
+/** Retest counts of one row: dev tasks and issues, in QA Backlog and in In QA. */
+export interface RetestCounts {
+  total: number;
+  dev: number;
+  issues: number;
+  qaBacklog: number;
+  inQa: number;
+  qaBacklogDev: number;
+  qaBacklogIssues: number;
+  inQaDev: number;
+  inQaIssues: number;
+}
+
+function retestCounts(list: readonly MetricTask[]): RetestCounts {
+  const c = (stage: StageTitle, issue: boolean) =>
+    list.filter((t) => t.stage === stage && t.isIssue === issue).length;
+  const qaBacklogDev = c('QA Backlog', false);
+  const qaBacklogIssues = c('QA Backlog', true);
+  const inQaDev = c('In QA', false);
+  const inQaIssues = c('In QA', true);
+  return {
+    total: qaBacklogDev + qaBacklogIssues + inQaDev + inQaIssues,
+    dev: qaBacklogDev + inQaDev,
+    issues: qaBacklogIssues + inQaIssues,
+    qaBacklog: qaBacklogDev + qaBacklogIssues,
+    inQa: inQaDev + inQaIssues,
+    qaBacklogDev,
+    qaBacklogIssues,
+    inQaDev,
+    inQaIssues,
+  };
+}
+
+/**
+ * QA tab "Retesting awaited": every task waiting for QA (QA Backlog or In QA), dev tasks and
+ * issues, in total and per assignee or project.
+ */
+export function retestBreakdown(tasks: readonly MetricTask[], by: GroupBy = 'assignee') {
+  const waiting = tasks.filter(isWaitingForRetest);
+  const rows = [...groupBy(waiting, groupKey(by))]
+    .map(([id, l]) => ({ id, ...retestCounts(l) }))
+    .sort((a, b) => b.total - a.total || a.id - b.id);
+  return { totals: retestCounts(waiting), rows };
 }
 
 // ---------------------------------------------------------------- alerts

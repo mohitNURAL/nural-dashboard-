@@ -3,7 +3,7 @@
 import { createColumnHelper } from '@tanstack/react-table';
 import clsx from 'clsx';
 import type { TaskRow } from '../../api/types';
-import { PriorityBadge, StageChip, TagChips } from '../../components/chips';
+import { PriorityBadge, StageChip, StatusChip, TagChips } from '../../components/chips';
 import type { Columns } from '../../components/DataTable';
 import { ageingText, fmtDate } from '../dev/format';
 import { LinkedTask } from './LinkedTask';
@@ -65,6 +65,14 @@ export function taskColumns({ withCreator = false } = {}): Columns<TaskRow> {
       header: 'Stage',
       enableSorting: false,
       cell: (c) => <StageChip title={c.getValue()} color={c.row.original.stageColor} />,
+    }),
+    col.accessor('status', {
+      header: 'Status',
+      enableSorting: false,
+      meta: {
+        info: 'Completed: in QA Backlog, In QA, Done or LIVE. Pending: any stage behind QA Backlog.',
+      },
+      cell: (c) => <StatusChip status={c.getValue()} />,
     }),
     col.accessor('tags', {
       header: 'Tags',
@@ -149,6 +157,7 @@ export function issueColumns({ full = false } = {}): Columns<TaskRow> {
     pick('project'),
     pick('priority'),
     pick('stage'),
+    pick('status'),
     col.accessor('linkedTaskId', {
       header: 'Linked task',
       enableSorting: false,
