@@ -25,7 +25,7 @@ pnpm tunnel   # public HTTPS URL for the outbound webhook (changes on every star
 pnpm hooks:simulate <taskId> [event]   # signed fake webhook call to the local API
 Docker Postgres is on port 5433 (a local PostgreSQL service holds 5432).
 node --env-file=.env scripts/test-webhook.mjs # checks the inbound webhook
-DEPLOY_HOST=ubuntu@<ip> scripts/deploy.sh   # ship committed code + .env.prod to the Oracle VM, rebuild, restart
-DEPLOY_HOST=ubuntu@<ip> scripts/db-copy.sh  # one-time copy of the local database to the VM
-ssh -i ~/.ssh/nural_oracle ubuntu@<ip> 'bash -s' < scripts/vm-setup.sh   # one-time VM setup
+DEPLOY_HOST=root@<ip> scripts/deploy.sh   # ship committed code + .env.prod to the server (Hetzner CX22), rebuild, restart
+DEPLOY_HOST=root@<ip> scripts/db-copy.sh  # one-time copy of the local database to the server
+ssh -i ~/.ssh/nural_oracle root@<ip> 'bash -s' < scripts/vm-setup.sh   # one-time server setup
 Production: docker-compose.prod.yml (project nural-prod, Caddy TLS). AUTH=bitrix needs BITRIX_CLIENT_ID/SECRET and SESSION_SECRET.

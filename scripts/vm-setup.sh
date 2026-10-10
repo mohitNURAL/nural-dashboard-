@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# One-time setup of a fresh Oracle Cloud Ubuntu VM (SRS 10.5, milestone 9). Run from Git Bash:
-#   ssh -i ~/.ssh/nural_oracle ubuntu@<ip> 'bash -s' < scripts/vm-setup.sh
+# One-time setup of a fresh Ubuntu 24.04 server (SRS 10.5, milestone 9), e.g. Hetzner CX22 (log in
+# as root) or Oracle Cloud (log in as ubuntu). Run from Git Bash:
+#   ssh -i ~/.ssh/nural_oracle root@<ip> 'bash -s' < scripts/vm-setup.sh
 set -euo pipefail
 
 # Docker Engine and the compose plugin (official convenience script).
@@ -9,14 +10,21 @@ if ! command -v docker >/dev/null; then
   sudo usermod -aG docker "$USER"
 fi
 
-# Oracle's Ubuntu image rejects everything but SSH in iptables, on top of the cloud security list.
-if ! sudo iptables -C INPUT -p tcp -m multiport --dports 80,443 -j ACCEPT 2>/dev/null; then
+# Oracle's Ubuntu image rejects everything but SSH in iptables (saved by netfilter-persistent);
+# other providers (Hetzner) leave the ports open, so this only runs where that tool exists.
+if command -v netfilter-persistent >/dev/null &&
+  ! sudo iptables -C INPUT -p tcp -m multiport --dports 80,443 -j ACCEPT 2>/dev/null; then
   sudo iptables -I INPUT -p tcp -m multiport --dports 80,443 -j ACCEPT
   sudo iptables -I INPUT -p udp --dport 443 -j ACCEPT
   sudo netfilter-persistent save
 fi
 
-# Swap, so image builds never run out of memory on small shapes.
+# If ufw is on, allow SSH and the web ports.
+if command -v ufw >/dev/null && sudo ufw status | grep -q 'Status: active'; then
+  sudo ufw allow OpenSSH && sudo ufw allow 80,443/tcp && sudo ufw allow 443/udp
+fi
+
+# Swap, so image builds never run out of memory on small servers.
 if ! swapon --show | grep -q swapfile; then
   sudo fallocate -l 4G /swapfile && sudo chmod 600 /swapfile
   sudo mkswap /swapfile >/dev/null && sudo swapon /swapfile

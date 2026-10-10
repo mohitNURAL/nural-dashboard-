@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Copies the local Postgres (port 5433 container) to the VM, so stage history and the backfill
+# Copies the local Postgres (port 5433 container) to the server, so stage history and the backfill
 # carry over; the reconcile then catches up. Run once after the first deploy:
-#   DEPLOY_HOST=ubuntu@<ip> scripts/db-copy.sh
+#   DEPLOY_HOST=root@<ip> scripts/db-copy.sh
 set -euo pipefail
 HOST=${DEPLOY_HOST:?set DEPLOY_HOST}
 KEY=${DEPLOY_KEY:-$HOME/.ssh/nural_oracle}

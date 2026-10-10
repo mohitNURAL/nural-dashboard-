@@ -353,7 +353,7 @@ Bitrix24 pushes task events to the receiver; the sync worker fetches the full ta
 | Queue and cache | Redis 7 + BullMQ | Webhook event queue, rate-limited Bitrix24 calls, SSE fan-out |
 | Live push | Server-Sent Events | One-way server to browser, auto-reconnect, works through the reverse proxy |
 | Auth | Sign in with Bitrix24 (OAuth local app) | Users log in with their portal account. For now every signed-in user sees everything; NFR-4 roles come later |
-| Hosting | Docker Compose on one Oracle Cloud Always Free VM (Ubuntu, ARM), Caddy with automatic Let's Encrypt TLS, address `<ip>.sslip.io` | Bitrix24 outbound webhooks need a public HTTPS URL; Caddy renews certificates itself (replaces Nginx + certbot) |
+| Hosting | Docker Compose on one Hetzner Cloud CX22 server (Ubuntu 24.04, 2 vCPU, 4 GB, billed hourly, about €4.50 a month; chosen 2026-10-10 because Oracle sign-up failed), Caddy with automatic Let's Encrypt TLS, address `<ip>.sslip.io` | Bitrix24 outbound webhooks need a public HTTPS URL; Caddy renews certificates itself (replaces Nginx + certbot) |
 | Monitoring | Pino logs; UptimeRobot (free) checks /health every 5 minutes and emails on HTTP 503 | Alerts when sync stops (NFR-9) |
 
 SSE is chosen over WebSocket because the browser only receives; filters are sent as normal HTTP requests. Socket.IO can replace it later if two-way features are added.
@@ -395,7 +395,7 @@ SSE is chosen over WebSocket because the browser only receives; filters are sent
 - `api` is `apps/api/Dockerfile`: it applies migrations at start, then serves through tsx.
 - `web` is `apps/web/Dockerfile`, which builds Vite into a Caddy image. Caddy (`deploy/Caddyfile`) serves the app, proxies `/api`, `/hooks` and `/health` to the API (SSE unbuffered), sets security headers, and gets the certificate for `SITE_ADDRESS`.
 - Extra Caddy config can be dropped on the server in `~/nural/caddy-extra/*.caddy`, for example an interim shared password.
-- `scripts/vm-setup.sh` prepares a fresh VM: Docker, ports 80 and 443 opened in iptables, and swap.
+- `scripts/vm-setup.sh` prepares a fresh Ubuntu server: Docker, ports 80 and 443 (Oracle iptables or ufw, where present), and swap.
 - `scripts/deploy.sh` ships the committed code (`git archive`) and `.env.prod` (as the server's `.env`) over SSH, then rebuilds and restarts.
 - `scripts/db-copy.sh` copies the local database to the server once.
 
@@ -405,7 +405,7 @@ Two webhooks are created in the portal by an administrator: an **inbound** webho
 
 **8.1 Inbound webhook (read)**
 
-- Created in Bitrix24: Developer resources > Other > Inbound webhook. Permissions: `task`, `user`, `department`, `sonet_group` (workgroups). Read-only use; the dashboard never writes.
+- Created in Bitrix24: Developer resources > Other > Inbound webhook. Permissions: `task`, `user`, `department`, `sonet_group` (workgroups). Read-only for sync; the stage guard and planned dates in section 12 add a few writes.
 - Gives a URL of the form `https://nural.bitrix24.in/rest/<user_id>/<secret>/`, stored as `BITRIX_INBOUND_URL`. The webhook acts as the user who created it, so that user must see every development workgroup (an admin account is best).
 
 | Method | Used for |
@@ -440,7 +440,7 @@ Two webhooks are created in the portal by an administrator: an **inbound** webho
 
 - Outbound webhooks are best-effort: Bitrix24 does not retry a failed delivery. The 10-minute reconcile and the nightly resync close that gap.
 - If the dashboard host is down, events are lost but the reconcile catches up on restart.
-- Stage moves before go-live are rebuilt once from `tasks.task.history.list`. If history does not record stage moves on this portal, rework and speed ranking start counting from go-live (open question 4).
+- Stage moves before go-live are rebuilt once from `tasks.task.history.list`. Checked 2026-10-10: history does record stage moves (field `STAGE`, with user and time), so rework and ranking are rebuilt for old tasks too.
 
 ## 9. Non-functional requirements
 
@@ -553,7 +553,7 @@ Run each in order. Start each session in plan mode, approve the plan, then let i
 7. **Development tab.** Prompt: "Build the Development tab from SRS section 3 (DEV-01 to DEV-08) and the wireframe in section 6, using ECharts and TanStack Table, with the TaskDrawer." Done when every tile and table matches Bitrix24 for one project and one assignee.
 8. **QA tab.** Prompt: "Build the QA tab from SRS section 4 (QA-01 to QA-09) and its wireframe, reusing the components from milestone 7." Done when issue counts, rework and retest-by-creator match Bitrix24.
 9. **Sign-in, deploy and launch.** Prompt: "Add Sign in with Bitrix24 (OAuth local app), Dockerfiles for api and web, Caddy with Let's Encrypt, and a health alert per NFR-9." Roles (NFR-4) are deferred; every signed-in user sees everything. Steps:
-   1. In Oracle Cloud, create an Always Free VM: Ubuntu 24.04, VM.Standard.A1.Flex with 2 OCPU and 12 GB, using the deploy SSH key. In the subnet's security list, allow TCP 80 and 443 (and UDP 443).
+   1. In Hetzner Cloud, create a CX22 server with Ubuntu 24.04, public IPv4 and the deploy SSH key. Oracle Cloud Always Free also works: open TCP 80 and 443 in its security list, and `vm-setup.sh` opens them in its iptables.
    2. Run `scripts/vm-setup.sh` on the VM. Fill in `.env.prod` locally (SITE_ADDRESS `<ip>.sslip.io`, PUBLIC_BASE_URL, WEB_ORIGIN, POSTGRES_PASSWORD, SESSION_SECRET, Bitrix24 keys). Run `scripts/deploy.sh`, then `scripts/db-copy.sh` once.
    3. Until the local app exists, use `AUTH=off` behind a Caddy `basic_auth` shared password in `caddy-extra/`.
    4. A Bitrix24 admin creates a server-side local app (Developer resources > Other > Local application). Settings:
@@ -594,3 +594,135 @@ Each question has the default this SRS already assumes; a one-word answer is eno
 | 11 | Ranking: minimum tasks to be ranked, and should late completions lower the rank more than early ones raise it? | At least 3 completed tasks; plain average days early or late |
 
 **What was checked for this SRS:** the Bitrix24 portal through its API (11 stages on group 148, 10 on Support Tool group 154 with no On Hold, 30 active users, task 41580 with tag "new development"), the three screenshots, and Mohit's QA Pulse artifact. The Figma file blocked automated access, and the company structure page itself is browser-only, so department membership comes from the screenshot and will be read through `department.get` at build time.
+
+## 12. Stage rules, automatic time tracking, planned vs actual
+
+Added 2026-10-10. This section makes the board behave like a Jira workflow (only allowed moves, by allowed people) and measures time from stage moves, so developer, team lead and PM time is recorded the same way for everyone without anyone pressing a timer.
+
+### 12.1 What Bitrix24 can and cannot do natively
+
+| Need | Native in Bitrix24? | How we do it |
+| --- | --- | --- |
+| Allow only certain stage-to-stage moves (Jira transitions) | **No.** Project roles decide who can see and edit a project's tasks; `task.stages.canmovetask` only answers "can this user move tasks on this board at all", not per transition. Automation rules and triggers run actions when a task *enters* a stage; they cannot block a move. | Backend **stage guard** (12.3): checks every move against a transition table and moves an illegal move back. |
+| Start, pause, complete the timer on a stage move | **No.** The Bitrix24 timer belongs to the person who presses it. The REST API cannot run another person's timer, and `task.elapseditem.add` rejects a `USER_ID` other than the caller ("You cannot pass another user's identifier"). There is no "start timer" automation rule. | Backend **stage clocks** (12.4): time is computed from the stage-move log, attributed to the right person, and shown on the dashboard. The Bitrix24 timer is no longer the source of truth. |
+| Planned start = time it entered In progress, planned end = deadline | Not reliably (no confirmed automation rule sets these fields from the move time). | Backend writes `START_DATE_PLAN` and `END_DATE_PLAN` with `tasks.task.update` on the first move to In progress (12.5). |
+| Know who moved a task and when | **Yes.** `tasks.task.history.list` records every stage move as field `STAGE` with from/to stage names, user and time. Checked on task 41900: "To do → Issue Raised" and "Issue Raised → To do" by Mohit Srivastava with timestamps. | Used for the stage-move log, for backfill of old tasks, and to find who made an illegal move. |
+
+Why not keep the manual timer: on 2026-10-10 the portal had 38 tasks in status In Progress, many with timers left running for days (for example task 37948, a same-day task, shows 72.6 hours logged). Stage clocks remove that drift.
+
+### 12.2 Stage meaning (who owns the clock)
+
+| Stage | Clock owner | Phase |
+| --- | --- | --- |
+| To do | none (waiting) | Queue. After Issue Raised it starts the **rework** phase (see 12.4) |
+| In progress | Assignee (developer) | Development |
+| Pushed to Master | Team lead | Code review |
+| Merged to Development | Team lead / PM | Staging deployment |
+| Pending for QA | Team lead / PM | Staging deployment |
+| QA Backlog | QA | QA waiting. Entering it ends delivery time |
+| In QA | QA | Testing |
+| Issue Raised | Assignee | Rework waiting |
+| On Hold | none | **Pauses every clock until the task is moved to In progress again** |
+| Done, LIVE | none | Release |
+
+### 12.3 Stage guard (Jira-like transitions)
+
+**Transition table** (stage names, configurable in `config/transitions.json`; "TL" = team leads and PM, "QA" = QA Testing department, admins can do any move):
+
+| From | Allowed to | Who |
+| --- | --- | --- |
+| To do | In progress | Assignee, TL |
+| In progress | Pushed to Master, To do | Assignee, TL |
+| Pushed to Master | Merged to Development; back to In progress | TL |
+| Merged to Development | Pending for QA, QA Backlog | TL |
+| Pending for QA | QA Backlog | TL |
+| QA Backlog | In QA | QA |
+| In QA | Done, Issue Raised | QA |
+| Issue Raised | To do | Assignee, TL, QA |
+| Done | LIVE | TL |
+| Any stage | On Hold | TL |
+| On Hold | In progress (clocks resume), or the stage it came from | TL |
+
+**How it runs**
+
+1. The sync worker sees `STAGE_ID` changed (8.3 step 4).
+2. It reads the newest `STAGE` record of `tasks.task.history.list` for that task to get the user who moved it.
+3. It looks the move up in the table (by stage name, using the user's role from the company structure).
+4. Allowed: the move is logged in `task_stage_events` as normal.
+5. Not allowed: the worker moves the task back with `task.stages.movetask`, re-reads the task to confirm the stage really changed back (the API can answer `true` without moving), posts a task comment "@user: moving from Merged to Development to QA Backlog is not allowed. Allowed next stages: Pending for QA (team lead)", and records the attempt in `stage_violations`.
+
+**Limits**
+
+- It is a correction, not a block: the card can sit in the wrong column for a few seconds before it jumps back.
+- If the backend was down, the reconciler finds the move later. Moves older than 2 minutes are **flagged only, never reverted**, so nobody sees a card jump back long after they moved it.
+- The Complete button sends a task straight to QA Backlog (section 2). Under these rules, a developer pressing Complete from In progress is an illegal move and gets reverted. Developers should move the card to Pushed to Master instead; the team lead takes it to QA Backlog.
+- Rollout: run in **monitor mode** (log and comment, no revert) for the first two weeks, review `stage_violations` with the team leads, adjust the table, then switch `STAGE_GUARD_MODE=enforce`.
+
+### 12.4 Stage clocks (automatic time tracking)
+
+Every stage move is an event with a time. A **clock segment** is the time between entering a stage and leaving it, counted in **working hours only** (default Mon–Sat 10:00–19:00 Asia/Kolkata, company holidays excluded; set in `config/calendar.json`). Each segment is charged to the clock owner from 12.2: the assignee at that moment for development, and the person who made the next move for TL/PM stages (history tells us who).
+
+What Mohit asked for, mapped to clocks:
+
+| Request | Clock behaviour |
+| --- | --- |
+| "Start" when moved to In progress | Development clock starts for the assignee |
+| "Complete first time" at Merged to Development | Development clock stops. **Developer time** = In progress → Merged to Development (includes the code-review wait, which is shown separately) |
+| "Complete the resumed task" at QA Backlog | TL/PM clock stops. **Review and deploy time** = Merged to Development → QA Backlog, charged to whoever moved it to QA Backlog |
+| Issue Raised → To do starts again | **Rework clock** starts at To do and runs until the task reaches Merged to Development again; charged to the assignee as rework hours |
+| On Hold | Pauses all clocks. They stay paused until the task next enters In progress, even if it passes through other stages first (for example On Hold → To do → In progress). Hold time is shown, never charged |
+
+**Per-task numbers stored in `task_time_summary`**
+
+| Field | Definition |
+| --- | --- |
+| dev\_hours | Working hours in In progress (first cycle) |
+| review\_hours | Working hours in Pushed to Master (first cycle) |
+| deploy\_hours | Working hours in Merged to Development + Pending for QA (first cycle) |
+| developer\_time | First In progress → first Merged to Development, minus On Hold |
+| tl\_pm\_time | First Merged to Development → first QA Backlog, minus On Hold |
+| actual\_hours | First In progress → first QA Backlog, minus On Hold ("real time") |
+| rework\_hours, rework\_cycles | Sum and count of To do (after Issue Raised) → Merged to Development cycles |
+| hold\_hours | Total On Hold |
+
+Optional write-back: when a task first enters QA Backlog the backend posts one comment, "Development 6h 20m · Review 1h 05m · Deploy 0h 40m · Planned 9h 00m", so the numbers are visible inside Bitrix24 too. Time is not written as elapsed-time entries, because the API would record them under the webhook owner instead of the developer.
+
+### 12.5 Planned dates
+
+- **Planned start**: on the first move to In progress the backend sets `START_DATE_PLAN` = move time (only if empty, so a later manual edit by the TL is kept).
+- **Planned end**: `END_DATE_PLAN` = `DEADLINE`, set at the same time and updated whenever the deadline changes.
+- **Baseline**: the dashboard also freezes `baseline_deadline` = the deadline at the moment of first In progress. Planned vs actual uses the baseline, so pushing the deadline later does not make a late task look on time. Each deadline change after the baseline is counted (`deadline_changes`) and shown in the task drawer.
+- The backend ignores the webhook event its own update causes (same task, changed by the webhook user, only plan fields changed).
+
+### 12.6 Planned vs actual
+
+Per task:
+
+| Metric | Formula |
+| --- | --- |
+| Planned hours | Working hours from planned start to baseline deadline |
+| Actual hours | `actual_hours` from 12.4 |
+| Variance % | (Actual − Planned) / Planned × 100; negative = faster than plan |
+| On time | First QA Backlog ≤ baseline deadline |
+
+Per employee (filter: project, date range of first QA Backlog): tasks delivered, on-time %, planned hours, developer hours, rework hours and cycles, average variance %. For team leads and PM: review and deploy hours handled, median time from Merged to Development to QA Backlog.
+
+Per project: the same totals over all its tasks, plus the share of time by phase (development, review, deploy, rework, hold), which shows where a project loses time.
+
+New dashboard views: a **Planned vs Actual** table (employee rows, the columns above, sortable) on the Development tab, a project roll-up card, and a phase-time bar in the task drawer.
+
+### 12.7 Changes to the rest of this SRS
+
+- 8.1: the dashboard now **writes** three things: plan dates (`tasks.task.update`), guard moves (`task.stages.movetask`) and guard or summary comments. Add `task` write permission to the backend's webhook or use the server-side local app's OAuth token. The account it acts as must be a moderator of every development project.
+- 8.4 / open question 4: resolved. Bitrix24 history does record stage moves on this portal, so old tasks are rebuilt from history.
+- New tables: `stage_violations` (task\_id, from\_stage, to\_stage, moved\_by, moved\_at, action reverted|flagged), `task_time_summary` (fields in 12.4 and 12.5), `clock_segments` (task\_id, stage, user\_id, phase, started\_at, ended\_at, working\_seconds, cycle).
+- New env keys: `STAGE_GUARD_MODE=monitor|enforce`, `WORK_CALENDAR=config/calendar.json`.
+
+### 12.8 Defaults to confirm
+
+| # | Question | Default assumed |
+| --- | --- | --- |
+| 12 | Working hours for clocks | Mon–Sat 10:00–19:00 IST |
+| 13 | Who counts as TL/PM for the guard | Balram Jha (PM), Adnan Mubeen, Faiz Arsalan, plus each project's owner |
+| 14 | Should the guard revert, or only warn? | Monitor for two weeks, then revert |
+| 15 | Developer time ends at Merged to Development (includes review wait) | Yes, as requested; review wait is also shown separately |
