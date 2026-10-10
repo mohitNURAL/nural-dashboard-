@@ -303,6 +303,57 @@ export function devSummary(
   };
 }
 
+/** One part of the DEV-01 tile breakdown. */
+export interface SummaryPart {
+  key: 'dev' | 'issues' | 'bug' | 'feedback';
+  total: number;
+  completed: number;
+  pending: number;
+  ready: number;
+  deployed: number;
+  overdue: number;
+  doneToday: number;
+}
+
+/**
+ * DEV-01 tile breakdown by the All / Dev / Issues switch: All splits each tile into Dev and
+ * Issues, Issues into Bug and Feedback, Dev has no split. Pass the same tasks as devSummary.
+ */
+export function devSummaryParts(tasks: readonly MetricTask[], ctx: MetricContext, scope: DevScope) {
+  const part = (key: SummaryPart['key'], list: MetricTask[]): SummaryPart => {
+    const { total, completed, pending, ready, deployed, overdue, doneToday } = devSummary(
+      list,
+      ctx,
+    );
+    return { key, total, completed, pending, ready, deployed, overdue, doneToday };
+  };
+  if (scope === 'all') {
+    return [
+      part(
+        'dev',
+        tasks.filter((t) => !t.isIssue),
+      ),
+      part(
+        'issues',
+        tasks.filter((t) => t.isIssue),
+      ),
+    ];
+  }
+  if (scope === 'issues') {
+    return [
+      part(
+        'bug',
+        tasks.filter((t) => t.issueType === 'bug'),
+      ),
+      part(
+        'feedback',
+        tasks.filter((t) => t.issueType === 'feedback'),
+      ),
+    ];
+  }
+  return [];
+}
+
 export interface AssigneeRow {
   id: number;
   total: number;

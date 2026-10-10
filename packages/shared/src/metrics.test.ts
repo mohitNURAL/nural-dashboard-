@@ -6,6 +6,7 @@ import {
   assigneeTable,
   completedAt,
   devSummary,
+  devSummaryParts,
   devTasks,
   filterOptions,
   indexTasks,
@@ -217,6 +218,29 @@ describe('Development tab', () => {
       by: 'project',
       items: [{ id: 154, count: 7 }],
     });
+  });
+
+  it('splits the tiles into Dev and Issues, or Bug and Feedback', () => {
+    const list = [
+      task({ stage: 'In progress' }),
+      task({ stage: 'Done' }),
+      task({ tags: ['Bug'], stage: 'In progress' }),
+      task({ tags: ['Feedback'], stage: 'LIVE' }),
+      task({ tags: ['bug'], stage: 'Done' }),
+    ];
+    const all = devSummaryParts(list, ctx, 'all');
+    expect(all.map((p) => [p.key, p.total, p.pending, p.ready])).toEqual([
+      ['dev', 2, 1, 1],
+      ['issues', 3, 1, 1],
+    ]);
+    const issuesOnly = list.filter((t) => t.isIssue);
+    expect(
+      devSummaryParts(issuesOnly, ctx, 'issues').map((p) => [p.key, p.total, p.deployed]),
+    ).toEqual([
+      ['bug', 2, 0],
+      ['feedback', 1, 1],
+    ]);
+    expect(devSummaryParts(list, ctx, 'dev')).toEqual([]);
   });
 
   it('builds the assignee table with totals', () => {

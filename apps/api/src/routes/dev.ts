@@ -4,6 +4,7 @@ import {
   applyFilters,
   assigneeTable,
   devSummary,
+  devSummaryParts,
   devTasks,
   speedRanking,
   stageMatrix,
@@ -33,10 +34,12 @@ export function devRoutes(app: FastifyInstance, getDataset: DatasetProvider, opt
   }
 
   app.get('/api/dev/summary', async (req) => {
-    const { ds, ctx, tasks, filters } = await scope(req.query);
+    const { ds, ctx, tasks, filters, q } = await scope(req.query);
     const s = devSummary(tasks, ctx, filters);
     return {
       ...s,
+      // Tile sub-lines: Dev vs Issues (All) or Bug vs Feedback (Issues).
+      parts: devSummaryParts(tasks, ctx, q.scope),
       split: s.split && {
         by: s.split.by,
         items: s.split.items.map((i) => ({

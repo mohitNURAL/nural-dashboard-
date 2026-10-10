@@ -113,7 +113,9 @@ The Development tab answers three questions for the PM and team leads: how much 
 | 5 | Overdue | Pending tasks whose deadline has passed (a subset of tile 2, shown in red) |
 | 6 | Done today | Tasks completed today (Complete pressed, moved to QA Backlog) |
 
-Clicking a tile opens the "All tasks" accordion pre-filtered to that tile. The former "Completed (sent to QA)" tile was removed (2026-10-10) as not relevant to the Development tab; the sent-to-QA stage group still feeds the Done column of DEV-02 and the speed ranking.
+Clicking a tile opens the "All tasks" accordion pre-filtered to that tile.
+
+Under each tile's number, a breakdown follows the All / Dev / Issues switch (DEV-00a): **All** splits it into Dev and Issues, **Issues** into Bug and Feedback, and **Dev** shows the number alone. The parts add up to the tile, and each part opens its own list, e.g. "All tasks: Pending · Bug". The former "Completed (sent to QA)" tile was removed (2026-10-10) as not relevant to the Development tab; the sent-to-QA stage group still feeds the Done column of DEV-02 and the speed ranking.
 
 **Assignee / Project switch.** The breakdown cards DEV-02, DEV-03 (chart and table), DEV-05, QA-02, QA-04 (table view) and QA-05 each have an Assignee / Project switch in their header. "Assignee" (the default) gives one row or bar per person; "Project" gives one per workgroup, with the same columns and counts. Clicking a row or bar then sets the Assignee or the Project filter. Cards that are about people by nature (DEV-04 speed ranking, QA-06 testing workload, QA-07 retest by creator) have no switch.
 
@@ -343,7 +345,7 @@ SSE is chosen over WebSocket because the browser only receives; filters are sent
 2. **Sync worker**: takes events, fetches the full task through the inbound webhook (batched), compares with the stored snapshot, writes the stage-move log, and publishes a change message.
 3. **Reconciler**: every 10 minutes, pulls tasks changed since the last run, to recover any missed webhook. Nightly full resync of open tasks.
 4. **Directory sync**: hourly, users, departments and workgroups, and the stage list of each workgroup.
-5. **Metrics API**: `GET /api/dev/summary`, `/api/dev/assignees`, `/api/dev/ranking`, `/api/dev/matrix`, `/api/tasks`, `/api/qa/summary`, `/api/qa/issues`, `/api/qa/testing`, `/api/filters/options`, all taking the same filter parameters. `/api/dev/assignees`, `/api/dev/matrix` and `/api/qa/issues` also take `groupBy=assignee|project` for the Assignee / Project switch. The Development endpoints, `/api/filters/options?tab=dev` and `/api/tasks?kind=tasks` take `scope=all|dev|issues` (API default `dev`). `/api/tasks` also takes `stage`, `overdue=true|false` and `ageing=<bucket>` for drill-downs.
+5. **Metrics API**: `GET /api/dev/summary`, `/api/dev/assignees`, `/api/dev/ranking`, `/api/dev/matrix`, `/api/tasks`, `/api/qa/summary`, `/api/qa/issues`, `/api/qa/testing`, `/api/filters/options`, all taking the same filter parameters. `/api/dev/assignees`, `/api/dev/matrix` and `/api/qa/issues` also take `groupBy=assignee|project` for the Assignee / Project switch. The Development endpoints, `/api/filters/options?tab=dev` and `/api/tasks?kind=tasks` take `scope=all|dev|issues` (API default `dev`). `/api/tasks` also takes `stage`, `overdue=true|false` and `ageing=<bucket>` for drill-downs. `/api/dev/summary` returns `parts`, the tile breakdown for the switch.
 6. **SSE endpoint** `GET /api/stream`: sends `task.changed` with the task ID, stage group and project, so the browser refetches only the queries that include it.
 
 **Data model (PostgreSQL)**

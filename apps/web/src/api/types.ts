@@ -1,5 +1,5 @@
 // Response shapes of apps/api (routes/*.ts). Dates arrive as ISO strings.
-import type { GroupBy, IssueType, StageGroup, StageTitle } from '@nural/shared';
+import type { GroupBy, IssueType, StageGroup, StageTitle, SummaryPart } from '@nural/shared';
 import type { DeptGroup } from './queries';
 
 export interface Person {
@@ -86,6 +86,8 @@ export interface DevSummary {
     by: 'project' | 'assignee';
     items: { id: number; count: number; name?: string }[];
   } | null;
+  /** Tile breakdown: Dev and Issues (All), Bug and Feedback (Issues), none (Dev). */
+  parts: SummaryPart[];
   asOf: string;
 }
 

@@ -142,7 +142,18 @@ describe('metrics API', () => {
     expect((await get('/api/dev/summary')).body.total).toBe(3);
     expect((await get('/api/dev/summary?scope=dev')).body.total).toBe(3);
     expect((await get('/api/dev/summary?scope=issues')).body.total).toBe(2);
-    expect((await get('/api/dev/summary?scope=all')).body.total).toBe(5);
+    const all = (await get('/api/dev/summary?scope=all')).body;
+    expect(all.total).toBe(5);
+    expect(all.parts.map((p: { key: string; total: number }) => [p.key, p.total])).toEqual([
+      ['dev', 3],
+      ['issues', 2],
+    ]);
+    const iss = (await get('/api/dev/summary?scope=issues')).body;
+    expect(iss.parts.map((p: { key: string; total: number }) => [p.key, p.total])).toEqual([
+      ['bug', 1],
+      ['feedback', 1],
+    ]);
+    expect((await get('/api/dev/summary?scope=dev')).body.parts).toEqual([]);
     const list = await get('/api/tasks?scope=issues&preset=total');
     expect(list.body.rows.map((r: { id: number }) => r.id).sort()).toEqual([5, 6]);
     expect((await get('/api/dev/summary?scope=everything')).status).toBe(400);
