@@ -468,7 +468,7 @@ describe('QA tab', () => {
       ev('To do', 'QA Backlog', '2026-10-02T05:00:00Z'),
       ev('In QA', 'To do', '2026-10-03T05:00:00Z'),
       ev('To do', 'In QA', '2026-10-04T05:00:00Z'),
-      ev('Issue Raised', 'In progress', '2026-10-05T05:00:00Z'),
+      ev('Done', 'In progress', '2026-10-05T05:00:00Z'),
     ],
   });
   const raisedOnIssue = task({
@@ -491,6 +491,17 @@ describe('QA tab', () => {
   const all = [parentIssue, reopenedTwice, raisedOnIssue, tagOnly, plain, devTask];
   const byId = indexTasks(all);
   const list = issues(all);
+
+  it('counts moves back from QA Backlog, In QA or Done as rework, not from Issue Raised', () => {
+    const moved = (from: MetricTask['stage'], to: MetricTask['stage']) =>
+      reworkCount(task({ tags: ['Bug'], events: [ev(from, to, '2026-10-05T05:00:00Z')] }), byId);
+    expect(moved('QA Backlog', 'To do')).toBe(1);
+    expect(moved('In QA', 'In progress')).toBe(1);
+    expect(moved('Done', 'To do')).toBe(1);
+    expect(moved('Issue Raised', 'To do')).toBe(0);
+    expect(moved('LIVE', 'To do')).toBe(0);
+    expect(moved('QA Backlog', 'Pending for QA')).toBe(0);
+  });
 
   it('counts rework without double counting', () => {
     expect(reworkCount(parentIssue, byId)).toBe(0);

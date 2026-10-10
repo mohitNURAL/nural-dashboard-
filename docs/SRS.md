@@ -239,8 +239,10 @@ Rank by on-time % first, then by average days early. Employees with fewer than 3
 
 **Rework.** An issue counts as rework, charged to its assignee, when either:
 
-1. it moves from QA Backlog, In QA or Issue Raised back to To do or In progress (retest failed and reopened), or
+1. it moves from **QA Backlog, In QA or Done** back to To do or In progress (sent back by QA, or reopened after Done), or
 2. a new issue is created whose parent or related task is itself an issue.
+
+A move from **Issue Raised** back to To do is **not** rework (changed 2026-10-10; it used to count). The same rule flags live "reopened" changes in the sync worker.
 
 Each reopen counts once, so an issue reopened twice adds 2 to the rework count. The task drawer shows each reopen with date and who moved it.
 

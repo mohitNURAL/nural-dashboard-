@@ -1,5 +1,5 @@
 // What changed between the stored copy of a task and the one just fetched (SRS 8.3 step 4).
-import { QA_STAGES, type StageTitle } from '@nural/shared';
+import { isReworkMove, type StageTitle } from '@nural/shared';
 
 export interface StoredTask {
   id: number;
@@ -33,11 +33,8 @@ export function diffTask(old: StoredTask | undefined, next: NextTask): TaskDiff 
   const isNew = !old || old.deleted;
   const fromStage = (old?.stage ?? null) as StageTitle | null;
   const stageChanged = !isNew && (old.stageId !== next.stageId || old.groupId !== next.groupId);
-  const reopened =
-    stageChanged &&
-    !!fromStage &&
-    QA_STAGES.includes(fromStage) &&
-    (next.stage === 'To do' || next.stage === 'In progress');
+  // Same rule as the rework count: sent back from QA Backlog, In QA or Done.
+  const reopened = stageChanged && isReworkMove(fromStage, next.stage);
   const changed = isNew || stageChanged || old.changedAt.getTime() !== next.changedAt.getTime();
   return {
     isNew,

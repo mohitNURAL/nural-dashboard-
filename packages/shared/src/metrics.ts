@@ -2,7 +2,7 @@
 // No I/O and no clock: `now` and the time zone come in through MetricContext.
 import {
   DEPLOYED_STAGE,
-  QA_STAGES,
+  isReworkMove,
   READY_FOR_DEPLOYMENT_STAGE,
   SENT_TO_QA_STAGES,
   STAGE_TITLES,
@@ -209,11 +209,8 @@ export const issueAgeBucket = (t: MetricTask, ctx: MetricContext): IssueAgeBucke
 
 // ---------------------------------------------------------------- rework
 
-/** Moves from a QA stage back to To do or In progress (retest failed, reopened). */
-export const reopenEvents = (t: MetricTask) =>
-  t.events.filter(
-    (e) => e.from && QA_STAGES.includes(e.from) && (e.to === 'To do' || e.to === 'In progress'),
-  );
+/** Moves from QA Backlog, In QA or Done back to To do or In progress (sent back, reopened). */
+export const reopenEvents = (t: MetricTask) => t.events.filter((e) => isReworkMove(e.from, e.to));
 
 export type TaskIndex = ReadonlyMap<number, MetricTask>;
 

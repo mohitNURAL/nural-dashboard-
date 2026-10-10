@@ -35,7 +35,7 @@ export const INFO = {
   qaOpen: 'Issues not in Done or LIVE, so also those waiting in QA. The ring shows the resolved %.',
   qaLastFiled: 'Latest day an issue was created, and how many that day.',
   qaRework:
-    'Issues sent back from QA to To do or In progress, or a new issue filed on an issue. % of all issues.',
+    'Issues sent back from QA Backlog, In QA or Done to To do or In progress, or a new issue filed on an issue. Not from Issue Raised.',
 
   // QA cards
   issuesByAssignee: 'Open vs resolved (Done or LIVE), or bug vs feedback, per person or project.',
@@ -45,7 +45,8 @@ export const INFO = {
     'Tasks tagged testing or re-testing, or assigned to QA Testing. Late = pending past deadline.',
   retest: 'Issues in QA Backlog or In QA, by who filed them. Oldest = days waiting.',
   issueAge: 'Open issues by days since they were created.',
-  rework: 'Reopens per person or project, and the % of their issues that were reworked.',
+  rework:
+    'Reopens (back from QA Backlog, In QA or Done) per person or project, and the % of their issues reworked.',
   latestFiled: 'Issues created on the Last filed date.',
   allIssues: 'Every bug or feedback in the filters, or the number you clicked.',
 } as const;
