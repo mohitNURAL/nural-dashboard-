@@ -2,6 +2,7 @@ import cors from '@fastify/cors';
 import Fastify from 'fastify';
 import { pathToFileURL } from 'node:url';
 import { ZodError } from 'zod';
+import type { Call } from './bitrix/limiter';
 import { config } from './config';
 import { cachedDataset, loadDataset, type DatasetProvider } from './data/dataset';
 import { createMemoryBus, type EventBus } from './events/bus';
@@ -23,6 +24,8 @@ export interface ServerOptions {
   hooks?: Partial<ReceiverDeps>;
   /** For /health (NFR-9). */
   health?: { worker: 'on' | 'off'; lastReconcileAt?: () => Promise<Date | null> };
+  /** Task description for the drawer, read live from Bitrix24 (not stored by the sync). */
+  describe?: (taskId: number) => Promise<string | null>;
 }
 
 export async function buildServer({
@@ -32,6 +35,7 @@ export async function buildServer({
   bus = createMemoryBus(),
   hooks = {},
   health = { worker: 'off' },
+  describe,
 }: ServerOptions = {}) {
   const app = Fastify({
     logger: logger && {
@@ -88,7 +92,7 @@ export async function buildServer({
   const opts = { tz: config.APP_TIMEZONE, now };
   devRoutes(app, dataset, opts);
   qaRoutes(app, dataset, opts);
-  taskRoutes(app, dataset, opts);
+  taskRoutes(app, dataset, opts, { describe });
   filterRoutes(app, dataset, opts);
   streamRoutes(app, bus, config.WEB_ORIGIN);
   await hookRoutes(app, {
@@ -101,6 +105,24 @@ export async function buildServer({
   });
 
   return app;
+}
+
+const DESCRIPTION_TTL_MS = 5 * 60_000;
+
+/** Reads a task description through the rate limiter (read-only tasks.task.get), cached 5 min. */
+function describer(call: Call) {
+  const cache = new Map<number, { at: number; text: string | null }>();
+  return async (taskId: number) => {
+    const hit = cache.get(taskId);
+    if (hit && Date.now() - hit.at < DESCRIPTION_TTL_MS) return hit.text;
+    const res = await call<{ task?: { description?: string | null } }>('tasks.task.get', {
+      taskId,
+      select: ['ID', 'DESCRIPTION'],
+    });
+    const text = res.result.task?.description?.trim() || null;
+    cache.set(taskId, { at: Date.now(), text });
+    return text;
+  };
 }
 
 /** Production wiring: Redis bus and queue, Bitrix24 limiter, sync worker and schedules. */
@@ -126,6 +148,7 @@ async function main() {
       },
     },
     health: { worker: workerOn ? 'on' : 'off', lastReconcileAt: reconciler.lastReconcileAt },
+    describe: describer(bitrix.getBitrix().call),
   });
 
   const closers: (() => Promise<unknown>)[] = [];

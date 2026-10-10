@@ -1,22 +1,8 @@
-// Skeleton layout of each tab from the SRS 6 wireframes. Milestones 7 (Development) and
-// 8 (QA) replace these blocks with live cards.
+// Skeleton layout of the QA tab from the SRS 6 wireframe. Milestone 8 replaces it with live cards.
 import clsx from 'clsx';
 import { Card } from '../components/Card';
-import type { Tab } from './filters/toParams';
 
 const LAYOUT = {
-  dev: {
-    tiles: ['Total tasks', 'Sent to QA', 'Pending', 'Ready', 'Deployed', 'Overdue', 'Done today'],
-    statusTile: 'Overdue',
-    cards: [
-      ['Assignee-wise tasks', 'lg:col-span-7'],
-      ['Pending vs Done', 'lg:col-span-5'],
-      ['Task ageing, days past deadline', 'lg:col-span-6'],
-      ['Fastest to QA Backlog', 'lg:col-span-6'],
-      ['Tasks by stage and assignee', 'lg:col-span-12'],
-    ],
-    accordions: ['Tasks due today', 'Overdue tasks', 'All tasks'],
-  },
   qa: {
     tiles: ['Total issues filed', 'Open / waiting', 'Last filed', 'Rework issues'],
     statusTile: 'Rework issues',
@@ -32,16 +18,11 @@ const LAYOUT = {
   },
 } as const;
 
-export function TabPlaceholder({ tab }: { tab: Tab }) {
+export function TabPlaceholder({ tab }: { tab: 'qa' }) {
   const l = LAYOUT[tab];
   return (
     <div className="space-y-4">
-      <div
-        className={clsx(
-          'grid grid-cols-2 gap-3 sm:grid-cols-4',
-          l.tiles.length === 7 ? 'lg:grid-cols-7' : 'lg:grid-cols-4',
-        )}
-      >
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {l.tiles.map((t) => (
           <div
             key={t}

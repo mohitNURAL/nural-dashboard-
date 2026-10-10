@@ -14,11 +14,16 @@ export const queryClient = new QueryClient({
 export const API_KEY = 'api';
 
 /** GET path with params; the previous result stays on screen while a new filter loads. */
-export function useApi<T>(path: string, params: Record<string, string>) {
+export function useApi<T>(
+  path: string,
+  params: Record<string, string>,
+  { enabled = true }: { enabled?: boolean } = {},
+) {
   return useQuery({
     queryKey: [API_KEY, path, params],
     queryFn: ({ signal }) => apiGet<T>(path, params, signal),
     placeholderData: keepPreviousData,
+    enabled,
   });
 }
 

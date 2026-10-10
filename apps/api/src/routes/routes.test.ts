@@ -87,7 +87,16 @@ const dataset: Dataset = {
 
 let app: Awaited<ReturnType<typeof buildServer>>;
 beforeAll(async () => {
-  app = await buildServer({ getDataset: async () => dataset, now: () => NOW, logger: false });
+  app = await buildServer({
+    getDataset: async () => dataset,
+    now: () => NOW,
+    logger: false,
+    // Task 5's description lookup fails, to show the drawer still loads.
+    describe: async (id) => {
+      if (id === 5) throw new Error('Bitrix24 down');
+      return `Description of ${id}`;
+    },
+  });
 });
 afterAll(() => app.close());
 
@@ -181,7 +190,10 @@ describe('metrics API', () => {
   it('GET /api/tasks/:id returns the drawer with linked issues and reopens', async () => {
     const d = await get('/api/tasks/1');
     expect(d.body.linkedIssues.map((r: { id: number }) => r.id)).toEqual([5]);
+    expect(d.body.description).toBe('Description of 1');
     const issue = await get('/api/tasks/5');
+    expect(issue.status).toBe(200);
+    expect(issue.body.description).toBeNull();
     expect(issue.body.parent.id).toBe(1);
     expect(issue.body.reopens).toHaveLength(1);
     expect(issue.body.task).toMatchObject({ rework: 1, linkedTaskId: 1, issueType: 'bug' });

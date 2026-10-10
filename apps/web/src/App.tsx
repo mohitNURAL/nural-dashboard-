@@ -1,4 +1,6 @@
+import { TaskDrawer } from './components/TaskDrawer';
 import { TopBar } from './components/TopBar';
+import { DevTab } from './features/dev/DevTab';
 import { FilterBar } from './features/filters/FilterBar';
 import { useTab } from './features/filters/useFilters';
 import { TabPlaceholder } from './features/TabPlaceholder';
@@ -13,8 +15,9 @@ export default function App() {
       <TopBar tab={tab} onTab={setTab} />
       <FilterBar tab={tab} />
       <main className="mx-auto max-w-page px-4 py-4 lg:px-6">
-        <TabPlaceholder tab={tab} />
+        {tab === 'dev' ? <DevTab /> : <TabPlaceholder tab="qa" />}
       </main>
+      <TaskDrawer />
     </div>
   );
 }

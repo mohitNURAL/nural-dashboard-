@@ -1,4 +1,4 @@
-// Card (SRS 6): title, optional action, body, loading skeleton and empty state.
+// Card (SRS 6): title, optional toggle (table or chart), body, empty state and loading skeleton.
 import clsx from 'clsx';
 import type { ReactNode } from 'react';
 
@@ -22,8 +22,13 @@ export function Card({
   children,
 }: Props) {
   return (
-    <section className={clsx('rounded-card border border-border bg-surface p-4', className)}>
-      <header className="mb-3 flex items-center justify-between gap-3">
+    <section
+      className={clsx(
+        'flex min-w-0 flex-col rounded-card border border-border bg-surface p-4',
+        className,
+      )}
+    >
+      <header className="mb-3 flex min-h-7 items-center justify-between gap-3">
         <h2 className="text-h3 text-primary-dark">{title}</h2>
         {action}
       </header>
@@ -39,5 +44,36 @@ export function Card({
         children
       )}
     </section>
+  );
+}
+
+/** Two-way switch for a card's header, e.g. Chart / Table. */
+export function ViewToggle<V extends string>({
+  value,
+  options,
+  onChange,
+}: {
+  value: V;
+  options: { value: V; label: string }[];
+  onChange: (v: V) => void;
+}) {
+  return (
+    <div className="flex rounded-control bg-primary-soft-100 p-0.5" role="radiogroup">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          role="radio"
+          aria-checked={value === o.value}
+          onClick={() => onChange(o.value)}
+          className={clsx(
+            'rounded px-2 py-0.5 font-heading text-label font-bold',
+            value === o.value ? 'bg-surface text-primary shadow-sm' : 'text-text-muted',
+          )}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
   );
 }

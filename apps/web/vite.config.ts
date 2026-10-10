@@ -15,4 +15,13 @@ export default defineConfig({
       '/health': api,
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // ECharts is most of the bundle and changes rarely; cache it apart from app code.
+        manualChunks: (id) =>
+          /[\\/]node_modules[\\/](echarts|zrender)[\\/]/.test(id) ? 'echarts' : undefined,
+      },
+    },
+  },
 });

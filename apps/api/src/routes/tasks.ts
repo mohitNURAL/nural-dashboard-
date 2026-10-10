@@ -44,7 +44,17 @@ function sorter(sort: (typeof SORTS)[number]) {
   };
 }
 
-export function taskRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts: AppOptions) {
+export interface TaskRouteDeps {
+  /** Live description lookup (tasks.task.get); the drawer works without it. */
+  describe?: (taskId: number) => Promise<string | null>;
+}
+
+export function taskRoutes(
+  app: FastifyInstance,
+  getDataset: DatasetProvider,
+  opts: AppOptions,
+  { describe }: TaskRouteDeps = {},
+) {
   app.get('/api/tasks', async (req) => {
     const { query, filters } = parseQuery(req.query, listParams);
     const ds = await getDataset();
@@ -91,9 +101,16 @@ export function taskRoutes(app: FastifyInstance, getDataset: DatasetProvider, op
     );
     const parent = t.parentId ? ds.byId.get(t.parentId) : undefined;
     const timeline = t.events.map((e) => ({ ...e, by: e.by ? person(ds, e.by) : null }));
+    const description = describe
+      ? await describe(t.id).catch((err: unknown) => {
+          req.log.warn({ err, taskId: t.id }, 'task description unavailable');
+          return null;
+        })
+      : null;
 
     return {
       task: taskRow(ds, ctx, t),
+      description,
       timeline,
       reopens: reopenEvents(t).map((e) => ({ ...e, by: e.by ? person(ds, e.by) : null })),
       parent: parent ? taskRow(ds, ctx, parent) : null,
