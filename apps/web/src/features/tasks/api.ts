@@ -3,7 +3,7 @@ import { parseAsInteger, useQueryState } from 'nuqs';
 import { useApi } from '../../api/queries';
 import type { TaskDetail, TaskPage } from '../../api/types';
 
-export type TaskListKind = 'tasks' | 'issues' | 'testing';
+export type TaskListKind = 'tasks' | 'issues' | 'testing' | 'kpi';
 export type TaskSort = 'deadline' | '-deadline' | 'created' | '-created' | 'id' | '-id';
 
 export interface TaskListQuery {

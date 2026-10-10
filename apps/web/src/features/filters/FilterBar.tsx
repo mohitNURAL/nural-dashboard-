@@ -4,13 +4,19 @@ import { SearchCombobox } from '../../components/SearchCombobox';
 import { useFilterOptions } from '../../api/queries';
 import { DateRangePicker } from './DateRangePicker';
 import { hasFilters, type Tab } from './toParams';
-import { useDevScope, useFilters } from './useFilters';
+import { useDevScope, useFilters, useKpiControls, type KpiDept } from './useFilters';
 
 const ISSUE_TYPE_LABEL = { bug: 'Bug', feedback: 'Feedback' } as const;
+const DEPT_OPTIONS: { value: Exclude<KpiDept, 'all'>; label: string }[] = [
+  { value: 'dev', label: 'Development' },
+  { value: 'qa', label: 'QA' },
+  { value: 'support', label: 'Support' },
+];
 
 export function FilterBar({ tab }: { tab: Tab }) {
   const { filters, setFilters, reset } = useFilters();
   const [scope] = useDevScope();
+  const kpi = useKpiControls();
   // Development options follow its All / Dev / Issues switch.
   const { data, isLoading } = useFilterOptions(tab, filters, tab === 'dev' ? { scope } : {});
   const ids = (v: number[]) => v.map(String);
@@ -42,7 +48,16 @@ export function FilterBar({ tab }: { tab: Tab }) {
           selected={ids(filters.assignee)}
           onChange={(v) => setFilters({ assignee: nums(v) })}
         />
-        {tab === 'dev' ? (
+        {tab === 'kpi' ? (
+          // KPI: the assignee's department (SRS 13.3) in place of Tag.
+          <SearchCombobox
+            label="Department: all"
+            single
+            options={DEPT_OPTIONS}
+            selected={kpi.dept === 'all' ? [] : [kpi.dept]}
+            onChange={(v) => kpi.setDept((v[0] as KpiDept | undefined) ?? 'all')}
+          />
+        ) : tab === 'dev' ? (
           <SearchCombobox
             label="Tag"
             loading={isLoading}
@@ -71,8 +86,11 @@ export function FilterBar({ tab }: { tab: Tab }) {
         <DateRangePicker value={filters} onChange={(r) => setFilters(r)} />
         <button
           type="button"
-          onClick={reset}
-          disabled={!hasFilters(tab, filters)}
+          onClick={() => {
+            reset();
+            if (tab === 'kpi') kpi.setDept('all');
+          }}
+          disabled={!hasFilters(tab, filters) && !(tab === 'kpi' && kpi.dept !== 'all')}
           className="col-span-2 h-10 rounded-control px-3 font-heading text-button text-primary hover:bg-primary-soft-100 disabled:text-text-muted disabled:hover:bg-transparent lg:col-span-1"
         >
           Reset filters

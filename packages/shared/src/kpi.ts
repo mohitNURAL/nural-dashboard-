@@ -456,16 +456,36 @@ export function hotProjects(scope: KpiScope, ctx: KpiContext, limit = 5): HotPro
     acc.set(gid, a);
   };
   const since = new Date(ctx.now.getTime() - KPI.sparkDays * DAY_MS);
+  // Bulk clean-ups are not activity: 30+ identical moves (same person, project, day, from and
+  // to stage) are left out, with the automatic comments Bitrix24 adds to those tasks that day.
+  const moveKey = (gid: number, day: string, e: MetricTask['events'][number]) =>
+    `${gid}|${day}|${e.by ?? 0}|${e.from ?? ''}>${e.to ?? ''}`;
+  const moveCount = new Map<string, number>();
+  for (const k of scope.inProjects) {
+    for (const e of k.t.events) {
+      if (e.at < since) continue;
+      const key = moveKey(k.t.groupId, dayKey(e.at, ctx.tz), e);
+      moveCount.set(key, (moveCount.get(key) ?? 0) + 1);
+    }
+  }
+  const bulkTaskDays = new Set<string>();
   for (const k of scope.inProjects) {
     if (k.t.createdAt >= since) {
       add(k.t.groupId, k.t.createdAt, 'newTasks');
       if (k.t.issueType === 'bug') add(k.t.groupId, k.t.createdAt, 'bugs');
     }
-    for (const e of k.t.events) if (e.at >= since) add(k.t.groupId, e.at, 'moves');
+    for (const e of k.t.events) {
+      if (e.at < since) continue;
+      const day = dayKey(e.at, ctx.tz);
+      if ((moveCount.get(moveKey(k.t.groupId, day, e)) ?? 0) >= KPI.bulkCloseMin) {
+        bulkTaskDays.add(`${k.t.id}|${day}`);
+      } else add(k.t.groupId, e.at, 'moves');
+    }
   }
   for (const c of ctx.comments ?? []) {
     const gid = groupOf.get(c.taskId);
-    if (gid && c.at >= since) add(gid, c.at, 'comments');
+    if (!gid || c.at < since || bulkTaskDays.has(`${c.taskId}|${dayKey(c.at, ctx.tz)}`)) continue;
+    add(gid, c.at, 'comments');
   }
   return [...acc]
     .map(([id, a]) => ({ id, ...a }))
@@ -615,6 +635,7 @@ export const KPI_LIST_PRESETS = [
   'longInProgress',
   'silent',
   'dueSoon',
+  'dueLater',
 ] as const;
 export type KpiListPreset = (typeof KPI_LIST_PRESETS)[number];
 
@@ -654,6 +675,11 @@ export function kpiList(
     case 'dueSoon': {
       const soon = addWorkingHours(ctx.now, KPI.soonWorkingDays * dayHours(ctx.cal), ctx.cal);
       list = list.filter((k) => k.open && !k.overdue && !!k.t.deadline && k.t.deadline <= soon);
+      break;
+    }
+    case 'dueLater': {
+      const soon = addWorkingHours(ctx.now, KPI.soonWorkingDays * dayHours(ctx.cal), ctx.cal);
+      list = list.filter((k) => k.open && !k.overdue && !!k.t.deadline && k.t.deadline > soon);
       break;
     }
     case 'silent': {

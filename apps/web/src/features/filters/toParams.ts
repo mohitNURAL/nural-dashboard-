@@ -1,6 +1,6 @@
 // URL filter state -> API query params. The URL uses the API's own parameter names so a
 // shared link and the request it makes read the same.
-export type Tab = 'dev' | 'qa';
+export type Tab = 'kpi' | 'dev' | 'qa';
 export type IssueTypeFilter = 'bug' | 'feedback';
 export type DateField = 'created' | 'deadline';
 
@@ -24,8 +24,12 @@ export const EMPTY_FILTERS: FilterState = {
   to: null,
 };
 
-/** The facet only one tab shows (SRS 6: QA swaps Tag for Bug or Feedback). */
-export const tabOnlyFacet = { dev: 'tag', qa: 'type' } as const;
+/** The facet only one tab shows (SRS 6: QA swaps Tag for Bug or Feedback; KPI has neither). */
+export const tabOnlyFacet: Record<Tab, 'tag' | 'type' | null> = {
+  kpi: null,
+  dev: 'tag',
+  qa: 'type',
+};
 
 /** Query params for a metrics request; empty filters are left out, lists sorted for stable keys. */
 export function toParams(tab: Tab, f: FilterState): Record<string, string> {

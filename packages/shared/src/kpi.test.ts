@@ -246,6 +246,21 @@ describe('projects, people, overdue, activity', () => {
     ]);
     expect(hot[1]!.spark.slice(-2)).toEqual([1, 1]);
   });
+
+  it('activity leaves out bulk clean-ups and their automatic comments', () => {
+    const at = ist('2026-10-10T15:00');
+    const bulk = Array.from({ length: 30 }, () =>
+      task({ groupId: 30, createdAt: ist('2026-09-01T10:00'), events: [ev('To do', 'LIVE', at)] }),
+    );
+    const real = task({
+      groupId: 30,
+      createdAt: ist('2026-09-01T10:00'),
+      events: [ev('To do', 'In progress', at)],
+    });
+    const comments = [...bulk.map((t) => ({ taskId: t.id, at })), { taskId: real.id, at }];
+    const [hot] = hotProjects(kpiScope([...bulk, real], ctx), { ...ctx, comments });
+    expect(hot!.parts).toEqual({ newTasks: 0, bugs: 0, moves: 1, comments: 1 });
+  });
 });
 
 describe('summary, insights, drill-down lists', () => {

@@ -12,16 +12,19 @@ const GROUP_ORDER = { Development: 0, Testing: 1, Other: 2 } as const;
 export function filterRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts: AppOptions) {
   app.get('/api/filters/options', async (req) => {
     const { query, filters } = parseQuery(req.query, {
-      tab: z.enum(['dev', 'qa']).default('dev'),
+      tab: z.enum(['kpi', 'dev', 'qa']).default('dev'),
       ...scopeParam,
     });
     const ds = await getDataset();
     const ctx = contextOf(ds, opts);
     // QA tab covers issues plus testing work (QA-06); the Development tab its own tasks.
+    // KPI tab: every task in every workgroup (SRS 13).
     const universe =
-      query.tab === 'qa'
-        ? [...issues(ds.tasks), ...testingTasks(ds.tasks, ctx)]
-        : devTasks(ds.tasks, ctx, query.scope);
+      query.tab === 'kpi'
+        ? ds.tasks
+        : query.tab === 'qa'
+          ? [...issues(ds.tasks), ...testingTasks(ds.tasks, ctx)]
+          : devTasks(ds.tasks, ctx, query.scope);
     const o = filterOptions(universe, filters, ctx.tz);
     return {
       projects: o.projects

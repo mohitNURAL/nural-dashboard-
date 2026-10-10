@@ -1,4 +1,4 @@
-// Top bar (SRS 6): Nural logo, app name, Development and QA tabs, alerts, Live indicator, user
+// Top bar (SRS 6): Nural logo, app name, KPI, Development and QA tabs, alerts, Live indicator, user
 // menu.
 import * as Popover from '@radix-ui/react-popover';
 import clsx from 'clsx';
@@ -9,6 +9,7 @@ import { AlertsBell } from './AlertsBell';
 import { LiveIndicator } from './LiveIndicator';
 
 const TABS: { id: Tab; label: string }[] = [
+  { id: 'kpi', label: 'KPI' },
   { id: 'dev', label: 'Development' },
   { id: 'qa', label: 'QA' },
 ];

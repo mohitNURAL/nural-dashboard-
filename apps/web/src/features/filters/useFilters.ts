@@ -23,7 +23,8 @@ const filterParsers = {
   to: parseAsString,
 };
 
-const tabParser = parseAsStringLiteral(['dev', 'qa'] as const).withDefault('dev');
+// KPI is the first tab and the default (SRS 13); its URL has no `tab`.
+const tabParser = parseAsStringLiteral(['kpi', 'dev', 'qa'] as const).withDefault('kpi');
 
 export function useTab() {
   const [tab, setTabRaw] = useQueryState('tab', tabParser);
@@ -32,8 +33,9 @@ export function useTab() {
     (next: Tab) => {
       if (next === tab) return;
       // Drop the facet only the current tab shows, so a hidden filter never narrows the view.
-      void setFilters({ [tabOnlyFacet[tab]]: null });
-      void setTabRaw(next === 'dev' ? null : next);
+      const facet = tabOnlyFacet[tab];
+      if (facet) void setFilters({ [facet]: null });
+      void setTabRaw(next === 'kpi' ? null : next);
     },
     [tab, setFilters, setTabRaw],
   );
@@ -80,6 +82,25 @@ const scopeParser = parseAsStringLiteral(['all', 'dev', 'issues'] as const).with
 export function useDevScope() {
   const [scope, setScope] = useQueryState('scope', scopeParser);
   return [scope, (s: DevScope) => void setScope(s === 'all' ? null : s)] as const;
+}
+
+const deptParser = parseAsStringLiteral(['all', 'dev', 'qa', 'support'] as const).withDefault(
+  'all',
+);
+const periodParser = parseAsStringLiteral(['day', 'week', 'month'] as const).withDefault('week');
+export type KpiDept = 'all' | 'dev' | 'qa' | 'support';
+export type KpiPeriod = 'day' | 'week' | 'month';
+
+/** KPI tab: Department and Day / Week / Month, in the URL; defaults (all, week) left out. */
+export function useKpiControls() {
+  const [dept, setDept] = useQueryState('dept', deptParser);
+  const [period, setPeriod] = useQueryState('period', periodParser);
+  return {
+    dept,
+    period,
+    setDept: (d: KpiDept) => void setDept(d === 'all' ? null : d),
+    setPeriod: (p: KpiPeriod) => void setPeriod(p === 'week' ? null : p),
+  };
 }
 
 /** "Showing: …" for the tab's "i" tooltips, with project and people names from the options. */

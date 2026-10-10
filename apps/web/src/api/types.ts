@@ -303,3 +303,117 @@ export interface AlertsResponse {
   stuck: (AlertBase & { stage: StageTitle; boardCount: number })[];
   total: number;
 }
+
+// ---------------------------------------------------------------- KPI tab (SRS 13)
+
+export type KpiDeptKey = 'dev' | 'qa' | 'support' | 'other';
+export type Health = 'red' | 'amber' | 'green';
+export type OverdueBucket = '1-2' | '3-7' | '8-30' | '30+';
+
+export interface KpiRates {
+  closed: number;
+  withDeadline: number;
+  onTime: number;
+  onTimePct: number | null;
+  open: number;
+  overdue: number;
+  overduePct: number;
+  reworkCycles: number;
+}
+
+export interface KpiSummary {
+  period: 'day' | 'week' | 'month';
+  range: { start: string; end: string };
+  open: number;
+  openByDept: Record<KpiDeptKey, number>;
+  overdue: number;
+  overduePct: number;
+  overdueOver30: number;
+  closed: number;
+  closedPrev: number;
+  onTimePct: number | null;
+  onTimePrevPct: number | null;
+  activeProjects: number;
+  silentProjects: number;
+  noDeadline: number;
+  noProject: { open: number };
+  bulkClosed: number;
+  asOf: string;
+}
+
+export interface KpiProject {
+  id: number;
+  name: string;
+  owner: Person | null;
+  total: number;
+  open: number;
+  overdue: number;
+  oldestOverdueDays: number;
+  noDeadline: number;
+  completionPct: number;
+  rates: KpiRates;
+  lastAction: string | null;
+  idleWorkingDays: number | null;
+  silent: boolean;
+  status: Health;
+}
+
+export interface KpiWorkload {
+  id: number;
+  name: string;
+  person: Person;
+  open: number;
+  overdue: number;
+  dueSoon: number;
+  later: number;
+  noDeadline: number;
+  projects: number;
+}
+
+export interface KpiPerson {
+  id: number;
+  name: string;
+  person: Person;
+  dept: KpiDeptKey;
+  rates: KpiRates;
+  closedPrev: number;
+  spark: number[];
+  workload: Omit<KpiWorkload, 'name' | 'person'> | null;
+}
+
+export interface KpiOverdueGroup {
+  id: number;
+  name: string;
+  total: number;
+  buckets: Record<OverdueBucket, number>;
+}
+
+export interface KpiOverdue {
+  total: number;
+  buckets: Record<OverdueBucket, number>;
+  byProject: KpiOverdueGroup[];
+  byAssignee: KpiOverdueGroup[];
+}
+
+export interface KpiActivity {
+  hot: {
+    id: number;
+    name: string;
+    owner: Person | null;
+    parts: { newTasks: number; bugs: number; moves: number; comments: number };
+    spark: number[];
+  }[];
+  silent: {
+    id: number;
+    name: string;
+    owner: Person | null;
+    open: number;
+    overdue: number;
+    idleWorkingDays: number | null;
+    lastAction: string | null;
+  }[];
+}
+
+export interface KpiInsights {
+  insights: { id: string; text: string; params: Record<string, string> }[];
+}
