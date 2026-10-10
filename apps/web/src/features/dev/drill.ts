@@ -21,6 +21,10 @@ interface DrillState {
   open: (d: Drill) => void;
   clear: () => void;
   revealed: () => void;
+  /** Set by the header bell; the Development tab opens and scrolls to Alert details. */
+  showAlerts: boolean;
+  openAlerts: () => void;
+  alertsShown: () => void;
 }
 
 export const useDrillStore = create<DrillState>((set) => ({
@@ -29,6 +33,9 @@ export const useDrillStore = create<DrillState>((set) => ({
   open: (drill) => set({ drill, reveal: true }),
   clear: () => set({ drill: null }),
   revealed: () => set({ reveal: false }),
+  showAlerts: false,
+  openAlerts: () => set({ showAlerts: true }),
+  alertsShown: () => set({ showAlerts: false }),
 }));
 
 export const useDrill = () => useDrillStore((s) => s.open);

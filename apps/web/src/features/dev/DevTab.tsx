@@ -8,6 +8,8 @@ import { useDevScope } from '../filters/useFilters';
 import { taskColumns } from '../tasks/columns';
 import { TaskList } from '../tasks/TaskList';
 import { AgeingCard } from './AgeingCard';
+import { AlertDetails } from './AlertDetails';
+import { useAlerts } from './alerts';
 import { useDevAssignees, useDevParams, useDevSummary } from './api';
 import { AssigneeTableCard, PendingDoneCard } from './AssigneeCards';
 import { useDrillStore } from './drill';
@@ -16,7 +18,7 @@ import { RankingCard } from './RankingCard';
 import { StageMatrixCard } from './StageMatrixCard';
 import { SummaryTiles } from './SummaryTiles';
 
-type Section = 'dueToday' | 'overdue' | 'all';
+type Section = 'dueToday' | 'overdue' | 'all' | 'alerts';
 
 const LIST_COLUMNS = taskColumns();
 const ALL_COLUMNS = taskColumns({ withCreator: true });
@@ -29,15 +31,20 @@ export function DevTab() {
     dueToday: false,
     overdue: false,
     all: false,
+    alerts: false,
   });
   // "All tasks" follows the last tile, count or header alert clicked (DEV-01..05).
   const { drill, reveal: revealDrill, open: openDrill, clear, revealed } = useDrillStore();
+  const { showAlerts, alertsShown } = useDrillStore();
+  const { data: alerts } = useAlerts();
   const [listTotal, setListTotal] = useState<number>();
   const allRef = useRef<HTMLElement>(null);
+  const alertsRef = useRef<HTMLElement>(null);
   const refs = {
     dueToday: useRef<HTMLElement>(null),
     overdue: useRef<HTMLElement>(null),
     all: allRef,
+    alerts: alertsRef,
   };
 
   const toggle = (s: Section) => (o: boolean) => setOpen((prev) => ({ ...prev, [s]: o }));
@@ -57,6 +64,14 @@ export function DevTab() {
     stopFollow.current?.();
     stopFollow.current = keepInView(allRef);
   }, [revealDrill, revealed]);
+  // The header bell opens Alert details.
+  useEffect(() => {
+    if (!showAlerts) return;
+    alertsShown();
+    setOpen((prev) => ({ ...prev, alerts: true }));
+    stopFollow.current?.();
+    stopFollow.current = keepInView(alertsRef);
+  }, [showAlerts, alertsShown]);
   useEffect(() => () => stopFollow.current?.(), []);
 
   const onTile = (preset: DevPreset) => {
@@ -138,6 +153,18 @@ export function DevTab() {
           searchable
           onTotal={setListTotal}
         />
+      </Accordion>
+
+      <Accordion
+        ref={refs.alerts}
+        title="Alert details"
+        hint="Overdue and over 5 days in a stage, project-wise or assignee-wise"
+        count={alerts?.total}
+        tone="bad"
+        open={open.alerts}
+        onOpenChange={toggle('alerts')}
+      >
+        <AlertDetails />
       </Accordion>
     </div>
   );

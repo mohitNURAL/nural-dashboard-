@@ -22,7 +22,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { DatasetProvider } from '../data/dataset';
 import { contextOf, person, taskRow, type AppOptions } from './context';
-import { parseQuery, scopeParam } from './params';
+import { list as listParam, parseQuery, scopeParam } from './params';
 
 const SORTS = ['deadline', '-deadline', 'created', '-created', 'id', '-id'] as const;
 
@@ -34,7 +34,8 @@ const listParams = {
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(200).default(50),
   // Drill-downs from a clicked count: Kanban stage, overdue or not, ageing bucket.
-  stage: z.enum(STAGE_TITLES).optional(),
+  // One or more stages (comma list), e.g. the alert details' stage filter.
+  stage: listParam(z.enum(STAGE_TITLES)),
   overdue: z.enum(['true', 'false']).optional(),
   ageing: z.enum(AGEING_BUCKETS).optional(),
   // Header alert: more than STUCK_DAYS days in the current stage (LIVE aside).
@@ -82,7 +83,8 @@ export function taskRoutes(
           ? testingTasks(ds.tasks, ctx)
           : devTasks(ds.tasks, ctx, query.scope);
     let list = applyFilters(base, filters, ctx.tz);
-    if (query.stage) list = list.filter((t) => t.stage === query.stage);
+    const stages = query.stage;
+    if (stages) list = list.filter((t) => t.stage !== null && stages.includes(t.stage));
     if (query.overdue) {
       const want = query.overdue === 'true';
       list = list.filter((t) => isOverdue(t, ctx) === want);

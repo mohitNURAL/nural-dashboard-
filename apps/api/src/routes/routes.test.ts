@@ -167,6 +167,7 @@ describe('metrics API', () => {
         .map((r: { id: number }) => r.id)
         .sort();
     expect(await ids('stage=To%20do')).toEqual([1]);
+    expect(await ids('stage=To%20do,LIVE')).toEqual([1, 3]);
     expect(await ids('stage=To%20do&overdue=true')).toEqual([1]);
     expect(await ids('stage=To%20do&overdue=false')).toEqual([]);
     expect(await ids('ageing=0-2')).toEqual([1]);

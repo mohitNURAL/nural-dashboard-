@@ -3,7 +3,7 @@ import { DEV_SCOPES, GROUP_BY, type Filters } from '@nural/shared';
 import { z } from 'zod';
 
 /** Accepts `a=1,2`, `a=1&a=2` or nothing. */
-const list = <T extends z.ZodTypeAny>(item: T) =>
+export const list = <T extends z.ZodTypeAny>(item: T) =>
   z.preprocess((v) => {
     if (v === undefined || v === null || v === '') return undefined;
     const parts = (Array.isArray(v) ? v : [v])
