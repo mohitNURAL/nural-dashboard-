@@ -2,6 +2,7 @@
 // number, All splits into Dev and Issues and Issues into Bug and Feedback; each part opens too.
 import type { DevPreset, SummaryPart } from '@nural/shared';
 import { StatTile } from '../../components/StatTile';
+import { useDevScope } from '../filters/useFilters';
 import { useDevSummary } from './api';
 import { useDrillTo } from './drill';
 import { splitLine, TILE_LABELS } from './format';
@@ -33,6 +34,7 @@ interface Props {
 
 export function SummaryTiles({ active, onSelect }: Props) {
   const { data } = useDevSummary();
+  const [scope] = useDevScope();
   const drill = useDrillTo();
   const split = data?.split;
   return (
@@ -40,7 +42,7 @@ export function SummaryTiles({ active, onSelect }: Props) {
       {TILES.map(({ preset, sub }) => (
         <StatTile
           key={preset}
-          label={TILE_LABELS[preset]}
+          label={preset === 'total' && scope === 'issues' ? 'Total issues' : TILE_LABELS[preset]}
           info={INFO[preset as keyof typeof INFO]}
           value={data?.[preset as keyof typeof data] as number | undefined}
           sub={preset === 'total' && split?.items.length ? splitLine(split.items) : sub}

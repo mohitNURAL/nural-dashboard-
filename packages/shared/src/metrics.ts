@@ -25,19 +25,17 @@ const isDeveloperTask = (t: MetricTask, ctx: MetricContext) =>
   ctx.developers ? ctx.developers.has(t.responsibleId) : !ctx.testers.has(t.responsibleId);
 
 /**
- * Development tab: work in a workgroup assigned to the Development department. `dev` = tasks
- * (not bug or feedback), `issues` = bugs and feedback, `all` = both.
+ * Development tab. `dev` = tasks (not bug or feedback) in a workgroup, assigned to the
+ * Development department. `issues` = every bug and feedback, whoever it is assigned to, the same
+ * set as the QA tab, so both tabs show the same issue count. `all` = both.
  */
 export const devTasks = (
   tasks: readonly MetricTask[],
   ctx: MetricContext,
   scope: DevScope = 'dev',
 ): MetricTask[] =>
-  tasks.filter(
-    (t) =>
-      t.groupId !== 0 &&
-      isDeveloperTask(t, ctx) &&
-      (scope === 'all' || (scope === 'issues') === t.isIssue),
+  tasks.filter((t) =>
+    t.isIssue ? scope !== 'dev' : scope !== 'issues' && t.groupId !== 0 && isDeveloperTask(t, ctx),
   );
 
 /** QA tab: tasks tagged bug or feedback (or Re-Open). */

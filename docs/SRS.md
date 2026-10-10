@@ -98,7 +98,7 @@ The Development tab answers three questions for the PM and team leads: how much 
 **DEV-00a All / Dev / Issues switch (top of the Development tab)**
 
 - Three toggles: **All** (default), **Dev** and **Issues**. Dev = tasks (not tagged bug or feedback); Issues = bugs and feedback; All = both.
-- Whatever the switch, the tab only counts work assigned to people in the **Development department** (Software Development tree, read from the company structure). Tasks of QA Testing or other departments are left out, and so is work outside a workgroup.
+- **Dev** counts only tasks assigned to people in the **Development department** (Software Development tree, read from the company structure), in a workgroup. **Issues** counts **every** bug and feedback, whoever it is assigned to, the same set as the QA tab, so both tabs show the same issue total (changed 2026-10-10; before, issues assigned to QA Testing or other departments were left out). **All** = Dev tasks + all issues.
 - Every tile, card, drop-down option and task list on the tab follows the switch. It is kept in the URL (`scope=dev|issues`; All is the default and is left out).
 
 **Drill-down from any count.** Every count on the Development tab opens the "All tasks" accordion (DEV-08) narrowed to exactly that count, and the accordion title takes the count's label, for example "All tasks: Neha Gautam · Pending" or "All tasks: Umang Singh · To do, overdue". This covers the tiles, every number and the totals row of the DEV-02 and DEV-03 tables, the bars of the DEV-02 and DEV-03 charts, and each part of a DEV-05 cell. A count that belongs to one assignee or project (a table row, a chart bar, a matrix cell, an ageing segment, a speed-ranking row) **also sets that Assignee or Project filter**, so the whole tab follows the click. Clearing, resetting or changing the filters afterwards returns "All tasks" to its default (title and list); "Show all tasks" does the same. Clicking a name (not a number) sets the filter only.
@@ -213,7 +213,7 @@ A task with stage ID 0 (Bitrix24's default for a task never moved on the board) 
 
 - Issue = a task tagged `bug` or `feedback` (case-insensitive). Every other task in a development workgroup is a Task.
 - An issue is linked to a task when its Parent task is set, or when the task is in its Related tasks. Otherwise it is independent and counts against its assignee.
-- The Development tab counts Tasks, Issues or both, by its All / Dev / Issues switch (DEV-00a), for the Development department only. QA tiles count Issues only.
+- The Development tab counts Tasks (Development department), Issues (all) or both, by its All / Dev / Issues switch (DEV-00a). QA tiles count Issues only; the issue totals match on both tabs. Note that Development "Pending" (still with developers) and QA "Open / waiting" (not yet Done or LIVE, so also waiting in QA) are different measures.
 
 **Formulas**
 
@@ -245,7 +245,7 @@ Each reopen counts once, so an issue reopened twice adds 2 to the rework count. 
 
 **Testing team.** Members of the QA Testing department (today Mohit Srivastava, Team Lead QA, and Ramprawesh, QA) plus anyone added to that department later, read from the company structure. A task belongs to Testing when it is tagged `testing` or `re-testing`, or its assignee is in the testing team.
 
-**Header alerts (bell).** Computed for the Development department's tasks and issues (the Development tab on All), ignoring the filter bar.
+**Header alerts (bell).** Computed for the Development tab on All (Development department tasks and every issue), ignoring the filter bar.
 
 - *Overdue*: overdue tasks (rule above) grouped by assignee and project, with the count and the most days past deadline.
 - *Stuck*: a task in any stage except LIVE for more than **5 days** (`STUCK_DAYS`), grouped by person, project and stage, with the count and the longest wait. Days in stage = calendar days since the last move into the current stage in the stage-move log; a task never moved has been in To do since it was created; with no recorded move, the last change date is used. Done counts too (only LIVE is left out, as requested).

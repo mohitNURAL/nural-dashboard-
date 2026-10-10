@@ -144,13 +144,21 @@ describe('selection', () => {
     expect(devTasks(all, ctx).map((t) => t.id)).toEqual([101, 105]);
   });
 
-  it('development tab scopes: dev, issues or all, Development department only', () => {
+  it('development tab scopes: dev tasks from Development only, issues from everyone', () => {
     expect(devTasks(all, ctx, 'issues').map((t) => t.id)).toEqual([103]);
     expect(devTasks(all, ctx, 'all').map((t) => t.id)).toEqual([101, 103, 105]);
-    // With the department list, someone outside Development (user 99) is left out.
-    const withOther = [...all, task({ id: 106, responsibleId: 99 })];
+    // With the department list, a task of someone outside Development (user 99) is left out...
     const devCtx = { ...ctx, developers: new Set([30]) };
-    expect(devTasks(withOther, devCtx, 'all').map((t) => t.id)).toEqual([101, 103, 105]);
+    const withOther = [
+      ...all,
+      task({ id: 106, responsibleId: 99 }),
+      // ...but issues count whoever they are assigned to, as on the QA tab.
+      task({ id: 107, responsibleId: TESTER, tags: ['Bug'] }),
+      task({ id: 108, responsibleId: 99, tags: ['Feedback'], groupId: 0 }),
+    ];
+    expect(devTasks(withOther, devCtx, 'dev').map((t) => t.id)).toEqual([101, 105]);
+    expect(devTasks(withOther, devCtx, 'issues').map((t) => t.id)).toEqual([103, 107, 108]);
+    expect(devTasks(withOther, devCtx, 'issues')).toEqual(issues(withOther));
     expect(devTasks(withOther, ctx, 'all').map((t) => t.id)).toContain(106);
   });
 
