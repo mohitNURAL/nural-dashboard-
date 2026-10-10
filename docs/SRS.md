@@ -351,10 +351,10 @@ Bitrix24 pushes task events to the receiver; the sync worker fetches the full ta
 | Backend | Node.js 20, Fastify, TypeScript | Light, fast, one language across the stack |
 | Database | PostgreSQL 16 | Task snapshots, stage-move log, metric queries |
 | Queue and cache | Redis 7 + BullMQ | Webhook event queue, rate-limited Bitrix24 calls, SSE fan-out |
-| Live push | Server-Sent Events | One-way server to browser, auto-reconnect, works through Nginx |
-| Auth | Sign in with Bitrix24 (OAuth local app) | Users log in with their portal account; role comes from department |
-| Hosting | Docker Compose on one Linux VM, Nginx with Let's Encrypt TLS | Bitrix24 outbound webhooks need a public HTTPS URL |
-| Monitoring | Pino logs, Uptime Kuma or similar health check on /health | Alerts when sync stops |
+| Live push | Server-Sent Events | One-way server to browser, auto-reconnect, works through the reverse proxy |
+| Auth | Sign in with Bitrix24 (OAuth local app) | Users log in with their portal account. For now every signed-in user sees everything; NFR-4 roles come later |
+| Hosting | Docker Compose on one Oracle Cloud Always Free VM (Ubuntu, ARM), Caddy with automatic Let's Encrypt TLS, address `<ip>.sslip.io` | Bitrix24 outbound webhooks need a public HTTPS URL; Caddy renews certificates itself (replaces Nginx + certbot) |
+| Monitoring | Pino logs; UptimeRobot (free) checks /health every 5 minutes and emails on HTTP 503 | Alerts when sync stops (NFR-9) |
 
 SSE is chosen over WebSocket because the browser only receives; filters are sent as normal HTTP requests. Socket.IO can replace it later if two-way features are added.
 
@@ -379,6 +379,25 @@ SSE is chosen over WebSocket because the browser only receives; filters are sent
 | workgroups | id, name, is\_dev\_project |
 | stages | id, group\_id, title, sort, color |
 | sync\_state | key, last\_run, cursor |
+
+**Sign-in (milestone 9)**
+
+- `AUTH=bitrix` turns sign-in on; `AUTH=off` (the default, for local development) lets every call through.
+- `GET /api/auth/login` sends the browser to the portal's `/oauth/authorize/` page with the local app's client ID and a random `state`, kept in a short-lived signed cookie.
+- Bitrix24 returns to `GET /api/auth/callback`. The API checks the `state` and exchanges the code at `https://oauth.bitrix.info/oauth/token/`. It accepts the result only when its `client_endpoint` is our portal and the `user_id` is an active user in our `users` table. The access token is not used or kept: sign-in makes no REST call and writes nothing to Bitrix24.
+- The session is a signed cookie (HMAC-SHA256 with `SESSION_SECRET`): HttpOnly, SameSite=Lax, Secure on HTTPS, valid 7 days, holding the user ID and name. There is no session table, and changing `SESSION_SECRET` signs everyone out.
+- With sign-in on, every `/api` call other than `/api/auth/*` needs the session, or it gets 401 and the web app goes to sign-in. `/health` and `/hooks/bitrix` (checked by its application token) stay open.
+- `GET /api/auth/me` returns the signed-in name, shown in the user menu with Sign out (`POST /api/auth/logout`).
+
+**Deployment (milestone 9)**
+
+- `docker-compose.prod.yml` (project `nural-prod`) runs `postgres`, `redis`, `api` and `web` with no database or Redis port exposed.
+- `api` is `apps/api/Dockerfile`: it applies migrations at start, then serves through tsx.
+- `web` is `apps/web/Dockerfile`, which builds Vite into a Caddy image. Caddy (`deploy/Caddyfile`) serves the app, proxies `/api`, `/hooks` and `/health` to the API (SSE unbuffered), sets security headers, and gets the certificate for `SITE_ADDRESS`.
+- Extra Caddy config can be dropped on the server in `~/nural/caddy-extra/*.caddy`, for example an interim shared password.
+- `scripts/vm-setup.sh` prepares a fresh VM: Docker, ports 80 and 443 opened in iptables, and swap.
+- `scripts/deploy.sh` ships the committed code (`git archive`) and `.env.prod` (as the server's `.env`) over SSH, then rebuilds and restarts.
+- `scripts/db-copy.sh` copies the local database to the server once.
 
 ## 8. Bitrix24 integration
 
@@ -435,7 +454,7 @@ Two webhooks are created in the portal by an administrator: an **inbound** webho
 | NFR-6 | Time zone | All "today" and "overdue" logic in Asia/Kolkata |
 | NFR-7 | Responsive | Desktop first (1440 px); usable at 1280 px and on tablet; tables scroll inside their card on phone |
 | NFR-8 | Accessibility | WCAG 2.1 AA contrast; keyboard use of all dropdowns and accordions; charts have table fallbacks |
-| NFR-9 | Availability | Health endpoint; alert if no webhook received for 2 working hours or reconcile fails twice |
+| NFR-9 | Availability | Health endpoint; alert if no webhook received for 2 working hours or reconcile fails twice. `/health` returns `status: degraded` with HTTP 503 and `reasons` in either case. Working hours: `WORK_DAYS` (default Mon to Sat) and `WORK_HOURS` (default 10 to 19) in APP_TIMEZONE. The webhook rule applies only when the sync worker runs and an outbound token is set |
 | NFR-10 | Audit | Webhook events kept 30 days for debugging |
 
 ## 10. Build plan
@@ -490,9 +509,17 @@ DEV_GROUP_IDS=148,154
 DATABASE_URL=postgres://dash:dash@localhost:5432/dash
 REDIS_URL=redis://localhost:6379
 APP_TIMEZONE=Asia/Kolkata
-PUBLIC_BASE_URL=
+PUBLIC_BASE_URL=            # https://<ip>.sslip.io in production (Secure cookies)
 PORT=4000
 WEB_ORIGIN=http://localhost:5173
+AUTH=off                    # bitrix = Sign in with Bitrix24
+BITRIX_CLIENT_ID=           # from the Bitrix24 local app
+BITRIX_CLIENT_SECRET=
+SESSION_SECRET=             # 32+ random characters
+WORK_DAYS=1,2,3,4,5,6       # NFR-9 working days (1 = Monday)
+WORK_HOURS=10-19            # NFR-9 working hours
+SITE_ADDRESS=               # production: <ip>.sslip.io
+POSTGRES_PASSWORD=          # production database password
 ```
 
 **10.4 CLAUDE.md (create in milestone 1)**
@@ -525,7 +552,19 @@ Run each in order. Start each session in plan mode, approve the plan, then let i
 6. **Web shell and theme.** Prompt: "Read SRS section 6. Put the Nural tokens in theme/tokens.css and Tailwind config, build the top bar with Development and QA tabs, the sticky filter bar with SearchCombobox (cmdk, multi-select, options from /api/filters/options), filters in the URL, TanStack Query setup, and useLiveUpdates that invalidates queries on SSE task.changed." Done when changing a filter updates the URL and a task move in Bitrix24 shows a toast.
 7. **Development tab.** Prompt: "Build the Development tab from SRS section 3 (DEV-01 to DEV-08) and the wireframe in section 6, using ECharts and TanStack Table, with the TaskDrawer." Done when every tile and table matches Bitrix24 for one project and one assignee.
 8. **QA tab.** Prompt: "Build the QA tab from SRS section 4 (QA-01 to QA-09) and its wireframe, reusing the components from milestone 7." Done when issue counts, rework and retest-by-creator match Bitrix24.
-9. **Sign-in, deploy and launch.** Prompt: "Add Sign in with Bitrix24 (OAuth local app) and roles from SRS NFR-4, Dockerfiles for api and web, Nginx with Let's Encrypt, and a health alert per NFR-9." Deploy to the VM, point the outbound webhook at the production URL, and run the acceptance tests below. Run beside the Bitrix24 board for one week, then go live.
+9. **Sign-in, deploy and launch.** Prompt: "Add Sign in with Bitrix24 (OAuth local app), Dockerfiles for api and web, Caddy with Let's Encrypt, and a health alert per NFR-9." Roles (NFR-4) are deferred; every signed-in user sees everything. Steps:
+   1. In Oracle Cloud, create an Always Free VM: Ubuntu 24.04, VM.Standard.A1.Flex with 2 OCPU and 12 GB, using the deploy SSH key. In the subnet's security list, allow TCP 80 and 443 (and UDP 443).
+   2. Run `scripts/vm-setup.sh` on the VM. Fill in `.env.prod` locally (SITE_ADDRESS `<ip>.sslip.io`, PUBLIC_BASE_URL, WEB_ORIGIN, POSTGRES_PASSWORD, SESSION_SECRET, Bitrix24 keys). Run `scripts/deploy.sh`, then `scripts/db-copy.sh` once.
+   3. Until the local app exists, use `AUTH=off` behind a Caddy `basic_auth` shared password in `caddy-extra/`.
+   4. A Bitrix24 admin creates a server-side local app (Developer resources > Other > Local application). Settings:
+      - Handler path `https://<site>/`.
+      - Initial installation path `https://<site>/api/auth/callback`.
+      - Scope `user`.
+
+      Put its client ID and secret in `.env.prod`, set `AUTH=bitrix`, remove the shared password and redeploy.
+   5. Point the outbound webhook's handler URL at `https://<site>/hooks/bitrix` and stop the local tunnel.
+   6. Add an UptimeRobot HTTPS monitor on `https://<site>/health`.
+   7. Run the acceptance tests below. Run beside the Bitrix24 board for one week, then go live.
 
 **Acceptance tests (examples)**
 

@@ -1,3 +1,4 @@
-* text=auto eol=lf
-*.png binary
-*.ps1 text eol=crlf
+# Scripts and container files run on Linux: keep LF.
+*.sh text eol=lf
+Dockerfile text eol=lf
+Caddyfile text eol=lf

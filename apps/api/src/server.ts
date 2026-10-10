@@ -2,10 +2,12 @@ import cors from '@fastify/cors';
 import Fastify from 'fastify';
 import { pathToFileURL } from 'node:url';
 import { ZodError } from 'zod';
+import { authRoutes, type AuthOptions } from './auth/routes';
 import type { Call } from './bitrix/limiter';
 import { config } from './config';
 import { cachedDataset, loadDataset, type DatasetProvider } from './data/dataset';
 import { createMemoryBus, type EventBus } from './events/bus';
+import { healthStatus, workTime } from './health';
 import { hookRoutes, type ReceiverDeps } from './hooks/receiver';
 import { alertRoutes } from './routes/alerts';
 import { devRoutes } from './routes/dev';
@@ -24,7 +26,14 @@ export interface ServerOptions {
   /** Webhook receiver dependencies; without `enqueue` the receiver answers 503. */
   hooks?: Partial<ReceiverDeps>;
   /** For /health (NFR-9). */
-  health?: { worker: 'on' | 'off'; lastReconcileAt?: () => Promise<Date | null> };
+  health?: {
+    worker: 'on' | 'off';
+    lastReconcileAt?: () => Promise<Date | null>;
+    /** Reconcile runs failed in a row (NFR-9). */
+    reconcileFailures?: () => number;
+  };
+  /** Sign-in; defaults to the config (AUTH, client ID and secret, SESSION_SECRET). */
+  auth?: Partial<AuthOptions>;
   /** Task description for the drawer, read live from Bitrix24 (not stored by the sync). */
   describe?: (taskId: number) => Promise<string | null>;
 }
@@ -37,6 +46,7 @@ export async function buildServer({
   hooks = {},
   health = { worker: 'off' },
   describe,
+  auth = {},
 }: ServerOptions = {}) {
   const app = Fastify({
     logger: logger && {
@@ -46,6 +56,10 @@ export async function buildServer({
         'req.body.auth',
         '*.BITRIX_INBOUND_URL',
         '*.BITRIX_OUTBOUND_TOKEN',
+        '*.BITRIX_CLIENT_SECRET',
+        '*.SESSION_SECRET',
+        'req.headers.cookie',
+        'res.headers["set-cookie"]',
       ],
       ...(process.env.NODE_ENV !== 'production' && process.stdout.isTTY
         ? { transport: { target: 'pino-pretty', options: { translateTime: 'HH:MM:ss' } } }
@@ -73,15 +87,31 @@ export async function buildServer({
     lastChangeAt = new Date();
   });
 
-  app.get('/health', async () => ({
-    status: 'ok',
-    time: new Date().toISOString(),
-    uptime: Math.round(process.uptime()),
-    worker: health.worker,
-    lastWebhookAt,
-    lastChangeAt,
-    lastReconcileAt: (await health.lastReconcileAt?.().catch(() => null)) ?? null,
-  }));
+  const startedAt = new Date();
+  const work = workTime(config.APP_TIMEZONE, config.WORK_DAYS, config.WORK_HOURS);
+  // 503 when degraded (NFR-9), so an external uptime monitor alerts on it.
+  app.get('/health', async (_req, reply) => {
+    const reconcileFailures = health.reconcileFailures?.() ?? 0;
+    const { status, reasons } = healthStatus({
+      now: now?.() ?? new Date(),
+      lastWebhookOrStart: lastWebhookAt ?? startedAt,
+      webhooksExpected: health.worker === 'on' && !!config.BITRIX_OUTBOUND_TOKEN,
+      reconcileFailures,
+      work,
+    });
+    if (status !== 'ok') reply.code(503);
+    return {
+      status,
+      reasons,
+      time: new Date().toISOString(),
+      uptime: Math.round(process.uptime()),
+      worker: health.worker,
+      lastWebhookAt,
+      lastChangeAt,
+      lastReconcileAt: (await health.lastReconcileAt?.().catch(() => null)) ?? null,
+      reconcileFailures,
+    };
+  });
 
   let dataset = getDataset;
   if (!dataset) {
@@ -90,6 +120,17 @@ export async function buildServer({
     bus.subscribe(() => cache.invalidate());
     dataset = cache.get;
   }
+  const ds = dataset;
+  authRoutes(app, {
+    mode: config.AUTH,
+    clientId: config.BITRIX_CLIENT_ID,
+    clientSecret: config.BITRIX_CLIENT_SECRET,
+    sessionSecret: config.SESSION_SECRET,
+    portalOrigin: new URL(config.BITRIX_INBOUND_URL).origin,
+    secure: (config.PUBLIC_BASE_URL ?? '').startsWith('https://'),
+    findUser: async (id) => (await ds()).users.get(id),
+    ...auth,
+  });
   const opts = { tz: config.APP_TIMEZONE, now };
   devRoutes(app, dataset, opts);
   qaRoutes(app, dataset, opts);
@@ -149,7 +190,11 @@ async function main() {
         await dbm.db.insert(dbm.schema.webhookEvents).values({ event, taskId, payload });
       },
     },
-    health: { worker: workerOn ? 'on' : 'off', lastReconcileAt: reconciler.lastReconcileAt },
+    health: {
+      worker: workerOn ? 'on' : 'off',
+      lastReconcileAt: reconciler.lastReconcileAt,
+      reconcileFailures: reconciler.reconcileFailures,
+    },
     describe: describer(bitrix.getBitrix().call),
   });
 

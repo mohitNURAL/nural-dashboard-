@@ -1,0 +1,31 @@
+# Nural dashboard (SRS 7). SITE_ADDRESS is the public host, e.g. 140-238-1-2.sslip.io: Caddy gets
+# its Let's Encrypt certificate and redirects HTTP to HTTPS. Use http://localhost for a local test.
+{$SITE_ADDRESS} {
+	encode gzip
+
+	# Optional extras from the server (not in git), e.g. the interim shared password.
+	import /etc/caddy/extra/*.caddy
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+
+	@backend path /api/* /hooks/* /health
+	handle @backend {
+		# flush_interval -1: Server-Sent Events (/api/stream) pass through unbuffered.
+		reverse_proxy api:4000 {
+			flush_interval -1
+		}
+	}
+
+	handle {
+		root * /srv
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		try_files {path} /index.html
+		file_server
+	}
+}

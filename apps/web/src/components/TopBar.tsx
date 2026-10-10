@@ -2,6 +2,7 @@
 // menu.
 import * as Popover from '@radix-ui/react-popover';
 import clsx from 'clsx';
+import { useApi } from '../api/queries';
 import type { Tab } from '../features/filters/toParams';
 import { useLive } from '../store/live';
 import { AlertsBell } from './AlertsBell';
@@ -56,7 +57,17 @@ export function TopBar({ tab, onTab }: Props) {
   );
 }
 
+/** Sign out clears the session cookie, then the next API call sends the page to sign-in. */
+async function signOut() {
+  await fetch('/api/auth/logout', { method: 'POST' }).catch(() => undefined);
+  window.location.href = '/api/auth/login';
+}
+
 function UserMenu() {
+  const { data: me } = useApi<{ id: number; name: string; auth: 'off' | 'bitrix' }>(
+    '/api/auth/me',
+    {},
+  );
   const toastsEnabled = useLive((s) => s.toastsEnabled);
   const setToastsEnabled = useLive((s) => s.setToastsEnabled);
   return (
@@ -85,7 +96,18 @@ function UserMenu() {
               className="h-4 w-4 accent-[var(--primary)]"
             />
           </label>
-          <p className="mt-2 text-table text-text-muted">Sign in with Bitrix24 arrives later.</p>
+          {me?.auth === 'bitrix' && (
+            <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
+              <span className="truncate font-bold">{me.name}</span>
+              <button
+                type="button"
+                onClick={() => void signOut()}
+                className="shrink-0 font-heading text-button text-primary hover:underline"
+              >
+                Sign out
+              </button>
+            </div>
+          )}
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>

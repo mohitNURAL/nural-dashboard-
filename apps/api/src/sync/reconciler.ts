@@ -59,6 +59,11 @@ export async function reconcile(call: Call, bus?: EventBus) {
   return { since, fetched: tasks.length, changed: changes.length, stageEvents };
 }
 
+let failuresInARow = 0;
+
+/** Reconcile runs that failed in a row (NFR-9 health); reset by a successful run. */
+export const reconcileFailures = () => failuresInARow;
+
 export async function lastReconcileAt(): Promise<Date | null> {
   const [row] = await db
     .select({ lastRun: schema.syncState.lastRun })
@@ -133,9 +138,13 @@ export async function startSchedules({
     },
     { connection: connect(), concurrency: 1 },
   );
-  worker.on('failed', (job, err) =>
-    log.error({ job: job?.name, err: err.message }, 'scheduled sync failed'),
-  );
+  worker.on('failed', (job, err) => {
+    if (job?.name === 'reconcile') failuresInARow += 1;
+    log.error({ job: job?.name, err: err.message }, 'scheduled sync failed');
+  });
+  worker.on('completed', (job) => {
+    if (job.name === 'reconcile') failuresInARow = 0;
+  });
   worker.on('error', (err) => log.error({ err: err.message }, 'schedule worker error'));
 
   return {
