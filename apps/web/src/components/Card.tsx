@@ -2,6 +2,7 @@
 import clsx from 'clsx';
 import type { GroupBy } from '@nural/shared';
 import type { ReactNode } from 'react';
+import { InfoTip } from './InfoTip';
 
 interface Props {
   title: string;
@@ -11,6 +12,8 @@ interface Props {
   emptyText?: string;
   className?: string;
   children?: ReactNode;
+  /** One-line explanation behind the "i" icon next to the title. */
+  info?: string;
 }
 
 export function Card({
@@ -21,6 +24,7 @@ export function Card({
   emptyText = 'Nothing matches these filters.',
   className,
   children,
+  info,
 }: Props) {
   return (
     <section
@@ -30,7 +34,10 @@ export function Card({
       )}
     >
       <header className="mb-3 flex min-h-7 items-center justify-between gap-3">
-        <h2 className="text-h3 text-primary-dark">{title}</h2>
+        <h2 className="flex items-center gap-1.5 text-h3 text-primary-dark">
+          {title}
+          {info && <InfoTip text={info} label={title} />}
+        </h2>
         {action}
       </header>
       {loading ? (

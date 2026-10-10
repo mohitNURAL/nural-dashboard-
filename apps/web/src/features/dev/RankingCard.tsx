@@ -8,6 +8,7 @@ import type { RankingRow } from '../../api/types';
 import { useDevRanking } from './api';
 import { useDrillTo } from './drill';
 import { daysEarlyText } from './format';
+import { INFO } from '../info';
 
 const MEDALS = ['#E0A100', '#9AA3B5', '#B87333'];
 
@@ -29,6 +30,7 @@ export function RankingCard({ className }: { className?: string }) {
   return (
     <Card
       title="Fastest to QA Backlog"
+      info={INFO.ranking}
       className={className}
       loading={isLoading}
       empty={data?.rows.length === 0}

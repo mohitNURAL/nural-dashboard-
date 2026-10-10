@@ -10,6 +10,7 @@ import { CountButton } from '../../components/CountButton';
 import { useDevMatrix } from './api';
 import { rowParams, useDrillTo } from './drill';
 import { GROUP_LABEL, heatShade } from './format';
+import { INFO } from '../info';
 
 export function StageMatrixCard({ className }: { className?: string }) {
   const [tag, setTag] = useState<string | null>(null);
@@ -32,6 +33,7 @@ export function StageMatrixCard({ className }: { className?: string }) {
   return (
     <Card
       title={`Tasks by stage and ${by}`}
+      info={INFO.matrix}
       className={className}
       loading={isLoading}
       empty={data?.rows.length === 0}

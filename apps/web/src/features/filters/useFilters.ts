@@ -9,6 +9,8 @@ import {
 } from 'nuqs';
 import { useCallback, useMemo } from 'react';
 import type { DevScope } from '@nural/shared';
+import { useFilterOptions } from '../../api/queries';
+import { filterSummary } from './summary';
 import { EMPTY_FILTERS, tabOnlyFacet, type FilterState, type Tab } from './toParams';
 
 const filterParsers = {
@@ -78,4 +80,20 @@ const scopeParser = parseAsStringLiteral(['all', 'dev', 'issues'] as const).with
 export function useDevScope() {
   const [scope, setScope] = useQueryState('scope', scopeParser);
   return [scope, (s: DevScope) => void setScope(s === 'all' ? null : s)] as const;
+}
+
+/** "Showing: …" for the tab's "i" tooltips, with project and people names from the options. */
+export function useFilterSummary(tab: Tab) {
+  const { filters } = useFilters();
+  const [scope] = useDevScope();
+  const { data } = useFilterOptions(tab, filters, tab === 'dev' ? { scope } : {});
+  return useMemo(
+    () =>
+      filterSummary(filters, {
+        scope: tab === 'dev' ? scope : undefined,
+        projects: new Map(data?.projects.map((p) => [p.id, p.name])),
+        people: new Map(data?.assignees.map((a) => [a.id, a.name])),
+      }),
+    [filters, scope, tab, data],
+  );
 }

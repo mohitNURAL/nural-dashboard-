@@ -14,6 +14,7 @@ import { useFocusRow } from '../filters/useFilters';
 import { useDevAssignees } from './api';
 import { rowParams, useDrillTo } from './drill';
 import { GROUP_LABEL } from './format';
+import { INFO } from '../info';
 
 const col = createColumnHelper<AssigneeRow>();
 
@@ -26,7 +27,6 @@ const COUNT_PRESET: Record<CountKey, DevPreset> = {
   dueToday: 'dueToday',
   completedToday: 'doneToday',
 };
-const num = { meta: { align: 'right' } } as const;
 const CHART_ROWS = 15;
 
 export function AssigneeTableCard({ className }: { className?: string }) {
@@ -38,10 +38,10 @@ export function AssigneeTableCard({ className }: { className?: string }) {
 
   const columns = useMemo(() => {
     // Each count opens "All tasks" for that row and column; the totals row for the column.
-    const count = (key: CountKey, header: string) =>
+    const count = (key: CountKey, header: string, info: string) =>
       col.accessor(key, {
         header,
-        ...num,
+        meta: { align: 'right', info },
         cell: (c) => {
           const r = c.row.original;
           return (
@@ -83,17 +83,18 @@ export function AssigneeTableCard({ className }: { className?: string }) {
         ),
         footer: 'Total',
       }),
-      count('total', 'Total'),
-      count('pending', 'Pending'),
-      count('done', 'Done'),
-      count('dueToday', 'Due today'),
-      count('completedToday', 'Comp. today'),
+      count('total', 'Total', INFO.colTotal),
+      count('pending', 'Pending', INFO.colPending),
+      count('done', 'Done', INFO.colDone),
+      count('dueToday', 'Due today', INFO.colDueToday),
+      count('completedToday', 'Comp. today', INFO.colCompToday),
     ] as Columns<AssigneeRow>;
   }, [by, data, drill, focus]);
 
   return (
     <Card
       title={by === 'project' ? 'Project-wise tasks' : 'Assignee-wise tasks'}
+      info={INFO.assigneeTable}
       className={className}
       loading={isLoading}
       empty={data?.rows.length === 0}
@@ -122,6 +123,7 @@ export function PendingDoneCard({ className }: { className?: string }) {
   return (
     <Card
       title="Pending vs Done"
+      info={INFO.pendingVsDone}
       className={className}
       loading={isLoading}
       empty={rows.length === 0}

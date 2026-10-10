@@ -4,7 +4,8 @@ import type { DevPreset, DevScope } from '@nural/shared';
 import clsx from 'clsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Accordion } from '../../components/Accordion';
-import { useDevScope, useFilters } from '../filters/useFilters';
+import { InfoContext } from '../../components/infoContext';
+import { useDevScope, useFilterSummary, useFilters } from '../filters/useFilters';
 import { taskColumns } from '../tasks/columns';
 import { TaskList } from '../tasks/TaskList';
 import { AgeingCard } from './AgeingCard';
@@ -13,10 +14,12 @@ import { useAlerts } from './alerts';
 import { useDevAssignees, useDevParams, useDevSummary } from './api';
 import { AssigneeTableCard, PendingDoneCard } from './AssigneeCards';
 import { filterKey, useDrillStore } from './drill';
+import { drillInfo } from './drillInfo';
 import { TILE_LABELS } from './format';
 import { RankingCard } from './RankingCard';
 import { StageMatrixCard } from './StageMatrixCard';
 import { SummaryTiles } from './SummaryTiles';
+import { INFO } from '../info';
 
 type Section = 'dueToday' | 'overdue' | 'all' | 'alerts';
 
@@ -37,6 +40,8 @@ export function DevTab() {
   const { drill, reveal: revealDrill, open: openDrill, clear, revealed } = useDrillStore();
   const { showAlerts, alertsShown } = useDrillStore();
   const { data: alerts } = useAlerts();
+  // Every "i" on this tab adds what the filters and the switch cover.
+  const showing = useFilterSummary('dev');
   const [listTotal, setListTotal] = useState<number>();
   const allRef = useRef<HTMLElement>(null);
   const alertsRef = useRef<HTMLElement>(null);
@@ -104,82 +109,88 @@ export function DevTab() {
   const tilePreset = drill && !drill.params ? drill.preset : null;
 
   return (
-    <div className="space-y-4">
-      <ScopeSwitch />
-      <SummaryTiles
-        active={open.all && tilePreset !== 'total' ? tilePreset : null}
-        onSelect={onTile}
-      />
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-        <AssigneeTableCard className="lg:col-span-7" />
-        <PendingDoneCard className="lg:col-span-5" />
-        <AgeingCard className="lg:col-span-6" />
-        <RankingCard className="lg:col-span-6" />
-        <StageMatrixCard className="lg:col-span-12" />
-      </div>
-
-      <Accordion
-        ref={refs.dueToday}
-        title="Tasks due today"
-        hint="Latest deadline first"
-        count={assignees?.totals.dueToday}
-        open={open.dueToday}
-        onOpenChange={toggle('dueToday')}
-      >
-        <TaskList filterParams={params} preset="dueToday" columns={LIST_COLUMNS} />
-      </Accordion>
-
-      <Accordion
-        ref={refs.overdue}
-        title="Overdue tasks"
-        hint="Pending tasks past their deadline"
-        count={summary?.overdue}
-        tone="bad"
-        open={open.overdue}
-        onOpenChange={toggle('overdue')}
-      >
-        <TaskList filterParams={params} preset="overdue" columns={LIST_COLUMNS} />
-      </Accordion>
-
-      <Accordion
-        ref={refs.all}
-        title={drill ? `All tasks: ${drill.label}` : 'All tasks'}
-        hint="Row click opens the task"
-        count={allCount}
-        open={open.all}
-        onOpenChange={toggle('all')}
-      >
-        {drill && (
-          <button
-            type="button"
-            onClick={clear}
-            className="mb-3 font-heading text-button text-primary hover:underline"
-          >
-            Show all tasks
-          </button>
-        )}
-        <TaskList
-          filterParams={listParams}
-          preset={drill?.preset ?? 'total'}
-          columns={ALL_COLUMNS}
-          searchable
-          onTotal={setListTotal}
+    <InfoContext.Provider value={showing}>
+      <div className="space-y-4">
+        <ScopeSwitch />
+        <SummaryTiles
+          active={open.all && tilePreset !== 'total' ? tilePreset : null}
+          onSelect={onTile}
         />
-      </Accordion>
 
-      <Accordion
-        ref={refs.alerts}
-        title="Alert details"
-        hint="Overdue and over 5 days in a stage, project-wise or assignee-wise"
-        count={alerts?.total}
-        tone="bad"
-        open={open.alerts}
-        onOpenChange={toggle('alerts')}
-      >
-        <AlertDetails />
-      </Accordion>
-    </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+          <AssigneeTableCard className="lg:col-span-7" />
+          <PendingDoneCard className="lg:col-span-5" />
+          <AgeingCard className="lg:col-span-6" />
+          <RankingCard className="lg:col-span-6" />
+          <StageMatrixCard className="lg:col-span-12" />
+        </div>
+
+        <Accordion
+          ref={refs.dueToday}
+          title="Tasks due today"
+          info={INFO.dueToday}
+          hint="Latest deadline first"
+          count={assignees?.totals.dueToday}
+          open={open.dueToday}
+          onOpenChange={toggle('dueToday')}
+        >
+          <TaskList filterParams={params} preset="dueToday" columns={LIST_COLUMNS} />
+        </Accordion>
+
+        <Accordion
+          ref={refs.overdue}
+          title="Overdue tasks"
+          info={INFO.overdue}
+          hint="Pending tasks past their deadline"
+          count={summary?.overdue}
+          tone="bad"
+          open={open.overdue}
+          onOpenChange={toggle('overdue')}
+        >
+          <TaskList filterParams={params} preset="overdue" columns={LIST_COLUMNS} />
+        </Accordion>
+
+        <Accordion
+          ref={refs.all}
+          title={drill ? `All tasks: ${drill.label}` : 'All tasks'}
+          info={drillInfo(drill, alerts?.stuckDays)}
+          hint="Row click opens the task"
+          count={allCount}
+          open={open.all}
+          onOpenChange={toggle('all')}
+        >
+          {drill && (
+            <button
+              type="button"
+              onClick={clear}
+              className="mb-3 font-heading text-button text-primary hover:underline"
+            >
+              Show all tasks
+            </button>
+          )}
+          <TaskList
+            filterParams={listParams}
+            preset={drill?.preset ?? 'total'}
+            columns={ALL_COLUMNS}
+            searchable
+            onTotal={setListTotal}
+          />
+        </Accordion>
+
+        <Accordion
+          ref={refs.alerts}
+          title="Alert details"
+          info={INFO.alerts}
+          hint="Overdue and over 5 days in a stage, project-wise or assignee-wise"
+          count={alerts?.total}
+          tone="bad"
+          open={open.alerts}
+          onOpenChange={toggle('alerts')}
+        >
+          <AlertDetails />
+        </Accordion>
+      </div>
+    </InfoContext.Provider>
   );
 }
 

@@ -10,6 +10,7 @@ import { GROUP_LABEL } from '../dev/format';
 import { useFocusRow } from '../filters/useFilters';
 import { useQaIssues } from './api';
 import { shadeSteps } from './format';
+import { INFO } from '../info';
 
 const CHART_ROWS = 15;
 const barHeight = (n: number) => Math.max(160, n * 22 + 50);
@@ -42,6 +43,7 @@ export function IssuesByAssigneeCard({ className }: { className?: string }) {
   return (
     <Card
       title={`Issues by ${by}`}
+      info={INFO.issuesByAssignee}
       className={className}
       loading={isLoading}
       empty={rows.length === 0}
@@ -106,6 +108,7 @@ export function IssuesByStageCard({ className }: { className?: string }) {
   return (
     <Card
       title="Issues by Kanban stage"
+      info={INFO.issuesByStage}
       className={className}
       loading={isLoading}
       empty={!!data && stages.every((s) => s.count === 0)}
@@ -162,6 +165,7 @@ export function IssueAgeCard({ className }: { className?: string }) {
   return (
     <BucketCard
       title="Age of open issues"
+      info={INFO.issueAge}
       chartLabel="Open issues by days since created"
       className={className}
       buckets={AGE_BUCKETS}
@@ -192,6 +196,7 @@ export function ReworkCard({ className }: { className?: string }) {
   return (
     <Card
       title={by === 'project' ? 'Rework by project' : 'Rework by developer'}
+      info={INFO.rework}
       className={className}
       loading={isLoading}
       empty={!!data && rows.length === 0}

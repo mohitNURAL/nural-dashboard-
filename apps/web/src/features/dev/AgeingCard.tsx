@@ -11,6 +11,7 @@ import { DataTable, type Columns } from '../../components/DataTable';
 import { useDevAssignees } from './api';
 import { rowParams, useDrillTo } from './drill';
 import { GROUP_LABEL } from './format';
+import { INFO } from '../info';
 
 type Key = keyof AgeingCounts;
 type Row = DevAssignees['ageing']['rows'][number];
@@ -83,6 +84,7 @@ export function AgeingCard({ className }: { className?: string }) {
   return (
     <Card
       title="Task ageing, days past deadline"
+      info={INFO.ageing}
       className={className}
       loading={isLoading}
       empty={!!data && open === 0}

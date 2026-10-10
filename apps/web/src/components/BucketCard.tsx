@@ -35,6 +35,8 @@ interface Props<K extends string> {
   rowLabel?: string;
   /** Extra header control for the table view, e.g. the Assignee / Project switch. */
   extraAction?: ReactNode;
+  /** One-line explanation behind the "i" icon. */
+  info?: string;
 }
 
 const resolve = (c: string) => (c.startsWith('--') ? token(c) : c);
@@ -52,6 +54,7 @@ export function BucketCard<K extends string>({
   className,
   rowLabel = 'Assignee',
   extraAction,
+  info,
 }: Props<K>) {
   const [view, setView] = useState<'chart' | 'table'>('chart');
   const all = useMemo(() => [...buckets, ...extraColumns], [buckets, extraColumns]);
@@ -75,6 +78,7 @@ export function BucketCard<K extends string>({
   return (
     <Card
       title={title}
+      info={info}
       className={className}
       loading={loading}
       empty={!!totals && sum === 0}

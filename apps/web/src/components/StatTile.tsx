@@ -2,6 +2,7 @@
 // breakdown row splits the number (e.g. Dev and Issues), each part clickable on its own.
 import clsx from 'clsx';
 import type { ReactNode } from 'react';
+import { InfoTip } from './InfoTip';
 
 export interface TilePart {
   label: string;
@@ -21,18 +22,25 @@ interface Props {
   aside?: ReactNode;
   /** Parts of the value, shown under it. */
   parts?: TilePart[];
+  /** One-line explanation behind the "i" icon. */
+  info?: string;
 }
 
-export function StatTile({ label, value, sub, tone, active, onClick, aside, parts }: Props) {
+export function StatTile({ label, value, sub, tone, active, onClick, aside, parts, info }: Props) {
   return (
     <div
       className={clsx(
-        'flex min-w-0 flex-col rounded-card border bg-surface transition-colors',
+        'relative flex min-w-0 flex-col rounded-card border bg-surface transition-colors',
         'hover:bg-primary-soft-100',
         tone === 'bad' ? 'border-bad' : active ? 'border-primary' : 'border-border',
         active && 'ring-2 ring-primary-soft',
       )}
     >
+      {info && (
+        <span className="absolute right-2 top-2 z-10">
+          <InfoTip text={info} label={label} />
+        </span>
+      )}
       <button
         type="button"
         onClick={onClick}

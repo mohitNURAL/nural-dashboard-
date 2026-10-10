@@ -10,6 +10,7 @@ import {
 } from '@tanstack/react-table';
 import clsx from 'clsx';
 import { useState } from 'react';
+import { InfoTip } from './InfoTip';
 
 export type { SortingState };
 
@@ -85,7 +86,9 @@ export function DataTable<T>({
               <tr key={hg.id}>
                 {hg.headers.map((h) => {
                   const sort = h.column.getIsSorted();
-                  const align = (h.column.columnDef.meta as { align?: string } | undefined)?.align;
+                  const meta = h.column.columnDef.meta as
+                    { align?: string; info?: string } | undefined;
+                  const align = meta?.align;
                   return (
                     <th
                       key={h.id}
@@ -115,6 +118,14 @@ export function DataTable<T>({
                         </button>
                       ) : (
                         flexRender(h.column.columnDef.header, h.getContext())
+                      )}
+                      {meta?.info && (
+                        <span className="ml-1 inline-block">
+                          <InfoTip
+                            text={meta.info}
+                            label={String(h.column.columnDef.header ?? '')}
+                          />
+                        </span>
                       )}
                     </th>
                   );

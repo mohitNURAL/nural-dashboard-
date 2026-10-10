@@ -7,6 +7,7 @@ import { Card } from '../../components/Card';
 import { DataTable, type Columns } from '../../components/DataTable';
 import { fmtDate } from '../dev/format';
 import { useQaIssues, useQaTesting } from './api';
+import { INFO } from '../info';
 
 const tcol = createColumnHelper<TestingRow>();
 const num = { meta: { align: 'right' } } as const;
@@ -66,6 +67,7 @@ export function TestingCard({ className }: { className?: string }) {
   return (
     <Card
       title="Testing team workload"
+      info={INFO.testing}
       className={className}
       loading={isLoading}
       empty={data?.rows.length === 0}
@@ -112,6 +114,7 @@ export function RetestCard({ className, onShow }: { className?: string; onShow: 
   return (
     <Card
       title="Waiting for retest, by creator"
+      info={INFO.retest}
       className={className}
       loading={isLoading}
       empty={retest?.total === 0}

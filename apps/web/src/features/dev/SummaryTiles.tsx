@@ -5,6 +5,7 @@ import { StatTile } from '../../components/StatTile';
 import { useDevSummary } from './api';
 import { useDrillTo } from './drill';
 import { splitLine, TILE_LABELS } from './format';
+import { INFO } from '../info';
 
 const TILES: { preset: DevPreset; sub?: string }[] = [
   { preset: 'total' },
@@ -40,6 +41,7 @@ export function SummaryTiles({ active, onSelect }: Props) {
         <StatTile
           key={preset}
           label={TILE_LABELS[preset]}
+          info={INFO[preset as keyof typeof INFO]}
           value={data?.[preset as keyof typeof data] as number | undefined}
           sub={preset === 'total' && split?.items.length ? splitLine(split.items) : sub}
           tone={preset === 'overdue' ? 'bad' : undefined}

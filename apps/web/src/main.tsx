@@ -2,6 +2,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { NuqsAdapter } from 'nuqs/adapters/react';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import * as Tooltip from '@radix-ui/react-tooltip';
 import { Toaster } from 'sonner';
 import { queryClient } from './api/queries';
 import App from './App';
@@ -11,7 +12,9 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <NuqsAdapter>
-        <App />
+        <Tooltip.Provider delayDuration={150}>
+          <App />
+        </Tooltip.Provider>
         <Toaster
           position="bottom-right"
           visibleToasts={4}

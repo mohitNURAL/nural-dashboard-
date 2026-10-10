@@ -3,6 +3,7 @@ import type { IssuePreset } from '@nural/shared';
 import { StatTile } from '../../components/StatTile';
 import { useQaSummary } from './api';
 import { lastFiledText } from './format';
+import { INFO } from '../info';
 
 interface Props {
   active: IssuePreset | null;
@@ -17,6 +18,7 @@ export function QaTiles({ active, onSelect }: Props) {
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       <StatTile
         label="Total issues filed"
+        info={INFO.qaTotal}
         value={data?.total}
         sub="Tagged bug or feedback"
         active={active === 'all'}
@@ -24,6 +26,7 @@ export function QaTiles({ active, onSelect }: Props) {
       />
       <StatTile
         label="Open / waiting"
+        info={INFO.qaOpen}
         value={data?.open}
         sub={data && `${data.resolvedPct}% resolved · ${data.openPct}% open`}
         active={active === 'open'}
@@ -32,6 +35,7 @@ export function QaTiles({ active, onSelect }: Props) {
       />
       <StatTile
         label="Last filed"
+        info={INFO.qaLastFiled}
         value={data && lastFiledText(last ?? null)}
         sub={last ? `${last.count} ${last.count === 1 ? 'issue' : 'issues'} that day` : undefined}
         active={active === 'lastFiled'}
@@ -39,6 +43,7 @@ export function QaTiles({ active, onSelect }: Props) {
       />
       <StatTile
         label="Rework issues"
+        info={INFO.qaRework}
         value={data?.reworkIssues}
         sub={
           data &&
