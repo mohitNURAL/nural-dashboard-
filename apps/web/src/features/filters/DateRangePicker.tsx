@@ -3,7 +3,7 @@
 import { dayKey } from '@nural/shared';
 import * as Popover from '@radix-ui/react-popover';
 import clsx from 'clsx';
-import { Chevron } from '../../components/SearchCombobox';
+import { Chevron, ClearButton } from '../../components/SearchCombobox';
 import { APP_TIMEZONE } from '../../config';
 import type { DateField, FilterState } from './toParams';
 
@@ -53,19 +53,27 @@ export function DateRangePicker({ value, onChange }: Props) {
 
   return (
     <Popover.Root>
-      <Popover.Trigger asChild>
-        <button
-          type="button"
-          className={clsx(
-            'flex h-10 min-w-0 items-center gap-2 rounded-control border bg-surface px-3 text-left',
-            active ? 'border-primary text-primary-dark' : 'border-border',
-            'hover:border-primary-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary',
-          )}
-        >
-          <span className="flex-1 truncate">{rangeLabel(value)}</span>
-          <Chevron />
-        </button>
-      </Popover.Trigger>
+      <div className="relative flex h-10 min-w-0">
+        <Popover.Trigger asChild>
+          <button
+            type="button"
+            className={clsx(
+              'flex h-full w-full min-w-0 items-center gap-2 rounded-control border bg-surface px-3 text-left',
+              active ? 'border-primary pr-14 text-primary-dark' : 'border-border',
+              'hover:border-primary-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary',
+            )}
+          >
+            <span className="flex-1 truncate">{rangeLabel(value)}</span>
+            <Chevron />
+          </button>
+        </Popover.Trigger>
+        {active && (
+          <ClearButton
+            label="Clear date range"
+            onClear={() => onChange({ dateField: null, from: null, to: null })}
+          />
+        )}
+      </div>
       <Popover.Portal>
         <Popover.Content
           align="end"

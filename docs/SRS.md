@@ -91,6 +91,7 @@ The Development tab answers three questions for the PM and team leads: how much 
 
 - Project (multi-select workgroup), Assignee (multi-select, grouped by department), Tag (multi-select), Date range (created or deadline, default: all time).
 - Every dropdown is a contextual search: typing filters the options, and options are limited to values present in the current data (for example, picking project "Support Tool" narrows Assignee to people with tasks there).
+- A filter that is set shows a × on its closed drop-down (and on the date range), so it can be cleared without opening it. "Reset filters" still clears them all.
 - Filters are kept in the URL so a filtered view can be shared as a link.
 - A "Live" indicator shows the time of the last change received from Bitrix24.
 
@@ -290,7 +291,7 @@ Three stages share #FDB051 on the board, so charts add a pattern or a shade step
 **Components (to match from the Figma component library)**
 
 - Top bar: Nural logo, app name, Development and QA tabs, Live indicator, user menu.
-- Filter bar: contextual search Combobox (multi-select, chips, "Clear"), date range picker, "Reset filters".
+- Filter bar: contextual search Combobox (multi-select, chips, "Clear" inside and a × on the closed control), date range picker (with ×), "Reset filters".
 - Stat tile: label, big number, sub-line (delta or split), optional status colour; clickable.
 - Card: title, optional toggle (table or chart), body, empty state and loading skeleton.
 - Data table: sticky header, sort arrows, pagination, row hover, stage chip, tag chips, priority badge (High red, Normal grey, Low blue), overdue text in `--bad`.

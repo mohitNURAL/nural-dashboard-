@@ -78,43 +78,47 @@ export function SearchCombobox({
         if (!o) setSearch('');
       }}
     >
-      <Popover.Trigger asChild>
-        <button
-          type="button"
-          className={clsx(
-            'flex h-10 min-w-0 items-center gap-2 rounded-control border bg-surface px-3 text-left',
-            selected.length ? 'border-primary' : 'border-border',
-            'hover:border-primary-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary',
-            className,
-          )}
-        >
-          <span className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
-            {selected.length === 0 ? (
-              <span className="truncate text-text">{label}</span>
-            ) : (
-              <>
-                <span className="shrink-0 font-heading text-label font-bold uppercase text-primary-dark">
-                  {label}
-                </span>
-                {selected.slice(0, MAX_CHIPS).map((v) => (
-                  <span
-                    key={v}
-                    className="max-w-[9rem] shrink truncate rounded-full bg-primary-soft px-2 py-0.5 font-heading text-label text-primary-dark"
-                  >
-                    {labelOf(v)}
-                  </span>
-                ))}
-                {selected.length > MAX_CHIPS && (
-                  <span className="shrink-0 font-heading text-label text-primary">
-                    +{selected.length - MAX_CHIPS}
-                  </span>
-                )}
-              </>
+      <div className={clsx('relative flex h-10 min-w-0', className)}>
+        <Popover.Trigger asChild>
+          <button
+            type="button"
+            className={clsx(
+              'flex h-full w-full min-w-0 items-center gap-2 rounded-control border bg-surface px-3 text-left',
+              selected.length ? 'border-primary pr-14' : 'border-border',
+              'hover:border-primary-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary',
             )}
-          </span>
-          <Chevron />
-        </button>
-      </Popover.Trigger>
+          >
+            <span className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
+              {selected.length === 0 ? (
+                <span className="truncate text-text">{label}</span>
+              ) : (
+                <>
+                  <span className="shrink-0 font-heading text-label font-bold uppercase text-primary-dark">
+                    {label}
+                  </span>
+                  {selected.slice(0, MAX_CHIPS).map((v) => (
+                    <span
+                      key={v}
+                      className="max-w-[9rem] shrink truncate rounded-full bg-primary-soft px-2 py-0.5 font-heading text-label text-primary-dark"
+                    >
+                      {labelOf(v)}
+                    </span>
+                  ))}
+                  {selected.length > MAX_CHIPS && (
+                    <span className="shrink-0 font-heading text-label text-primary">
+                      +{selected.length - MAX_CHIPS}
+                    </span>
+                  )}
+                </>
+              )}
+            </span>
+            <Chevron />
+          </button>
+        </Popover.Trigger>
+        {selected.length > 0 && (
+          <ClearButton label={`Clear ${label.toLowerCase()} filter`} onClear={() => onChange([])} />
+        )}
+      </div>
       <Popover.Portal>
         <Popover.Content
           align="start"
@@ -192,5 +196,25 @@ export function Chevron() {
     <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden className="shrink-0 text-text">
       <path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
     </svg>
+  );
+}
+
+/**
+ * Clears a filter from its closed trigger, without opening the drop-down. Sits over the
+ * trigger's right edge, just before the chevron (a button cannot nest inside the trigger).
+ */
+export function ClearButton({ label, onClear }: { label: string; onClear: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onClear}
+      className="absolute right-8 top-1/2 grid h-5 w-5 -translate-y-1/2 place-items-center rounded-full text-text-muted hover:bg-bad-soft hover:text-bad-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+    >
+      <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden>
+        <path d="M2 2l6 6M8 2L2 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    </button>
   );
 }
