@@ -37,7 +37,7 @@ export function RankingCard({ className }: { className?: string }) {
       emptyText="No completed tasks with a deadline in these filters."
     >
       <div className="max-h-[300px] overflow-y-auto">
-        <table className="w-full border-separate border-spacing-0 text-table">
+        <table className="nural-table w-full border-separate border-spacing-0 text-table">
           <thead>
             <tr className="font-heading text-label font-bold uppercase text-text-muted">
               <th className="sticky top-0 bg-surface px-2 py-1.5 text-left">#</th>

@@ -206,3 +206,59 @@ h3 {
   max-height: none !important;
   overflow: visible !important;
 }
+
+/* Tables and grids (2026-10-12): the same feel as the tiles. Tinted gradient header, soft zebra,
+   a glowing hover with an accent edge, and a highlighted totals row. Used by DataTable and the
+   hand-built tables (class "nural-table" on the <table>). */
+.nural-table-wrap {
+  border: 1px solid color-mix(in srgb, var(--primary) 14%, var(--border));
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(16, 24, 64, 0.04);
+}
+.nural-table thead th {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--primary) 11%, var(--surface)),
+    color-mix(in srgb, var(--primary) 5%, var(--surface))
+  );
+  color: color-mix(in srgb, var(--primary-dark) 80%, var(--text-muted));
+  border-bottom: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border));
+  backdrop-filter: blur(6px);
+}
+.nural-table thead th:first-child {
+  border-top-left-radius: 13px;
+}
+.nural-table thead th:last-child {
+  border-top-right-radius: 13px;
+}
+.nural-table tbody tr:nth-child(even) > td {
+  background: color-mix(in srgb, var(--primary) 3%, transparent);
+}
+.nural-table tbody tr > td {
+  border-bottom: 1px solid color-mix(in srgb, var(--primary) 7%, transparent);
+  transition:
+    background-color 120ms ease,
+    box-shadow 120ms ease;
+}
+.nural-table tbody tr:hover > td {
+  background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+}
+.nural-table tbody tr:hover > td:first-child {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.nural-table tfoot td {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 10%, var(--surface)),
+    color-mix(in srgb, var(--primary) 12%, var(--surface))
+  );
+  border-top: 2px solid color-mix(in srgb, var(--primary) 45%, transparent);
+  color: var(--primary-dark);
+}
+.nural-table tfoot tr > td:first-child {
+  border-bottom-left-radius: 13px;
+}
+.nural-table tfoot tr > td:last-child {
+  border-bottom-right-radius: 13px;
+}

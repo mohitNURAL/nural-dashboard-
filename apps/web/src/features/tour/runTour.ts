@@ -30,6 +30,9 @@ export const tourRunning = () => !!active?.isActive();
 function resolve(selector: string): Element | undefined {
   const el = document.querySelector(selector);
   if (!el) return undefined;
+  // A page inside a folded menu module: point at the module instead.
+  const folded = el.closest('[data-folded="true"]');
+  if (folded) return folded.querySelector('[data-module-head]') ?? folded;
   if (el.getBoundingClientRect().height <= window.innerHeight * 0.6) return el;
   return el.querySelector('header, button[aria-expanded], h2') ?? el;
 }

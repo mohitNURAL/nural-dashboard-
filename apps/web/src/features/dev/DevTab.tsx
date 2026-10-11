@@ -114,6 +114,8 @@ export function DevTab() {
 
   return (
     <InfoContext.Provider value={showing}>
+      {/* What the filters cover, for the page export in the page tools. */}
+      <span hidden data-showing={showing ?? ''} />
       <div className="space-y-4">
         <PageHead
           title="Development"

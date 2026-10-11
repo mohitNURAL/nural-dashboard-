@@ -5,6 +5,7 @@ import type { Me } from '../../api/me';
 import type { Tab } from '../../features/filters/toParams';
 import {
   IconDev,
+  IconGrid,
   IconInsights,
   IconKpi,
   IconMail,
@@ -23,14 +24,21 @@ export interface NavItem {
   icon: ReactNode;
 }
 
+/** A menu module: its pages (submodules) are shown under it. */
 export interface NavGroup {
   label: string;
+  icon: ReactNode;
   items: NavItem[];
 }
 
-const ALL: { label: string; items: (NavItem & { allowed: (me: Me) => boolean })[] }[] = [
+const ALL: {
+  label: string;
+  icon: ReactNode;
+  items: (NavItem & { allowed: (me: Me) => boolean })[];
+}[] = [
   {
     label: 'Dashboard',
+    icon: <IconGrid />,
     items: [
       {
         id: 'kpi',
@@ -64,6 +72,7 @@ const ALL: { label: string; items: (NavItem & { allowed: (me: Me) => boolean })[
   },
   {
     label: 'Insights',
+    icon: <IconInsights />,
     items: [
       {
         id: 'insights',
@@ -77,6 +86,7 @@ const ALL: { label: string; items: (NavItem & { allowed: (me: Me) => boolean })[
   },
   {
     label: 'Employees',
+    icon: <IconPeople />,
     items: [
       {
         id: 'org',
@@ -103,6 +113,7 @@ const ALL: { label: string; items: (NavItem & { allowed: (me: Me) => boolean })[
   },
   {
     label: 'Integration',
+    icon: <IconPlug />,
     items: [
       {
         id: 'connections',
@@ -125,14 +136,19 @@ const ALL: { label: string; items: (NavItem & { allowed: (me: Me) => boolean })[
 /** The groups and pages this person may open. */
 export function navFor(me: Me | undefined): NavGroup[] {
   if (!me) return [];
-  return ALL.map((g) => ({ label: g.label, items: g.items.filter((i) => i.allowed(me)) })).filter(
-    (g) => g.items.length,
-  );
+  return ALL.map((g) => ({
+    label: g.label,
+    icon: g.icon,
+    items: g.items.filter((i) => i.allowed(me)),
+  })).filter((g) => g.items.length);
 }
 
 /** May this person open the page? */
 export const allowedPage = (me: Me | undefined, tab: Tab) =>
   navFor(me).some((g) => g.items.some((i) => i.id === tab));
+
+/** The module a page belongs to. */
+export const moduleOf = (tab: Tab) => ALL.find((g) => g.items.some((i) => i.id === tab))?.label;
 
 /** "Dashboard › QA". */
 export function crumbs(tab: Tab): [string, string] {

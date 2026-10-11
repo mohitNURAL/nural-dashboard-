@@ -20,6 +20,42 @@ const Svg = ({ size = 20, children, ...p }: P) => (
   </svg>
 );
 
+export const IconGrid = (p: P) => (
+  <Svg {...p}>
+    <rect x="3" y="3" width="6" height="6" rx="1.5" />
+    <rect x="11" y="3" width="6" height="6" rx="1.5" />
+    <rect x="3" y="11" width="6" height="6" rx="1.5" />
+    <rect x="11" y="11" width="6" height="6" rx="1.5" />
+  </Svg>
+);
+export const IconHelp = (p: P) => (
+  <Svg {...p}>
+    <circle cx="10" cy="10" r="7.5" />
+    <path d="M7.8 7.8a2.3 2.3 0 1 1 3.2 2.1c-.6.3-1 .8-1 1.4v.4M10 14.3v.1" />
+  </Svg>
+);
+export const IconCoin = (p: P) => (
+  <Svg {...p}>
+    <ellipse cx="10" cy="5.5" rx="6" ry="2.5" />
+    <path d="M4 5.5v4.5c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5V5.5M4 10v4.5c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5V10" />
+  </Svg>
+);
+export const IconGrip = (p: P) => (
+  <Svg {...p} strokeWidth={0} fill="currentColor">
+    <circle cx="7.5" cy="5" r="1.3" />
+    <circle cx="12.5" cy="5" r="1.3" />
+    <circle cx="7.5" cy="10" r="1.3" />
+    <circle cx="12.5" cy="10" r="1.3" />
+    <circle cx="7.5" cy="15" r="1.3" />
+    <circle cx="12.5" cy="15" r="1.3" />
+  </Svg>
+);
+export const IconFeedback = (p: P) => (
+  <Svg {...p}>
+    <path d="M4 4.5h12a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5H9l-4 3v-3H4A1.5 1.5 0 0 1 2.5 13V6A1.5 1.5 0 0 1 4 4.5Z" />
+    <path d="M6.5 8.5h7M6.5 11h4.5" />
+  </Svg>
+);
 export const IconMenu = (p: P) => (
   <Svg {...p}>
     <path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13" />

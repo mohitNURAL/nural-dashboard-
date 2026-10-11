@@ -41,7 +41,7 @@ export const COMMON_STEPS: TourStep[] = [
   {
     target: tour('drawer'),
     title: 'The menu',
-    text: 'Every page is here: the dashboard tabs and, for managers, the Employee module. Hover the icons to open it; click ☰ to pin it open, and again to unpin.',
+    text: 'Every page, by module (Dashboard, Insights, Employees, Integration). The module of the page you are on is highlighted and open; click another module to open it. Drag ⠿ to put modules in your order, and pages within their own module. Hover the icons to open the menu; click ☰ to pin it open.',
   },
   {
     target: tour('filters'),
@@ -63,7 +63,7 @@ export const COMMON_STEPS: TourStep[] = [
   {
     target: tour('dock'),
     title: 'Page tools',
-    text: 'On the right: Customise (choose the tiles and cards to show), the guided tour of this page, the PDF guides, reading tours aloud, and resetting the layout. Hover any icon for its name. Each data point also has a small toolbar on hover: ⠿ to move it, ? to explain it, the eye to hide it.',
+    text: 'On the right: Customise (choose the tiles and cards to show), the guided tour of this page, the PDF guides, Export page (every data point on the page as one Excel workbook or PDF), reading tours aloud, and resetting the layout. Hover any icon for its name. Each data point also has a small toolbar on hover: ⠿ to move it, ? to explain it, the eye to hide it.',
   },
   {
     target: tour('profile'),

@@ -67,6 +67,8 @@ export function KpiTab() {
   const label = list.label ? `All tasks: ${list.label}` : 'All tasks';
   return (
     <InfoContext.Provider value={showing}>
+      {/* What the filters cover, for the page export in the page tools. */}
+      <span hidden data-showing={showing ?? ''} />
       <div className="space-y-4">
         <PageHead
           title="KPI"

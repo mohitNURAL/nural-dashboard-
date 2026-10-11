@@ -14,6 +14,7 @@ import { API_KEY } from '../../api/queries';
 import { Card } from '../../components/Card';
 import { SortableGroup } from '../../components/layout/SortableGroup';
 import { StatTile } from '../../components/StatTile';
+import { confirm } from '../../components/ui/ConfirmDialog';
 import { IconClose, IconMail } from '../../components/ui/icons';
 import { PageHead } from '../../components/ui/PageHead';
 import { Tip } from '../../components/ui/Tip';
@@ -332,9 +333,14 @@ function ReportCard({
         <button
           type="button"
           className="ml-auto rounded-control px-2.5 py-1 font-heading text-button text-bad hover:bg-bad/10"
-          onClick={() => {
-            if (window.confirm(`Delete "${r.name}"? Its schedule stops.`))
-              void act(() => apiPost(`/api/reports/${r.id}`, {}, 'DELETE'), 'Deleted');
+          onClick={async () => {
+            const ok = await confirm({
+              title: `Delete "${r.name}"?`,
+              message: 'Its schedule stops and nobody gets it any more. Its run log is kept.',
+              confirmLabel: 'Delete report',
+              tone: 'bad',
+            });
+            if (ok) void act(() => apiPost(`/api/reports/${r.id}`, {}, 'DELETE'), 'Deleted');
           }}
         >
           Delete

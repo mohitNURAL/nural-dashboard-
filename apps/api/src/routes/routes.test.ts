@@ -356,7 +356,9 @@ describe('metrics API', () => {
     const wb = new ExcelJS.Workbook();
     await wb.xlsx.load(res.rawPayload as unknown as ArrayBuffer);
     const ws = wb.getWorksheet('Tasks')!;
-    const header = (ws.getRow(1).values as unknown[]).slice(1);
+    // Rows 1-3: title, what it holds, when; row 4: the header.
+    expect(ws.getRow(1).getCell(1).text).toMatch(/./);
+    const header = (ws.getRow(4).values as unknown[]).slice(1);
     expect(header).toEqual(
       expect.arrayContaining([
         'Task ID',
@@ -368,9 +370,9 @@ describe('metrics API', () => {
     );
     // Same rows as the on-screen list (all pages).
     const list = await get('/api/tasks?scope=all&preset=total&pageSize=1');
-    expect(ws.rowCount - 1).toBe(list.body.total);
+    expect(ws.rowCount - 4).toBe(list.body.total);
     const col = (h: string) => header.indexOf(h) + 1;
-    const first = ws.getRow(2);
+    const first = ws.getRow(5);
     const id = Number((first.getCell(col('Task ID')).value as { text: string }).text);
     const row = (await get(`/api/tasks/${id}`)).body.task;
     expect(first.getCell(col('Project ID')).value).toBe(row.project.id);

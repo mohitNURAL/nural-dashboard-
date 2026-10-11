@@ -8,6 +8,7 @@ import clsx from 'clsx';
 import { useEffect, useMemo, useState } from 'react';
 import { BULK_MAX, type Bulk, type BulkResult, type BulkState } from './bulk';
 import { toast } from 'sonner';
+import { confirm } from '../../components/ui/ConfirmDialog';
 import { apiPost } from '../../api/client';
 import { useMe } from '../../api/me';
 import { API_KEY, useApi } from '../../api/queries';
@@ -330,8 +331,31 @@ export function BulkBar({ bulk, boards }: { bulk: Bulk; boards: Record<string, B
                     ? 'Nothing to change'
                     : `Change ${ready} tasks in Bitrix24`
               }
-              onClick={() => {
-                if (window.confirm(`Change ${ready} tasks in Bitrix24?`)) void send('apply');
+              onClick={async () => {
+                // The chosen item and value as shown in the bar's own pickers.
+                const shown = (sel: string) =>
+                  document.querySelector<HTMLSelectElement>(sel)?.selectedOptions[0]?.text;
+                const ok = await confirm({
+                  title: `Change ${ready} task${ready === 1 ? '' : 's'}?`,
+                  message:
+                    'The change is made in Bitrix24, in your name. Rows marked red are skipped.',
+                  details: [
+                    {
+                      label: 'Change',
+                      value: shown('select[aria-label="Item to change"]') ?? item,
+                    },
+                    {
+                      label: 'To',
+                      value:
+                        item === 'tags'
+                          ? `${tagsMode === 'add' ? 'Add' : 'Replace with'}: ${value}`
+                          : (shown('select[aria-label^="New "]') ?? value),
+                    },
+                  ],
+                  confirmLabel: `Apply to ${ready}`,
+                  tone: 'warn',
+                });
+                if (ok) void send('apply');
               }}
               className="h-8 rounded-control bg-primary px-3 font-heading text-button text-white hover:brightness-110 disabled:opacity-50"
             >

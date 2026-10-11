@@ -3,7 +3,7 @@
 // reading the tour aloud, and resetting the layout.
 import * as Popover from '@radix-ui/react-popover';
 import clsx from 'clsx';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { useMe } from '../../api/me';
 import { usePrefs, useSavePrefs } from '../../api/prefs';
@@ -12,7 +12,16 @@ import { useTourRequest } from '../../features/tour/useGuidedTour';
 import { voiceAvailable } from '../../features/tour/voice';
 import { useCustomisable } from '../layout/customisable';
 import { CustomisePanel } from '../layout/CustomiseView';
-import { IconBook, IconCompass, IconReset, IconSliders, IconSpeaker } from '../ui/icons';
+import {
+  IconBook,
+  IconCompass,
+  IconDownload,
+  IconExcel,
+  IconPdf,
+  IconReset,
+  IconSliders,
+  IconSpeaker,
+} from '../ui/icons';
 import { Tip } from '../ui/Tip';
 
 /**
@@ -177,6 +186,7 @@ export function ActionDock({ tourable }: { tourable: boolean }) {
           </Popover.Content>
         </Popover.Portal>
       </Popover.Root>
+      {ready && <ExportPage />}
       {voiceAvailable() && (
         <DockButton
           label={voice ? 'Voice on' : 'Voice off'}
@@ -200,5 +210,91 @@ export function ActionDock({ tourable }: { tourable: boolean }) {
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * Export page (2026-10-12): every data point on the page at once, as the person arranged it and
+ * without the hidden ones: Excel (a Summary sheet with every tile, then one sheet per card or
+ * list) or PDF (the page, block by block).
+ */
+function ExportPage() {
+  const [busy, setBusy] = useState<'xlsx' | 'pdf' | null>(null);
+  const run = async (kind: 'xlsx' | 'pdf') => {
+    setBusy(kind);
+    try {
+      const m = await import('../layout/exportPoint');
+      const page = document.querySelector('main h1')?.textContent?.trim() || 'Dashboard';
+      const showing = document.querySelector('main [data-showing]')?.getAttribute('data-showing');
+      const { groups, points } = m.pagePoints();
+      if (kind === 'xlsx') await m.exportPageExcel(points, page, showing);
+      else
+        await m.exportPagePdf(
+          groups.flatMap((g) =>
+            g.dataset.group!.endsWith('.tiles')
+              ? [g]
+              : points.filter((p) => p.el.parentElement === g).map((p) => p.el),
+          ),
+          page,
+          showing,
+        );
+      toast.success(`${page} exported`, {
+        description:
+          kind === 'xlsx' ? 'One sheet per card and list.' : 'Every tile, card and list.',
+      });
+    } catch (e) {
+      toast.error('Export failed', { description: e instanceof Error ? e.message : '' });
+    } finally {
+      setBusy(null);
+    }
+  };
+  return (
+    <Popover.Root>
+      <Tip label="Export page" hint="Every data point on this page: Excel or PDF" side="left">
+        <Popover.Trigger asChild>
+          <button type="button" aria-label="Export page" data-tour="export-page" className={BTN}>
+            <IconDownload />
+          </button>
+        </Popover.Trigger>
+      </Tip>
+      <Popover.Portal>
+        <Popover.Content
+          side="left"
+          align="center"
+          sideOffset={12}
+          collisionPadding={12}
+          className="z-50 w-72 rounded-card border border-border bg-surface p-2 text-text shadow-pop"
+        >
+          <p className="px-2 pt-1 font-heading text-h3 text-primary-dark">Export this page</p>
+          <p className="px-2 pb-2 text-table text-text-muted">
+            Every tile, card and list you see, in your order, with the filters in force.
+          </p>
+          {(
+            [
+              ['xlsx', 'Excel workbook', 'Summary of the tiles, then a sheet per card and list'],
+              ['pdf', 'PDF', 'The page as you see it, block by block'],
+            ] as const
+          ).map(([k, title, hint]) => (
+            <button
+              key={k}
+              type="button"
+              disabled={!!busy}
+              onClick={() => void run(k)}
+              className="flex w-full items-start gap-3 rounded-control p-2 text-left hover:bg-primary-soft-100 disabled:opacity-50"
+            >
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent text-white">
+                {k === 'xlsx' ? <IconExcel size={18} /> : <IconPdf size={18} />}
+              </span>
+              <span>
+                <span className="block font-heading text-button text-primary-dark">
+                  {busy === k ? 'Preparing…' : title}
+                </span>
+                <span className="block text-table text-text-muted">{hint}</span>
+              </span>
+            </button>
+          ))}
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   );
 }

@@ -4,6 +4,7 @@
 // person's effective rights (auth/rights.ts); open and overdue tasks from the request's dataset.
 import { isOverdue, isPending } from '@nural/shared';
 import ExcelJS from 'exceljs';
+import { brandSheet, exportedAt } from '../exports/theme';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { RequestDataset, Viewer } from '../auth/roles';
 import type { Resolved, Role } from '../auth/rights';
@@ -140,7 +141,6 @@ export function employeeRoutes(
       { header: 'Open tasks', key: 'open', width: 10 },
       { header: 'Overdue', key: 'overdue', width: 9 },
     ];
-    sheet.getRow(1).font = { bold: true };
     for (const r of list) {
       const areas = [
         r.rights.kpi && 'KPI',
@@ -163,6 +163,7 @@ export function employeeRoutes(
         lastSeenAt: r.lastSeenAt ?? '',
       });
     }
+    brandSheet(sheet, 'People directory', `${list.length} people`, exportedAt('Asia/Kolkata'));
     const buf = await wb.xlsx.writeBuffer();
     return reply
       .header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')

@@ -11,6 +11,7 @@ import { useMe } from '../../api/me';
 import { API_KEY, useApi } from '../../api/queries';
 import type { BitrixStatus, BoardStage, Priority, TaskRow } from '../../api/types';
 import { PriorityBadge, StageChip, StatusChip, TagChips } from '../../components/chips';
+import { confirm } from '../../components/ui/ConfirmDialog';
 import { fmtDate } from '../dev/format';
 import { BoardsContext } from './boards';
 
@@ -227,8 +228,23 @@ export function StatusCell({ task }: { task: TaskRow }) {
           ]}
           busy={busy}
           close={close}
-          onPick={(s) => {
-            if (s === 'completed' && !window.confirm(`Complete task ${task.id} in Bitrix24?`))
+          onPick={async (s) => {
+            if (
+              s === 'completed' &&
+              !(await confirm({
+                title: 'Complete this task?',
+                message: 'It is completed in Bitrix24, in your name.',
+                details: [
+                  { label: 'Task', value: `${task.id} · ${task.title}` },
+                  {
+                    label: 'Status',
+                    value: `${STATUS_LABEL[task.bitrixStatus]} → ${STATUS_LABEL[s]}`,
+                  },
+                ],
+                confirmLabel: 'Complete task',
+                tone: 'good',
+              }))
+            )
               return;
             return save('status', { status: s }, `Task ${task.id}: ${STATUS_LABEL[s]}`);
           }}

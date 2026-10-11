@@ -397,7 +397,8 @@ Rebuild after a change people can see:
 - **Open:** hovering or keyboard focus slides it open over the page (264 px), with each page's name and a short hint, and leaving closes it.
 - **Pinned:** the ☰ button pins it open, pushing the page aside, until clicked again (remembered in the browser).
 - **Small screens:** it opens from a menu button in the top bar.
-- **Folding:** each group folds shut from its header (chevron), remembered in the browser; a folded group still shows the page you are on.
+- **Modules (2026-10-12):** the groups are menu modules, each with an icon and a bold name. Only the module of the page you are on is open (highlighted, with an accent bar); the others are folded. Clicking a module's header opens it (one at a time). Folded modules keep their pages in the page, out of sight, so links and the tour still find them (the tour points at the module).
+- **Order:** modules can be dragged (⠿ on hover) into another order, and pages within their own module only; a page can never move to another module. The order is saved per person (prefs layout `menu.modules`, `menu.<module>`); Reset layout restores the default.
 - **Groups:**
   - *Dashboard*: KPI, Development, QA, Support;
   - *Insights*: Insights (everyone, own scope for members);
@@ -428,6 +429,14 @@ Rebuild after a change people can see:
 - **Hide or bring back:** untick to hide, tick to bring back, **Show all** to restore everything. The button shows how many are hidden.
 - **Nothing leaves a gap:** on wide screens the tiles spread over the row (as many columns as tiles shown); cards fill their rows as described above.
 - **Saved per person:** `user_prefs.layout["<tab>.<group>.hidden"]`. If a save fails, a toast says so.
+
+**Confirmations (2026-10-12).** Confirmations use the dashboard's own popup (`components/ui/ConfirmDialog.tsx`), never the browser's: completing a task, applying a bulk change, deleting a report. The popup names what will change (task, from → to) and its tone (good, warn, bad) colours the button.
+
+**Look of charts and tables (2026-10-12).** Every chart (Chart.tsx): gradient bars with rounded ends, smooth lines with a faded area, dashed light grid lines, frosted tooltips, an easing entry. Every table (DataTable and the hand-built ones, class `nural-table`): a tinted gradient header, soft zebra rows, an accent edge on hover and a highlighted totals row.
+
+**Excel look (2026-10-12).** Every Excel file (task lists, people, feedback, a card, a page) has a dark blue title band, a teal line with what it holds and the filters, the export time, a blue header row with white bold text, zebra rows, thin borders, the header frozen and filters on (browser: `components/layout/excelTheme.ts`; server: `apps/api/src/exports/theme.ts`).
+
+**Export page (2026-10-12).** The page tools have *Export page*: every data point the person sees on the page, in their order, without hidden ones and closed lists. *Excel*: a Summary sheet (each tile, its value and detail) and one sheet per card or open list. *PDF*: a title band with the page, filters and time, then the tile rows and each card and list, over A4 landscape pages with page numbers.
 
 **Focus view (2026-10-11).**
 - **Opening:** clicking a card's title or empty area brings the card to the centre of the screen, up to 1100 px wide, with the page behind dimmed and blurred. Charts grow with it.

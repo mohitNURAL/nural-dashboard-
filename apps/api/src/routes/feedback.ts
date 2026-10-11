@@ -2,6 +2,7 @@
 // the Support tab and the dashboard. Anyone who may see the Support tab (Tech Support team, PM,
 // team leads, admins) can submit and read their own entries; only admins and the head of Tech Support read everything.
 import ExcelJS from 'exceljs';
+import { brandSheet, exportedAt } from '../exports/theme';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import type { RequestDataset, Viewer } from '../auth/roles';
@@ -187,8 +188,8 @@ export function feedbackRoutes(
       { header: 'Status', key: 'status', width: 10 },
       { header: 'Admin note', key: 'adminNote', width: 30 },
     ];
-    sheet.getRow(1).font = { bold: true };
     for (const r of rows) sheet.addRow({ ...r, needs: r.needs.join(', ') });
+    brandSheet(sheet, 'Support feedback', `${rows.length} answers`, exportedAt('Asia/Kolkata'));
     const buf = await wb.xlsx.writeBuffer();
     return reply
       .header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')

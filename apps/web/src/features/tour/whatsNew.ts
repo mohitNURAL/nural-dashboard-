@@ -18,6 +18,24 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-12-menu-export',
+    date: '2026-10-12',
+    tab: 'dev',
+    title: 'Menu by module, Export page, a fresher look',
+    steps: [
+      {
+        target: '[data-tour="drawer"]',
+        title: 'Menu by module',
+        text: 'The menu now shows modules with icons. Only the module of the page you are on is open; click another to open it. Drag ⠿ to reorder modules, and pages within their module.',
+      },
+      {
+        target: '[data-tour="export-page"]',
+        title: 'Export page',
+        text: 'Every data point on this page at once: an Excel workbook (a summary of the tiles, then a sheet per card and list) or a PDF, with your filters. Excel files now come in the dashboard colours.',
+      },
+    ],
+  },
+  {
     id: '2026-10-12-mailing',
     date: '2026-10-12',
     tab: 'mailing',

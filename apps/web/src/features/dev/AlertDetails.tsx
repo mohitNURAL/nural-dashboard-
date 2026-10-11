@@ -169,7 +169,7 @@ export function AlertDetails() {
       )}
       {groups.length > 0 && (
         <div className="max-h-[600px] overflow-auto rounded-control border border-border">
-          <table className="w-full border-separate border-spacing-0 text-table">
+          <table className="nural-table w-full border-separate border-spacing-0 text-table">
             <thead>
               <tr className="font-heading text-label font-bold uppercase text-text-muted">
                 <Th>{by === 'project' ? 'Project / assignee' : 'Assignee / project'}</Th>

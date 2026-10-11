@@ -4,6 +4,7 @@ import { TopBar } from './components/TopBar';
 import { ActionDock } from './components/shell/ActionDock';
 import { allowedPage, navFor } from './components/shell/nav';
 import { useDrawer } from './components/shell/drawerStore';
+import { ConfirmHost } from './components/ui/ConfirmDialog';
 import { SideDrawer } from './components/shell/SideDrawer';
 import { DevTab } from './features/dev/DevTab';
 import { AccessPage } from './features/employees/AccessPage';
@@ -41,6 +42,7 @@ export default function App() {
   return (
     <div className="min-h-screen">
       <TopBar tab={tab} onTab={setTab} />
+      <ConfirmHost />
       <SideDrawer groups={navFor(me)} tab={tab} onTab={setTab} newTabs={newTabs} />
       <div
         className={clsx(

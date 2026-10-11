@@ -3,6 +3,7 @@
 // are read live from Bitrix24 per task, not stored).
 import { dayKey } from '@nural/shared';
 import ExcelJS from 'exceljs';
+import { brandSheet, exportedAt } from '../exports/theme';
 import type { taskRow } from './context';
 
 type Row = ReturnType<typeof taskRow>;
@@ -77,14 +78,7 @@ export async function tasksWorkbook(rows: Row[], title: string, tz: string): Pro
     row.getCell('id').value = { text: String(r.id), hyperlink: r.url };
   }
 
-  // Look: Arial, blue header, dates as dates, links blue, filters on every column.
-  const header = ws.getRow(1);
-  header.height = 30;
-  header.eachCell((c) => {
-    c.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
-    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF32499F' } };
-    c.alignment = { vertical: 'middle', wrapText: true };
-  });
+  // Look: Arial, dates as dates, links blue, overdue red; then the dashboard's band and header.
   ws.eachRow((row, n) => {
     if (n === 1) return;
     row.eachCell({ includeEmpty: true }, (c) => {
@@ -109,7 +103,7 @@ export async function tasksWorkbook(rows: Row[], title: string, tz: string): Pro
     }
   });
   for (const key of ['created', 'deadline', 'closed']) ws.getColumn(key).numFmt = 'dd mmm yyyy';
-  ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: ws.columnCount } };
+  brandSheet(ws, title, `${rows.length} tasks, as listed on the dashboard`, exportedAt(tz));
 
   // What the file is: the list title, the row count, and how it was made.
   ws.headerFooter.oddHeader = `&L${title}&R${rows.length} tasks`;

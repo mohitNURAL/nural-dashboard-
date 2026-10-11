@@ -90,10 +90,13 @@ export function DataTable<T>({
   return (
     <div className="min-w-0">
       <div
-        className={clsx('overflow-auto', loading && 'opacity-60 transition-opacity')}
+        className={clsx(
+          'nural-table-wrap overflow-auto',
+          loading && 'opacity-60 transition-opacity',
+        )}
         style={maxHeight ? { maxHeight } : undefined}
       >
-        <table className="w-full border-separate border-spacing-0 font-body text-table">
+        <table className="nural-table w-full border-separate border-spacing-0 font-body text-table">
           <thead>
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>
@@ -110,7 +113,7 @@ export function DataTable<T>({
                         sort === 'asc' ? 'ascending' : sort === 'desc' ? 'descending' : undefined
                       }
                       className={clsx(
-                        'sticky top-0 z-10 whitespace-nowrap border-b border-border bg-surface font-heading text-label font-bold uppercase text-text-muted',
+                        'sticky top-0 z-10 whitespace-nowrap font-heading text-label font-bold uppercase',
                         cell,
                         align === 'right' ? 'text-right' : 'text-left',
                       )}
@@ -152,11 +155,7 @@ export function DataTable<T>({
                 key={row.id}
                 onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                 title={rowTitle?.(row.original)}
-                className={clsx(
-                  'hover:bg-primary-soft-100',
-                  onRowClick && 'cursor-pointer',
-                  rowClassName?.(row.original),
-                )}
+                className={clsx(onRowClick && 'cursor-pointer', rowClassName?.(row.original))}
               >
                 {row.getVisibleCells().map((c) => {
                   const align = (c.column.columnDef.meta as { align?: string } | undefined)?.align;
@@ -164,7 +163,7 @@ export function DataTable<T>({
                     <td
                       key={c.id}
                       className={clsx(
-                        'border-b border-primary-soft-100 align-middle',
+                        'align-middle',
                         cell,
                         align === 'right' && 'text-right tabular-nums',
                       )}
@@ -194,7 +193,7 @@ export function DataTable<T>({
                       <td
                         key={h.id}
                         className={clsx(
-                          'sticky bottom-0 border-t border-border bg-primary-soft-100 font-bold',
+                          'sticky bottom-0 font-bold',
                           cell,
                           align === 'right' && 'text-right tabular-nums',
                         )}

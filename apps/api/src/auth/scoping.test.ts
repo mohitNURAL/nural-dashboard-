@@ -287,8 +287,8 @@ describe('task view, actions and export follow the scope', () => {
     const sheet = wb.worksheets[0]!;
     const ids: number[] = [];
     sheet.eachRow((row, n) => {
-      // The ID cell links to Bitrix24: read its text.
-      if (n > 1) ids.push(Number(row.getCell(1).text));
+      // Rows 1-3 are the title band, row 4 the header; the ID cell links to Bitrix24.
+      if (n > 4) ids.push(Number(row.getCell(1).text));
     });
     expect(ids.filter(Boolean).sort((a, b) => a - b)).toEqual(visible(28));
   });
