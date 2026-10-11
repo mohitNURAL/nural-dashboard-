@@ -7,3 +7,4 @@ export * from './events';
 export * from './calendar';
 export * from './kpi';
 export * from './insights';
+export * from './reports';

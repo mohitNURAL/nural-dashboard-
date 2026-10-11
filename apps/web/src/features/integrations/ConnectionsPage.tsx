@@ -1,0 +1,238 @@
+// Integration › Connections (SRS 19, admins): Microsoft 365 mail, Slack and Infowan, each with
+// its status, a test to yourself and how to connect it. Keys live only in the server's settings.
+import clsx from 'clsx';
+import { useState, type ReactNode } from 'react';
+import { toast } from 'sonner';
+import { apiPost } from '../../api/client';
+import { Card } from '../../components/Card';
+import { SortableGroup } from '../../components/layout/SortableGroup';
+import { StatTile } from '../../components/StatTile';
+import { IconPlug } from '../../components/ui/icons';
+import { PageHead } from '../../components/ui/PageHead';
+import { useStatus } from './api';
+
+function Pill({ on, children }: { on: boolean; children: ReactNode }) {
+  return (
+    <span
+      className={clsx(
+        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-heading text-label font-bold uppercase',
+        on ? 'bg-good/15 text-good' : 'bg-border/50 text-text-muted',
+      )}
+    >
+      <span className="h-1.5 w-1.5 rounded-full bg-current" />
+      {children}
+    </span>
+  );
+}
+
+function Steps({ items }: { items: ReactNode[] }) {
+  return (
+    <details className="mt-3 rounded-card border border-border p-3 text-table">
+      <summary className="cursor-pointer font-heading text-button text-primary">
+        How to connect
+      </summary>
+      <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-text">
+        {items.map((s, i) => (
+          <li key={i}>{s}</li>
+        ))}
+      </ol>
+    </details>
+  );
+}
+
+function TestButton({ channel, disabled }: { channel: 'mail' | 'slack'; disabled: boolean }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <button
+      type="button"
+      disabled={disabled || busy}
+      onClick={async () => {
+        setBusy(true);
+        try {
+          const r = await apiPost<{ to: string }>('/api/integrations/test', { channel });
+          toast.success(`Test sent to ${r.to}`, {
+            description: channel === 'mail' ? 'Check your inbox.' : 'Check your Slack messages.',
+          });
+        } catch (e) {
+          toast.error('Test failed', { description: e instanceof Error ? e.message : '' });
+        } finally {
+          setBusy(false);
+        }
+      }}
+      className="rounded-control bg-primary px-3 py-1.5 font-heading text-button text-white hover:brightness-110 disabled:opacity-40"
+    >
+      {busy ? 'Sending…' : 'Send a test to me'}
+    </button>
+  );
+}
+
+const code = (s: string) => (
+  <code className="rounded bg-primary-soft-100 px-1 font-mono text-[11px]">{s}</code>
+);
+
+export function ConnectionsPage() {
+  const { data, isLoading } = useStatus();
+  const connected = [data?.mail.connected, data?.slack.connected, data?.infowan.connected].filter(
+    Boolean,
+  ).length;
+  return (
+    <div className="space-y-4">
+      <PageHead
+        title="Connections"
+        sub="Mail, Slack and Infowan: where reports go and where leave comes from"
+        icon={<IconPlug size={24} />}
+      />
+      <SortableGroup
+        group="connections.tiles"
+        noun="tile"
+        className="grid grid-cols-2 gap-3 lg:grid-cols-[repeat(var(--cols),minmax(0,1fr))]"
+        items={[
+          {
+            id: 'connected',
+            node: (
+              <StatTile
+                label="Connected"
+                info="Services the dashboard can use now."
+                value={isLoading ? undefined : `${connected} of 3`}
+                sub="Microsoft 365, Slack, Infowan"
+              />
+            ),
+          },
+          {
+            id: 'scheduling',
+            node: (
+              <StatTile
+                label="Scheduled sending"
+                info="Reports are sent on time by the server; local copies never send."
+                value={isLoading ? undefined : data?.scheduling ? 'On' : 'Off here'}
+                sub={data?.scheduling ? 'This server sends reports' : 'Only the live server sends'}
+              />
+            ),
+          },
+        ]}
+      />
+      <SortableGroup
+        group="connections.cards"
+        noun="card"
+        className="grid grid-cols-1 gap-4 lg:grid-cols-12"
+        items={[
+          {
+            id: 'mail',
+            className: 'lg:col-span-6',
+            node: (
+              <Card
+                title="Microsoft 365 mail"
+                info="Report mails go out through Microsoft Graph from one Nural mailbox."
+                loading={isLoading}
+                action={
+                  <Pill on={!!data?.mail.connected}>
+                    {data?.mail.connected ? 'Connected' : 'Not connected'}
+                  </Pill>
+                }
+              >
+                <p className="text-body">
+                  {data?.mail.connected ? (
+                    <>
+                      Sending from <b>{data.mail.from}</b>.
+                    </>
+                  ) : (
+                    'Not connected yet: reports are logged but no mail goes out.'
+                  )}
+                </p>
+                <div className="mt-3">
+                  <TestButton channel="mail" disabled={!data?.mail.connected} />
+                </div>
+                <Steps
+                  items={[
+                    <>
+                      In the Azure portal (Microsoft Entra ID) create an <b>app registration</b> for
+                      the dashboard.
+                    </>,
+                    <>
+                      Under API permissions add Microsoft Graph <b>Mail.Send</b> (application) and
+                      grant admin consent.
+                    </>,
+                    <>
+                      Limit it to the sender mailbox with an application access policy (Exchange
+                      Online), so it can send only as that address.
+                    </>,
+                    <>
+                      Create a client secret, then put {code('MS_TENANT_ID')},{' '}
+                      {code('MS_CLIENT_ID')}, {code('MS_CLIENT_SECRET')} and {code('MAIL_FROM')} in
+                      the server's {code('.env.prod')} and redeploy.
+                    </>,
+                  ]}
+                />
+              </Card>
+            ),
+          },
+          {
+            id: 'slack',
+            className: 'lg:col-span-6',
+            node: (
+              <Card
+                title="Slack"
+                info="Direct messages to each person (found by work email) and posts to channels."
+                loading={isLoading}
+                action={
+                  <Pill on={!!data?.slack.connected}>
+                    {data?.slack.connected ? 'Connected' : 'Not connected'}
+                  </Pill>
+                }
+              >
+                <p className="text-body">
+                  {data?.slack.connected ? (
+                    <>
+                      Workspace <b>{data.slack.team ?? 'connected'}</b>.
+                    </>
+                  ) : (
+                    'Not connected yet: Slack sends are logged but nothing is posted.'
+                  )}
+                </p>
+                <div className="mt-3">
+                  <TestButton channel="slack" disabled={!data?.slack.connected} />
+                </div>
+                <Steps
+                  items={[
+                    <>At api.slack.com create an app for your workspace.</>,
+                    <>
+                      Add the bot scopes {code('chat:write')}, {code('users:read.email')},{' '}
+                      {code('im:write')} and {code('channels:read')}, and install it.
+                    </>,
+                    <>Invite the app to every channel that should get reports.</>,
+                    <>
+                      Put the Bot User OAuth Token in the server's {code('.env.prod')} as{' '}
+                      {code('SLACK_BOT_TOKEN')} and redeploy.
+                    </>,
+                  ]}
+                />
+              </Card>
+            ),
+          },
+          {
+            id: 'infowan',
+            className: 'lg:col-span-12',
+            node: (
+              <Card
+                title="Infowan (leave and attendance)"
+                info="Planned and urgent leave, late arrivals and early leaving, for Insights and reports."
+                loading={isLoading}
+                action={
+                  <Pill on={!!data?.infowan.connected}>
+                    {data?.infowan.connected ? 'Connected' : 'Not connected'}
+                  </Pill>
+                }
+              >
+                <p className="text-body">
+                  {data?.infowan.connected
+                    ? 'Leave and attendance come in every hour. See Integration › CRM (Infowan).'
+                    : 'Not connected yet: Insights and reports use Bitrix24 and dashboard data only. Share Infowan’s API documentation and a key to connect it.'}
+                </p>
+              </Card>
+            ),
+          },
+        ]}
+      />
+    </div>
+  );
+}

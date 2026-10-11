@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-12-mailing',
+    date: '2026-10-12',
+    tab: 'mailing',
+    title: 'Integration: reports by mail and Slack',
+    steps: [
+      {
+        target: '[data-nav="mailing"]',
+        title: 'Integration › Mailing',
+        text: 'Design performance reports sent by mail and Slack: daily, weekly, monthly, or when someone’s numbers are very poor or very good. Each person gets their own part. New reports go only to admins (Preview) until you switch them to Live.',
+      },
+    ],
+  },
+  {
     id: '2026-10-12-insights',
     date: '2026-10-12',
     tab: 'dev',

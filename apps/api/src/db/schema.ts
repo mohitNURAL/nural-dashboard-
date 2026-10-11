@@ -8,6 +8,7 @@ import {
   jsonb,
   pgTable,
   primaryKey,
+  uniqueIndex,
   serial,
   text,
   timestamp,
@@ -94,6 +95,8 @@ export const users = pgTable('users', {
   id: integer('id').primaryKey(),
   name: text('name').notNull(),
   workPosition: text('work_position'),
+  /** Work email from Bitrix24 (report mails, Slack lookup). */
+  email: text('email'),
   departmentIds: integer('department_ids')
     .array()
     .notNull()
@@ -255,3 +258,43 @@ export const accessAudit = pgTable('access_audit', {
   before: jsonb('before'),
   after: jsonb('after'),
 });
+
+/**
+ * Scheduled performance reports by mail and Slack (SRS 19, Mailing). `definition` holds when,
+ * who, what and how (reports/model.ts). New reports start in preview: sent only to admins.
+ */
+export const reports = pgTable('reports', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  /** preview | live | paused */
+  state: text('state').notNull().default('preview'),
+  definition: jsonb('definition').notNull(),
+  createdBy: integer('created_by').notNull(),
+  createdAt: tz('created_at').notNull().defaultNow(),
+  updatedAt: tz('updated_at').notNull().defaultNow(),
+});
+
+/** Every send of a report: one row per period, recipient and channel (no duplicates). */
+export const reportRuns = pgTable(
+  'report_runs',
+  {
+    id: serial('id').primaryKey(),
+    reportId: integer('report_id').notNull(),
+    at: tz('at').notNull().defaultNow(),
+    /** The period the run covers, e.g. 2026-10-12 or 2026-W42 (one run per period). */
+    periodKey: text('period_key').notNull(),
+    /** user:<id>, channel:<id> or mail:<address>. */
+    recipient: text('recipient').notNull(),
+    /** mail | slack | slack-channel */
+    channel: text('channel').notNull(),
+    /** sent | failed | skipped | test */
+    status: text('status').notNull(),
+    preview: boolean('preview').notNull().default(false),
+    subject: text('subject'),
+    error: text('error'),
+  },
+  (t) => [
+    index('report_runs_report_idx').on(t.reportId, t.at),
+    uniqueIndex('report_runs_once').on(t.reportId, t.periodKey, t.recipient, t.channel),
+  ],
+);

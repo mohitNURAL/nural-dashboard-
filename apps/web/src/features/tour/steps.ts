@@ -32,6 +32,8 @@ export const TAB_LABEL: Record<Tab, string> = {
   org: 'Company tree',
   people: 'People directory',
   access: 'Access permissions',
+  connections: 'Connections',
+  mailing: 'Mailing',
 };
 
 /** Shown once per sign-in, before the first tab tour: the top bar, the same on every tab. */
@@ -255,6 +257,25 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
       target: slot('insights.cards', 'absences'),
       title: 'Leave and attendance',
       text: 'From Infowan once connected: leave, late arrivals and early leaving, and the tasks and projects they put at risk. Until then insights use Bitrix24 data.',
+    },
+  ],
+  connections: [
+    {
+      target: slot('connections.cards', 'mail'),
+      title: 'Connections',
+      text: 'Where reports go and where leave comes from: Microsoft 365 mail, Slack and Infowan. Each shows whether it is connected, sends a test to you, and explains how to connect it.',
+    },
+  ],
+  mailing: [
+    {
+      target: tour('mailing-new'),
+      title: 'New report',
+      text: 'Design a performance report: when (daily, weekly, monthly, or when someone’s numbers are very poor or very good), who (by role or by name; each gets their own part), what (topics and questions) and how (mail with CC, Slack messages, Slack channels).',
+    },
+    {
+      target: tour('mailing-list'),
+      title: 'Your reports',
+      text: 'New reports start in Preview: only admins get them, with the list of who would. Preview shows the mail as any person would get it; Send test sends it to you; Go live sends it to everyone on schedule. Last runs show what went out.',
     },
   ],
   org: [

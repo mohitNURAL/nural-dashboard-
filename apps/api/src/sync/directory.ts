@@ -11,6 +11,7 @@ interface BitrixUser {
   NAME?: string;
   LAST_NAME?: string;
   WORK_POSITION?: string;
+  EMAIL?: string;
   UF_DEPARTMENT?: number[] | number | null;
   ACTIVE: boolean | string;
 }
@@ -58,6 +59,7 @@ export async function syncDirectory(call: Call): Promise<DirectorySummary> {
     id: Number(u.ID),
     name: [u.NAME, u.LAST_NAME].filter((s) => s?.trim()).join(' ') || `User ${u.ID}`,
     workPosition: u.WORK_POSITION?.trim() || null,
+    email: u.EMAIL?.trim().toLowerCase() || null,
     departmentIds: [u.UF_DEPARTMENT ?? []].flat().map(Number).filter(Boolean),
     active: u.ACTIVE === true || u.ACTIVE === 'Y' || u.ACTIVE === 'true',
   }));

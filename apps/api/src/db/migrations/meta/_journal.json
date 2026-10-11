@@ -50,6 +50,13 @@
       "when": 1791722191552,
       "tag": "0006_melodic_thunderbird",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791733681084,
+      "tag": "0007_gifted_shatterstar",
+      "breakpoints": true
     }
   ]
 }

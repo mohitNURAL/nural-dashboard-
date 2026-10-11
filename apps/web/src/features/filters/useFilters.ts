@@ -33,6 +33,8 @@ const tabParser = parseAsStringLiteral([
   'org',
   'people',
   'access',
+  'connections',
+  'mailing',
 ] as const).withDefault('kpi');
 
 export function useTab() {

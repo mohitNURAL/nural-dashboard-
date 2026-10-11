@@ -80,6 +80,9 @@ export const POINT_LABELS: Record<string, Record<string, string>> = {
     releases: 'Release plan',
     absences: 'Leave and attendance',
   },
+  'connections.tiles': { connected: 'Connected', scheduling: 'Scheduled sending' },
+  'connections.cards': { mail: 'Microsoft 365 mail', slack: 'Slack', infowan: 'Infowan' },
+  'mailing.tiles': { reports: 'Reports', live: 'Live', preview: 'In preview', paused: 'Paused' },
   'org.tiles': {
     departments: 'Departments',
     people: 'People',

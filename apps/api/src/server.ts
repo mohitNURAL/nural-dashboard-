@@ -1,5 +1,5 @@
 import cors from '@fastify/cors';
-import Fastify from 'fastify';
+import Fastify, { type FastifyBaseLogger } from 'fastify';
 import { pathToFileURL } from 'node:url';
 import { ZodError } from 'zod';
 import { authRoutes, sessionUserOf, type AuthOptions } from './auth/routes';
@@ -8,6 +8,12 @@ import { SESSION_DAYS } from './auth/session';
 import { accessRoutes, memoryAccessStore, type AccessStore } from './routes/access';
 import { employeeRoutes } from './routes/employees';
 import { insightRoutes } from './routes/insights';
+import { reportRoutes } from './routes/reports';
+import { graphMailer, type Mailer } from './integrations/mail';
+import { slackBot, type Slack } from './integrations/slack';
+import { runReport, type EngineDeps } from './reports/engine';
+import { startReportScheduler, type ReportScheduler } from './reports/schedule';
+import { memoryReportStore, type ReportStore } from './reports/store';
 import { actionRoutes, type ActionDeps } from './routes/actions';
 import { feedbackRoutes, memoryFeedbackStore, type FeedbackStore } from './routes/feedback';
 import { memoryPrefsStore, prefsRoutes, type PrefsStore } from './routes/prefs';
@@ -51,6 +57,16 @@ export interface ServerOptions {
   prefs?: PrefsStore;
   /** Access overrides set by admins (SRS 7, Access permissions); in-memory by default. */
   access?: AccessStore;
+  /** Reports by mail and Slack (SRS 19): store, senders, and a scheduler where the worker runs. */
+  reports?: {
+    store?: ReportStore;
+    mailer?: Mailer;
+    slack?: Slack;
+    makeScheduler?: (
+      run: (reportId: number) => Promise<unknown>,
+      log: FastifyBaseLogger,
+    ) => ReportScheduler;
+  };
   /** Task actions (move stage, change status) as the signed-in person; off without them. */
   actions?: Omit<Partial<ActionDeps>, 'userOf'>;
   /** Task description for the drawer, read live from Bitrix24 (not stored by the sync). */
@@ -71,6 +87,7 @@ export async function buildServer({
   feedback,
   prefs,
   access,
+  reports,
 }: ServerOptions = {}) {
   const app = Fastify({
     logger: logger && {
@@ -220,6 +237,39 @@ export async function buildServer({
       grants = await accessStore.load();
     },
   });
+  // Reports: built from the full dataset, then scoped per recipient (reports/scope.ts).
+  const reportStore = reports?.store ?? memoryReportStore();
+  const engine: EngineDeps = {
+    dataset: ds,
+    roles: rolesCfg,
+    grants: () => grants,
+    mailer:
+      reports?.mailer ??
+      graphMailer({
+        tenantId: config.MS_TENANT_ID,
+        clientId: config.MS_CLIENT_ID,
+        clientSecret: config.MS_CLIENT_SECRET,
+        from: config.MAIL_FROM,
+      }),
+    slack: reports?.slack ?? slackBot(config.SLACK_BOT_TOKEN),
+    store: reportStore,
+    tz: config.APP_TIMEZONE,
+    now: () => now?.() ?? new Date(),
+    dashboardUrl: config.PUBLIC_BASE_URL ?? config.WEB_ORIGIN,
+    slackPauseMs: 1100,
+  };
+  const scheduler = reports?.makeScheduler?.(async (id) => {
+    const r = await reportStore.get(id);
+    return r ? runReport(r, engine, { kind: 'scheduled' }) : null;
+  }, app.log);
+  if (scheduler) {
+    void reportStore
+      .list()
+      .then((list) => Promise.all(list.map((r) => scheduler.sync(r))))
+      .catch((err: Error) => app.log.error({ err: err.message }, 'report schedules not set'));
+    app.addHook('onClose', async () => scheduler.close());
+  }
+  reportRoutes(app, scoping.viewer, { engine, store: reportStore, scheduler });
   employeeRoutes(app, scoping.dataset, scoping.viewer, {
     ...opts,
     activity: () => prefStore.activity(),
@@ -287,6 +337,14 @@ async function main() {
     feedback: await (await import('./routes/feedback')).dbFeedbackStore(),
     prefs: await (await import('./routes/prefs')).dbPrefsStore(),
     access: await (await import('./routes/access')).dbAccessStore(),
+    reports: {
+      store: await (await import('./reports/store')).dbReportStore(),
+      // Only where the worker runs (the server): a laptop copy never sends reports.
+      makeScheduler: workerOn
+        ? (run, log) =>
+            startReportScheduler({ redisUrl: config.REDIS_URL, tz: config.APP_TIMEZONE, run, log })
+        : undefined,
+    },
     actions: {
       userCall: bitrix.getBitrix().userCall,
       tokens,

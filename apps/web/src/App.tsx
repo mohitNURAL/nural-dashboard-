@@ -10,6 +10,8 @@ import { AccessPage } from './features/employees/AccessPage';
 import { OrgTree } from './features/employees/OrgTree';
 import { PeoplePage } from './features/employees/PeoplePage';
 import { FilterBar } from './features/filters/FilterBar';
+import { ConnectionsPage } from './features/integrations/ConnectionsPage';
+import { MailingPage } from './features/integrations/MailingPage';
 import { InsightsPage } from './features/insights/InsightsPage';
 import { isDashboardTab } from './features/filters/toParams';
 import { SupportTab } from './features/support/SupportTab';
@@ -60,6 +62,10 @@ export default function App() {
             <OrgTree />
           ) : tab === 'people' ? (
             <PeoplePage />
+          ) : tab === 'connections' ? (
+            <ConnectionsPage />
+          ) : tab === 'mailing' ? (
+            <MailingPage />
           ) : tab === 'access' ? (
             <AccessPage />
           ) : (

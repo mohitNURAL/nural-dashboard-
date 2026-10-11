@@ -1193,3 +1193,32 @@ For people with the **employees** right (by default admins, PM and team leads). 
 - **Tools:** drag, Customise, tour, focus and export, as on every page.
 
 **API:** `GET /api/insights?window=7|14|30`. It is part of the scoping suite.
+
+## 19. Integration: Connections and Mailing (2026-10-12)
+
+**What it is.** Admin pages under *Integration* in the menu (`admin` right; API refuses others with 403).
+- **Connections:** Microsoft 365 mail (Graph `sendMail` from one mailbox), Slack (bot app: direct messages found by work email, and channel posts), Infowan (leave and attendance; *Not connected* until its API docs and key arrive, so Insights and reports use Bitrix24 and dashboard data only). Each shows its status and *Send a test to me*.
+- **Mailing:** a designer for performance reports.
+
+**Secrets (server only, `.env` / `.env.prod`, never in the web app or logs):** `MS_TENANT_ID`, `MS_CLIENT_ID`, `MS_CLIENT_SECRET`, `MAIL_FROM`; `SLACK_BOT_TOKEN`; later `INFOWAN_BASE_URL`, `INFOWAN_API_KEY`. Without them sends are logged as *skipped: not connected*.
+
+**A report has:**
+
+| Part | Choices |
+|---|---|
+| When | Daily (working days only by default), weekly (weekday), monthly (day 1–28), or **conditional**: checked daily, sent to each recipient whose own numbers are *very poor* or *very good* (on-time % last 7 days, overdue share of open tasks, closed vs the usual week), at most once a week per person. Times are IST; a report before 12:00 covers the day, week or month before, later ones the current one. |
+| Who | Roles (admins/management, PMs, team leads, product owners, members) and named people. |
+| What | Topics, in order: How it went, Due today, Tasks in hand (next working day, week, month), Releases this week, What went well, What to improve, Lagging projects and people, Load and overlap, What is holding us back, Leave and attendance. Plus suggested or own questions (up to 10). |
+| How | Mail to each person with CC; Slack direct message to each person; Slack channels (one copy each, company view). |
+
+**Scope per recipient** (`reports/scope.ts`, with each person's own rights): admins and PMs the company; team leads their departments' people (Bitrix24 tree, sub-departments included) and projects they own; product owners their projects; members (and anyone without all-data rights) their own tasks.
+
+**States:** new reports start in **Preview**: only admins get them, subject `[PREVIEW]`, built for a sample recipient with the list of who would get it when live; no CC, no channel posts. **Live** sends to everyone on schedule; **Paused** sends nothing. *Send test* goes only to the admin who asked (`[TEST]`). *Preview* on the page renders the mail as any chosen person would get it, sending nothing.
+
+**Running:** one BullMQ job scheduler per report (`report-<id>`, cron in Asia/Kolkata), only on the server with the sync worker on. Every send is logged in `report_runs` (recipient, channel, status sent/failed/skipped/test, error); a unique key (report, period, recipient, channel) stops duplicates. A failed send is logged and the run carries on.
+
+**Setup:**
+- *Microsoft 365:* Entra ID app registration → Microsoft Graph **Mail.Send** (application) with admin consent → limit it to the sender mailbox with an Exchange application access policy → client secret → put the four `MS_*`/`MAIL_FROM` values in `.env.prod` and redeploy.
+- *Slack:* api.slack.com app → bot scopes `chat:write`, `users:read.email`, `im:write`, `channels:read` → install → invite it to report channels → `SLACK_BOT_TOKEN` in `.env.prod` and redeploy.
+
+**API (admins):** `GET /api/integrations/status`, `POST /api/integrations/test`, `GET /api/integrations/slack/channels`, `GET /api/reports/catalogue`, `GET|POST /api/reports`, `PUT|DELETE /api/reports/:id`, `POST /api/reports/:id/state|render|test`, `GET /api/reports/:id/runs`. Content builders are pure functions in `packages/shared/src/reports.ts` with tests.

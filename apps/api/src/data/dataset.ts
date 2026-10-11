@@ -20,6 +20,8 @@ export interface UserInfo {
   id: number;
   name: string;
   workPosition: string | null;
+  /** Work email (report mails); absent in fixtures. */
+  email?: string | null;
   deptGroup: DeptGroup;
   active: boolean;
   /** Bitrix24 departments (company tree, access per department). */
@@ -196,6 +198,7 @@ export async function loadDataset(): Promise<Dataset> {
       id: u.id,
       name: u.name,
       workPosition: u.workPosition,
+      email: u.email,
       deptGroup,
       active: u.active,
       departmentIds: u.departmentIds,
