@@ -454,6 +454,47 @@ SSE is chosen over WebSocket because the browser only receives; filters are sent
 - `/api/auth/me` returns `role` and `full`; the top bar shows the role (e.g. "Team lead", "My tasks"). With sign-in off (local copy) everyone has full access.
 - Tested by equivalence: for every member, every endpoint must answer exactly what a server holding only that member's tasks answers (and full access exactly what one holding everything answers); deliberately breaking the scoping, the stream filter or the KPI guard makes those tests fail. Checked on real data against SQL (2026-10-11): Neha Gautam 252 tasks and 186 issues, Deepankar Shisodia 62 and 36, Adnan Mubeen everything.
 
+**Rights and access permissions (2026-10-11)** (`auth/rights.ts`, `routes/access.ts`). Each person has seven rights:
+- **scope:** all data / own tasks;
+- **kpi**, **support**, **inbox**, **employees**, **admin:** on or off;
+- **edit:** all fields / stage, status and tags.
+
+**Defaults come from the role.** The defaults reproduce the rules above, so nothing changes until an admin overrides something.
+
+| Role | scope | kpi | support | inbox | employees | edit | admin |
+|---|---|---|---|---|---|---|---|
+| Admin | all | ✓ | ✓ | ✓ | ✓ | all | ✓ |
+| PM, Team lead | all | ✓ | ✓ | Support lead | ✓ | all | – |
+| Product owner | all | ✓ | – | – | – | all | – |
+| Member | own | – | Tech Support | Support lead | – | limited | – |
+
+**Overrides.** Admins override any right per department (`access_grants`, subject `dept`) or per person (subject `user`).
+- **Order:** role defaults, then departments from the outermost to the person's own (sub-departments are covered by their parents; the deeper one wins), then the person.
+- **Locked:** admins in `config/roles.json` always keep every right and cannot be changed (409), so nobody can lock everyone out.
+- **Audit:** every change is logged in `access_audit` (who, whose, before, after).
+- **Instant:** overrides are cached in memory and reloaded on each change, so a change applies to the next request.
+
+**Enforcement on the server:**
+- scoped data and stream: `scope`;
+- KPI endpoints and KPI lists: `kpi`;
+- task edits and bulk edits (every field vs stage, status, tags) and `/api/tasks/edit-options`: `edit`;
+- feedback: `support` / `inbox`;
+- `/api/employees*`: `employees`;
+- `/api/access*`: `admin`.
+
+`/api/auth/me` returns them all.
+
+**APIs:**
+- `GET /api/access`: people and departments, each right's default, override, result and source (role, department, person, locked);
+- `PUT /api/access/user/:id` and `PUT /api/access/dept/:id` with `{ rights }`; `null` clears;
+- `GET /api/access/audit`.
+
+**Activity** (`user_prefs.last_sign_in_at`, `last_seen_at`):
+- last sign-in is set on sign-in;
+- last active is set by signed-in `/api` requests, at most once a minute per person.
+
+Tested in `routes/access.test.ts` (defaults, person and department overrides, order, instant effect on data, KPI and edits, admin-only, locked admins, audit) alongside the scoping suite.
+
 **Task actions: editing in place (2026-10-11)**
 
 Every task grid and the task view edit a task where it is shown. Each cell is a label; **clicking an editable cell turns it into an editor**, and it becomes a label again after a change or a click anywhere else (Escape also leaves). One column per item: no separate "Move to" or action columns.

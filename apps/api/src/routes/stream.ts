@@ -1,7 +1,7 @@
 // GET /api/stream (SRS 7 module 6): Server-Sent Events. The browser only listens; it
 // refetches the queries a task.changed message affects.
 import type { FastifyInstance, FastifyRequest } from 'fastify';
-import type { Viewer } from '../auth/roles';
+import { LOCAL_VIEWER, type Viewer } from '../auth/roles';
 import type { EventBus, TaskChanged } from '../events/bus';
 
 const HEARTBEAT_MS = 25_000;
@@ -27,9 +27,7 @@ export function streamRoutes(
   });
 
   app.get('/api/stream', async (req, reply) => {
-    const viewer: Viewer = viewerOf
-      ? await viewerOf(req)
-      : { userId: 0, role: 'local', full: true, support: true, admin: true, inbox: true };
+    const viewer: Viewer = viewerOf ? await viewerOf(req) : LOCAL_VIEWER;
     reply.hijack();
     const res = reply.raw;
     res.writeHead(200, {

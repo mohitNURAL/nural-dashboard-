@@ -3,7 +3,10 @@ import Fastify from 'fastify';
 import { pathToFileURL } from 'node:url';
 import { ZodError } from 'zod';
 import { authRoutes, sessionUserOf, type AuthOptions } from './auth/routes';
-import { loadRoles, requestDataset, type RolesConfig } from './auth/roles';
+import { loadRoles, requestDataset, resolveFor, type RolesConfig } from './auth/roles';
+import { SESSION_DAYS } from './auth/session';
+import { accessRoutes, memoryAccessStore, type AccessStore } from './routes/access';
+import { employeeRoutes } from './routes/employees';
 import { actionRoutes, type ActionDeps } from './routes/actions';
 import { feedbackRoutes, memoryFeedbackStore, type FeedbackStore } from './routes/feedback';
 import { memoryPrefsStore, prefsRoutes, type PrefsStore } from './routes/prefs';
@@ -45,6 +48,8 @@ export interface ServerOptions {
   feedback?: FeedbackStore;
   /** Per-person settings (sign-in count, layout, guided tour); in-memory by default. */
   prefs?: PrefsStore;
+  /** Access overrides set by admins (SRS 7, Access permissions); in-memory by default. */
+  access?: AccessStore;
   /** Task actions (move stage, change status) as the signed-in person; off without them. */
   actions?: Omit<Partial<ActionDeps>, 'userOf'>;
   /** Task description for the drawer, read live from Bitrix24 (not stored by the sync). */
@@ -64,6 +69,7 @@ export async function buildServer({
   roles,
   feedback,
   prefs,
+  access,
 }: ServerOptions = {}) {
   const app = Fastify({
     logger: logger && {
@@ -138,20 +144,40 @@ export async function buildServer({
     dataset = cache.get;
   }
   const ds = dataset;
+  // Access overrides, kept in memory and reloaded on every change so it applies at once.
+  const rolesCfg = roles ?? loadRoles();
+  const accessStore = access ?? memoryAccessStore();
+  let grants = await accessStore.load();
   // NFR-4: every route reads data through this, per request; a member gets only their tasks.
-  const scoping = requestDataset(ds, roles ?? loadRoles(), (auth.mode ?? config.AUTH) === 'bitrix');
+  const scoping = requestDataset(
+    ds,
+    rolesCfg,
+    (auth.mode ?? config.AUTH) === 'bitrix',
+    () => grants,
+  );
   const prefStore = prefs ?? memoryPrefsStore();
+  // Last active (People directory): at most one write a minute per person.
+  const lastSeen = new Map<number, number>();
   authRoutes(app, {
     onSignIn: (userId) => prefStore.signIn(userId),
+    onSeen: (userId) => {
+      const t = Date.now();
+      if (t - (lastSeen.get(userId) ?? 0) < 60_000) return;
+      lastSeen.set(userId, t);
+      void prefStore.seen(userId, new Date(t)).catch(() => undefined);
+    },
     describeViewer: async (req) => {
       const v = await scoping.viewer(req);
       const d = await ds();
       return {
         role: v.role,
         full: v.full,
+        kpi: v.kpi,
         support: v.support,
-        admin: v.admin,
         inbox: v.inbox,
+        employees: v.employees,
+        editAll: v.editAll,
+        admin: v.admin,
         dept: d.kpiDept?.get(v.userId) ?? 'other',
         position: d.users.get(v.userId)?.workPosition ?? null,
       };
@@ -184,6 +210,20 @@ export async function buildServer({
   streamRoutes(app, bus, config.WEB_ORIGIN, scoping.viewer);
   feedbackRoutes(app, scoping.dataset, feedback ?? memoryFeedbackStore(), scoping.viewer);
   prefsRoutes(app, prefStore, scoping.viewer);
+  accessRoutes(app, scoping.dataset, scoping.viewer, {
+    store: accessStore,
+    roles: rolesCfg,
+    grants: () => grants,
+    refresh: async () => {
+      grants = await accessStore.load();
+    },
+  });
+  employeeRoutes(app, scoping.dataset, scoping.viewer, {
+    ...opts,
+    activity: () => prefStore.activity(),
+    resolve: (id, d) => resolveFor(id, d, rolesCfg, grants),
+    sessionDays: SESSION_DAYS,
+  });
   await hookRoutes(app, {
     token: config.BITRIX_OUTBOUND_TOKEN,
     ...hooks,
@@ -244,6 +284,7 @@ async function main() {
     auth: { saveTokens: tokens?.save },
     feedback: await (await import('./routes/feedback')).dbFeedbackStore(),
     prefs: await (await import('./routes/prefs')).dbPrefsStore(),
+    access: await (await import('./routes/access')).dbAccessStore(),
     actions: {
       userCall: bitrix.getBitrix().userCall,
       tokens,

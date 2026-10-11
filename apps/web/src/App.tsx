@@ -19,7 +19,7 @@ export default function App() {
   // Charts read the theme's colours when they draw: a theme change redraws the tab.
   const theme = useTheme((s) => s.resolved);
   // NFR-4: the KPI tab is for full access only; members open on Development.
-  const kpiAllowed = me?.full ?? false;
+  const kpiAllowed = me?.kpi ?? me?.full ?? false;
   const supportAllowed = me?.support ?? false;
   // KPI is for full access; Support for the support team and management. Others open on Development.
   const tab =

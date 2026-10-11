@@ -33,7 +33,7 @@ const present = (selector: string) => !!document.querySelector(selector);
 /** Lets the tab draw its tiles and cards before the tour looks for them. */
 const SETTLE_MS = 1500;
 
-export const tourTabs = (me: Me) => tabsFor({ kpi: me.full, support: me.support });
+export const tourTabs = (me: Me) => tabsFor({ kpi: me.kpi ?? me.full, support: me.support });
 
 /** Tabs with what's new for this person (the "New" dot in the top bar). */
 export function useNewTabs(): Set<Tab> {

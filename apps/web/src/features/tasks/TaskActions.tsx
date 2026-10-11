@@ -23,7 +23,7 @@ const MEMBER_EDITS: readonly EditField[] = ['stage', 'status', 'tags'];
 function useCanEdit(field: EditField): boolean {
   const { data: me } = useMe();
   if (!me || me.auth !== 'bitrix') return false;
-  return me.full || MEMBER_EDITS.includes(field);
+  return (me.editAll ?? me.full) || MEMBER_EDITS.includes(field);
 }
 
 const STATUS_LABEL: Record<BitrixStatus, string> = {

@@ -34,9 +34,12 @@ export interface AuthOptions {
   describeViewer?: (req: FastifyRequest) => Promise<{
     role: string;
     full: boolean;
+    kpi?: boolean;
     support: boolean;
     admin: boolean;
     inbox: boolean;
+    employees?: boolean;
+    editAll?: boolean;
     /** KPI department (dev, qa, support, other) and Bitrix24 designation, for the guided tour. */
     dept?: string;
     position?: string | null;
@@ -45,6 +48,8 @@ export interface AuthOptions {
   saveTokens?: (userId: number, token: TokenResponse) => Promise<void>;
   /** Called after each successful sign-in (counts sign-ins for the guided tour). */
   onSignIn?: (userId: number) => Promise<void>;
+  /** Called on every signed-in /api request (last active, People directory). */
+  onSeen?: (userId: number) => void;
   /** Defaults to the real code exchange; tests pass a stub. */
   exchange?: (code: string) => Promise<TokenResponse>;
   now?: () => number;
@@ -71,6 +76,7 @@ export function authRoutes(app: FastifyInstance, opts: AuthOptions) {
     if (opts.mode === 'off') return;
     const s = session(req);
     (req as unknown as Record<symbol, Session | null>)[SESSION_USER] = s;
+    if (s && req.url.startsWith('/api/') && s.userId) opts.onSeen?.(s.userId);
     if (isOpen(req.url)) return;
     if (!s) return reply.code(401).send(signInRequired(req));
   });
@@ -90,6 +96,9 @@ export function authRoutes(app: FastifyInstance, opts: AuthOptions) {
       support: true,
       admin: true,
       inbox: true,
+      kpi: true,
+      employees: true,
+      editAll: true,
     };
     // exp: when the session ends (null with sign-in off); the page signs out by itself then.
     const exp = Number.isFinite(s.exp) ? s.exp : null;

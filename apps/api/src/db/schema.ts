@@ -223,5 +223,35 @@ export const userPrefs = pgTable('user_prefs', {
   layout: jsonb('layout').notNull().default({}),
   /** { voice, shown: { tab: sign-in number }, seen: [what's-new IDs] } */
   tour: jsonb('tour').notNull().default({}),
+  /** Activity for the People directory: last sign-in and last request (at most once a minute). */
+  lastSignInAt: tz('last_sign_in_at'),
+  lastSeenAt: tz('last_seen_at'),
   updatedAt: tz('updated_at').notNull().defaultNow(),
+});
+
+/**
+ * Access overrides set by admins (SRS 7, Access permissions): per person ('user') or per
+ * department ('dept'); `rights` holds only the rights changed (auth/rights.ts).
+ */
+export const accessGrants = pgTable(
+  'access_grants',
+  {
+    subjectType: text('subject_type').notNull(),
+    subjectId: integer('subject_id').notNull(),
+    rights: jsonb('rights').notNull().default({}),
+    updatedBy: integer('updated_by').notNull(),
+    updatedAt: tz('updated_at').notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.subjectType, t.subjectId] })],
+);
+
+/** Every access change: who, whose rights, before and after. */
+export const accessAudit = pgTable('access_audit', {
+  id: serial('id').primaryKey(),
+  at: tz('at').notNull().defaultNow(),
+  byUser: integer('by_user').notNull(),
+  subjectType: text('subject_type').notNull(),
+  subjectId: integer('subject_id').notNull(),
+  before: jsonb('before'),
+  after: jsonb('after'),
 });

@@ -106,7 +106,8 @@ function firstAllowedDay(): string {
 /** The bar shown while tasks are ticked: item, value, Check, Apply, Clear, and the problems. */
 export function BulkBar({ bulk, boards }: { bulk: Bulk; boards: Record<string, BoardStage[]> }) {
   const { data: me } = useMe();
-  const full = !!me?.full;
+  // Every field, or stage, status and tags only (the edit right).
+  const full = !!(me?.editAll ?? me?.full);
   const canEdit = me?.auth === 'bitrix';
   const queryClient = useQueryClient();
   const [item, setItem] = useState<Item>('stage');

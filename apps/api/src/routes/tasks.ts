@@ -102,7 +102,7 @@ export function taskRoutes(
   /** The task list for these query params: filters, drill-downs, search and order (no paging). */
   async function selectTasks(req: FastifyRequest) {
     const { query, filters } = parseQuery(req.query, listParams);
-    if (query.kind === 'kpi' && viewer && !(await viewer(req)).full) {
+    if (query.kind === 'kpi' && viewer && !(await viewer(req)).kpi) {
       throw Object.assign(new Error('The KPI tab is for managers only.'), { statusCode: 403 });
     }
     const ds = await getDataset(req);

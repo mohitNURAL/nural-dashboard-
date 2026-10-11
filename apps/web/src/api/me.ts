@@ -11,7 +11,14 @@ export interface Me {
   /** When the session ends (ms since epoch), 3 days after sign-in; null with sign-in off. */
   exp: number | null;
   role: 'admin' | 'pm' | 'teamLead' | 'productOwner' | 'member' | 'local';
+  /** Data scope: every project and person (else only their own tasks). */
   full: boolean;
+  /** KPI tab. */
+  kpi?: boolean;
+  /** Employee module: company tree and people directory. */
+  employees?: boolean;
+  /** Changes every task field (else stage, status and tags). */
+  editAll?: boolean;
   /** Sees the Support tab (Tech Support team, PM, team leads, admins). */
   support: boolean;
   admin: boolean;

@@ -280,7 +280,7 @@ export interface ActionDeps {
   /** The signed-in person, or null (sign-in off or signed out). */
   userOf: (req: unknown) => { userId: number; name: string } | null;
   /** Access of the person (NFR-4): members may change only stage, status and tags. */
-  viewer?: (req: FastifyRequest) => Promise<{ full: boolean }>;
+  viewer?: (req: FastifyRequest) => Promise<{ editAll: boolean }>;
   /** Clock for the future-deadline rule (tests). */
   now?: () => Date;
 }
@@ -306,7 +306,9 @@ function explain(e: unknown): { status: number; message: string } {
 }
 
 export function actionRoutes(app: FastifyInstance, getDataset: RequestDataset, deps: ActionDeps) {
-  const isFull = async (req: FastifyRequest) => ((await deps.viewer?.(req)) ?? { full: true }).full;
+  /** May change every field (the edit right), else stage, status and tags only. */
+  const isFull = async (req: FastifyRequest) =>
+    ((await deps.viewer?.(req)) ?? { editAll: true }).editAll;
 
   /** The person and their token, or the reason they cannot edit. */
   async function actor(req: unknown) {

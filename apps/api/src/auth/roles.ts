@@ -1,13 +1,22 @@
 // Roles and data scoping (SRS NFR-4). Admins and directors, PM, team leads and product owners
 // (config/roles.json, plus every Bitrix24 workgroup owner) see everything. Everyone else sees
-// only tasks assigned to them or created by them, on every endpoint and the live stream. The
-// KPI tab is for full access only. Enforced on the server: routes read data only through the
-// per-request provider, which hands a scoped viewer a scoped copy of the dataset.
+// only tasks assigned to them or created by them, on every endpoint and the live stream. Admins
+// change these rights per department or person (rights.ts, Access permissions). Enforced on the
+// server: routes read data only through the per-request provider, which hands a scoped viewer a
+// scoped copy of the dataset.
 import type { MetricTask } from '@nural/shared';
 import type { FastifyRequest } from 'fastify';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { Dataset, DatasetProvider } from '../data/dataset';
+import {
+  departmentChain,
+  noGrants,
+  resolveRights,
+  type Grants,
+  type Resolved,
+  type Role,
+} from './rights';
 import { sessionUserOf } from './routes';
 
 export interface RolesConfig {
@@ -18,19 +27,26 @@ export interface RolesConfig {
   productOwners: number[];
 }
 
-export type Role = 'admin' | 'pm' | 'teamLead' | 'productOwner' | 'member' | 'local';
+export type { Role } from './rights';
 
+/** Who is asking and what they may do (rights.ts); enforced by every route. */
 export interface Viewer {
   /** 0 when sign-in is off (local copy). */
   userId: number;
   role: Role;
-  /** Sees everything, including the KPI tab. */
+  /** Data scope: every project and person (else only their own tasks). */
   full: boolean;
-  /** Sees the Support tab: the Tech Support team, PM, team leads and admins. */
+  kpi: boolean;
+  /** Sees the Support tab. */
   support: boolean;
-  admin: boolean;
-  /** Reads the feedback inbox: admins and the head of Tech Support. */
+  /** Reads the feedback inbox. */
   inbox: boolean;
+  /** Employee module: company tree and people directory. */
+  employees: boolean;
+  /** Changes every task field (else stage, status and tags only). */
+  editAll: boolean;
+  /** Manages access. */
+  admin: boolean;
 }
 
 const EMPTY: RolesConfig = { admins: [], pms: [], teamLeads: [], productOwners: [] };
@@ -48,18 +64,12 @@ export function loadRoles(): RolesConfig {
   };
 }
 
-/** The role of a signed-in person; `authOn` false (local copy) means full access. */
-export function viewerOf(
-  userId: number | null,
-  ds: Pick<Dataset, 'owners' | 'kpiDept' | 'supportLead'>,
-  roles: RolesConfig,
-  authOn: boolean,
-): Viewer {
-  if (!authOn)
-    return { userId: 0, role: 'local', full: true, support: true, admin: true, inbox: true };
-  const id = userId ?? -1;
+type RoleData = Pick<Dataset, 'owners' | 'kpiDept' | 'supportLead' | 'users' | 'departments'>;
+
+/** The person's role from config/roles.json and Bitrix24 project ownership. */
+export function roleOf(id: number, ds: Pick<Dataset, 'owners'>, roles: RolesConfig): Role {
   const ownsProject = [...(ds.owners?.values() ?? [])].includes(id);
-  const role: Role = roles.admins.includes(id)
+  return roles.admins.includes(id)
     ? 'admin'
     : roles.pms.includes(id)
       ? 'pm'
@@ -68,11 +78,66 @@ export function viewerOf(
         : roles.productOwners.includes(id) || ownsProject
           ? 'productOwner'
           : 'member';
-  const support =
-    role === 'admin' || role === 'pm' || role === 'teamLead' || ds.kpiDept?.get(id) === 'support';
-  const admin = role === 'admin';
-  const inbox = admin || (ds.supportLead != null && ds.supportLead === id);
-  return { userId: id, role, full: role !== 'member', support: support || inbox, admin, inbox };
+}
+
+/** Role, rights and where each right comes from (the Access permissions screen). */
+export function resolveFor(
+  id: number,
+  ds: RoleData,
+  roles: RolesConfig,
+  grants: Grants,
+): Resolved & { role: Role; locked: boolean } {
+  const role = roleOf(id, ds, roles);
+  const locked = roles.admins.includes(id);
+  const resolved = resolveRights(
+    id,
+    role,
+    {
+      supportDept: ds.kpiDept?.get(id) === 'support',
+      supportLead: ds.supportLead != null && ds.supportLead === id,
+      locked,
+      chain: departmentChain(ds.users?.get(id)?.departmentIds ?? [], ds.departments ?? []),
+    },
+    grants,
+  );
+  return { ...resolved, role, locked };
+}
+
+/** Sign-in off (local copy): everything. */
+export const LOCAL_VIEWER: Viewer = {
+  userId: 0,
+  role: 'local',
+  full: true,
+  kpi: true,
+  support: true,
+  inbox: true,
+  employees: true,
+  editAll: true,
+  admin: true,
+};
+
+/** What a signed-in person may do; `authOn` false (local copy) means everything. */
+export function viewerOf(
+  userId: number | null,
+  ds: RoleData,
+  roles: RolesConfig,
+  authOn: boolean,
+  grants: Grants = noGrants(),
+): Viewer {
+  if (!authOn) return { ...LOCAL_VIEWER };
+  const id = userId ?? -1;
+  const { role, rights } = resolveFor(id, ds, roles, grants);
+  return {
+    userId: id,
+    role,
+    full: rights.scope === 'all',
+    kpi: rights.kpi,
+    support: rights.support,
+    inbox: rights.inbox,
+    employees: rights.employees,
+    editAll: rights.edit === 'all',
+    admin: rights.admin,
+  };
 }
 
 /** A task is in a member's scope when it is assigned to them or they created it. */
@@ -113,21 +178,17 @@ export function requestDataset(
   base: DatasetProvider,
   roles: RolesConfig,
   authOn: boolean,
+  /** The current access overrides (read on every request, so a change applies at once). */
+  grants: () => Grants = noGrants,
 ): { dataset: RequestDataset; viewer: (req: FastifyRequest) => Promise<Viewer> } {
-  const local: Viewer = {
-    userId: 0,
-    role: 'local',
-    full: true,
-    support: true,
-    admin: true,
-    inbox: true,
-  };
   const viewer = async (req: FastifyRequest) =>
-    authOn ? viewerOf(sessionUserOf(req)?.userId ?? null, await base(), roles, authOn) : local;
+    authOn
+      ? viewerOf(sessionUserOf(req)?.userId ?? null, await base(), roles, authOn, grants())
+      : { ...LOCAL_VIEWER };
   const dataset = async (req: FastifyRequest) => {
     const ds = await base();
     if (!authOn) return ds;
-    const v = viewerOf(sessionUserOf(req)?.userId ?? null, ds, roles, authOn);
+    const v = viewerOf(sessionUserOf(req)?.userId ?? null, ds, roles, authOn, grants());
     return v.full ? ds : scopeDataset(ds, v.userId);
   };
   return { dataset, viewer };

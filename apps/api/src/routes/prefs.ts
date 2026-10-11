@@ -42,6 +42,16 @@ export interface PrefsStore {
   signIn(userId: number): Promise<void>;
   /** Replaces the fields given. */
   save(userId: number, patch: { layout?: Layout; tour?: TourPrefs }): Promise<Prefs>;
+  /** The person made a signed-in request (People directory: last active). */
+  seen(userId: number, at: Date): Promise<void>;
+  /** Sign-ins and activity of everyone (People directory). */
+  activity(): Promise<Map<number, Activity>>;
+}
+
+export interface Activity {
+  loginCount: number;
+  lastSignInAt: Date | null;
+  lastSeenAt: Date | null;
 }
 
 const EMPTY = (): Prefs => ({ loginCount: 0, layout: {}, tour: {} });
@@ -49,13 +59,22 @@ const EMPTY = (): Prefs => ({ loginCount: 0, layout: {}, tour: {} });
 /** In-memory store (tests, and local runs without a database). */
 export function memoryPrefsStore(): PrefsStore {
   const rows = new Map<number, Prefs>();
+  const acts = new Map<number, Activity>();
   const row = (userId: number) => rows.get(userId) ?? EMPTY();
+  const act = (userId: number) =>
+    acts.get(userId) ?? { loginCount: 0, lastSignInAt: null, lastSeenAt: null };
   return {
     get: async (userId) => structuredClone(row(userId)),
     async signIn(userId) {
       const r = row(userId);
       rows.set(userId, { ...r, loginCount: r.loginCount + 1 });
+      const now = new Date();
+      acts.set(userId, { loginCount: r.loginCount + 1, lastSignInAt: now, lastSeenAt: now });
     },
+    async seen(userId, at) {
+      acts.set(userId, { ...act(userId), lastSeenAt: at });
+    },
+    activity: async () => new Map(acts),
     async save(userId, patch) {
       const next = { ...row(userId), ...patch };
       rows.set(userId, next);
@@ -98,11 +117,33 @@ export async function dbPrefsStore(): Promise<PrefsStore> {
     async signIn(userId) {
       await db
         .insert(t)
-        .values({ userId, loginCount: 1 })
+        .values({ userId, loginCount: 1, lastSignInAt: new Date(), lastSeenAt: new Date() })
         .onConflictDoUpdate({
           target: t.userId,
-          set: { loginCount: sql`${t.loginCount} + 1`, updatedAt: new Date() },
+          set: {
+            loginCount: sql`${t.loginCount} + 1`,
+            lastSignInAt: new Date(),
+            lastSeenAt: new Date(),
+            updatedAt: new Date(),
+          },
         });
+    },
+    async seen(userId, at) {
+      await db
+        .insert(t)
+        .values({ userId, lastSeenAt: at })
+        .onConflictDoUpdate({ target: t.userId, set: { lastSeenAt: at } });
+    },
+    async activity() {
+      const rows = await db
+        .select({
+          userId: t.userId,
+          loginCount: t.loginCount,
+          lastSignInAt: t.lastSignInAt,
+          lastSeenAt: t.lastSeenAt,
+        })
+        .from(t);
+      return new Map(rows.map(({ userId, ...a }) => [userId, a]));
     },
     async save(userId, patch) {
       const set = { ...patch, updatedAt: new Date() };

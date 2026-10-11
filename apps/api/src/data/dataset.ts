@@ -22,6 +22,8 @@ export interface UserInfo {
   workPosition: string | null;
   deptGroup: DeptGroup;
   active: boolean;
+  /** Bitrix24 departments (company tree, access per department). */
+  departmentIds?: number[];
 }
 
 export interface Dataset {
@@ -44,6 +46,8 @@ export interface Dataset {
   /** KPI tab (SRS 13): department per user, project owner per workgroup, recent comments. */
   kpiDept?: Map<number, Dept>;
   owners?: Map<number, number>;
+  /** The company structure: departments with parent and head (Employee module, access). */
+  departments?: { id: number; name: string; parentId: number | null; headId: number | null }[];
   /** Head of the top Tech Support department (reads the Support tab feedback inbox). */
   supportLead?: number | null;
   comments?: { taskId: number; at: Date }[];
@@ -194,6 +198,7 @@ export async function loadDataset(): Promise<Dataset> {
       workPosition: u.workPosition,
       deptGroup,
       active: u.active,
+      departmentIds: u.departmentIds,
     });
   }
 
@@ -209,6 +214,12 @@ export async function loadDataset(): Promise<Dataset> {
     boards: boardsOf(stageRows),
     kpiDept: kpiDepartments(userRows, deptRows),
     supportLead: supportLead(deptRows),
+    departments: deptRows.map((d) => ({
+      id: d.id,
+      name: d.name.trim(),
+      parentId: d.parentId,
+      headId: d.headId,
+    })),
     owners: new Map(
       groupRows.flatMap((g) => {
         const owner = kpiConfig().owners.get(g.id) ?? g.ownerId;

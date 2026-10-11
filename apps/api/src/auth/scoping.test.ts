@@ -345,9 +345,12 @@ describe('live stream', () => {
     userId,
     role: 'member' as const,
     full: false,
+    kpi: false,
     support: false,
-    admin: false,
     inbox: false,
+    employees: false,
+    editAll: false,
+    admin: false,
   });
 
   it('a member receives only changes naming them; full viewers receive all', () => {
@@ -357,7 +360,17 @@ describe('live stream', () => {
     expect(mayReceive(member(30), change(undefined, 0))).toBe(true); // nightly notice
     expect(
       mayReceive(
-        { userId: 12, role: 'teamLead', full: true, support: true, admin: false, inbox: false },
+        {
+          userId: 12,
+          role: 'teamLead',
+          full: true,
+          kpi: true,
+          support: true,
+          inbox: false,
+          employees: true,
+          editAll: true,
+          admin: false,
+        },
         change([28]),
       ),
     ).toBe(true);

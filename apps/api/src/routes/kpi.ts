@@ -76,10 +76,10 @@ export function kpiRoutes(
   viewer: (req: FastifyRequest) => Promise<Viewer>,
 ) {
   const get = computer(getDataset, opts);
-  // The KPI tab is for full access only (admin, directors, PM, team leads, product owners).
+  // The KPI tab needs the kpi right (by default admins, PM, team leads, product owners).
   app.addHook('preHandler', async (req, reply) => {
     if (!req.url.startsWith('/api/kpi/')) return;
-    if (!(await viewer(req)).full) {
+    if (!(await viewer(req)).kpi) {
       return reply.code(403).send({ error: 'The KPI tab is for managers only.' });
     }
   });
