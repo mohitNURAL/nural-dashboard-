@@ -152,8 +152,9 @@ export function BulkBar({ bulk, boards }: { bulk: Bulk; boards: Record<string, B
         ids: rows.map((r) => r.id),
         edit,
       });
-      bulk.setResults(new Map(results.map((r) => [r.id, r])));
       const n = (s: BulkState) => results.filter((r) => r.state === s).length;
+      if (path === 'apply') bulk.afterApply(results);
+      else bulk.setResults(new Map(results.map((r) => [r.id, r])));
       if (path === 'check') {
         setChecked(true);
         if (n('error'))

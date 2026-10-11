@@ -71,7 +71,7 @@ export function TaskList({
   }, [data, onTotal]);
 
   // Bulk edit: ticks are kept across pages of this list and reset when the list changes.
-  const bulk = useBulk(JSON.stringify([filterParams, kind, preset, q]));
+  const bulk = useBulk(JSON.stringify([filterParams, kind, preset, q]), page, data?.rows);
   const rows = useMemo(() => data?.rows ?? [], [data]);
   const withSelect = useMemo(
     () =>
