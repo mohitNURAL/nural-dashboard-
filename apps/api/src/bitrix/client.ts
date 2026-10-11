@@ -1,6 +1,6 @@
 // Raw HTTP caller for the Bitrix24 inbound webhook. Never call this directly:
 // go through limiter.ts so every request respects the 2 calls/s limit.
-import { assertReadOnly } from './methods';
+import { assertReadOnly, assertUserAction } from './methods';
 
 export type Params = Record<string, unknown>;
 
@@ -33,6 +33,11 @@ export class BitrixError extends Error {
 
 export interface RawCallerOptions {
   baseUrl: string;
+  /**
+   * 'read' (default): the inbound webhook, read methods only. 'userAction': the portal's REST
+   * endpoint with a person's OAuth token in `params.auth`, task actions only.
+   */
+  mode?: 'read' | 'userAction';
   fetch?: typeof fetch;
   timeoutMs?: number;
 }
@@ -49,13 +54,17 @@ const isRetryableStatus = (status: number) => status === 429 || status >= 500;
 
 export function createRawCaller({
   baseUrl,
+  mode = 'read',
   fetch: doFetch = fetch,
   timeoutMs = 30_000,
 }: RawCallerOptions): RawCall {
   const base = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
 
   return async function rawCall<T>(method: string, params: Params = {}) {
-    assertReadOnly(method);
+    if (mode === 'userAction') {
+      assertUserAction(method);
+      if (typeof params.auth !== 'string') throw new Error('task action without a user token');
+    } else assertReadOnly(method);
     let res: Response;
     try {
       res = await doFetch(new URL(`${method}.json`, base), {

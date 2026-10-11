@@ -7,6 +7,7 @@ import { PriorityBadge, StageChip, StatusChip, TagChips } from '../../components
 import type { Columns } from '../../components/DataTable';
 import { ageingText, fmtDate } from '../dev/format';
 import { LinkedTask } from './LinkedTask';
+import { StageSelect, StatusSelect } from './TaskActions';
 
 const col = createColumnHelper<TaskRow>();
 
@@ -73,6 +74,20 @@ export function taskColumns({ withCreator = false } = {}): Columns<TaskRow> {
         info: 'Completed: QA Backlog, In QA, Done or LIVE. On hold: On Hold. Pending: any other stage behind QA Backlog.',
       },
       cell: (c) => <StatusChip status={c.getValue()} />,
+    }),
+    col.display({
+      id: 'moveTo',
+      header: 'Move to',
+      meta: { info: 'Move the task to another column of its board in Bitrix24 (as you).' },
+      cell: (c) => <StageSelect task={c.row.original} compact />,
+    }),
+    col.display({
+      id: 'bitrixStatus',
+      header: 'Bitrix24 status',
+      meta: {
+        info: 'Change the task status in Bitrix24 (as you): Pending, In progress, Deferred, Completed.',
+      },
+      cell: (c) => <StatusSelect task={c.row.original} compact />,
     }),
     col.accessor('tags', {
       header: 'Tags',
@@ -158,6 +173,8 @@ export function issueColumns({ full = false } = {}): Columns<TaskRow> {
     pick('priority'),
     pick('stage'),
     pick('status'),
+    pick('moveTo'),
+    pick('bitrixStatus'),
     col.accessor('linkedTaskId', {
       header: 'Linked task',
       enableSorting: false,

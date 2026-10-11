@@ -7,6 +7,7 @@ import type { ReactNode } from 'react';
 import type { StageMove, TaskRow } from '../api/types';
 import { ageingText, bbcodeToText, fmtDate, fmtDateTime } from '../features/dev/format';
 import { useOpenTask, useTask } from '../features/tasks/api';
+import { StageSelect, StatusSelect } from '../features/tasks/TaskActions';
 import { Avatar, PriorityBadge, StageChip, TagChips } from './chips';
 
 export function TaskDrawer() {
@@ -50,6 +51,22 @@ export function TaskDrawer() {
             {isError && <p className="text-bad">This task is not in the dashboard’s data.</p>}
             {t && data && (
               <>
+                <Section title="Change in Bitrix24">
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="space-y-1">
+                      <span className="font-heading text-label uppercase text-text-muted">
+                        Kanban column
+                      </span>
+                      <StageSelect task={t} board={data.board} />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="font-heading text-label uppercase text-text-muted">
+                        Status
+                      </span>
+                      <StatusSelect task={t} />
+                    </label>
+                  </div>
+                </Section>
                 <Facts t={t} />
                 {t.tags.length > 0 && <TagChips tags={t.tags} max={20} />}
                 <Section title="Description">

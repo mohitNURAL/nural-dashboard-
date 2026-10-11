@@ -164,6 +164,12 @@ export function taskRoutes(
       page: query.page,
       pageSize: query.pageSize,
       rows: list.slice(start, start + query.pageSize).map((t) => taskRow(ds, ctx, t)),
+      // The columns of every board on this page (the stage dropdown of each row).
+      boards: Object.fromEntries(
+        [...new Set(list.slice(start, start + query.pageSize).map((t) => t.groupId))]
+          .filter((g) => g > 0)
+          .map((g) => [g, ds.boards?.get(g) ?? []]),
+      ),
     };
   });
 
@@ -207,6 +213,7 @@ export function taskRoutes(
 
     return {
       task: taskRow(ds, ctx, t),
+      board: t.groupId > 0 ? (ds.boards?.get(t.groupId) ?? []) : [],
       description,
       timeline,
       reopens: reopenEvents(t).map((e) => ({ ...e, by: e.by ? person(ds, e.by) : null })),

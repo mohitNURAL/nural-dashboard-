@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import type { TaskRow } from '../../api/types';
 import { DataTable, type Columns, type SortingState } from '../../components/DataTable';
 import { taskExportUrl, useOpenTask, useTaskList, type TaskListKind, type TaskSort } from './api';
+import { BoardsContext } from './boards';
 import { SORTABLE } from './columns';
 
 interface Props {
@@ -112,21 +113,25 @@ export function TaskList({
           Could not load tasks. They will retry on the next change.
         </p>
       ) : (
-        <DataTable
-          columns={columns}
-          data={data?.rows ?? []}
-          rowKey={(r) => r.id}
-          onRowClick={(r) => void openTask(r.id)}
-          sorting={toSorting(sort)}
-          onSortingChange={(s) => {
-            const first = s[0];
-            const key = first && SORTABLE[first.id];
-            if (key) setSort(`${first.desc ? '-' : ''}${key}` as TaskSort);
-          }}
-          pagination={data && { page, pageSize: data.pageSize, total: data.total, onPage: setPage }}
-          maxHeight={560}
-          loading={isFetching}
-        />
+        <BoardsContext.Provider value={data?.boards ?? {}}>
+          <DataTable
+            columns={columns}
+            data={data?.rows ?? []}
+            rowKey={(r) => r.id}
+            onRowClick={(r) => void openTask(r.id)}
+            sorting={toSorting(sort)}
+            onSortingChange={(s) => {
+              const first = s[0];
+              const key = first && SORTABLE[first.id];
+              if (key) setSort(`${first.desc ? '-' : ''}${key}` as TaskSort);
+            }}
+            pagination={
+              data && { page, pageSize: data.pageSize, total: data.total, onPage: setPage }
+            }
+            maxHeight={560}
+            loading={isFetching}
+          />
+        </BoardsContext.Provider>
       )}
     </div>
   );

@@ -14,6 +14,7 @@ The dashboard is a React web app with two tabs, **Development** and **QA**, that
 - Development tab: summary tiles, assignee-wise table and chart, task ageing and speed ranking, stage x assignee x tag counts, "Due today" and "All tasks" accordions.
 - QA tab: issue tiles, testing-team workload, issues waiting for retest, "Last filed" and "All issues" accordions.
 - Global filters for project (workgroup), assignee, tag and date range; every dropdown is a type-to-search (contextual) dropdown.
+- Task actions from the dashboard (move a task's Kanban column, change its status), made by the signed-in person as themselves (section 7, Task actions).
 - Read-only connection to Bitrix24 through an inbound REST webhook, and live updates through outbound webhooks (ONTASKADD, ONTASKUPDATE, ONTASKDELETE, ONTASKCOMMENTADD).
 
 **Out of scope (v1)**
@@ -395,6 +396,24 @@ SSE is chosen over WebSocket because the browser only receives; filters are sent
 - The session is a signed cookie (HMAC-SHA256 with `SESSION_SECRET`): HttpOnly, SameSite=Lax, Secure on HTTPS, valid 7 days, holding the user ID and name. There is no session table, and changing `SESSION_SECRET` signs everyone out.
 - With sign-in on, every `/api` call other than `/api/auth/*` needs the session, or it gets 401 and the web app goes to sign-in. `/health` and `/hooks/bitrix` (checked by its application token) stay open.
 - `GET /api/auth/me` returns the signed-in name, shown in the user menu with Sign out (`POST /api/auth/logout`).
+
+**Task actions (2026-10-11)**
+
+Every task list (grid) and the task view have two dropdowns, so a task can be changed without leaving the dashboard:
+
+| Dropdown | Choices | Bitrix24 call |
+| --- | --- | --- |
+| Move to (Kanban column) | The columns of the task's own board, in board order (none for a task outside a workgroup) | `task.stages.movetask` |
+| Bitrix24 status | Pending, In progress, Deferred, Completed | Bitrix24's own actions, as its buttons: Completed → `tasks.task.complete`; Deferred → `tasks.task.defer`; In progress → `tasks.task.start`; Pending → `tasks.task.pause` (from In progress) or `tasks.task.renew` (from a closed or deferred task). A completed or deferred task is renewed first where Bitrix24 needs it. Completed asks for confirmation. |
+
+- **As the person.** Actions run with the signed-in person's own Bitrix24 OAuth token, so Bitrix24 history shows their name and their Bitrix24 permissions apply; a refusal (e.g. no access to the project) is shown to them as Bitrix24's message.
+- The tokens are kept from sign-in, encrypted (AES-256-GCM, key from `SESSION_SECRET`) in `user_tokens`, and renewed with the refresh token. They are never logged or sent to the browser. With sign-in off (`AUTH=off`, local development) the dropdowns are shown but disabled.
+- **The local app needs the Tasks permission** (scope `task`) besides `user`; after the admin adds it, everyone signs in once more.
+- **Guard rails.** The webhook stays read-only (`READ_METHODS`). Task actions are a separate allowlist (`USER_ACTION_METHODS`: the six methods above) and run only with a person's token, through the same rate limiter. A column must belong to the task's board.
+- **Audit.** Every action is recorded in `task_actions`: person, task, move or status, from, to, and whether Bitrix24 accepted it (with its error).
+- After an action the task is re-synced (same queue as webhook events), so every open dashboard shows the change within seconds.
+- API: `POST /api/tasks/:id/stage {stageId}`, `POST /api/tasks/:id/status {status: pending|inProgress|deferred|completed}`. Task rows carry `stageId` and `bitrixStatus`; `/api/tasks` returns the `boards` of its rows, `/api/tasks/:id` the task's `board`.
+- The dashboard's own Status (Completed / Pending / On hold, section 5) follows the Kanban column, not the Bitrix24 status.
 
 **Deployment (milestone 9)**
 
@@ -825,7 +844,7 @@ Every card and tile has an "i" note with its rule.
 
 ### 13.4 Data and API
 
-- Read-only. The sync additionally reads `START_DATE_PLAN`, `END_DATE_PLAN` and `DATE_START` on tasks, and `OWNER_ID` on workgroups (`tasks.start_date_plan`, `tasks.end_date_plan`, `tasks.date_start`, `workgroups.owner_id`). Comments come from the outbound webhook's `ONTASKCOMMENTADD` events (kept 30 days).
+- Read-only for this tab (task actions are in section 7). The sync additionally reads `START_DATE_PLAN`, `END_DATE_PLAN` and `DATE_START` on tasks, and `OWNER_ID` on workgroups (`tasks.start_date_plan`, `tasks.end_date_plan`, `tasks.date_start`, `workgroups.owner_id`). Comments come from the outbound webhook's `ONTASKCOMMENTADD` events (kept 30 days).
 - Config files: `config/holidays.json`, `config/project-owners.json`, `config/departments.json`.
 - Endpoints, all taking the filter parameters plus `period=day|week|month` and `dept=all|dev|qa|support`: `GET /api/kpi/summary`, `/api/kpi/projects`, `/api/kpi/people`, `/api/kpi/workload`, `/api/kpi/overdue`, `/api/kpi/activity`, `/api/kpi/insights`.
 - Task lists: `GET /api/tasks?kind=kpi`, with:

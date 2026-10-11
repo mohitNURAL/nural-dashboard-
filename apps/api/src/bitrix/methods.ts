@@ -11,6 +11,26 @@ export const READ_METHODS = new Set([
   'sonet_group.get',
 ]);
 
+/**
+ * The only writes, and only with the signed-in person's own OAuth token (never the webhook):
+ * moving a task to another Kanban column, and Bitrix24's own status actions (Complete, Defer,
+ * Start, Pause, Renew) behind the status dropdown (SRS 7, Task actions).
+ */
+export const USER_ACTION_METHODS = new Set([
+  'task.stages.movetask',
+  'tasks.task.complete',
+  'tasks.task.defer',
+  'tasks.task.start',
+  'tasks.task.pause',
+  'tasks.task.renew',
+]);
+
+export function assertUserAction(method: string): void {
+  if (!USER_ACTION_METHODS.has(method)) {
+    throw new Error(`Bitrix24 method "${method}" is not an allowed task action`);
+  }
+}
+
 export function assertReadOnly(method: string): void {
   if (!READ_METHODS.has(method)) {
     throw new Error(`Bitrix24 method "${method}" is not on the read-only allowlist`);

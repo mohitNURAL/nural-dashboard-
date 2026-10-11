@@ -36,6 +36,11 @@ export interface Dataset {
   stageIds?: Map<number, Map<StageTitle, number[]>>;
   users: Map<number, UserInfo>;
   projects: Map<number, { id: number; name: string }>;
+  /** Each board's columns in order (task actions: the stage dropdown). */
+  boards?: Map<
+    number,
+    { id: number; title: string; stage: StageTitle | null; color: string | null }[]
+  >;
   /** KPI tab (SRS 13): department per user, project owner per workgroup, recent comments. */
   kpiDept?: Map<number, Dept>;
   owners?: Map<number, number>;
@@ -159,6 +164,7 @@ export async function loadDataset(): Promise<Dataset> {
     events: events.get(t.id) ?? [],
     startDatePlan: t.startDatePlan,
     dateStart: t.dateStart,
+    stageId: t.stageId,
     ...(t.groupId > 0 && { qaFlow: qaFlowGroups.has(t.groupId) }),
   }));
 
@@ -198,6 +204,7 @@ export async function loadDataset(): Promise<Dataset> {
     stageIds,
     users,
     projects: new Map(groupRows.map((g) => [g.id, { id: g.id, name: g.name }])),
+    boards: boardsOf(stageRows),
     kpiDept: kpiDepartments(userRows, deptRows),
     owners: new Map(
       groupRows.flatMap((g) => {
@@ -209,6 +216,29 @@ export async function loadDataset(): Promise<Dataset> {
     portalOrigin: new URL(config.BITRIX_INBOUND_URL).origin,
     loadedAt: new Date(),
   };
+}
+
+/** Each workgroup's columns, in board order. */
+function boardsOf(
+  rows: {
+    id: number;
+    groupId: number;
+    title: string;
+    canonical: string | null;
+    sort: number;
+    color: string | null;
+  }[],
+) {
+  const out = new Map<
+    number,
+    { id: number; title: string; stage: StageTitle | null; color: string | null }[]
+  >();
+  for (const r of [...rows].sort((a, b) => a.sort - b.sort || a.id - b.id)) {
+    const list = out.get(r.groupId) ?? [];
+    list.push({ id: r.id, title: r.title, stage: canonicalStage(r.canonical), color: r.color });
+    out.set(r.groupId, list);
+  }
+  return out;
 }
 
 /** KPI department of each user from config/departments.json (sub-departments included). */

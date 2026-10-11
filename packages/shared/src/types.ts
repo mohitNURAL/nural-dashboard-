@@ -43,6 +43,8 @@ export interface MetricTask {
    * card is (SRS 5). Absent (older fixtures, no workgroup): the stage alone decides.
    */
   qaFlow?: boolean;
+  /** Bitrix24 STAGE_ID of its column ("0" = never moved, To do); absent in fixtures. */
+  stageId?: string;
   /** Bitrix24 planned start and first start (KPI tab, SRS 13.2); absent in older fixtures. */
   startDatePlan?: Date | null;
   dateStart?: Date | null;

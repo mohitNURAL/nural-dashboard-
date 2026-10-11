@@ -147,3 +147,34 @@ export const webhookEvents = pgTable(
   },
   (t) => [index('webhook_events_received_idx').on(t.receivedAt)],
 );
+
+/**
+ * Bitrix24 OAuth tokens of signed-in people, for task actions as themselves (SRS 7). Encrypted
+ * with a key derived from SESSION_SECRET (AES-256-GCM); never logged, never sent to the browser.
+ */
+export const userTokens = pgTable('user_tokens', {
+  userId: integer('user_id').primaryKey(),
+  accessToken: text('access_token').notNull(),
+  refreshToken: text('refresh_token').notNull(),
+  expiresAt: tz('expires_at').notNull(),
+  scope: text('scope'),
+  updatedAt: tz('updated_at').notNull().defaultNow(),
+});
+
+/** Every task action from the dashboard: who, which task, what, and whether Bitrix24 took it. */
+export const taskActions = pgTable(
+  'task_actions',
+  {
+    id: serial('id').primaryKey(),
+    at: tz('at').notNull().defaultNow(),
+    userId: integer('user_id').notNull(),
+    taskId: integer('task_id').notNull(),
+    /** 'move' or 'status'. */
+    action: text('action').notNull(),
+    fromValue: text('from_value'),
+    toValue: text('to_value').notNull(),
+    ok: boolean('ok').notNull(),
+    error: text('error'),
+  },
+  (t) => [index('task_actions_task_idx').on(t.taskId, t.at)],
+);

@@ -8,7 +8,7 @@ Build order: SRS section 10.5, milestones 1 to 9. Do one milestone per session, 
 - The Bitrix24 webhook URL and token live only in the root `.env`, read by apps/api. Never import them in apps/web, never log them, never commit `.env`.
 - Match Kanban stages by title, never by ID (IDs differ per workgroup). stageId "0" = To do.
 - Every Bitrix24 call goes through bitrix/limiter.ts (2 calls/s) and uses batch.ts when making more than one call.
-- The dashboard is read-only: no Bitrix24 write methods (no *.add, *.update, *.delete, *.complete).
+- The webhook is read-only: no Bitrix24 write methods through it (bitrix/methods.ts READ_METHODS). The only writes are task actions a signed-in person makes (move column: task.stages.movetask; status: tasks.task.complete/defer/start/pause/renew), run with that person's own OAuth token via limiter.userCall (USER_ACTION_METHODS), recorded in task_actions (SRS 7, Task actions). Never add *.add, *.update or *.delete.
 - Metric logic lives in packages/shared/src/metrics.ts as pure functions with Vitest tests.
 - "Today" and "overdue" use APP_TIMEZONE (Asia/Kolkata).
 - Scope: all workgroups (DEV_GROUP_IDS empty = all; a comma list narrows it).

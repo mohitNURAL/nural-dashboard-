@@ -28,6 +28,8 @@ export interface AuthOptions {
   callbackUrl?: string;
   /** An active portal user from our users table. */
   findUser: (id: number) => Promise<{ id: number; name: string; active: boolean } | undefined>;
+  /** Keeps the person's tokens for task actions (tokens.ts); optional. */
+  saveTokens?: (userId: number, token: TokenResponse) => Promise<void>;
   /** Defaults to the real code exchange; tests pass a stub. */
   exchange?: (code: string) => Promise<TokenResponse>;
   now?: () => number;
@@ -36,6 +38,11 @@ export interface AuthOptions {
 const STATE_TTL_SEC = 10 * 60;
 
 const isOpen = (url: string) => !url.startsWith('/api/') || url.startsWith('/api/auth/');
+
+/** The signed-in person on a request (task actions); null when signed out or sign-in is off. */
+export const SESSION_USER = Symbol('sessionUser');
+export const sessionUserOf = (req: unknown): Session | null =>
+  (req as Record<symbol, Session | null>)[SESSION_USER] ?? null;
 
 export function authRoutes(app: FastifyInstance, opts: AuthOptions) {
   const now = opts.now ?? Date.now;
@@ -46,8 +53,11 @@ export function authRoutes(app: FastifyInstance, opts: AuthOptions) {
       : readSession(parseCookies(req.headers.cookie)[SESSION_COOKIE], secret, now());
 
   app.addHook('onRequest', async (req, reply) => {
-    if (opts.mode === 'off' || isOpen(req.url)) return;
-    if (!session(req)) return reply.code(401).send({ error: 'Sign in required' });
+    if (opts.mode === 'off') return;
+    const s = session(req);
+    (req as unknown as Record<symbol, Session | null>)[SESSION_USER] = s;
+    if (isOpen(req.url)) return;
+    if (!s) return reply.code(401).send({ error: 'Sign in required' });
   });
 
   app.get('/api/auth/me', async (req, reply) => {
@@ -88,10 +98,16 @@ export function authRoutes(app: FastifyInstance, opts: AuthOptions) {
       );
       const { code, state } = req.query;
       if (!code || !state || saved?.state !== state) return deny('state mismatch');
-      const userId = portalUserId(await exchange(code), opts.portalOrigin);
+      const token = await exchange(code);
+      const userId = portalUserId(token, opts.portalOrigin);
       if (!userId) return deny('token not for this portal');
       const user = await opts.findUser(userId);
       if (!user?.active) return deny(`user ${userId} not an active portal user`);
+      await opts
+        .saveTokens?.(user.id, token)
+        .catch((err: Error) =>
+          req.log.error({ err: err.message }, 'could not store Bitrix24 tokens'),
+        );
       const s: Session = {
         userId: user.id,
         name: user.name,

@@ -2,7 +2,8 @@ import cors from '@fastify/cors';
 import Fastify from 'fastify';
 import { pathToFileURL } from 'node:url';
 import { ZodError } from 'zod';
-import { authRoutes, type AuthOptions } from './auth/routes';
+import { authRoutes, sessionUserOf, type AuthOptions } from './auth/routes';
+import { actionRoutes, type ActionDeps } from './routes/actions';
 import type { Call } from './bitrix/limiter';
 import { config } from './config';
 import { cachedDataset, loadDataset, type DatasetProvider } from './data/dataset';
@@ -35,6 +36,8 @@ export interface ServerOptions {
   };
   /** Sign-in; defaults to the config (AUTH, client ID and secret, SESSION_SECRET). */
   auth?: Partial<AuthOptions>;
+  /** Task actions (move stage, change status) as the signed-in person; off without them. */
+  actions?: Omit<Partial<ActionDeps>, 'userOf'>;
   /** Task description for the drawer, read live from Bitrix24 (not stored by the sync). */
   describe?: (taskId: number) => Promise<string | null>;
 }
@@ -48,6 +51,7 @@ export async function buildServer({
   health = { worker: 'off' },
   describe,
   auth = {},
+  actions = {},
 }: ServerOptions = {}) {
   const app = Fastify({
     logger: logger && {
@@ -142,6 +146,7 @@ export async function buildServer({
   filterRoutes(app, dataset, opts);
   alertRoutes(app, dataset, opts);
   kpiRoutes(app, dataset, opts);
+  actionRoutes(app, dataset, { ...actions, userOf: sessionUserOf });
   streamRoutes(app, bus, config.WEB_ORIGIN);
   await hookRoutes(app, {
     token: config.BITRIX_OUTBOUND_TOKEN,
@@ -187,8 +192,28 @@ async function main() {
   const queue = createTaskQueue(config.REDIS_URL);
   const workerOn = config.SYNC_WORKER === 'on';
 
+  // Task actions run as the signed-in person: their Bitrix24 tokens, kept encrypted.
+  const tokens =
+    config.AUTH === 'bitrix'
+      ? await (
+          await import('./auth/tokens')
+        ).dbTokenStore({
+          secret: config.SESSION_SECRET!,
+          clientId: config.BITRIX_CLIENT_ID!,
+          clientSecret: config.BITRIX_CLIENT_SECRET!,
+        })
+      : undefined;
   const app = await buildServer({
     bus,
+    auth: { saveTokens: tokens?.save },
+    actions: {
+      userCall: bitrix.getBitrix().userCall,
+      tokens,
+      enqueue: queue.enqueue,
+      record: async (a) => {
+        await dbm.db.insert(dbm.schema.taskActions).values(a);
+      },
+    },
     hooks: {
       enqueue: queue.enqueue,
       record: async (event, taskId, payload) => {

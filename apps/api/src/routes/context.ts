@@ -15,6 +15,7 @@ import {
   type StageTitle,
 } from '@nural/shared';
 import type { Dataset, DeptGroup } from '../data/dataset';
+import { statusOf } from './actions';
 
 export interface AppOptions {
   tz: string;
@@ -114,6 +115,10 @@ export function taskRow(ds: Dataset, ctx: MetricContext, t: MetricTask) {
     stageGroup: group,
     /** Completed (QA Backlog, In QA, Done, LIVE) or pending (any stage behind), SRS 5. */
     status: taskStatus(t),
+    /** Its Bitrix24 column ID (task actions: the stage dropdown); 0 = never moved, To do. */
+    stageId: Number(t.stageId ?? 0),
+    /** Bitrix24's own task status (task actions: the status dropdown). */
+    bitrixStatus: statusOf(t.status),
     tags: t.tags,
     priority: PRIORITY[t.priority] ?? 'normal',
     deadline: t.deadline,

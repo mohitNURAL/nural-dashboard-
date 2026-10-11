@@ -1,8 +1,13 @@
 // Sign in with Bitrix24 (SRS 7, Auth): the OAuth 2.0 authorization-code flow of a Bitrix24 local
-// app. Only the code exchange is done; the access token is never used or stored, so no REST call
-// (and nothing written) happens on the user's behalf. The user comes from our own users table.
+// app. The user comes from our own users table. The tokens are kept (encrypted, tokens.ts) only
+// for task actions the person makes from the dashboard (move stage, change status).
 
 export interface TokenResponse {
+  access_token?: string;
+  refresh_token?: string;
+  expires_in?: number | string;
+  /** e.g. "task,user". */
+  scope?: string;
   user_id?: number | string;
   /** The portal's REST endpoint, e.g. https://nural.bitrix24.in/rest/ */
   client_endpoint?: string;

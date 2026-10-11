@@ -3,7 +3,7 @@
 import { Queue, QueueEvents, UnrecoverableError, Worker } from 'bullmq';
 import { Redis } from 'ioredis';
 import { BitrixError, type BitrixResponse, type Params, type RawCall } from './client';
-import { assertReadOnly } from './methods';
+import { assertReadOnly, assertUserAction } from './methods';
 
 export const QUEUE_NAME = 'bitrix-calls';
 export const CALLS_PER_SECOND = 2;
@@ -11,12 +11,23 @@ export const CALLS_PER_SECOND = 2;
 interface CallJob {
   method: string;
   params: Params;
+  /** A task action with the person's own token (params.auth), run by `userRawCall`. */
+  user?: boolean;
 }
 
 export type Call = <T = unknown>(method: string, params?: Params) => Promise<BitrixResponse<T>>;
 
 export interface BitrixLimiter {
   call: Call;
+  /**
+   * A task action (move, complete) as the signed-in person, with their OAuth token. Same queue
+   * and rate limit as every other call.
+   */
+  userCall: <T = unknown>(
+    method: string,
+    params: Params,
+    token: string,
+  ) => Promise<BitrixResponse<T>>;
   /** Number of calls this process has completed (for diagnostics). */
   readonly callCount: number;
   close(): Promise<void>;
@@ -26,6 +37,8 @@ export interface LimiterOptions {
   redisUrl: string;
   /** Required when this process runs the worker that executes calls. */
   rawCall?: RawCall;
+  /** Executes task actions (portal REST with a user token); without it they fail. */
+  userRawCall?: RawCall;
   /** Set false in producer-only processes; another process must run the worker. */
   worker?: boolean;
   attempts?: number;
@@ -39,6 +52,7 @@ const ERROR_RE = /^(\S+): \[([^\]]+)\] ?([\s\S]*)$/;
 export function createBitrixLimiter({
   redisUrl,
   rawCall,
+  userRawCall,
   worker: runWorker = true,
   attempts = 5,
   backoffMs = 1000,
@@ -69,6 +83,10 @@ export function createBitrixLimiter({
       QUEUE_NAME,
       async (job) => {
         try {
+          if (job.data.user) {
+            if (!userRawCall) throw new UnrecoverableError('task actions are not configured');
+            return await userRawCall(job.data.method, job.data.params);
+          }
           return await rawCall(job.data.method, job.data.params);
         } catch (err) {
           // Retryable errors (QUERY_LIMIT_EXCEEDED, 5xx, network) are retried with backoff.
@@ -93,8 +111,22 @@ export function createBitrixLimiter({
 
   async function call<T>(method: string, params: Params = {}): Promise<BitrixResponse<T>> {
     assertReadOnly(method);
+    return run<T>({ method, params });
+  }
+
+  async function userCall<T>(method: string, params: Params, token: string) {
+    assertUserAction(method);
+    // The token must not outlive the call in Redis, failed or not.
+    return run<T>({ method, params: { ...params, auth: token }, user: true }, true);
+  }
+
+  async function run<T>(data: CallJob, forget = false): Promise<BitrixResponse<T>> {
     await ready;
-    const job = await queue.add(method, { method, params });
+    const job = await queue.add(
+      data.method,
+      data,
+      forget ? { removeOnComplete: true, removeOnFail: true } : undefined,
+    );
     try {
       const out = (await job.waitUntilFinished(events, callTimeoutMs)) as BitrixResponse<T>;
       callCount++;
@@ -109,6 +141,7 @@ export function createBitrixLimiter({
 
   return {
     call,
+    userCall,
     get callCount() {
       return callCount;
     },

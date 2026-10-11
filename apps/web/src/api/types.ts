@@ -43,6 +43,9 @@ export interface TaskRow {
   stageGroup: StageGroup | null;
   /** Completed (QA Backlog, In QA, Done, LIVE) or pending (any stage behind). */
   status: 'completed' | 'pending' | 'hold';
+  /** Bitrix24 column ID (0 = never moved, To do) and Bitrix24's own task status. */
+  stageId: number;
+  bitrixStatus: BitrixStatus;
   tags: string[];
   priority: Priority;
   deadline: string | null;
@@ -58,11 +61,25 @@ export interface TaskRow {
   linkedTaskId?: number | null;
 }
 
+/** Bitrix24 task status: the status dropdown's values, plus two it can show but not set. */
+export type BitrixStatus =
+  'pending' | 'inProgress' | 'deferred' | 'completed' | 'supposedlyCompleted' | 'declined';
+
+/** One column of a board, in board order (the stage dropdown). */
+export interface BoardStage {
+  id: number;
+  title: string;
+  stage: StageTitle | null;
+  color: string | null;
+}
+
 export interface TaskPage {
   total: number;
   page: number;
   pageSize: number;
   rows: TaskRow[];
+  /** Columns of every board on this page, by workgroup ID. */
+  boards: Record<string, BoardStage[]>;
 }
 
 export interface StageMove {
@@ -74,6 +91,8 @@ export interface StageMove {
 
 export interface TaskDetail {
   task: TaskRow;
+  /** Its board's columns (none for a task outside a workgroup). */
+  board: BoardStage[];
   description: string | null;
   timeline: StageMove[];
   reopens: StageMove[];

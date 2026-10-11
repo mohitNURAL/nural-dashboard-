@@ -14,6 +14,11 @@ export function getBitrix(opts: Pick<LimiterOptions, 'worker'> = {}): BitrixLimi
   instance ??= createBitrixLimiter({
     redisUrl: config.REDIS_URL,
     rawCall: createRawCaller({ baseUrl: config.BITRIX_INBOUND_URL }),
+    // Task actions go to the portal's REST endpoint with the person's own token.
+    userRawCall: createRawCaller({
+      baseUrl: new URL('/rest/', config.BITRIX_INBOUND_URL).toString(),
+      mode: 'userAction',
+    }),
     ...opts,
   });
   return instance;
