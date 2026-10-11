@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-12-insights',
+    date: '2026-10-12',
+    tab: 'dev',
+    title: 'Insights: what is holding us back',
+    steps: [
+      {
+        target: '[data-nav="insights"]',
+        title: 'Insights',
+        text: 'A new page in the menu: lagging projects and people, overload, people with room to help, projects pulling people off others, and releases at risk. Every number opens its tasks. Members see their own work.',
+      },
+    ],
+  },
+  {
     id: '2026-10-11-guides',
     date: '2026-10-11',
     tab: 'dev',

@@ -62,6 +62,12 @@ export const IconTree = (p: P) => (
     <path d="M10 6.5v3.5M5 13.5V10h10v3.5" />
   </Svg>
 );
+export const IconInsights = (p: P) => (
+  <Svg {...p}>
+    <path d="M10 2.5a5 5 0 0 0-3 9v2h6v-2a5 5 0 0 0-3-9Z" />
+    <path d="M7.5 16h5M8.5 18h3" />
+  </Svg>
+);
 export const IconPeople = (p: P) => (
   <Svg {...p}>
     <circle cx="7.5" cy="7" r="3" />

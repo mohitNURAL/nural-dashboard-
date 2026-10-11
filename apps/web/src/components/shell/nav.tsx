@@ -5,6 +5,7 @@ import type { Me } from '../../api/me';
 import type { Tab } from '../../features/filters/toParams';
 import {
   IconDev,
+  IconInsights,
   IconKpi,
   IconPeople,
   IconQa,
@@ -56,6 +57,19 @@ const ALL: { label: string; items: (NavItem & { allowed: (me: Me) => boolean })[
         hint: 'Feedback for the Support tab',
         icon: <IconSupport />,
         allowed: (me) => me.support,
+      },
+    ],
+  },
+  {
+    label: 'Insights',
+    items: [
+      {
+        id: 'insights',
+        label: 'Insights',
+        hint: 'What is holding us back',
+        icon: <IconInsights />,
+        // Everyone: members see their own work, managers the company (the data is scoped).
+        allowed: () => true,
       },
     ],
   },

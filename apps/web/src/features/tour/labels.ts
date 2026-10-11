@@ -64,6 +64,22 @@ export const POINT_LABELS: Record<string, Record<string, string>> = {
     people: 'People',
     activity: 'Activity',
   },
+  'insights.tiles': {
+    laggingProjects: 'Lagging projects',
+    laggingPeople: 'Lagging people',
+    overloaded: 'Overloaded',
+    underloaded: 'Has room',
+    shared: 'Split across projects',
+    atRisk: 'Releases at risk',
+  },
+  'insights.cards': {
+    holding: 'What is holding us back',
+    projects: 'Projects: overdue vs on track',
+    load: 'Load per person',
+    overlap: 'Projects pulling people away',
+    releases: 'Release plan',
+    absences: 'Leave and attendance',
+  },
   'org.tiles': {
     departments: 'Departments',
     people: 'People',

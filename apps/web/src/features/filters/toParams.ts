@@ -1,7 +1,7 @@
 // URL filter state -> API query params. The URL uses the API's own parameter names so a
 // shared link and the request it makes read the same.
 /** Every page: the dashboard tabs, then the Employee module (side drawer, 2026-10-11). */
-export type Tab = 'kpi' | 'dev' | 'qa' | 'support' | 'org' | 'people' | 'access';
+export type Tab = 'kpi' | 'dev' | 'qa' | 'support' | 'insights' | 'org' | 'people' | 'access';
 export const DASHBOARD_TABS = ['kpi', 'dev', 'qa', 'support'] as const;
 export const isDashboardTab = (t: Tab): t is (typeof DASHBOARD_TABS)[number] =>
   (DASHBOARD_TABS as readonly string[]).includes(t);
@@ -34,6 +34,7 @@ export const tabOnlyFacet: Record<Tab, 'tag' | 'type' | null> = {
   dev: 'tag',
   qa: 'type',
   support: null,
+  insights: null,
   org: null,
   people: null,
   access: null,

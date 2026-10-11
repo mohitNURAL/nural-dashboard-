@@ -129,11 +129,16 @@ const ENDPOINTS = [
   '/api/tasks?kind=tasks&scope=all&preset=total&pageSize=200',
   '/api/tasks?kind=issues&preset=all&pageSize=200',
   '/api/tasks?kind=tasks&scope=all&preset=pending&pageSize=200',
+  '/api/tasks?kind=all&ids=1,2,3,4,5,6,7,8&pageSize=200',
+  '/api/insights',
+  '/api/insights?window=30',
 ];
 
 /** Drops the request clock, which differs between two otherwise identical answers. */
 const stable = (v: unknown): unknown =>
-  JSON.parse(JSON.stringify(v), (k, x) => (k === 'asOf' || k === 'dataLoadedAt' ? undefined : x));
+  JSON.parse(JSON.stringify(v), (k, x) =>
+    k === 'asOf' || k === 'dataLoadedAt' || k === 'viewScope' ? undefined : x,
+  );
 
 let scoped: Awaited<ReturnType<typeof buildServer>>;
 const references = new Map<number, Awaited<ReturnType<typeof buildServer>>>();

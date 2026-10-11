@@ -7,6 +7,7 @@ import { loadRoles, requestDataset, resolveFor, type RolesConfig } from './auth/
 import { SESSION_DAYS } from './auth/session';
 import { accessRoutes, memoryAccessStore, type AccessStore } from './routes/access';
 import { employeeRoutes } from './routes/employees';
+import { insightRoutes } from './routes/insights';
 import { actionRoutes, type ActionDeps } from './routes/actions';
 import { feedbackRoutes, memoryFeedbackStore, type FeedbackStore } from './routes/feedback';
 import { memoryPrefsStore, prefsRoutes, type PrefsStore } from './routes/prefs';
@@ -201,6 +202,7 @@ export async function buildServer({
   filterRoutes(app, scoping.dataset, opts);
   alertRoutes(app, scoping.dataset, opts);
   kpiRoutes(app, scoping.dataset, opts, scoping.viewer);
+  insightRoutes(app, scoping.dataset, opts, scoping.viewer);
   actionRoutes(app, scoping.dataset, {
     now,
     ...actions,

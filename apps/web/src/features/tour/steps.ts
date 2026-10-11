@@ -28,6 +28,7 @@ export const TAB_LABEL: Record<Tab, string> = {
   dev: 'Development',
   qa: 'QA',
   support: 'Support',
+  insights: 'Insights',
   org: 'Company tree',
   people: 'People directory',
   access: 'Access permissions',
@@ -208,6 +209,52 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
       target: tour('kpi-all'),
       title: 'All tasks',
       text: 'Every number on this tab opens its tasks here. Edit in place, bulk edit and Excel export work as on the other tabs.',
+    },
+  ],
+  insights: [
+    {
+      target: tour('insights-window'),
+      title: 'Insights',
+      text: 'What is holding us back, worked out from Bitrix24 data: lagging projects and people, load, projects pulling people away and releases at risk. Choose how far back to look: 7, 14 or 30 days.',
+      member:
+        'What is holding your work back: your load, your late tasks, and projects pulling you away from others. Choose how far back to look: 7, 14 or 30 days.',
+    },
+    {
+      target: slot('insights.tiles', 'laggingProjects'),
+      title: 'At a glance',
+      text: 'Lagging projects and people, the overloaded, those with room to help, people split across projects and releases at risk. Click a tile for its tasks.',
+    },
+    {
+      target: slot('insights.cards', 'holding'),
+      title: 'What is holding us back',
+      text: 'The findings ranked, causes first: a project taking people’s time while another project’s tasks go overdue, then lagging projects and people, overload, people with room and risky releases. Click one for its tasks.',
+      member:
+        'Your findings ranked, causes first: a project taking your time while your tasks in another go overdue, then your late work and releases at risk. Click one for its tasks.',
+    },
+    {
+      target: slot('insights.cards', 'projects'),
+      title: 'Projects',
+      text: 'Open tasks per project with the overdue part; ⚠ marks a lagging project. Hover for why; click for the tasks.',
+    },
+    {
+      target: slot('insights.cards', 'load'),
+      title: 'Load',
+      text: 'Open tasks per person: overdue, due in the next 5 working days and the rest. ▲ overloaded, ▽ has room to take tasks over.',
+    },
+    {
+      target: slot('insights.cards', 'overlap'),
+      title: 'Projects pulling people away',
+      text: 'Who has open work in several projects, how much they do in each, and which project is taking their time while another goes overdue.',
+    },
+    {
+      target: slot('insights.cards', 'releases'),
+      title: 'Release plan',
+      text: 'Tasks due this week and next with their planned date, stage and risk of slipping. Click a row for the task.',
+    },
+    {
+      target: slot('insights.cards', 'absences'),
+      title: 'Leave and attendance',
+      text: 'From Infowan once connected: leave, late arrivals and early leaving, and the tasks and projects they put at risk. Until then insights use Bitrix24 data.',
     },
   ],
   org: [

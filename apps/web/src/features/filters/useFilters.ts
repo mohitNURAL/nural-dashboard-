@@ -29,6 +29,7 @@ const tabParser = parseAsStringLiteral([
   'dev',
   'qa',
   'support',
+  'insights',
   'org',
   'people',
   'access',

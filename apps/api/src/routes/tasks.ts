@@ -67,6 +67,17 @@ const listParams = {
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
+  // Insights (SRS 18): the exact tasks behind a finding.
+  ids: z.preprocess(
+    (v) =>
+      v === undefined || v === ''
+        ? undefined
+        : String(Array.isArray(v) ? v.join(',') : v)
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean),
+    z.array(z.coerce.number().int().positive()).max(3000).optional(),
+  ),
   ...scopeParam,
 };
 
@@ -118,6 +129,10 @@ export function taskRoutes(
             : devTasks(ds.tasks, ctx, query.scope);
     let list = applyFilters(base, filters, ctx.tz);
     if (query.issue) list = list.filter((t) => t.isIssue === (query.issue === 'true'));
+    if (query.ids) {
+      const want = new Set(query.ids);
+      list = list.filter((t) => want.has(t.id));
+    }
     if (query.kind === 'kpi') {
       list = kpiList(list, kpiContext(ds, ctx.now, ctx.tz), {
         preset: query.kpi,

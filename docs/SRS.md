@@ -400,6 +400,7 @@ Rebuild after a change people can see:
 - **Folding:** each group folds shut from its header (chevron), remembered in the browser; a folded group still shows the page you are on.
 - **Groups:**
   - *Dashboard*: KPI, Development, QA, Support;
+  - *Insights*: Insights (everyone, own scope for members);
   - *Employees*: Company tree, People directory, Access permissions.
 - **Rights:** each page is shown only to those with its right, and a page someone may not open falls back to Development.
 - **What's new:** a teal dot on a page's icon marks it.
@@ -1156,3 +1157,39 @@ For people with the **employees** right (by default admins, PM and team leads). 
 - **Saving:** changes save at once and apply from the person's next click.
 - **Recent changes:** lists the last 30 changes (who, for whom or which department, what, and what it was before).
 - **Locked:** admins in `config/roles.json` cannot be changed.
+
+## 18. Insights (2026-10-12)
+
+**What it is.** What is holding us back, from Bitrix24 and dashboard data; Infowan absences join once connected (section 19).
+- **Who:** everyone. It reads the request's own dataset, so a member's page is *My insights* and covers their own tasks; full access covers the company.
+- **Rules:** pure functions in `packages/shared/src/insights.ts`, with tests, built on the KPI task view (same open, overdue and completed rules).
+- **Thresholds:** in `INSIGHT`.
+- **Period:** looks back over 7, 14 (default) or 30 days. Every finding carries its task IDs, and clicking it opens them (`/api/tasks?ids=`).
+
+**Rules:**
+
+| Finding | Rule |
+|---|---|
+| Lagging project | ≥ 3 overdue and ≥ 25 % of its open tasks; or open work and no action (move, closure, comment) for 10+ working days; or closed ≤ half of the period before (≥ 4 before) |
+| Lagging person | ≥ 3 overdue and ≥ 30 % of their open tasks; or < 50 % on time (≥ 3 closed with a deadline); or closed ≤ half of the period before with ≥ 5 open |
+| Overloaded | ≥ 10 open and ≥ 2× the team median, or ≥ 8 due in the next 5 working days |
+| Has room | ≤ 2 open and ≤ 2 closed in the period while one of their projects has overdue work |
+| Split across projects | Open work in 2+ projects |
+| Pulling people away (cause) | One project takes ≥ 70 % of a person's actions in the period while their tasks in another project are overdue |
+| Release risk | Open tasks due this week or next. *High*: overdue, or not started (To do, Issue Raised) and due within 2 working days. *Medium*: not started, or In progress. *Low*: further along |
+
+**What is holding us back.** The findings are ranked: causes first, then releases at risk, lagging projects, overload, lagging people, people with room.
+
+**Page:**
+- **Tiles:** lagging projects, lagging people, overloaded, has room, split across projects, releases at risk.
+- **Cards:**
+  - What is holding us back;
+  - Projects: overdue vs on track;
+  - Load per person;
+  - Projects pulling people away;
+  - Release plan (this week and next);
+  - Leave and attendance (Infowan).
+- **Tasks list:** every number opens its tasks here.
+- **Tools:** drag, Customise, tour, focus and export, as on every page.
+
+**API:** `GET /api/insights?window=7|14|30`. It is part of the scoping suite.
