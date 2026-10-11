@@ -146,3 +146,9 @@ export const IconDownload = (p: P) => (
     <path d="M10 3v10m0 0 3.5-3.5M10 13 6.5 9.5M3.5 15v2h13v-2" />
   </Svg>
 );
+export const IconBook = (p: P) => (
+  <Svg {...p}>
+    <path d="M10 5.5c-1.8-1.5-4.2-2-6.5-1.7v11.5c2.3-.3 4.7.2 6.5 1.7 1.8-1.5 4.2-2 6.5-1.7V3.8c-2.3-.3-4.7.2-6.5 1.7Z" />
+    <path d="M10 5.5V17" />
+  </Svg>
+);

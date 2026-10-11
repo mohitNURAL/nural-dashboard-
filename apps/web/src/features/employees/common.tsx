@@ -42,29 +42,3 @@ export function StatusPill({ status }: { status: SignInStatus }) {
     </span>
   );
 }
-
-/** Page heading of the Employee module. */
-export function PageHead({
-  title,
-  sub,
-  icon,
-  children,
-}: {
-  title: string;
-  sub: string;
-  icon: React.ReactNode;
-  children?: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-4">
-      <span className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-primary to-accent text-white shadow-pop">
-        {icon}
-      </span>
-      <div className="min-w-0">
-        <h1 className="font-heading text-title text-primary-dark">{title}</h1>
-        <p className="text-text-muted">{sub}</p>
-      </div>
-      <div className="ml-auto flex flex-wrap items-center gap-2">{children}</div>
-    </div>
-  );
-}

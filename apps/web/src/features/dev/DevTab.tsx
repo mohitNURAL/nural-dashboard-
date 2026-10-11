@@ -4,6 +4,8 @@ import type { DevPreset, DevScope } from '@nural/shared';
 import clsx from 'clsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Accordion } from '../../components/Accordion';
+import { PageHead } from '../../components/ui/PageHead';
+import { IconDev } from '../../components/ui/icons';
 import { keepInView } from '../../components/keepInView';
 import { SortableGroup } from '../../components/layout/SortableGroup';
 import { InfoContext } from '../../components/infoContext';
@@ -113,7 +115,13 @@ export function DevTab() {
   return (
     <InfoContext.Provider value={showing}>
       <div className="space-y-4">
-        <ScopeSwitch />
+        <PageHead
+          title="Development"
+          sub="Tasks and issues of the Development department, their stages and deadlines"
+          icon={<IconDev size={24} />}
+        >
+          <ScopeSwitch />
+        </PageHead>
         <SummaryTiles
           active={open.all && tilePreset !== 'total' ? tilePreset : null}
           onSelect={onTile}

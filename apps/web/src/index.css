@@ -69,6 +69,8 @@ h3 {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 6px;
+  /* Room for the close button in the corner. */
+  padding-right: 30px;
 }
 .driver-popover.nural-tour .nural-tour-kind {
   display: inline-flex;

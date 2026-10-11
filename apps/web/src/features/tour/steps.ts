@@ -60,7 +60,7 @@ export const COMMON_STEPS: TourStep[] = [
   {
     target: tour('dock'),
     title: 'Page tools',
-    text: 'On the right: Customise (choose the tiles and cards to show), the guided tour of this page, reading tours aloud, and resetting the layout. Hover any icon for its name. Each data point also has a small toolbar on hover: ⠿ to move it, ? to explain it, the eye to hide it.',
+    text: 'On the right: Customise (choose the tiles and cards to show), the guided tour of this page, the PDF guides, reading tours aloud, and resetting the layout. Hover any icon for its name. Each data point also has a small toolbar on hover: ⠿ to move it, ? to explain it, the eye to hide it.',
   },
   {
     target: tour('profile'),
@@ -212,31 +212,41 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
   ],
   org: [
     {
-      target: tour('org-tree'),
+      target: slot('org.tiles', 'departments'),
+      title: 'The company at a glance',
+      text: 'Departments, people, department heads and departments without a head, from Bitrix24. Click a tile to open the tree; drag ⠿ to rearrange them.',
+    },
+    {
+      target: slot('org.cards', 'tree'),
       title: 'Company tree',
       text: 'Departments as in Bitrix24, each with its head and people; sub-departments sit under their parent. Click a department to open or close it; search finds a person or department and opens the way to it.',
     },
   ],
   people: [
     {
-      target: tour('people-tiles'),
+      target: slot('people.tiles', 'employees'),
       title: 'Who uses the dashboard',
-      text: 'Employees, who is signed in, who is active right now and who has never signed in. Click a tile to list them.',
+      text: 'Employees, who is signed in, who is active right now and who has never signed in. Click a tile to list them; click again to show everyone.',
     },
     {
-      target: '[data-tour="people-tiles"] ~ div table',
+      target: slot('people.cards', 'directory'),
       title: 'People directory',
       text: 'Everyone with designation and department, what they can open (access areas), their dashboard status and sign-ins, when they were last active, and their open and overdue tasks. Search and filter above; Excel at the top right.',
     },
   ],
   access: [
     {
-      target: tour('access-table'),
+      target: slot('access.tiles', 'people'),
+      title: 'Access at a glance',
+      text: 'How many rights are set per person and per department, how many admins, and who sees all data. Click the first two to switch the view.',
+    },
+    {
+      target: slot('access.cards', 'rights'),
       title: 'Rights per person or department',
       text: 'Each column is a right: data (all or own tasks), KPI, Support, Inbox, Employees, edit (all fields or limited) and Admin. Click a value to inherit it, allow it or deny it. The dot shows where it comes from: grey the role, blue the department, teal the person. Locked admins cannot be changed.',
     },
     {
-      target: tour('access-audit'),
+      target: slot('access.cards', 'changes'),
       title: 'Recent changes',
       text: 'Every change: who made it, for whom, and what changed. A change applies from the person’s next click.',
     },

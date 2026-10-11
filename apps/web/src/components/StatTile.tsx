@@ -30,12 +30,20 @@ export function StatTile({ label, value, sub, tone, active, onClick, aside, part
   return (
     <div
       className={clsx(
-        'relative flex min-w-0 flex-col rounded-card border bg-surface transition-colors',
-        'hover:bg-primary-soft-100',
+        'group/tile relative flex min-w-0 flex-col overflow-hidden rounded-card border bg-surface transition duration-200',
+        'hover:-translate-y-0.5 hover:shadow-pop',
         tone === 'bad' ? 'border-bad' : active ? 'border-primary' : 'border-border',
-        active && 'ring-2 ring-primary-soft',
+        active && 'ring-2 ring-primary/30',
       )}
     >
+      {/* A soft glow in the corner, as on every page (2026-10-11). */}
+      <span
+        aria-hidden
+        className={clsx(
+          'pointer-events-none absolute -right-7 -top-7 h-20 w-20 rounded-full bg-gradient-to-br opacity-20 transition-opacity group-hover/tile:opacity-30',
+          tone === 'bad' ? 'from-bad to-warn' : 'from-primary to-accent',
+        )}
+      />
       {info && (
         <span className="absolute right-2 top-2 z-10">
           <InfoTip text={info} label={label} />

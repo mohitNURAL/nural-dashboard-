@@ -64,6 +64,27 @@ export const POINT_LABELS: Record<string, Record<string, string>> = {
     people: 'People',
     activity: 'Activity',
   },
+  'org.tiles': {
+    departments: 'Departments',
+    people: 'People',
+    heads: 'Department heads',
+    noHead: 'Without a head',
+  },
+  'org.cards': { tree: 'Company tree' },
+  'people.tiles': {
+    employees: 'Employees',
+    signedIn: 'Signed in',
+    activeNow: 'Active now',
+    never: 'Never signed in',
+  },
+  'people.cards': { directory: 'People directory' },
+  'access.tiles': {
+    people: 'Set per person',
+    departments: 'Set per department',
+    admins: 'Admins',
+    allData: 'See all data',
+  },
+  'access.cards': { rights: 'Rights', changes: 'Recent changes' },
   'support.cards': {
     form: 'Share your needs',
     mine: 'My feedback',

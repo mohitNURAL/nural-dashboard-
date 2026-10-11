@@ -354,6 +354,30 @@ The QA tab swaps the Tag filter for a Bug or Feedback filter and puts Rework in 
 - Dropping a half-width card next to a full-width one (just before or after it) pairs them, and the full-width card turns half. The pair is saved per person (`<tab>.pairs`) and forgotten once the two are moved apart.
 - Rules: `rowSpans` and `pairOnDrop` in `components/layout/order.ts`, with tests.
 
+**One look on every page (2026-10-11).** Every page uses the same parts:
+- **page header** (`components/ui/PageHead.tsx`): a gradient icon, the title and a line under it, with the page's own controls on the right (Development's All / Dev / Issues, KPI's Day / Week / Month, the Employee pages' search, view and export);
+- **cards and tiles** with 16 px corners (controls 10 px; `--radius-card`, `--radius-control`). Tiles have a soft glow in the corner (red on alert tiles), and tiles, cards and sections lift with a shadow on hover;
+- **section headers** with their open/close arrow in a gradient square.
+
+**Same tools on every page (2026-10-11).**
+- The Employee pages have draggable tiles and cards with the data-point toolbar (move, explain, hide), Customise and the guided tour, like the dashboard tabs:
+  - Company tree: tiles for departments, people, department heads and departments without a head;
+  - People directory: employees, signed in, active now, never signed in;
+  - Access permissions: set per person, set per department, admins, see all data. Its rights table and Recent changes are two cards.
+- Their tour steps and Customise names are in `features/tour/steps.ts` and `labels.ts`.
+
+**Guides (2026-10-11).** Two PDF guides open from the **Guides** icon on the dock (`apps/web/public/guides`; sources in `docs/guides`):
+- **User guide:** the whole dashboard;
+- **Module guide:** page by page, every data point, with definitions.
+
+How they are made:
+- Their data-point texts are the guided tour's own steps and the "i" definitions.
+- Their screenshots come from real data with every person's and project's name, the avatar initials and the task titles replaced by stand-ins; a check before each capture stops if a real name is left.
+- Rebuild after a change people can see:
+  1. `python docs/guides/src/build_guides.py`;
+  2. `node docs/guides/src/print.mjs` (needs Chrome with remote debugging on port 9333);
+  3. copy the two PDFs to `apps/web/public/guides`.
+
 **Side drawer and page tools (2026-10-11).**
 
 *Side drawer:*

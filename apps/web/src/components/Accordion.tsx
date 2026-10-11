@@ -27,7 +27,7 @@ export const Accordion = forwardRef<HTMLElement, Props>(function Accordion(
       ref={ref}
       data-tour={tour}
       className={clsx(
-        'scroll-mt-20 rounded-card border bg-surface',
+        'scroll-mt-32 overflow-hidden rounded-card border bg-surface transition-shadow duration-200 hover:shadow-pop',
         tone === 'bad' ? 'border-bad' : 'border-border',
       )}
     >
@@ -38,15 +38,22 @@ export const Accordion = forwardRef<HTMLElement, Props>(function Accordion(
           onClick={() => onOpenChange(!open)}
           className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left hover:bg-primary-soft-100"
         >
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 12 12"
+          <span
             aria-hidden
-            className={clsx('shrink-0 transition-transform', open && 'rotate-90')}
+            className={clsx(
+              'grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-gradient-to-br text-white shadow-sm',
+              tone === 'bad' ? 'from-bad to-warn' : 'from-primary to-accent',
+            )}
           >
-            <path d="M4.5 2.5 8 6l-3.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-          </svg>
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              className={clsx('transition-transform', open && 'rotate-90')}
+            >
+              <path d="M4.5 2.5 8 6l-3.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
+            </svg>
+          </span>
           <h2 className="font-heading text-h3 text-primary-dark">{title}</h2>
           <CountBadge n={count} tone={tone} />
           {hint && <span className="ml-auto hidden text-text-muted sm:inline">{hint}</span>}

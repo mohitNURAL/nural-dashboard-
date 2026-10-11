@@ -3,10 +3,13 @@
 // way to it. Employee module (employees right).
 import clsx from 'clsx';
 import { useMemo, useState } from 'react';
+import { SortableGroup } from '../../components/layout/SortableGroup';
+import { StatTile } from '../../components/StatTile';
 import { IconChevron, IconSearch, IconTree } from '../../components/ui/icons';
 import { Tip } from '../../components/ui/Tip';
 import { useOrgTree, type DeptNode, type PersonRef } from './api';
-import { Avatar, PageHead } from './common';
+import { PageHead } from '../../components/ui/PageHead';
+import { Avatar } from './common';
 
 export function OrgTree() {
   const { data, isLoading } = useOrgTree();
@@ -74,6 +77,7 @@ export function OrgTree() {
   };
 
   const people = new Set(depts.flatMap((d) => d.members.map((m) => m.id))).size;
+  const heads = new Set(depts.flatMap((d) => (d.head ? [d.head.id] : []))).size;
 
   return (
     <div className="space-y-5">
@@ -116,29 +120,101 @@ export function OrgTree() {
         </Tip>
       </PageHead>
 
-      {isLoading ? (
-        <div className="space-y-3">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="skeleton h-16 rounded-xl" />
-          ))}
-        </div>
-      ) : (
-        <ul className="space-y-3" data-tour="org-tree">
-          {roots.map((d) => (
-            <Node
-              key={d.id}
-              d={d}
-              depth={0}
-              children={children}
-              peopleIn={peopleIn}
-              isOpen={isOpen}
-              toggle={toggle}
-              hits={hits}
-              needle={needle}
-            />
-          ))}
-        </ul>
-      )}
+      <div data-tour="org-tiles">
+        <SortableGroup
+          group="org.tiles"
+          noun="tile"
+          className="grid grid-cols-2 gap-3 lg:grid-cols-[repeat(var(--cols),minmax(0,1fr))]"
+          items={[
+            {
+              id: 'departments',
+              node: (
+                <StatTile
+                  label="Departments"
+                  info="Departments in Bitrix24, sub-departments included."
+                  value={isLoading ? undefined : depts.length}
+                  sub={`${roots.length} at the top level`}
+                  onClick={() => setOpen(new Set(depts.map((d) => d.id)))}
+                />
+              ),
+            },
+            {
+              id: 'people',
+              node: (
+                <StatTile
+                  label="People"
+                  info="Active people in at least one department."
+                  value={isLoading ? undefined : people}
+                  sub="Active in Bitrix24"
+                  onClick={() => setOpen(new Set(depts.map((d) => d.id)))}
+                />
+              ),
+            },
+            {
+              id: 'heads',
+              node: (
+                <StatTile
+                  label="Department heads"
+                  info="People set as head of a department in Bitrix24; one person can head several."
+                  value={isLoading ? undefined : heads}
+                  sub={`${depts.filter((d) => d.head).length} departments have a head`}
+                />
+              ),
+            },
+            {
+              id: 'noHead',
+              node: (
+                <StatTile
+                  label="Without a head"
+                  info="Departments with no head set in Bitrix24."
+                  value={isLoading ? undefined : depts.filter((d) => !d.head).length}
+                  sub="Set one in Bitrix24"
+                  tone={depts.some((d) => !d.head) ? 'bad' : undefined}
+                  onClick={() => setQ('')}
+                />
+              ),
+            },
+          ]}
+        />
+      </div>
+
+      <SortableGroup
+        group="org.cards"
+        noun="card"
+        className="grid grid-cols-1 gap-4"
+        items={[
+          {
+            id: 'tree',
+            node: (
+              <div className="rounded-card border border-border bg-surface p-4">
+                {isLoading ? (
+                  <div className="space-y-3">
+                    {[0, 1, 2].map((i) => (
+                      <div key={i} className="skeleton h-16 rounded-xl" />
+                    ))}
+                  </div>
+                ) : (
+                  <ul className="space-y-3" data-tour="org-tree">
+                    {roots.map((d) => (
+                      <Node
+                        key={d.id}
+                        d={d}
+                        depth={0}
+                        children={children}
+                        peopleIn={peopleIn}
+                        isOpen={isOpen}
+                        toggle={toggle}
+                        hits={hits}
+                        needle={needle}
+                      />
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ),
+          },
+        ]}
+      />
     </div>
   );
 }
@@ -180,7 +256,7 @@ function Node({
       {depth > 0 && <span className="absolute -left-6 top-7 h-0.5 w-5 bg-border" aria-hidden />}
       <div
         className={clsx(
-          'group flex items-center gap-3 rounded-2xl border bg-surface p-3 pr-4 transition hover:shadow-pop',
+          'group flex items-center gap-3 rounded-card border bg-surface p-3 pr-4 transition hover:shadow-pop',
           hit ? 'border-accent ring-2 ring-accent/30' : 'border-border',
         )}
       >

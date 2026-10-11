@@ -10,8 +10,22 @@ import { useTourRequest } from '../../features/tour/useGuidedTour';
 import { voiceAvailable } from '../../features/tour/voice';
 import { useCustomisable } from '../layout/customisable';
 import { CustomisePanel } from '../layout/CustomiseView';
-import { IconCompass, IconReset, IconSliders, IconSpeaker } from '../ui/icons';
+import { IconBook, IconCompass, IconReset, IconSliders, IconSpeaker } from '../ui/icons';
 import { Tip } from '../ui/Tip';
+
+/** The PDF guides (docs/guides, built by docs/guides/src; names in screenshots replaced). */
+const GUIDES = [
+  {
+    file: 'Nural Dashboard - User guide.pdf',
+    title: 'User guide',
+    hint: 'The whole dashboard: signing in, finding your way, changing tasks, making it yours',
+  },
+  {
+    file: 'Nural Dashboard - Module guide.pdf',
+    title: 'Module guide',
+    hint: 'Page by page: who can open it and what every tile, card and list shows',
+  },
+];
 
 const BTN =
   'relative grid h-10 w-10 place-items-center rounded-xl text-text-muted transition hover:bg-primary-soft-100 hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary';
@@ -114,6 +128,45 @@ export function ActionDock({ tourable }: { tourable: boolean }) {
           <IconCompass />
         </DockButton>
       )}
+      <Popover.Root>
+        <Tip label="Guides" hint="User guide and Module guide (PDF)" side="left">
+          <Popover.Trigger asChild>
+            <button type="button" aria-label="Guides" data-tour="guides" className={BTN}>
+              <IconBook />
+            </button>
+          </Popover.Trigger>
+        </Tip>
+        <Popover.Portal>
+          <Popover.Content
+            side="left"
+            align="center"
+            sideOffset={12}
+            collisionPadding={12}
+            className="z-50 w-80 rounded-card border border-border bg-surface p-2 text-text shadow-pop"
+          >
+            <p className="px-2 pb-2 pt-1 font-heading text-h3 text-primary-dark">Guides</p>
+            {GUIDES.map((g) => (
+              <a
+                key={g.file}
+                href={`/guides/${encodeURIComponent(g.file)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-start gap-3 rounded-control p-2 hover:bg-primary-soft-100"
+              >
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent text-white">
+                  <IconBook size={18} />
+                </span>
+                <span>
+                  <span className="block font-heading text-button text-primary-dark">
+                    {g.title}
+                  </span>
+                  <span className="block text-table text-text-muted">{g.hint}</span>
+                </span>
+              </a>
+            ))}
+          </Popover.Content>
+        </Popover.Portal>
+      </Popover.Root>
       {voiceAvailable() && (
         <DockButton
           label={voice ? 'Voice on' : 'Voice off'}

@@ -3,6 +3,8 @@
 import clsx from 'clsx';
 import { useEffect, useRef, useState } from 'react';
 import { Accordion } from '../../components/Accordion';
+import { PageHead } from '../../components/ui/PageHead';
+import { IconKpi } from '../../components/ui/icons';
 import { SortableGroup } from '../../components/layout/SortableGroup';
 import { InfoContext } from '../../components/infoContext';
 import { InfoTip } from '../../components/InfoTip';
@@ -66,7 +68,13 @@ export function KpiTab() {
   return (
     <InfoContext.Provider value={showing}>
       <div className="space-y-4">
-        <PeriodSwitch range={summary?.range} />
+        <PageHead
+          title="KPI"
+          sub="Management overview: every project, all departments"
+          icon={<IconKpi size={24} />}
+        >
+          <PeriodSwitch range={summary?.range} />
+        </PageHead>
         <KpiTiles
           onProjects={() =>
             projectsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })

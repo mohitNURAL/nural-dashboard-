@@ -1,0 +1,483 @@
+{
+ "COMMON_STEPS": [
+  {
+   "target": "[data-tour=\"drawer\"]",
+   "title": "The menu",
+   "text": "Every page is here: the dashboard tabs and, for managers, the Employee module. Hover the icons to open it; click ☰ to pin it open, and again to unpin."
+  },
+  {
+   "target": "[data-tour=\"filters\"]",
+   "title": "Filters",
+   "text": "Project, assignee, tag and date range narrow every number on the tab. Reset filters clears them. The \"i\" icons say exactly what each number counts.",
+   "member": "Project, assignee, tag and date range narrow every number on the tab, within your own tasks. The \"i\" icons say exactly what each number counts."
+  },
+  {
+   "target": "[data-tour=\"bell\"]",
+   "title": "Alerts",
+   "text": "The bell counts overdue tasks and tasks stuck over 5 days in one stage. Click it for the list and jump to the tasks."
+  },
+  {
+   "target": "[data-tour=\"live\"]",
+   "title": "Live",
+   "text": "Live means changes in Bitrix24 reach the dashboard within seconds; numbers refresh by themselves. Offline means the connection dropped and it is reconnecting."
+  },
+  {
+   "target": "[data-tour=\"dock\"]",
+   "title": "Page tools",
+   "text": "On the right: Customise (choose the tiles and cards to show), the guided tour of this page, reading tours aloud, and resetting the layout. Hover any icon for its name. Each data point also has a small toolbar on hover: ⠿ to move it, ? to explain it, the eye to hide it."
+  },
+  {
+   "target": "[data-tour=\"profile\"]",
+   "title": "Your profile",
+   "text": "Your name and role, the theme (Light, Dark, System), live-update toasts, Reset layout, this tour (replay, voice on or off) and Sign out. You are signed out 3 days after signing in."
+  }
+ ],
+ "TAB_LABEL": {
+  "kpi": "KPI",
+  "dev": "Development",
+  "qa": "QA",
+  "support": "Support",
+  "org": "Company tree",
+  "people": "People directory",
+  "access": "Access permissions"
+ },
+ "TAB_STEPS": {
+  "dev": [
+   {
+    "target": "[data-tour=\"dev-scope\"]",
+    "title": "All, Dev or Issues",
+    "text": "Development department only. Dev = development tasks, Issues = bugs and feedback, All = both. Every number on this tab follows this switch."
+   },
+   {
+    "target": "[data-group=\"dev.tiles\"] [data-slot=\"total\"]",
+    "title": "Total",
+    "text": "All tasks in the filters for the switch (Dev, Issues or both), Development department only. Under the number: the split into Dev and Issues (or Bug and Feedback). Click any count to list those tasks below.",
+    "member": "Your tasks (assigned to you or created by you) for the switch. Click any count to list those tasks below."
+   },
+   {
+    "target": "[data-group=\"dev.tiles\"] [data-slot=\"pending\"]",
+    "title": "Pending",
+    "text": "Behind QA Backlog and not on hold: To do, In progress, Pushed to Master, Merged to Development, Pending for QA, Issue Raised. Click any count to list those tasks below."
+   },
+   {
+    "target": "[data-group=\"dev.tiles\"] [data-slot=\"hold\"]",
+    "title": "On hold",
+    "text": "In On Hold: neither pending nor completed. Pending + completed + on hold = total."
+   },
+   {
+    "target": "[data-group=\"dev.tiles\"] [data-slot=\"ready\"]",
+    "title": "Ready to deploy",
+    "text": "In the Done stage, ready to go live. Then Deployed: in the LIVE stage."
+   },
+   {
+    "target": "[data-group=\"dev.tiles\"] [data-slot=\"overdue\"]",
+    "title": "Overdue",
+    "text": "Pending, not On Hold, and the deadline has passed. The first number to act on each day."
+   },
+   {
+    "target": "[data-group=\"dev.tiles\"] [data-slot=\"doneToday\"]",
+    "title": "Done today",
+    "text": "Reached QA Backlog for the first time today (IST)."
+   },
+   {
+    "target": "[data-group=\"dev.cards\"] [data-slot=\"assignees\"]",
+    "title": "Per person or project",
+    "text": "Per person or project. Done = sent to QA (QA Backlog to LIVE). Comp. today = reached QA Backlog today. Switch Assignee / Project at the top. Every count opens its tasks. Click the title to focus it in the centre; drag ⠿ at the top to move it."
+   },
+   {
+    "target": "[data-group=\"dev.cards\"] [data-slot=\"pendingDone\"]",
+    "title": "Pending vs Done",
+    "text": "Pending vs completed (QA Backlog, In QA, Done, LIVE) per person or project, top 15 by total. Tooltip splits Dev / Issues (Bug / Feedback on Issues). Click a bar to open those tasks."
+   },
+   {
+    "target": "[data-group=\"dev.cards\"] [data-slot=\"ageing\"]",
+    "title": "Task ageing",
+    "text": "Open tasks by days past deadline. On Hold counts here but not as Overdue. The darker the red, the later. Chart or Table at the top."
+   },
+   {
+    "target": "[data-group=\"dev.cards\"] [data-slot=\"ranking\"]",
+    "title": "On-time ranking",
+    "text": "Tasks sent to QA with a deadline. Ranked by on-time %, then average days early. Fewer than 3: not ranked."
+   },
+   {
+    "target": "[data-group=\"dev.cards\"] [data-slot=\"matrix\"]",
+    "title": "Tasks by stage",
+    "text": "Tasks per Kanban stage; the colour bar shows each stage total. The red part of a cell is overdue. Click a cell for those tasks."
+   },
+   {
+    "target": "[data-group=\"dev.sections\"] [data-slot=\"dueToday\"]",
+    "title": "Task lists",
+    "text": "Due today, Overdue, All tasks and Alert details open here. Clicking any number above opens All tasks narrowed to it. In a list: click a cell to change stage, status or tags (and more for leads), tick rows for bulk edit, and export to Excel.",
+    "member": "Due today, Overdue, All tasks and Alert details open here. Clicking any number above opens All tasks narrowed to it. In a list you can change stage, status and tags of your tasks, tick rows for bulk edit, and export to Excel."
+   }
+  ],
+  "qa": [
+   {
+    "target": "[data-group=\"qa.tiles\"] [data-slot=\"qaTotal\"]",
+    "title": "Issues filed",
+    "text": "Every task tagged bug or feedback in the filters, whoever it is assigned to. Bug and Feedback under the number. Click any count to list those tasks below.",
+    "member": "Bugs and feedback assigned to you or filed by you. Click any count to list those tasks below."
+   },
+   {
+    "target": "[data-group=\"qa.tiles\"] [data-slot=\"qaOpen\"]",
+    "title": "Open / pending",
+    "text": "Open = pending: any stage behind QA Backlog except On Hold (Issue Raised included). Resolved = QA Backlog, In QA, Done or LIVE. On Hold is its own tile. The ring shows the resolved %."
+   },
+   {
+    "target": "[data-group=\"qa.tiles\"] [data-slot=\"hold\"]",
+    "title": "On hold",
+    "text": "In On Hold: neither pending nor completed. Pending + completed + on hold = total."
+   },
+   {
+    "target": "[data-group=\"qa.tiles\"] [data-slot=\"qaLastFiled\"]",
+    "title": "Last filed and resolved",
+    "text": "Latest day an issue was created, and how many that day. Next to it, Last resolved: Latest day issues were pushed to QA Backlog (a fix handed to QA), and how many that day."
+   },
+   {
+    "target": "[data-group=\"qa.tiles\"] [data-slot=\"qaRework\"]",
+    "title": "Rework",
+    "text": "Issues QA sent back after testing: from QA Backlog, In QA or Done to Issue Raised, To do or In progress. Stage flow only."
+   },
+   {
+    "target": "[data-group=\"qa.tiles\"] [data-slot=\"retestAwaited\"]",
+    "title": "Retesting awaited",
+    "text": "Every task waiting for QA: in QA Backlog or In QA, split into dev tasks and issues (bug or feedback). The QA team's queue."
+   },
+   {
+    "target": "[data-group=\"qa.cards\"] [data-slot=\"issuesByAssignee\"]",
+    "title": "Issues by person",
+    "text": "Open vs resolved, each split into bug and feedback (or the reverse), per person or project. Table: the assignee-wise table. Click the title to focus it in the centre; drag ⠿ at the top to move it."
+   },
+   {
+    "target": "[data-group=\"qa.cards\"] [data-slot=\"rework\"]",
+    "title": "Rework by developer",
+    "text": "QA send-backs per person or project, split into bug and feedback, and the % of their issues sent back. First Issue Raised to To do is not counted."
+   },
+   {
+    "target": "[data-group=\"qa.cards\"] [data-slot=\"testing\"]",
+    "title": "Testing tasks",
+    "text": "Tasks tagged testing or re-testing, or assigned to QA Testing. Late = pending past deadline."
+   },
+   {
+    "target": "[data-group=\"qa.cards\"] [data-slot=\"retest\"]",
+    "title": "Waiting for retest",
+    "text": "Issues in QA Backlog or In QA, by who filed them. Oldest = days waiting."
+   },
+   {
+    "target": "[data-group=\"qa.cards\"] [data-slot=\"retestByGroup\"]",
+    "title": "Retest queue by person",
+    "text": "Tasks and issues in QA Backlog and In QA per assignee or project. Every number opens its tasks."
+   },
+   {
+    "target": "[data-group=\"qa.cards\"] [data-slot=\"issueTrend\"]",
+    "title": "Issue trend",
+    "text": "Last 7 days (IST): bugs and feedback filed (created, light) and resolved (pushed to QA Backlog that day, dark). Pick one assignee or project, or see all. Click a point for that day's issues."
+   },
+   {
+    "target": "[data-group=\"qa.cards\"] [data-slot=\"issueAgeing\"]",
+    "title": "Issue ageing",
+    "text": "Open issues by days past deadline (same as task ageing). On Hold counts here."
+   },
+   {
+    "target": "[data-group=\"qa.cards\"] [data-slot=\"issueStage\"]",
+    "title": "Issues by stage",
+    "text": "Issues per stage and person (or project). Red = overdue part. Bug / Feedback narrows it."
+   },
+   {
+    "target": "[data-group=\"qa.sections\"] [data-slot=\"latest\"]",
+    "title": "Issue lists",
+    "text": "Latest filed, Latest resolved and All issues. Any number above opens All issues narrowed to it. Edit in place, bulk edit and Excel export work as on Development."
+   }
+  ],
+  "kpi": [
+   {
+    "target": "[data-tour=\"kpi-period\"]",
+    "title": "Day, Week or Month",
+    "text": "The period for closed, on-time and the people table, compared with the period before. Every task in every project, all departments. A task is closed when it first reaches QA Backlog (or, without QA stages, when Bitrix24 closes it)."
+   },
+   {
+    "target": "[data-group=\"kpi.tiles\"] [data-slot=\"open\"]",
+    "title": "Open tasks",
+    "text": "Pending tasks: behind QA Backlog and not on hold. Department = the assignee’s department. Click any count to list those tasks below."
+   },
+   {
+    "target": "[data-group=\"kpi.tiles\"] [data-slot=\"overdue\"]",
+    "title": "Overdue",
+    "text": "Open tasks whose deadline has passed. \"Over 30 days\" = more than 30 days late."
+   },
+   {
+    "target": "[data-group=\"kpi.tiles\"] [data-slot=\"closed\"]",
+    "title": "Closed",
+    "text": "Tasks closed in the period (first QA Backlog, else the Bitrix24 closed date). Clean-ups of 30+ tasks closed in one project on one day are left out."
+   },
+   {
+    "target": "[data-group=\"kpi.tiles\"] [data-slot=\"onTime\"]",
+    "title": "On-time",
+    "text": "Of the tasks closed in the period that had a deadline, the share closed on or before it."
+   },
+   {
+    "target": "[data-group=\"kpi.tiles\"] [data-slot=\"active\"]",
+    "title": "Active projects",
+    "text": "Projects with open tasks and any action (task change or comment) in the last 30 days. Silent = open tasks and no action for 10+ working days."
+   },
+   {
+    "target": "[data-group=\"kpi.tiles\"] [data-slot=\"noDeadline\"]",
+    "title": "No deadline",
+    "text": "Open tasks without a deadline: they cannot be overdue or planned."
+   },
+   {
+    "target": "[data-group=\"kpi.cards\"] [data-slot=\"insights\"]",
+    "title": "Insights",
+    "text": "Findings worked out from the same numbers. Click one to see its tasks. Start here each morning. Click the title to focus it in the centre; drag ⠿ at the top to move it."
+   },
+   {
+    "target": "[data-group=\"kpi.cards\"] [data-slot=\"projectHealth\"]",
+    "title": "Project health",
+    "text": "One row per project, worst first. Red: over 25 % of open tasks overdue (at least 3), or a task over 30 days late. Amber: any overdue task, or silent. Green: neither."
+   },
+   {
+    "target": "[data-group=\"kpi.cards\"] [data-slot=\"overdue\"]",
+    "title": "Overdue breakdown",
+    "text": "Open tasks past their deadline, by how many days late, per project and per person."
+   },
+   {
+    "target": "[data-group=\"kpi.cards\"] [data-slot=\"workload\"]",
+    "title": "Workload",
+    "text": "Open project tasks per person: overdue, due in the next 10 working days, due later, no deadline."
+   },
+   {
+    "target": "[data-group=\"kpi.cards\"] [data-slot=\"people\"]",
+    "title": "People",
+    "text": "Per person: tasks closed in the period (vs the one before), on-time %, open and overdue now, QA send-backs on closed tasks, and closed tasks over the last 8 periods."
+   },
+   {
+    "target": "[data-group=\"kpi.cards\"] [data-slot=\"activity\"]",
+    "title": "Activity",
+    "text": "Busiest projects of the last 7 days: new tasks, bugs raised, stage moves and comments (ranked by new×2 + bugs×3 + moves + comments). Silent projects below."
+   },
+   {
+    "target": "[data-tour=\"kpi-all\"]",
+    "title": "All tasks",
+    "text": "Every number on this tab opens its tasks here. Edit in place, bulk edit and Excel export work as on the other tabs."
+   }
+  ],
+  "org": [
+   {
+    "target": "[data-group=\"org.tiles\"] [data-slot=\"departments\"]",
+    "title": "The company at a glance",
+    "text": "Departments, people, department heads and departments without a head, from Bitrix24. Click a tile to open the tree; drag ⠿ to rearrange them."
+   },
+   {
+    "target": "[data-group=\"org.cards\"] [data-slot=\"tree\"]",
+    "title": "Company tree",
+    "text": "Departments as in Bitrix24, each with its head and people; sub-departments sit under their parent. Click a department to open or close it; search finds a person or department and opens the way to it."
+   }
+  ],
+  "people": [
+   {
+    "target": "[data-group=\"people.tiles\"] [data-slot=\"employees\"]",
+    "title": "Who uses the dashboard",
+    "text": "Employees, who is signed in, who is active right now and who has never signed in. Click a tile to list them; click again to show everyone."
+   },
+   {
+    "target": "[data-group=\"people.cards\"] [data-slot=\"directory\"]",
+    "title": "People directory",
+    "text": "Everyone with designation and department, what they can open (access areas), their dashboard status and sign-ins, when they were last active, and their open and overdue tasks. Search and filter above; Excel at the top right."
+   }
+  ],
+  "access": [
+   {
+    "target": "[data-group=\"access.tiles\"] [data-slot=\"people\"]",
+    "title": "Access at a glance",
+    "text": "How many rights are set per person and per department, how many admins, and who sees all data. Click the first two to switch the view."
+   },
+   {
+    "target": "[data-group=\"access.cards\"] [data-slot=\"rights\"]",
+    "title": "Rights per person or department",
+    "text": "Each column is a right: data (all or own tasks), KPI, Support, Inbox, Employees, edit (all fields or limited) and Admin. Click a value to inherit it, allow it or deny it. The dot shows where it comes from: grey the role, blue the department, teal the person. Locked admins cannot be changed."
+   },
+   {
+    "target": "[data-group=\"access.cards\"] [data-slot=\"changes\"]",
+    "title": "Recent changes",
+    "text": "Every change: who made it, for whom, and what changed. A change applies from the person’s next click."
+   }
+  ],
+  "support": [
+   {
+    "target": "[data-tour=\"support-hero\"]",
+    "title": "The Support tab is coming",
+    "text": "It will be built from what the support team and management need, so it starts by asking you."
+   },
+   {
+    "target": "[data-group=\"support.cards\"] [data-slot=\"form\"]",
+    "title": "Share your needs",
+    "text": "Tick what you would like to see, how often you would use it, and describe your biggest problem today. Must have, should have or nice to have helps us plan."
+   },
+   {
+    "target": "[data-group=\"support.cards\"] [data-slot=\"mine\"]",
+    "title": "My feedback",
+    "text": "What you sent, and whether it has been reviewed. Only you, the admins and the Support lead see your entries."
+   },
+   {
+    "target": "[data-group=\"support.cards\"] [data-slot=\"inbox\"]",
+    "title": "Feedback inbox",
+    "text": "Every entry from everyone. Filter New or Must have, open one to read it all, add a private note, mark it reviewed, or download all as Excel."
+   }
+  ]
+ },
+ "POINT_LABELS": {
+  "dev.tiles": {
+   "total": "Total tasks",
+   "pending": "Pending",
+   "hold": "On hold",
+   "ready": "Ready",
+   "deployed": "Deployed",
+   "overdue": "Overdue",
+   "doneToday": "Done today"
+  },
+  "dev.cards": {
+   "assignees": "Assignee-wise tasks",
+   "pendingDone": "Pending vs Done",
+   "ageing": "Task ageing",
+   "ranking": "Fastest to QA Backlog",
+   "matrix": "Tasks by stage"
+  },
+  "dev.sections": {
+   "dueToday": "Tasks due today",
+   "overdue": "Overdue tasks",
+   "all": "All tasks",
+   "alerts": "Alert details"
+  },
+  "qa.tiles": {
+   "qaTotal": "Total issues filed",
+   "qaOpen": "Open / pending",
+   "hold": "On hold",
+   "qaLastFiled": "Last filed",
+   "qaLastResolved": "Last resolved",
+   "qaRework": "Rework issues",
+   "retestAwaited": "Retesting awaited"
+  },
+  "qa.cards": {
+   "issuesByAssignee": "Issues by assignee",
+   "rework": "Rework by developer",
+   "testing": "Testing team workload",
+   "retest": "Waiting for retest",
+   "retestByGroup": "Retesting awaited by assignee",
+   "issueTrend": "Issue trend",
+   "issueAgeing": "Issue ageing",
+   "issueStage": "Issues by stage"
+  },
+  "qa.sections": {
+   "latest": "Latest filed issues",
+   "resolved": "Latest resolved issues",
+   "all": "All issues"
+  },
+  "kpi.tiles": {
+   "open": "Open tasks",
+   "hold": "On hold",
+   "overdue": "Overdue",
+   "closed": "Closed",
+   "onTime": "On-time",
+   "active": "Active projects",
+   "noDeadline": "No deadline"
+  },
+  "kpi.cards": {
+   "insights": "Insights",
+   "projectHealth": "Project health",
+   "overdue": "Overdue breakdown",
+   "workload": "Workload",
+   "people": "People",
+   "activity": "Activity"
+  },
+  "org.tiles": {
+   "departments": "Departments",
+   "people": "People",
+   "heads": "Department heads",
+   "noHead": "Without a head"
+  },
+  "org.cards": {
+   "tree": "Company tree"
+  },
+  "people.tiles": {
+   "employees": "Employees",
+   "signedIn": "Signed in",
+   "activeNow": "Active now",
+   "never": "Never signed in"
+  },
+  "people.cards": {
+   "directory": "People directory"
+  },
+  "access.tiles": {
+   "people": "Set per person",
+   "departments": "Set per department",
+   "admins": "Admins",
+   "allData": "See all data"
+  },
+  "access.cards": {
+   "rights": "Rights",
+   "changes": "Recent changes"
+  },
+  "support.cards": {
+   "form": "Share your needs",
+   "mine": "My feedback",
+   "inbox": "Feedback inbox"
+  }
+ },
+ "INFO": {
+  "total": "All tasks in the filters for the switch (Dev, Issues or both), Development department only.",
+  "pending": "Behind QA Backlog and not on hold: To do, In progress, Pushed to Master, Merged to Development, Pending for QA, Issue Raised.",
+  "hold": "In On Hold: neither pending nor completed. Pending + completed + on hold = total.",
+  "ready": "In the Done stage, ready to go live.",
+  "deployed": "In the LIVE stage.",
+  "overdue": "Pending, not On Hold, and the deadline has passed.",
+  "doneToday": "Reached QA Backlog for the first time today (IST).",
+  "dueToday": "Deadline is today (IST), in any stage except LIVE.",
+  "assigneeTable": "Per person or project. Done = sent to QA (QA Backlog to LIVE). Comp. today = reached QA Backlog today.",
+  "colTotal": "All tasks of this row.",
+  "colPending": "Pending: any stage behind QA Backlog except On Hold, Issue Raised included.",
+  "colDone": "Completed: in QA Backlog, In QA, Done or LIVE.",
+  "colDueToday": "Deadline is today, not yet LIVE.",
+  "colCompToday": "Reached QA Backlog for the first time today.",
+  "colCompYesterday": "Reached QA Backlog for the first time yesterday (IST).",
+  "pendingVsDone": "Pending vs completed (QA Backlog, In QA, Done, LIVE) per person or project, top 15 by total. Tooltip splits Dev / Issues (Bug / Feedback on Issues).",
+  "ageing": "Open tasks by days past deadline. On Hold counts here but not as Overdue.",
+  "ranking": "Tasks sent to QA with a deadline. Ranked by on-time %, then average days early. Fewer than 3: not ranked.",
+  "matrix": "Tasks per Kanban stage; the colour bar shows each stage total. The red part of a cell is overdue.",
+  "allTasks": "Every task in the filters, or the number you clicked.",
+  "alerts": "Overdue tasks, and tasks over 5 days in one stage (LIVE aside). QA stages name the tester or QA lead.",
+  "qaTotal": "Every task tagged bug or feedback in the filters, whoever it is assigned to.",
+  "qaOpen": "Open = pending: any stage behind QA Backlog except On Hold (Issue Raised included). Resolved = QA Backlog, In QA, Done or LIVE. On Hold is its own tile. The ring shows the resolved %.",
+  "qaLastFiled": "Latest day an issue was created, and how many that day.",
+  "qaLastResolved": "Latest day issues were pushed to QA Backlog (a fix handed to QA), and how many that day.",
+  "qaRework": "Issues QA sent back after testing: from QA Backlog, In QA or Done to Issue Raised, To do or In progress. Stage flow only.",
+  "issuesByAssignee": "Open vs resolved, each split into bug and feedback (or the reverse), per person or project. Table: the assignee-wise table.",
+  "issuesByStage": "Issues per stage and person (or project). Red = overdue part. Bug / Feedback narrows it.",
+  "testing": "Tasks tagged testing or re-testing, or assigned to QA Testing. Late = pending past deadline.",
+  "retest": "Issues in QA Backlog or In QA, by who filed them. Oldest = days waiting.",
+  "issueAge": "Open issues by days past deadline (same as task ageing). On Hold counts here.",
+  "rework": "QA send-backs per person or project, split into bug and feedback, and the % of their issues sent back. First Issue Raised to To do is not counted.",
+  "issueTrend": "Last 7 days (IST): bugs and feedback filed (created, light) and resolved (pushed to QA Backlog that day, dark). Pick one assignee or project, or see all.",
+  "latestFiled": "Issues created on the Last filed date.",
+  "retestAwaited": "Every task waiting for QA: in QA Backlog or In QA, split into dev tasks and issues (bug or feedback).",
+  "retestByGroup": "Tasks and issues in QA Backlog and In QA per assignee or project. Every number opens its tasks.",
+  "latestResolved": "Issues pushed to QA Backlog on the Last resolved date.",
+  "allIssues": "Every bug or feedback in the filters, or the number you clicked."
+ },
+ "KPI_INFO": {
+  "tab": "Every task in every project, all departments. A task is closed when it first reaches QA Backlog (or, without QA stages, when Bitrix24 closes it).",
+  "open": "Pending tasks: behind QA Backlog and not on hold. Department = the assignee’s department.",
+  "hold": "In On Hold: neither pending nor completed. Pending + completed + on hold = total.",
+  "overdue": "Open tasks whose deadline has passed. \"Over 30 days\" = more than 30 days late.",
+  "closed": "Tasks closed in the period (first QA Backlog, else the Bitrix24 closed date). Clean-ups of 30+ tasks closed in one project on one day are left out.",
+  "onTime": "Of the tasks closed in the period that had a deadline, the share closed on or before it.",
+  "active": "Projects with open tasks and any action (task change or comment) in the last 30 days. Silent = open tasks and no action for 10+ working days.",
+  "noDeadline": "Open tasks without a deadline: they cannot be overdue or planned.",
+  "projects": "One row per project, worst first. Red: over 25 % of open tasks overdue (at least 3), or a task over 30 days late. Amber: any overdue task, or silent. Green: neither.",
+  "overdue2": "Open tasks past their deadline, by how many days late, per project and per person.",
+  "workload": "Open project tasks per person: overdue, due in the next 10 working days, due later, no deadline.",
+  "people": "Per person: tasks closed in the period (vs the one before), on-time %, open and overdue now, QA send-backs on closed tasks, and closed tasks over the last 8 periods.",
+  "activity": "Busiest projects of the last 7 days: new tasks, bugs raised, stage moves and comments (ranked by new×2 + bugs×3 + moves + comments). Silent projects below.",
+  "insights": "Findings worked out from the same numbers. Click one to see its tasks.",
+  "workingTime": "Working time: Monday to Friday, 09:30 to 18:30 IST, public holidays excluded."
+ }
+}

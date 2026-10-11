@@ -11,6 +11,8 @@ import { toast } from 'sonner';
 import { apiPost } from '../../api/client';
 import { API_KEY } from '../../api/queries';
 import { IconLock, IconSearch, IconShield } from '../../components/ui/icons';
+import { SortableGroup } from '../../components/layout/SortableGroup';
+import { StatTile } from '../../components/StatTile';
 import { Tip } from '../../components/ui/Tip';
 import {
   useAccess,
@@ -21,7 +23,8 @@ import {
   type RightKey,
   type Source,
 } from './api';
-import { Avatar, PageHead } from './common';
+import { PageHead } from '../../components/ui/PageHead';
+import { Avatar } from './common';
 import { isOn, RIGHTS, ROLE_NAME, timeAgo, valueOf } from './labels';
 
 const SOURCE: Record<Source, { label: string; dot: string }> = {
@@ -99,70 +102,145 @@ export function AccessPage() {
 
       <Legend />
 
-      <div className="grid grid-cols-1 gap-5 2xl:grid-cols-[1fr_340px]">
-        <div className="min-w-0 rounded-2xl border border-border bg-surface p-4">
-          {view === 'people' && (
-            <label className="relative mb-3 block w-72">
-              <IconSearch
-                size={16}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
-              />
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Search people"
-                className="h-9 w-full rounded-xl border border-border bg-surface pl-9 pr-3 text-body text-text focus:border-primary focus:outline-none"
-              />
-            </label>
-          )}
-          <div className="overflow-x-auto">
-            <table
-              className="w-full min-w-[920px] border-separate border-spacing-0 text-table"
-              data-tour="access-table"
-            >
-              <thead>
-                <tr>
-                  <th className="sticky left-0 z-10 bg-surface px-2 py-2 text-left font-heading text-label uppercase tracking-wider text-text-muted">
-                    {view === 'people' ? 'Person' : 'Department'}
-                  </th>
-                  {RIGHTS.map((r) => (
-                    <th
-                      key={r.key}
-                      className="px-1 py-2 text-center font-heading text-label uppercase tracking-wider text-text-muted"
-                    >
-                      <Tip label={r.label} hint={r.hint}>
-                        <span className="cursor-help border-b border-dotted border-text-muted/60">
-                          {r.label}
-                        </span>
-                      </Tip>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {isLoading && (
-                  <tr>
-                    <td colSpan={RIGHTS.length + 1} className="p-6 text-center text-text-muted">
-                      Loading…
-                    </td>
-                  </tr>
-                )}
-                {view === 'people'
-                  ? people.map((p) => <PersonRow key={p.id} p={p} save={save} />)
-                  : (data?.departments ?? []).map((d) => <DeptRow key={d.id} d={d} save={save} />)}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <RecentChanges />
+      <div data-tour="access-tiles">
+        <SortableGroup
+          group="access.tiles"
+          noun="tile"
+          className="grid grid-cols-2 gap-3 lg:grid-cols-[repeat(var(--cols),minmax(0,1fr))]"
+          items={[
+            {
+              id: 'people',
+              node: (
+                <StatTile
+                  label="Set per person"
+                  info="People with at least one right set for them personally."
+                  value={data && data.people.filter((p) => p.grant).length}
+                  sub={data && `of ${data.people.length} people`}
+                  onClick={() => setView('people')}
+                />
+              ),
+            },
+            {
+              id: 'departments',
+              node: (
+                <StatTile
+                  label="Set per department"
+                  info="Departments with at least one right set; it reaches their people and sub-departments."
+                  value={data && data.departments.filter((d) => d.grant).length}
+                  sub={data && `of ${data.departments.length} departments`}
+                  onClick={() => setView('departments')}
+                />
+              ),
+            },
+            {
+              id: 'admins',
+              node: (
+                <StatTile
+                  label="Admins"
+                  info="People who can manage access. Locked admins come from config/roles.json."
+                  value={data && data.people.filter((p) => p.rights.admin).length}
+                  sub={data && `${data.people.filter((p) => p.locked).length} locked`}
+                />
+              ),
+            },
+            {
+              id: 'allData',
+              node: (
+                <StatTile
+                  label="See all data"
+                  info="People whose data scope is every project and person; the rest see only their own tasks."
+                  value={data && data.people.filter((p) => p.rights.scope === 'all').length}
+                  sub={
+                    data &&
+                    `${data.people.filter((p) => p.rights.scope === 'own').length} see own tasks`
+                  }
+                />
+              ),
+            },
+          ]}
+        />
       </div>
+
+      <SortableGroup
+        group="access.cards"
+        noun="card"
+        className="grid grid-cols-1 gap-5 xl:grid-cols-12"
+        items={[
+          {
+            id: 'rights',
+            className: 'xl:col-span-12',
+            node: (
+              <div className="min-w-0 rounded-card border border-border bg-surface p-4">
+                {view === 'people' && (
+                  <label className="relative mb-3 block w-72">
+                    <IconSearch
+                      size={16}
+                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
+                    />
+                    <input
+                      value={q}
+                      onChange={(e) => setQ(e.target.value)}
+                      placeholder="Search people"
+                      className="h-9 w-full rounded-xl border border-border bg-surface pl-9 pr-3 text-body text-text focus:border-primary focus:outline-none"
+                    />
+                  </label>
+                )}
+                <div className="overflow-x-auto">
+                  <table
+                    className="w-full min-w-[920px] border-separate border-spacing-0 text-table"
+                    data-tour="access-table"
+                  >
+                    <thead>
+                      <tr>
+                        <th className="sticky left-0 z-10 bg-surface px-2 py-2 text-left font-heading text-label uppercase tracking-wider text-text-muted">
+                          {view === 'people' ? 'Person' : 'Department'}
+                        </th>
+                        {RIGHTS.map((r) => (
+                          <th
+                            key={r.key}
+                            className="px-1 py-2 text-center font-heading text-label uppercase tracking-wider text-text-muted"
+                          >
+                            <Tip label={r.label} hint={r.hint}>
+                              <span className="cursor-help border-b border-dotted border-text-muted/60">
+                                {r.label}
+                              </span>
+                            </Tip>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {isLoading && (
+                        <tr>
+                          <td
+                            colSpan={RIGHTS.length + 1}
+                            className="p-6 text-center text-text-muted"
+                          >
+                            Loading…
+                          </td>
+                        </tr>
+                      )}
+                      {view === 'people'
+                        ? people.map((p) => <PersonRow key={p.id} p={p} save={save} />)
+                        : (data?.departments ?? []).map((d) => (
+                            <DeptRow key={d.id} d={d} save={save} />
+                          ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ),
+          },
+          { id: 'changes', className: 'xl:col-span-12', node: <RecentChanges /> },
+        ]}
+      />
     </div>
   );
 }
 
 function Legend() {
   return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-2xl border border-border bg-surface px-4 py-3 text-table text-text-muted">
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-card border border-border bg-surface px-4 py-3 text-table text-text-muted">
       <span className="font-heading text-label uppercase tracking-wider">
         Where a right comes from
       </span>
@@ -367,10 +445,7 @@ const describe = (g: Grant | null) =>
 function RecentChanges() {
   const { data } = useAudit();
   return (
-    <aside
-      className="h-fit rounded-2xl border border-border bg-surface p-4"
-      data-tour="access-audit"
-    >
+    <aside className="rounded-card border border-border bg-surface p-4" data-tour="access-audit">
       <h2 className="mb-3 font-heading text-h3 text-primary-dark">Recent changes</h2>
       {!data?.rows.length ? (
         <p className="text-table text-text-muted">No changes yet. Every change is listed here.</p>

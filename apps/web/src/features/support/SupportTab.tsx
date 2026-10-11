@@ -9,6 +9,8 @@ import { apiPost } from '../../api/client';
 import { useMe } from '../../api/me';
 import { API_KEY, useApi } from '../../api/queries';
 import { Card } from '../../components/Card';
+import { PageHead } from '../../components/ui/PageHead';
+import { IconSupport } from '../../components/ui/icons';
 import { SortableGroup } from '../../components/layout/SortableGroup';
 import { fmtDateTime } from '../dev/format';
 
@@ -76,6 +78,11 @@ export function SupportTab() {
   const { data: me } = useMe();
   return (
     <div className="space-y-4">
+      <PageHead
+        title="Support"
+        sub="Coming soon, shaped by what the support team and management tell us"
+        icon={<IconSupport size={24} />}
+      />
       <ComingSoon />
       <SortableGroup
         group="support.cards"

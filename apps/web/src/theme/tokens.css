@@ -61,10 +61,10 @@
   --primary-muted: #8d9edb;
 }
 
-/* Shape and spacing: 4 px grid, 8 px card radius (SRS section 6). */
+/* Shape and spacing: 4 px grid; 16 px cards, 10 px controls (SRS section 6, 2026-10-11). */
 :root {
   --space: 4px;
-  --radius-card: 8px;
-  --radius-control: 6px;
+  --radius-card: 16px;
+  --radius-control: 10px;
   --shadow-pop: 0 8px 24px rgb(24 36 78 / 0.14);
 }

@@ -5,10 +5,13 @@ import { createColumnHelper } from '@tanstack/react-table';
 import clsx from 'clsx';
 import { useMemo, useState } from 'react';
 import { DataTable } from '../../components/DataTable';
+import { SortableGroup } from '../../components/layout/SortableGroup';
+import { StatTile } from '../../components/StatTile';
 import { IconDownload, IconPeople, IconSearch } from '../../components/ui/icons';
 import { Tip } from '../../components/ui/Tip';
 import { useEmployees, type Employee, type SignInStatus } from './api';
-import { Avatar, PageHead, StatusPill } from './common';
+import { PageHead } from '../../components/ui/PageHead';
+import { Avatar, StatusPill } from './common';
 import { ROLE_NAME, STATUS, timeAgo } from './labels';
 
 const col = createColumnHelper<Employee>();
@@ -147,37 +150,42 @@ export function PeoplePage() {
   );
   const active = rows.filter((r) => r.active);
   const tiles: {
+    id: string;
     label: string;
+    info: string;
     value: number;
     sub: string;
-    tone: string;
     pick?: SignInStatus | 'session';
   }[] = [
     {
+      id: 'employees',
       label: 'Employees',
+      info: 'People active in Bitrix24.',
       value: active.length,
       sub: 'Active in Bitrix24',
-      tone: 'from-primary to-primary-dark',
     },
     {
+      id: 'signedIn',
       label: 'Signed in',
+      info: 'Active now, or signed in less than 3 days ago (a session lasts 3 days).',
       value: active.filter((r) => r.status === 'active' || r.status === 'signedIn').length,
       sub: 'Session still open',
-      tone: 'from-primary to-accent',
       pick: 'session',
     },
     {
+      id: 'activeNow',
       label: 'Active now',
+      info: 'Used the dashboard in the last 5 minutes.',
       value: active.filter((r) => r.status === 'active').length,
       sub: 'In the last 5 minutes',
-      tone: 'from-accent to-accent-dark',
       pick: 'active',
     },
     {
+      id: 'never',
       label: 'Never signed in',
+      info: 'Active in Bitrix24 but never signed in to the dashboard.',
       value: active.filter((r) => r.status === 'never').length,
       sub: 'Not used the dashboard yet',
-      tone: 'from-warn to-bad',
       pick: 'never',
     },
   ];
@@ -201,95 +209,100 @@ export function PeoplePage() {
         </Tip>
       </PageHead>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4" data-tour="people-tiles">
-        {tiles.map((t) => (
-          <button
-            key={t.label}
-            type="button"
-            onClick={() => setStatus(t.pick && status !== t.pick ? t.pick : '')}
-            className={clsx(
-              'relative overflow-hidden rounded-2xl border bg-surface p-4 text-left transition hover:-translate-y-0.5 hover:shadow-pop',
-              t.pick && status === t.pick ? 'border-accent ring-2 ring-accent/30' : 'border-border',
-            )}
-          >
-            <span
-              className={clsx(
-                'absolute -right-6 -top-6 h-20 w-20 rounded-full bg-gradient-to-br opacity-20',
-                t.tone,
-              )}
-            />
-            <span className="block font-heading text-label uppercase tracking-wider text-text-muted">
-              {t.label}
-            </span>
-            <span className="block font-heading text-title text-primary-dark">
-              {isLoading ? '…' : t.value}
-            </span>
-            <span className="block text-table text-text-muted">{t.sub}</span>
-          </button>
-        ))}
-      </div>
-
-      <div className="rounded-2xl border border-border bg-surface p-4">
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <label className="relative">
-            <IconSearch
-              size={16}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
-            />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search name, designation, department"
-              className="h-9 w-72 rounded-xl border border-border bg-surface pl-9 pr-3 text-body text-text focus:border-primary focus:outline-none"
-            />
-          </label>
-          <select
-            value={dept}
-            onChange={(e) => setDept(e.target.value)}
-            aria-label="Department"
-            className="h-9 rounded-xl border border-border bg-surface px-3 text-body text-text"
-          >
-            <option value="">All departments</option>
-            {departments.map((d) => (
-              <option key={d}>{d}</option>
-            ))}
-          </select>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value as SignInStatus | 'session' | '')}
-            aria-label="Dashboard status"
-            className="h-9 rounded-xl border border-border bg-surface px-3 text-body text-text"
-          >
-            <option value="">Any status</option>
-            <option value="session">Signed in (now or session open)</option>
-            {(Object.keys(STATUS) as SignInStatus[]).map((s) => (
-              <option key={s} value={s}>
-                {STATUS[s].label}
-              </option>
-            ))}
-          </select>
-          <label className="flex cursor-pointer items-center gap-2 text-table text-text-muted">
-            <input
-              type="checkbox"
-              checked={inactive}
-              onChange={(e) => setInactive(e.target.checked)}
-              className="h-4 w-4 accent-[var(--primary)]"
-            />
-            Show inactive
-          </label>
-          <span className="ml-auto text-table text-text-muted">
-            {shown.length} of {inactive ? rows.length : active.length}
-          </span>
-        </div>
-        <DataTable
-          columns={columns}
-          data={shown}
-          rowKey={(r) => r.id}
-          loading={isLoading}
-          initialSorting={[{ id: 'status', desc: false }]}
-          emptyText="Nobody matches."
+      <div data-tour="people-tiles">
+        <SortableGroup
+          group="people.tiles"
+          noun="tile"
+          className="grid grid-cols-2 gap-3 lg:grid-cols-[repeat(var(--cols),minmax(0,1fr))]"
+          items={tiles.map((t) => ({
+            id: t.id,
+            node: (
+              <StatTile
+                label={t.label}
+                info={t.info}
+                value={isLoading ? undefined : t.value}
+                sub={t.sub}
+                active={!!t.pick && status === t.pick}
+                onClick={() => setStatus(t.pick && status !== t.pick ? t.pick : '')}
+              />
+            ),
+          }))}
         />
       </div>
+
+      <SortableGroup
+        group="people.cards"
+        noun="card"
+        className="grid grid-cols-1 gap-4"
+        items={[
+          {
+            id: 'directory',
+            node: (
+              <div className="rounded-card border border-border bg-surface p-4">
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <label className="relative">
+                    <IconSearch
+                      size={16}
+                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
+                    />
+                    <input
+                      value={q}
+                      onChange={(e) => setQ(e.target.value)}
+                      placeholder="Search name, designation, department"
+                      className="h-9 w-72 rounded-xl border border-border bg-surface pl-9 pr-3 text-body text-text focus:border-primary focus:outline-none"
+                    />
+                  </label>
+                  <select
+                    value={dept}
+                    onChange={(e) => setDept(e.target.value)}
+                    aria-label="Department"
+                    className="h-9 rounded-xl border border-border bg-surface px-3 text-body text-text"
+                  >
+                    <option value="">All departments</option>
+                    {departments.map((d) => (
+                      <option key={d}>{d}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value as SignInStatus | 'session' | '')}
+                    aria-label="Dashboard status"
+                    className="h-9 rounded-xl border border-border bg-surface px-3 text-body text-text"
+                  >
+                    <option value="">Any status</option>
+                    <option value="session">Signed in (now or session open)</option>
+                    {(Object.keys(STATUS) as SignInStatus[]).map((s) => (
+                      <option key={s} value={s}>
+                        {STATUS[s].label}
+                      </option>
+                    ))}
+                  </select>
+                  <label className="flex cursor-pointer items-center gap-2 text-table text-text-muted">
+                    <input
+                      type="checkbox"
+                      checked={inactive}
+                      onChange={(e) => setInactive(e.target.checked)}
+                      className="h-4 w-4 accent-[var(--primary)]"
+                    />
+                    Show inactive
+                  </label>
+                  <span className="ml-auto text-table text-text-muted">
+                    {shown.length} of {inactive ? rows.length : active.length}
+                  </span>
+                </div>
+                <DataTable
+                  columns={columns}
+                  data={shown}
+                  rowKey={(r) => r.id}
+                  loading={isLoading}
+                  initialSorting={[{ id: 'status', desc: false }]}
+                  emptyText="Nobody matches."
+                />
+              </div>
+            ),
+          },
+        ]}
+      />
     </div>
   );
 }

@@ -2,6 +2,8 @@
 import type { IssuePreset } from '@nural/shared';
 import { useEffect, useRef, useState } from 'react';
 import { Accordion } from '../../components/Accordion';
+import { PageHead } from '../../components/ui/PageHead';
+import { IconQa } from '../../components/ui/icons';
 import { SortableGroup } from '../../components/layout/SortableGroup';
 import { InfoContext } from '../../components/infoContext';
 import { keepInView } from '../../components/keepInView';
@@ -121,6 +123,11 @@ export function QaTab() {
   return (
     <InfoContext.Provider value={showing}>
       <div className="space-y-4">
+        <PageHead
+          title="QA"
+          sub="Bugs and feedback, testing work and what waits for retest"
+          icon={<IconQa size={24} />}
+        />
         <QaTiles
           active={open.all && allPreset !== 'all' && !list.params ? allPreset : null}
           onSelect={onTile}
