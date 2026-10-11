@@ -9,6 +9,7 @@ import { useTab } from './features/filters/useFilters';
 import { KpiTab } from './features/kpi/KpiTab';
 import { QaTab } from './features/qa/QaTab';
 import { useLiveUpdates } from './hooks/useLiveUpdates';
+import { useNewVersion } from './hooks/useNewVersion';
 
 export default function App() {
   const [urlTab, setTab] = useTab();
@@ -22,6 +23,7 @@ export default function App() {
   const tab =
     (urlTab === 'kpi' && !kpiAllowed) || (urlTab === 'support' && !supportAllowed) ? 'dev' : urlTab;
   useLiveUpdates();
+  useNewVersion();
 
   return (
     <div className="min-h-screen">

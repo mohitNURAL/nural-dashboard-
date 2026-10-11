@@ -923,3 +923,11 @@ Each person sees only their own entries under "My feedback".
 - Each entry records the person's name, role and department at the time.
 - Nothing is sent to Bitrix24.
 - Code: `apps/api/src/routes/feedback.ts`, tests in `feedback.test.ts`; `apps/web/src/features/support/SupportTab.tsx`.
+
+## 15. New version notice (2026-10-11)
+
+After a deploy, everyone who has the dashboard open gets a toast: **"A new version of the dashboard is ready. Refresh to get the latest update."** with a **Refresh** button. The toast stays until it is used or closed.
+
+- Each build has an ID (its build time). The ID is compiled into the app and written to `/version.json` (`apps/web/vite.config.ts`).
+- The open page reads `/version.json` every minute, when its browser tab is shown again and when the browser comes back online. It skips the check while offline or hidden. A different ID shows the toast, once (`hooks/useNewVersion.ts`).
+- Caddy serves the page and `/version.json` with `Cache-Control: no-cache`, so Refresh always loads the new build. The hashed `/assets/*` files stay cached for a year.
