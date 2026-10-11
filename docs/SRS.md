@@ -370,11 +370,11 @@ The QA tab swaps the Tag filter for a Bug or Feedback filter and puts Rework in 
 
 | Set | Pages covered | Wording |
 |---|---|---|
-| member | Development, QA | "your tasks" |
-| support | Development, QA, Support | "your tasks" |
-| owner | KPI, Development, QA | all data |
-| manager | KPI, Development, QA, Support, Company tree, People directory | all data |
-| admin | everything, including Access permissions | all data |
+| member | Development, QA, My insights | "your tasks" |
+| support | Development, QA, Support, My insights | "your tasks" |
+| owner | KPI, Development, QA, Insights | all data |
+| manager | KPI, Development, QA, Support, Insights, Company tree, People directory | all data |
+| admin | everything, including Access permissions and Integration (Connections, Mailing) | all data |
 
 What each set holds:
 - **Chapters:** only the pages that level can open, worded for that level (members' own wording where the tour has one).

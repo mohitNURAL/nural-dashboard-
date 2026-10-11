@@ -84,11 +84,11 @@ IMG = '../../img/'
 
 # What each level can open, and how it reads (the dock picks the set from the person's rights).
 SETS = {
-    'member': dict(label='Members', who='a team member', pages=['dev', 'qa'], member=True, edit='limited'),
-    'support': dict(label='Support team', who='a member of the Tech Support team', pages=['dev', 'qa', 'support'], member=True, edit='limited'),
-    'owner': dict(label='Product owners', who='a product owner', pages=['kpi', 'dev', 'qa'], member=False, edit='all'),
-    'manager': dict(label='Team leads and PM', who='a team lead or project manager', pages=['kpi', 'dev', 'qa', 'support', 'org', 'people'], member=False, edit='all'),
-    'admin': dict(label='Admins', who='an admin', pages=['kpi', 'dev', 'qa', 'support', 'org', 'people', 'access'], member=False, edit='all'),
+    'member': dict(label='Members', who='a team member', pages=['dev', 'qa', 'insights'], member=True, edit='limited'),
+    'support': dict(label='Support team', who='a member of the Tech Support team', pages=['dev', 'qa', 'support', 'insights'], member=True, edit='limited'),
+    'owner': dict(label='Product owners', who='a product owner', pages=['kpi', 'dev', 'qa', 'insights'], member=False, edit='all'),
+    'manager': dict(label='Team leads and PM', who='a team lead or project manager', pages=['kpi', 'dev', 'qa', 'support', 'insights', 'org', 'people'], member=False, edit='all'),
+    'admin': dict(label='Admins', who='an admin', pages=['kpi', 'dev', 'qa', 'support', 'insights', 'org', 'people', 'access', 'connections', 'mailing'], member=False, edit='all'),
 }
 
 
@@ -127,16 +127,19 @@ PAGE_CARD = {
     'dev': ('Development', "The Development department's tasks and issues: totals, pending, on hold, ready, deployed, overdue, done today; per person or project, ageing, ranking and stages; task lists and alerts."),
     'qa': ('QA', 'Bugs and feedback: filed, open, on hold, last filed and resolved, rework and retesting awaited; by person, rework, testing workload, retest queue, trend, ageing and stages.'),
     'support': ('Support', 'Coming soon. Tell us what the Support tab should show; your answers shape it.'),
+    'insights': ('Insights', 'What is holding us back: lagging projects and people, overload, people with room to help, projects pulling people off others, and releases at risk. Every finding opens its tasks.'),
+    'connections': ('Connections', 'Microsoft 365 mail, Slack and Infowan: connected or not, a test to yourself, and how to connect each.'),
+    'mailing': ('Mailing', 'Performance reports by mail and Slack: when, to whom, what and how. New reports go only to admins until switched to Live.'),
     'org': ('Company tree', 'Departments as in Bitrix24, with heads and people.'),
     'people': ('People directory', "Everyone's designation, department, access areas, dashboard status, last active, and open and overdue tasks."),
     'access': ('Access permissions', 'Set each right per person or department; every change is logged.'),
 }
 
 LEVELS_TABLE = '''<table><tr><th>Level</th><th>Data</th><th>Pages</th><th>Can change on tasks</th></tr>
-<tr><td class="name">Admin</td><td>Everything</td><td>All, including Access permissions</td><td>Every field</td></tr>
-<tr><td class="name">Project manager, team lead</td><td>Everything</td><td>KPI, Development, QA, Support, Company tree, People directory</td><td>Every field</td></tr>
-<tr><td class="name">Product owner</td><td>Everything</td><td>KPI, Development, QA</td><td>Every field</td></tr>
-<tr><td class="name">Member</td><td>Tasks assigned to them or created by them</td><td>Development, QA (and Support for the Tech Support team)</td><td>Stage, status and tags</td></tr></table>'''
+<tr><td class="name">Admin</td><td>Everything</td><td>All, including Access permissions and Integration (Connections, Mailing)</td><td>Every field</td></tr>
+<tr><td class="name">Project manager, team lead</td><td>Everything</td><td>KPI, Development, QA, Support, Insights, Company tree, People directory</td><td>Every field</td></tr>
+<tr><td class="name">Product owner</td><td>Everything</td><td>KPI, Development, QA, Insights</td><td>Every field</td></tr>
+<tr><td class="name">Member</td><td>Tasks assigned to them or created by them</td><td>Development, QA, My insights (and Support for the Tech Support team)</td><td>Stage, status and tags</td></tr></table>'''
 
 
 def user_guide(key):
@@ -171,9 +174,13 @@ def user_guide(key):
         + ('' if member else LEVELS_TABLE)))
 
     groups = ['<b>Dashboard</b>: ' + ', '.join(PAGE_CARD[p][0] for p in pages if p in ('kpi', 'dev', 'qa', 'support')) + '.']
+    groups.append('<b>Insights</b>: ' + ('My insights' if member else 'Insights') + '.')
     emp = [PAGE_CARD[p][0] for p in pages if p in ('org', 'people', 'access')]
     if emp:
         groups.append('<b>Employees</b>: ' + ', '.join(emp) + '.')
+    integ = [PAGE_CARD[p][0] for p in pages if p in ('connections', 'mailing')]
+    if integ:
+        groups.append('<b>Integration</b>: ' + ', '.join(integ) + '.')
     ch.append(('Finding your way', 'Menu, top bar and page tools',
         f'<figure class="side"><img src="{IMG}{key}/drawer.jpg" alt=""><figcaption><b>The menu</b> sits on the left. Closed, it shows icons; hover it to open it, and move away to close it. '
         'Click <b>☰</b> to pin it open until you click again. Click a group\'s name to fold it.<br><br>'
@@ -194,6 +201,13 @@ def user_guide(key):
         + (callout('', 'Your scope.', scope) if member else '')
         + fig(key, 'tasklist', 'A task list: sortable columns, edit in place, tick boxes for bulk edit, Excel export and pages of 10 to 100 rows.')
         + fig(key, 'taskview', 'Clicking a task opens its view: every detail, the description and its history, with Open in Bitrix24.')))
+
+    ch.append(('Insights', 'What is holding us back',
+        ('<p><b>My insights</b> looks at your own tasks: what is overdue, what is due soon, and where your work is split across projects.</p>' if member else
+         '<p><b>Insights</b> ranks what is holding the work back: projects pulling people off other projects, releases at risk, lagging projects, overloaded people, lagging people and people with room to help.</p>')
+        + '<ul><li>Choose the period (7, 14 or 30 days) at the top.</li><li>Every finding names its numbers; <b>click it</b> to list the tasks behind it.</li>'
+        '<li>Leave and attendance from Infowan join the findings once Infowan is connected; until then Insights uses Bitrix24 and dashboard data only.</li></ul>'
+        + fig(key, 'page-insights', ('My insights' if member else 'Insights') + ', as you see it (names replaced).')))
 
     ch.append(('Changing tasks', 'Edit in place and in bulk',
         f'<p>Changes are made in Bitrix24, in your name, and show on the dashboard straight away. You can change {e(edits)}.</p>'
@@ -246,12 +260,32 @@ MODULES = [
     ('dev', 'Development', 'Tasks, issues and deadlines', "The Development department's tasks and issues. The All / Dev / Issues switch at the top steers every number."),
     ('qa', 'QA', 'Bugs, feedback, testing and retesting', 'Bugs and feedback (tasks tagged bug or feedback), testing work and the retest queue. The Bug or Feedback filter narrows the page.'),
     ('support', 'Support', 'Feedback for the coming Support tab', 'Coming soon. Until then it collects what the support team and management need; admins and the Support lead read the answers.'),
+    ('insights', 'Insights', 'What is holding us back', 'Findings from Bitrix24 and dashboard data, ranked: causes first (projects pulling people away), then releases at risk, lagging projects, overload, lagging people and people with room. Period: 7, 14 or 30 days. Every finding opens its tasks.'),
     ('org', 'Company tree', 'Departments, heads and people', 'The company structure from Bitrix24: departments, their heads and people.'),
     ('people', 'People directory', 'Who has access, who is active', 'Everyone in Bitrix24 with what they can open on the dashboard and whether they use it.'),
     ('access', 'Access permissions', 'Rights per person or department', 'Who sees what and who may change what, set per person or department, with every change logged.'),
+    ('connections', 'Connections', 'Microsoft 365, Slack and Infowan', 'Where reports go and where leave comes from. Keys are kept only on the server; each service shows whether it is connected and sends a test to you.'),
+    ('mailing', 'Mailing', 'Performance reports by mail and Slack', 'Design reports: when they go, to whom, what they hold and how they are sent. Each person gets their own part.'),
 ]
 
 EXTRA = {
+    'insights': """<h3>The rules</h3><table><tr><th>Finding</th><th>Rule</th></tr>
+<tr><td class="name">Lagging project</td><td>3+ overdue and 25 % or more of its open tasks; or no action for 10+ working days; or closing half or less of the period before.</td></tr>
+<tr><td class="name">Lagging person</td><td>3+ overdue and 30 % or more of their open tasks; or under 50 % on time; or closing half or less of the period before with 5+ open.</td></tr>
+<tr><td class="name">Overloaded</td><td>10+ open and twice the team median, or 8+ due in the next 5 working days.</td></tr>
+<tr><td class="name">Has room</td><td>2 or fewer open and closed while one of their projects has overdue work.</td></tr>
+<tr><td class="name">Pulling people away</td><td>One project takes 70 % or more of a person's actions while their tasks in another project are overdue.</td></tr>
+<tr><td class="name">Release risk</td><td>Open tasks due this week or next: high if overdue, or not started and due within 2 working days.</td></tr></table>""",
+    'mailing': """<h3>A report</h3><table><tr><th>Part</th><th>Choices</th></tr>
+<tr><td class="name">When</td><td>Daily (working days), weekly, monthly, or when someone's own numbers are very poor or very good (checked daily, at most once a week each). Times are IST; reports before 12:00 cover the period before.</td></tr>
+<tr><td class="name">Who</td><td>Roles and named people. Admins get the company, team leads their team and projects, product owners their projects, members their own tasks.</td></tr>
+<tr><td class="name">What</td><td>Topics (how it went, due today, tasks in hand, releases, what went well, what to improve, lagging, load, what is holding us back, leave) and questions for the reader.</td></tr>
+<tr><td class="name">How</td><td>Mail with CC, Slack message to each person, Slack channels (one company copy each).</td></tr></table>
+<h3>States</h3><table><tr><th>State</th><th>Who gets it</th></tr>
+<tr><td class="name">Preview</td><td>Admins only, marked PREVIEW, with the list of who would get it. Every new report starts here.</td></tr>
+<tr><td class="name">Live</td><td>Every recipient, on schedule.</td></tr>
+<tr><td class="name">Paused</td><td>Nobody.</td></tr></table>
+<p><b>Preview</b> on a card shows the mail as any person would get it, sending nothing. <b>Send test</b> sends it to you only. <b>Last runs</b> shows what went out, failed or was skipped.</p>""",
     'dev': '''<h3>Task lists</h3><p>Due today, Overdue, All tasks (follows the last number you clicked) and Alert details. Each list sorts, edits in place, bulk edits, pages and exports to Excel.</p>''',
     'qa': '''<h3>Issue lists</h3><p>Latest filed, Latest resolved and All issues (follows the last number you clicked), with the same editing and export as on Development.</p>''',
     'people': '''<h3>Dashboard status</h3><table><tr><th>Status</th><th>Meaning</th></tr>
@@ -290,7 +324,7 @@ def module_guide(key):
             for st in steps.get(mod, [])
         )
         scope = ('<div class="callout">Every number on this page counts <b>only your own tasks</b>: assigned to you or created by you.</div>'
-                 if S['member'] and mod in ('dev', 'qa') else '')
+                 if S['member'] and mod in ('dev', 'qa', 'insights') else '')
         body = (f'<p>{e(purpose)}</p>{scope}' + fig(key, 'page-' + mod, f'{title}, as you see it (names replaced).')
                 + f'<h3>Every data point</h3><table><tr><th>Data point</th><th>What it shows and how to use it</th></tr>{rows}</table>'
                 + EXTRA.get(mod, ''))

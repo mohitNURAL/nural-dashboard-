@@ -37,9 +37,12 @@
   "dev": "Development",
   "qa": "QA",
   "support": "Support",
+  "insights": "Insights",
   "org": "Company tree",
   "people": "People directory",
-  "access": "Access permissions"
+  "access": "Access permissions",
+  "connections": "Connections",
+  "mailing": "Mailing"
  },
  "TAB_STEPS": {
   "dev": [
@@ -261,6 +264,69 @@
     "text": "Every number on this tab opens its tasks here. Edit in place, bulk edit and Excel export work as on the other tabs."
    }
   ],
+  "insights": [
+   {
+    "target": "[data-tour=\"insights-window\"]",
+    "title": "Insights",
+    "text": "What is holding us back, worked out from Bitrix24 data: lagging projects and people, load, projects pulling people away and releases at risk. Choose how far back to look: 7, 14 or 30 days.",
+    "member": "What is holding your work back: your load, your late tasks, and projects pulling you away from others. Choose how far back to look: 7, 14 or 30 days."
+   },
+   {
+    "target": "[data-group=\"insights.tiles\"] [data-slot=\"laggingProjects\"]",
+    "title": "At a glance",
+    "text": "Lagging projects and people, the overloaded, those with room to help, people split across projects and releases at risk. Click a tile for its tasks."
+   },
+   {
+    "target": "[data-group=\"insights.cards\"] [data-slot=\"holding\"]",
+    "title": "What is holding us back",
+    "text": "The findings ranked, causes first: a project taking people’s time while another project’s tasks go overdue, then lagging projects and people, overload, people with room and risky releases. Click one for its tasks.",
+    "member": "Your findings ranked, causes first: a project taking your time while your tasks in another go overdue, then your late work and releases at risk. Click one for its tasks."
+   },
+   {
+    "target": "[data-group=\"insights.cards\"] [data-slot=\"projects\"]",
+    "title": "Projects",
+    "text": "Open tasks per project with the overdue part; ⚠ marks a lagging project. Hover for why; click for the tasks."
+   },
+   {
+    "target": "[data-group=\"insights.cards\"] [data-slot=\"load\"]",
+    "title": "Load",
+    "text": "Open tasks per person: overdue, due in the next 5 working days and the rest. ▲ overloaded, ▽ has room to take tasks over."
+   },
+   {
+    "target": "[data-group=\"insights.cards\"] [data-slot=\"overlap\"]",
+    "title": "Projects pulling people away",
+    "text": "Who has open work in several projects, how much they do in each, and which project is taking their time while another goes overdue."
+   },
+   {
+    "target": "[data-group=\"insights.cards\"] [data-slot=\"releases\"]",
+    "title": "Release plan",
+    "text": "Tasks due this week and next with their planned date, stage and risk of slipping. Click a row for the task."
+   },
+   {
+    "target": "[data-group=\"insights.cards\"] [data-slot=\"absences\"]",
+    "title": "Leave and attendance",
+    "text": "From Infowan once connected: leave, late arrivals and early leaving, and the tasks and projects they put at risk. Until then insights use Bitrix24 data."
+   }
+  ],
+  "connections": [
+   {
+    "target": "[data-group=\"connections.cards\"] [data-slot=\"mail\"]",
+    "title": "Connections",
+    "text": "Where reports go and where leave comes from: Microsoft 365 mail, Slack and Infowan. Each shows whether it is connected, sends a test to you, and explains how to connect it."
+   }
+  ],
+  "mailing": [
+   {
+    "target": "[data-tour=\"mailing-new\"]",
+    "title": "New report",
+    "text": "Design a performance report: when (daily, weekly, monthly, or when someone’s numbers are very poor or very good), who (by role or by name; each gets their own part), what (topics and questions) and how (mail with CC, Slack messages, Slack channels)."
+   },
+   {
+    "target": "[data-tour=\"mailing-list\"]",
+    "title": "Your reports",
+    "text": "New reports start in Preview: only admins get them, with the list of who would. Preview shows the mail as any person would get it; Send test sends it to you; Go live sends it to everyone on schedule. Last runs show what went out."
+   }
+  ],
   "org": [
    {
     "target": "[data-group=\"org.tiles\"] [data-slot=\"departments\"]",
@@ -388,6 +454,37 @@
    "workload": "Workload",
    "people": "People",
    "activity": "Activity"
+  },
+  "insights.tiles": {
+   "laggingProjects": "Lagging projects",
+   "laggingPeople": "Lagging people",
+   "overloaded": "Overloaded",
+   "underloaded": "Has room",
+   "shared": "Split across projects",
+   "atRisk": "Releases at risk"
+  },
+  "insights.cards": {
+   "holding": "What is holding us back",
+   "projects": "Projects: overdue vs on track",
+   "load": "Load per person",
+   "overlap": "Projects pulling people away",
+   "releases": "Release plan",
+   "absences": "Leave and attendance"
+  },
+  "connections.tiles": {
+   "connected": "Connected",
+   "scheduling": "Scheduled sending"
+  },
+  "connections.cards": {
+   "mail": "Microsoft 365 mail",
+   "slack": "Slack",
+   "infowan": "Infowan"
+  },
+  "mailing.tiles": {
+   "reports": "Reports",
+   "live": "Live",
+   "preview": "In preview",
+   "paused": "Paused"
   },
   "org.tiles": {
    "departments": "Departments",
