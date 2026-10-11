@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import clsx from 'clsx';
 import { TaskDrawer } from './components/TaskDrawer';
 import { TopBar } from './components/TopBar';
@@ -5,6 +6,7 @@ import { ActionDock } from './components/shell/ActionDock';
 import { allowedPage, navFor } from './components/shell/nav';
 import { useDrawer } from './components/shell/drawerStore';
 import { ConfirmHost } from './components/ui/ConfirmDialog';
+import { trackClicks } from './components/spotlight/spotlight';
 import { SideDrawer } from './components/shell/SideDrawer';
 import { DevTab } from './features/dev/DevTab';
 import { AccessPage } from './features/employees/AccessPage';
@@ -38,6 +40,8 @@ export default function App() {
   useSessionEnd();
   useGuidedTour(tab, setTab);
   const newTabs = useNewTabs();
+  // Which data point a click came from, for the spotlight (components/spotlight).
+  useEffect(() => trackClicks(), []);
 
   return (
     <div className="min-h-screen">

@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Accordion } from '../../components/Accordion';
 import { PageHead } from '../../components/ui/PageHead';
 import { IconDev } from '../../components/ui/icons';
-import { keepInView } from '../../components/keepInView';
+import { closeSpotlight, spotlightSoon } from '../../components/spotlight/spotlight';
 import { SortableGroup } from '../../components/layout/SortableGroup';
 import { InfoContext } from '../../components/infoContext';
 import { useDevScope, useFilterSummary, useFilters } from '../filters/useFilters';
@@ -59,19 +59,15 @@ export function DevTab() {
   const toggle = (s: Section) => (o: boolean) => setOpen((prev) => ({ ...prev, [s]: o }));
   const reveal = (s: Section) => {
     setOpen((prev) => ({ ...prev, [s]: true }));
-    requestAnimationFrame(() =>
-      refs[s].current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
-    );
+    spotlightSoon(refs[s]);
   };
 
   // A drill from anywhere (this tab or the header bell) opens and scrolls to "All tasks".
-  const stopFollow = useRef<() => void>(undefined);
   useEffect(() => {
     if (!revealDrill) return;
     revealed();
     setOpen((prev) => ({ ...prev, all: true }));
-    stopFollow.current?.();
-    stopFollow.current = keepInView(allRef);
+    spotlightSoon(allRef);
   }, [revealDrill, revealed]);
   // Clearing, resetting or changing the filters returns "All tasks" to its default, unless the
   // new filters are the ones the drill-down itself set (e.g. clicking an assignee's count).
@@ -91,10 +87,10 @@ export function DevTab() {
     if (!showAlerts) return;
     alertsShown();
     setOpen((prev) => ({ ...prev, alerts: true }));
-    stopFollow.current?.();
-    stopFollow.current = keepInView(alertsRef);
+    spotlightSoon(alertsRef);
   }, [showAlerts, alertsShown]);
-  useEffect(() => () => stopFollow.current?.(), []);
+  // Leaving the tab puts the spotlight away.
+  useEffect(() => () => closeSpotlight(), []);
 
   const onTile = (preset: DevPreset) => {
     if (preset === 'overdue') return reveal('overdue');

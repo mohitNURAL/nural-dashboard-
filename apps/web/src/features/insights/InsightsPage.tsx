@@ -8,6 +8,7 @@ import { Card } from '../../components/Card';
 import { Chart } from '../../components/Chart';
 import { token } from '../../components/chartTheme';
 import { SortableGroup } from '../../components/layout/SortableGroup';
+import { closeSpotlight, spotlightSoon } from '../../components/spotlight/spotlight';
 import { StatTile } from '../../components/StatTile';
 import { PageHead } from '../../components/ui/PageHead';
 import { IconInsights } from '../../components/ui/icons';
@@ -15,10 +16,27 @@ import { useOpenTask } from '../tasks/api';
 import { taskColumns } from '../tasks/columns';
 import { TaskList } from '../tasks/TaskList';
 import { fmtDate } from '../dev/format';
-import { useInsightList, useInsights, type Insights, type KeyPoint, type TileKey } from './api';
+import {
+  useInsightList,
+  useInsights,
+  type EntityList,
+  type Insights,
+  type KeyPoint,
+  type TileKey,
+} from './api';
+import { tileEntities } from './entities';
 
 const COLUMNS = taskColumns({ withCreator: true });
 const WINDOWS = [7, 14, 30] as const;
+/** What each tile counts. */
+const UNIT: Record<TileKey, string> = {
+  laggingProjects: 'Projects',
+  laggingPeople: 'People',
+  overloaded: 'People',
+  underloaded: 'People',
+  shared: 'People',
+  atRisk: 'Tasks',
+};
 
 const KIND: Record<KeyPoint['kind'], { label: string; cls: string }> = {
   pull: { label: 'Cause', cls: 'bg-bad/15 text-bad' },
@@ -33,17 +51,15 @@ export function InsightsPage() {
   const [win, setWin] = useState<number>(14);
   const { data, isLoading } = useInsights(win);
   const own = data?.viewScope === 'own';
-  const open = useInsightList((s) => s.open);
   const list = useInsightList();
   const [listOpen, setListOpen] = useState(false);
   const listRef = useRef<HTMLElement>(null);
   useEffect(() => {
     if (!list.reveal) return;
     setListOpen(true);
-    requestAnimationFrame(() =>
-      listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
-    );
+    spotlightSoon(listRef);
   }, [list.reveal]);
+  useEffect(() => () => closeSpotlight(), []);
   // Without a choice, the list shows the tasks behind every key point.
   const defaultIds = useMemo(
     () => [...new Set((data?.keyPoints ?? []).flatMap((k) => k.taskIds))],
@@ -58,14 +74,10 @@ export function InsightsPage() {
         label={label}
         info={info}
         value={data?.tiles[key]}
-        sub={sub}
+        sub={`${UNIT[key]} · ${sub}`}
         tone={tone && data?.tiles[key] ? tone : undefined}
-        onClick={() => {
-          if (!data) return;
-          const which =
-            key === 'shared' ? data.overlap.pulls.flatMap((p) => p.overdueIds) : data.ids[key];
-          open(label, which);
-        }}
+        // A tile first lists the projects or people it counts; a row then opens their tasks.
+        onClick={() => data && list.openEntities(tileEntities(key, data, label))}
       />
     ),
   });
@@ -190,22 +202,41 @@ export function InsightsPage() {
       <Accordion
         ref={listRef}
         tour="insights-tasks"
-        title={list.label ? `Tasks: ${list.label}` : 'Tasks behind the key points'}
-        hint="Row click opens the task"
-        count={ids.length}
+        title={
+          list.entities
+            ? `${list.label} · by ${list.entities.kind === 'project' ? 'project' : 'person'}`
+            : list.label
+              ? `Tasks: ${list.label}`
+              : 'Tasks behind the key points'
+        }
+        hint={list.entities ? 'Click a row for its tasks' : 'Row click opens the task'}
+        count={list.entities ? list.entities.rows.length : ids.length}
         open={listOpen}
         onOpenChange={setListOpen}
       >
-        {list.label && (
-          <button
-            type="button"
-            onClick={list.clear}
-            className="mb-3 font-heading text-button text-primary hover:underline"
-          >
-            Show the tasks behind every key point
-          </button>
-        )}
-        {ids.length ? (
+        <div className="mb-3 flex flex-wrap gap-4">
+          {list.back && (
+            <button
+              type="button"
+              onClick={list.goBack}
+              className="font-heading text-button text-primary hover:underline"
+            >
+              ‹ Back to {list.back.label.toLowerCase()}
+            </button>
+          )}
+          {list.label && (
+            <button
+              type="button"
+              onClick={list.clear}
+              className="font-heading text-button text-text-muted hover:text-primary hover:underline"
+            >
+              Show the tasks behind every key point
+            </button>
+          )}
+        </div>
+        {list.entities ? (
+          <EntityTable list={list.entities} onPick={list.openEntity} />
+        ) : ids.length ? (
           <TaskList
             filterParams={{ ids: ids.join(',') }}
             kind="all"
@@ -611,6 +642,60 @@ function AbsenceCard({ data, className }: { data?: Insights; className?: string 
           </p>
         )}
       </Card>
+    </div>
+  );
+}
+
+/** The projects or people behind a tile, each with why it counts; a row opens its tasks. */
+function EntityTable({
+  list,
+  onPick,
+}: {
+  list: EntityList;
+  onPick: (e: EntityList['rows'][number]) => void;
+}) {
+  if (!list.rows.length)
+    return <p className="py-6 text-center text-text-muted">Nobody here right now.</p>;
+  const heads = list.rows[0]!.stats.map(([h]) => h);
+  return (
+    <div className="nural-table-wrap overflow-auto">
+      <table className="nural-table w-full border-separate border-spacing-0 text-table [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
+        <thead>
+          <tr className="text-left font-heading text-label uppercase">
+            <th>{list.kind === 'project' ? 'Project' : 'Person'}</th>
+            <th>Why</th>
+            {heads.map((h) => (
+              <th key={h} className="text-right">
+                {h}
+              </th>
+            ))}
+            <th />
+          </tr>
+        </thead>
+        <tbody>
+          {list.rows.map((e) => (
+            <tr key={`${e.id}-${e.name}`} className="cursor-pointer" onClick={() => onPick(e)}>
+              <td className="font-heading font-bold text-primary-dark">{e.name}</td>
+              <td className="text-text">{e.reason}</td>
+              {e.stats.map(([h, n]) => (
+                <td key={h} className="text-right tabular-nums">
+                  {n.toLocaleString('en-IN')}
+                </td>
+              ))}
+              <td className="whitespace-nowrap text-right">
+                <span className="rounded-full bg-primary/10 px-2.5 py-0.5 font-heading text-label font-bold text-primary">
+                  {e.ids.length} task{e.ids.length === 1 ? '' : 's'} ›
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {list.total > list.rows.length && (
+        <p className="px-3 py-2 text-table text-text-muted">
+          The {list.rows.length} most important of {list.total}.
+        </p>
+      )}
     </div>
   );
 }

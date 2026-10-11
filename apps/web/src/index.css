@@ -262,3 +262,49 @@ h3 {
 .nural-table tfoot tr > td:last-child {
   border-bottom-right-radius: 13px;
 }
+
+/* Spotlight (components/spotlight/spotlight.ts): the page dimmed around the clicked data point,
+   a glowing ring on it, and the close button at the list's corner. */
+[data-spotlight] .spot-dim {
+  position: fixed;
+  inset: 0;
+  z-index: 44;
+  fill: rgba(8, 12, 30, 0.58);
+  cursor: pointer;
+  animation: fade-in 200ms ease-out;
+}
+[data-spotlight] .spot-ring {
+  position: fixed;
+  z-index: 45;
+  pointer-events: none;
+  border-radius: 14px;
+  border: 2px solid var(--accent);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent),
+    0 0 28px color-mix(in srgb, var(--accent) 65%, transparent);
+  animation: spot-pulse 1.6s ease-in-out infinite;
+}
+[data-spotlight] .spot-close {
+  position: fixed;
+  z-index: 47;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+@keyframes spot-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent),
+      0 0 22px color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 7px color-mix(in srgb, var(--accent) 15%, transparent),
+      0 0 36px color-mix(in srgb, var(--accent) 75%, transparent);
+  }
+}

@@ -430,6 +430,8 @@ Rebuild after a change people can see:
 - **Nothing leaves a gap:** on wide screens the tiles spread over the row (as many columns as tiles shown); cards fill their rows as described above.
 - **Saved per person:** `user_prefs.layout["<tab>.<group>.hidden"]`. If a save fails, a toast says so.
 
+**Spotlight (2026-10-12).** Clicking a number, tile, bar or cell no longer scrolls the page to the list at the bottom. The page dims, the clicked data point stays lit with a glowing ring (a whole tile, or the count, cell or chart mark), and the list it opens comes to the centre, under the data point when there is room. The list works as usual there (search, sort, pages, edit, Excel, row click opens the task). Escape, a click on the dimmed page or ✕ puts it back. Applies to Development, QA, KPI (and its Active projects tile), Insights and the alerts bell (`components/spotlight/spotlight.ts`).
+
 **Confirmations (2026-10-12).** Confirmations use the dashboard's own popup (`components/ui/ConfirmDialog.tsx`), never the browser's: completing a task, applying a bulk change, deleting a report. The popup names what will change (task, from → to) and its tone (good, warn, bad) colours the button.
 
 **Look of charts and tables (2026-10-12).** Every chart (Chart.tsx): gradient bars with rounded ends, smooth lines with a faded area, dashed light grid lines, frosted tooltips, an easing entry. Every table (DataTable and the hand-built ones, class `nural-table`): a tinted gradient header, soft zebra rows, an accent edge on hover and a highlighted totals row.
@@ -1198,7 +1200,8 @@ For people with the **employees** right (by default admins, PM and team leads). 
   - Projects pulling people away;
   - Release plan (this week and next);
   - Leave and attendance (Infowan).
-- **Tasks list:** every number opens its tasks here.
+- **Tiles list who or what (2026-10-12):** Lagging projects and Releases at risk open a list of **projects**; Lagging people, Overloaded, Has room and Split across projects a list of **people**. Each row says why it counts in words ("197 of 204 open tasks overdue (97 %); no action for 37 working days") with its numbers; a row opens that project's or person's tasks, with *‹ Back* to the list. Each tile names its unit (Projects, People, Tasks). Pure function `features/insights/entities.ts`, with tests.
+- **Tasks list:** every other number opens its tasks here.
 - **Tools:** drag, Customise, tour, focus and export, as on every page.
 
 **API:** `GET /api/insights?window=7|14|30`. It is part of the scoping suite.

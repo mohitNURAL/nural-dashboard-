@@ -224,7 +224,7 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
     {
       target: slot('insights.tiles', 'laggingProjects'),
       title: 'At a glance',
-      text: 'Lagging projects and people, the overloaded, those with room to help, people split across projects and releases at risk. Click a tile for its tasks.',
+      text: 'Lagging projects and people, the overloaded, those with room to help, people split across projects and releases at risk. Click a tile for the projects or people it counts, with why each is there; click one of them for its tasks.',
     },
     {
       target: slot('insights.cards', 'holding'),

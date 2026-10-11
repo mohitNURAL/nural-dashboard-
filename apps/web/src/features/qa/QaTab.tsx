@@ -6,7 +6,7 @@ import { PageHead } from '../../components/ui/PageHead';
 import { IconQa } from '../../components/ui/icons';
 import { SortableGroup } from '../../components/layout/SortableGroup';
 import { InfoContext } from '../../components/infoContext';
-import { keepInView } from '../../components/keepInView';
+import { closeSpotlight, spotlightSoon } from '../../components/spotlight/spotlight';
 import { useFilterSummary, useFilters } from '../filters/useFilters';
 import { qaFilterKey, useIssueList, useOpenIssues, type IssueList } from './issueList';
 import { issueColumns, taskColumns } from '../tasks/columns';
@@ -69,15 +69,14 @@ export function QaTab() {
   };
 
   // A number clicked anywhere on the tab opens and scrolls to "All issues".
-  const stopFollow = useRef<() => void>(undefined);
   useEffect(() => {
     if (!revealList) return;
     revealed();
     setOpen((prev) => ({ ...prev, all: true }));
-    stopFollow.current?.();
-    stopFollow.current = keepInView(allRef);
+    spotlightSoon(allRef);
   }, [revealList, revealed]);
-  useEffect(() => () => stopFollow.current?.(), []);
+  // Leaving the tab puts the spotlight away.
+  useEffect(() => () => closeSpotlight(), []);
 
   // Clearing or changing the filters returns "All issues" to its default, unless the new
   // filters are the ones the click itself set.
@@ -93,9 +92,7 @@ export function QaTab() {
 
   const reveal = (s: Section) => {
     setOpen((prev) => ({ ...prev, [s]: true }));
-    requestAnimationFrame(() =>
-      refs[s].current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
-    );
+    spotlightSoon(refs[s]);
   };
   const showAll = (preset: IssuePreset, part?: Omit<IssueList, 'preset'>) =>
     openIssues({ preset, ...part });

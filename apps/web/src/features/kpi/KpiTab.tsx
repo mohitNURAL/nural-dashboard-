@@ -8,7 +8,7 @@ import { IconKpi } from '../../components/ui/icons';
 import { SortableGroup } from '../../components/layout/SortableGroup';
 import { InfoContext } from '../../components/infoContext';
 import { InfoTip } from '../../components/InfoTip';
-import { keepInView } from '../../components/keepInView';
+import { closeSpotlight, spotlightSoon } from '../../components/spotlight/spotlight';
 import { fmtDate } from '../dev/format';
 import {
   useFilterSummary,
@@ -43,15 +43,14 @@ export function KpiTab() {
   const projectsRef = useRef<HTMLDivElement>(null);
 
   // A number clicked anywhere on the tab opens and scrolls to "All tasks".
-  const stopFollow = useRef<() => void>(undefined);
   useEffect(() => {
     if (!reveal) return;
     revealed();
     setOpen(true);
-    stopFollow.current?.();
-    stopFollow.current = keepInView(allRef);
+    spotlightSoon(allRef);
   }, [reveal, revealed]);
-  useEffect(() => () => stopFollow.current?.(), []);
+  // Leaving the tab puts the spotlight away.
+  useEffect(() => () => closeSpotlight(), []);
 
   // Changing the filters returns "All tasks" to its default, unless the click set them.
   const { filters } = useFilters();
@@ -77,11 +76,7 @@ export function KpiTab() {
         >
           <PeriodSwitch range={summary?.range} />
         </PageHead>
-        <KpiTiles
-          onProjects={() =>
-            projectsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-          }
-        />
+        <KpiTiles onProjects={() => spotlightSoon(projectsRef)} />
         {summary && summary.noProject.open > 0 && <NoProjectNote n={summary.noProject.open} />}
 
         <SortableGroup

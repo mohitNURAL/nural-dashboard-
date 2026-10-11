@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-12-spotlight',
+    date: '2026-10-12',
+    tab: 'insights',
+    title: 'Click a number: its list comes to you',
+    steps: [
+      {
+        target: '[data-group="insights.tiles"]',
+        title: 'Spotlight and lists',
+        text: 'Click any number on any page: the page dims, the number stays lit and its list opens in the middle of the screen; Escape or ✕ puts it back. Here, a tile first lists the projects or people it counts, with why; click one for its tasks.',
+      },
+    ],
+  },
+  {
     id: '2026-10-12-menu-export',
     date: '2026-10-12',
     tab: 'dev',
