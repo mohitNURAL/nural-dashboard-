@@ -2,7 +2,7 @@
 // board, or change its Bitrix24 status (Pending, In progress, Deferred, Completed). They run as
 // the signed-in person, with their own OAuth token, through the shared rate limiter, and each is
 // recorded in task_actions. The webhook stays read-only.
-import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import type { TokenStore } from '../auth/tokens';
 import { BitrixError, type BitrixResponse, type Params } from '../bitrix';
@@ -66,7 +66,8 @@ export interface ActionDeps {
   record?: (a: {
     userId: number;
     taskId: number;
-    action: 'move' | 'status';
+    /** 'move', 'status', or 'field:<name>' (project, assignee, tags, priority, deadline). */
+    action: string;
     fromValue: string | null;
     toValue: string;
     ok: boolean;
@@ -74,6 +75,31 @@ export interface ActionDeps {
   }) => Promise<void>;
   /** The signed-in person, or null (sign-in off or signed out). */
   userOf: (req: unknown) => { userId: number; name: string } | null;
+  /** Access of the person (NFR-4): members may change only stage, status and tags. */
+  viewer?: (req: FastifyRequest) => Promise<{ full: boolean }>;
+  /** Clock for the future-deadline rule (tests). */
+  now?: () => Date;
+}
+
+/** Fields the dashboard can change, and who may: full access all, members only tags. */
+export const TASK_FIELDS = ['project', 'assignee', 'tags', 'priority', 'deadline'] as const;
+export type TaskField = (typeof TASK_FIELDS)[number];
+export const MEMBER_FIELDS: readonly TaskField[] = ['tags'];
+const PRIORITY_CODE = { low: '0', normal: '1', high: '2' } as const;
+
+/** Splits "bug, Backend App,  urgent" into clean, distinct tags. */
+export function parseTags(text: string): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of text.split(',')) {
+    const tag = raw.trim();
+    // Case-insensitive duplicates keep the first spelling.
+    if (tag && !seen.has(tag.toLowerCase())) {
+      seen.add(tag.toLowerCase());
+      out.push(tag);
+    }
+  }
+  return out;
 }
 
 const idParam = z.object({ id: z.coerce.number().int().positive() });
@@ -122,7 +148,7 @@ export function actionRoutes(app: FastifyInstance, getDataset: RequestDataset, d
     a: {
       userId: number;
       taskId: number;
-      action: 'move' | 'status';
+      action: string;
       fromValue: string | null;
       toValue: string;
     },
@@ -191,5 +217,100 @@ export function actionRoutes(app: FastifyInstance, getDataset: RequestDataset, d
       },
       reply,
     );
+  });
+
+  // Change one field of a task (project, assignee, tags, priority or deadline) with
+  // tasks.task.update. Full access may change any of them; members only tags (NFR-4).
+  app.post('/api/tasks/:id/field', async (req, reply) => {
+    const { id } = idParam.parse(req.params);
+    const body = z
+      .object({ field: z.enum(TASK_FIELDS), value: z.union([z.string(), z.number()]) })
+      .parse(req.body);
+    const ds = await getDataset(req);
+    const t = ds.byId.get(id);
+    if (!t) return reply.code(404).send({ error: 'Task not found' });
+    const v = (await deps.viewer?.(req)) ?? { full: true };
+    if (!v.full && !MEMBER_FIELDS.includes(body.field)) {
+      return reply
+        .code(403)
+        .send({ error: 'Only managers can change the project, assignee, priority or deadline.' });
+    }
+
+    let fields: Record<string, unknown>;
+    let fromValue: string | null;
+    let toValue: string;
+    switch (body.field) {
+      case 'project': {
+        const to = Number(body.value);
+        const p = ds.projects.get(to);
+        if (!p) return reply.code(400).send({ error: 'Unknown project.' });
+        fields = { GROUP_ID: to };
+        fromValue = ds.projects.get(t.groupId)?.name ?? String(t.groupId);
+        toValue = p.name;
+        break;
+      }
+      case 'assignee': {
+        const to = Number(body.value);
+        const u = ds.users.get(to);
+        if (!u?.active) return reply.code(400).send({ error: 'Unknown or inactive person.' });
+        fields = { RESPONSIBLE_ID: to };
+        fromValue = ds.users.get(t.responsibleId)?.name ?? String(t.responsibleId);
+        toValue = u.name;
+        break;
+      }
+      case 'tags': {
+        const tags = parseTags(String(body.value));
+        if (tags.length > 30 || tags.some((x) => x.length > 60)) {
+          return reply.code(400).send({ error: 'Too many or too long tags.' });
+        }
+        fields = { TAGS: tags };
+        fromValue = (t.tags ?? []).join(', ');
+        toValue = tags.join(', ');
+        break;
+      }
+      case 'priority': {
+        const key = String(body.value) as keyof typeof PRIORITY_CODE;
+        if (!(key in PRIORITY_CODE)) return reply.code(400).send({ error: 'Unknown priority.' });
+        fields = { PRIORITY: PRIORITY_CODE[key] };
+        fromValue = ['low', 'normal', 'high'][t.priority] ?? null;
+        toValue = key;
+        break;
+      }
+      case 'deadline': {
+        const to = new Date(String(body.value));
+        const now = deps.now?.() ?? new Date();
+        if (Number.isNaN(to.getTime())) return reply.code(400).send({ error: 'Not a date.' });
+        if (to <= now)
+          return reply.code(400).send({ error: 'The deadline must be in the future.' });
+        fields = { DEADLINE: to.toISOString() };
+        fromValue = t.deadline?.toISOString() ?? null;
+        toValue = to.toISOString();
+        break;
+      }
+    }
+
+    const who = await actor(req, reply);
+    if (!who) return reply;
+    return finish(
+      { userId: who.user.userId, taskId: id, action: `field:${body.field}`, fromValue, toValue },
+      async () => {
+        await deps.userCall!('tasks.task.update', { taskId: id, fields }, who.token);
+      },
+      reply,
+    );
+  });
+
+  // Choices for the project and assignee dropdowns (full access only; members cannot change them).
+  app.get('/api/tasks/edit-options', async (req, reply) => {
+    const v = (await deps.viewer?.(req)) ?? { full: true };
+    if (!v.full) return reply.code(403).send({ error: 'Managers only.' });
+    const ds = await getDataset(req);
+    return {
+      projects: [...ds.projects.values()].sort((a, b) => a.name.localeCompare(b.name)),
+      people: [...ds.users.values()]
+        .filter((u) => u.active)
+        .map((u) => ({ id: u.id, name: u.name, deptGroup: u.deptGroup }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    };
   });
 }

@@ -406,23 +406,26 @@ SSE is chosen over WebSocket because the browser only receives; filters are sent
 - `/api/auth/me` returns `role` and `full`; the top bar shows the role (e.g. "Team lead", "My tasks"). With sign-in off (local copy) everyone has full access.
 - Tested by equivalence: for every member, every endpoint must answer exactly what a server holding only that member's tasks answers (and full access exactly what one holding everything answers); deliberately breaking the scoping, the stream filter or the KPI guard makes those tests fail. Checked on real data against SQL (2026-10-11): Neha Gautam 252 tasks and 186 issues, Deepankar Shisodia 62 and 36, Adnan Mubeen everything.
 
-**Task actions (2026-10-11)**
+**Task actions: editing in place (2026-10-11)**
 
-Every task list (grid) and the task view have two dropdowns, so a task can be changed without leaving the dashboard:
+Every task grid and the task view edit a task where it is shown. Each cell is a label; **clicking an editable cell turns it into an editor**, and it becomes a label again after a change or a click anywhere else (Escape also leaves). One column per item: no separate "Move to" or action columns.
 
-| Dropdown | Choices | Bitrix24 call |
-| --- | --- | --- |
-| Move to (Kanban column) | The columns of the task's own board, in board order (none for a task outside a workgroup) | `task.stages.movetask` |
-| Bitrix24 status | Pending, In progress, Deferred, Completed | Bitrix24's own actions, as its buttons: Completed → `tasks.task.complete`; Deferred → `tasks.task.defer`; In progress → `tasks.task.start`; Pending → `tasks.task.pause` (from In progress) or `tasks.task.renew` (from a closed or deferred task). A completed or deferred task is renewed first where Bitrix24 needs it. Completed asks for confirmation. |
+| Item | Editor | Bitrix24 call | Who may change it |
+| --- | --- | --- | --- |
+| Stage | Dropdown of the task's own board columns, in order (the cell also shows the dashboard status Completed / Pending / On hold under the column) | `task.stages.movetask` | Everyone (in their scope) |
+| Status | Dropdown: Pending, In progress, Deferred, Completed (Bitrix24's own status) | Bitrix24's own actions: Completed → `tasks.task.complete`, Deferred → `tasks.task.defer`, In progress → `tasks.task.start`, Pending → `tasks.task.pause` or `tasks.task.renew` (renewing first where Bitrix24 needs it); Completed asks for confirmation | Everyone (in their scope) |
+| Tags | Text box, several tags comma-separated; saving replaces the task's tags with exactly that list (duplicates removed, first spelling kept). New tags are created by Bitrix24 in the task's project | `tasks.task.update` `TAGS` | Everyone (in their scope) |
+| Project | Dropdown of projects | `tasks.task.update` `GROUP_ID` | Full access only |
+| Assignee | Dropdown of active people | `tasks.task.update` `RESPONSIBLE_ID` | Full access only |
+| Priority | Dropdown: Low, Normal, High | `tasks.task.update` `PRIORITY` | Full access only |
+| Deadline | Date picker, future dates only (today while 18:30 IST is ahead); the time is 18:30 IST | `tasks.task.update` `DEADLINE` (the server refuses a past date) | Full access only |
 
-- **As the person.** Actions run with the signed-in person's own Bitrix24 OAuth token, so Bitrix24 history shows their name and their Bitrix24 permissions apply; a refusal (e.g. no access to the project) is shown to them as Bitrix24's message.
-- The tokens are kept from sign-in, encrypted (AES-256-GCM, key from `SESSION_SECRET`) in `user_tokens`, and renewed with the refresh token. They are never logged or sent to the browser. With sign-in off (`AUTH=off`, local development) the dropdowns are shown but disabled.
-- **The local app needs the Tasks permission** (scope `task`) besides `user`; after the admin adds it, everyone signs in once more. The dashboard does not judge the token's scope label (portals report it differently, e.g. just `app`); Bitrix24 decides, and its `insufficient_scope` answer is shown as "missing the Tasks permission".
-- **Guard rails.** The webhook stays read-only (`READ_METHODS`). Task actions are a separate allowlist (`USER_ACTION_METHODS`: the six methods above) and run only with a person's token, through the same rate limiter. A column must belong to the task's board.
-- **Audit.** Every action is recorded in `task_actions`: person, task, move or status, from, to, and whether Bitrix24 accepted it (with its error).
-- After an action the task is re-synced (same queue as webhook events), so every open dashboard shows the change within seconds.
-- API: `POST /api/tasks/:id/stage {stageId}`, `POST /api/tasks/:id/status {status: pending|inProgress|deferred|completed}`. Task rows carry `stageId` and `bitrixStatus`; `/api/tasks` returns the `boards` of its rows, `/api/tasks/:id` the task's `board`.
-- The dashboard's own Status (Completed / Pending / On hold, section 5) follows the Kanban column, not the Bitrix24 status.
+- **As the person.** Changes run with the signed-in person's own Bitrix24 OAuth token, so Bitrix24 history shows their name and their Bitrix24 permissions apply; a refusal is shown as Bitrix24's message (a missing app permission as "missing the Tasks permission").
+- **Who may change what is enforced on the server**: full access (admin, directors, PM, team leads, product owners) may change every item; members only stage, status and tags, and only on tasks in their scope (another person's task is "not found"). Cells a person may not change stay plain labels; with sign-in off (local copy) nothing is editable.
+- The tokens are kept from sign-in, encrypted (AES-256-GCM, key from `SESSION_SECRET`) in `user_tokens`, and renewed with the refresh token; never logged or sent to the browser. The local app needs the **Tasks** permission (scope `task`) besides `user`.
+- **Guard rails.** The webhook stays read-only (`READ_METHODS`). Task actions are a separate allowlist (`USER_ACTION_METHODS`: `task.stages.movetask`, `tasks.task.complete`, `defer`, `start`, `pause`, `renew`, `update`) and run only with a person's token through the same rate limiter; `tasks.task.update` may carry only `GROUP_ID`, `RESPONSIBLE_ID`, `TAGS`, `PRIORITY` and `DEADLINE` (`EDITABLE_FIELDS`). A column must belong to the task's board.
+- **Audit.** Every change is recorded in `task_actions`: person, task, `move`, `status` or `field:<name>`, from, to, and whether Bitrix24 accepted it (with its error). After a change the task is re-synced, so every open dashboard shows it within seconds.
+- API: `POST /api/tasks/:id/stage {stageId}`, `POST /api/tasks/:id/status {status}`, `POST /api/tasks/:id/field {field: project|assignee|tags|priority|deadline, value}`, `GET /api/tasks/edit-options` (projects and people; full access only).
 
 **Deployment (milestone 9)**
 

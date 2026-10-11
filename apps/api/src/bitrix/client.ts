@@ -1,6 +1,6 @@
 // Raw HTTP caller for the Bitrix24 inbound webhook. Never call this directly:
 // go through limiter.ts so every request respects the 2 calls/s limit.
-import { assertReadOnly, assertUserAction } from './methods';
+import { assertReadOnly, assertUserAction, EDITABLE_FIELDS } from './methods';
 
 export type Params = Record<string, unknown>;
 
@@ -64,6 +64,12 @@ export function createRawCaller({
     if (mode === 'userAction') {
       assertUserAction(method);
       if (typeof params.auth !== 'string') throw new Error('task action without a user token');
+      if (method === 'tasks.task.update') {
+        const fields = Object.keys((params.fields as Record<string, unknown> | undefined) ?? {});
+        if (!fields.length || fields.some((f) => !EDITABLE_FIELDS.has(f))) {
+          throw new Error('tasks.task.update with fields outside the editable set');
+        }
+      }
     } else assertReadOnly(method);
     let res: Response;
     try {

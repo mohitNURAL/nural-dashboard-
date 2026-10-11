@@ -23,6 +23,17 @@ export const USER_ACTION_METHODS = new Set([
   'tasks.task.start',
   'tasks.task.pause',
   'tasks.task.renew',
+  // Field edits; the route sends only EDITABLE_FIELDS (project, assignee, tags, priority, deadline).
+  'tasks.task.update',
+]);
+
+/** The only task fields the dashboard may change with tasks.task.update. */
+export const EDITABLE_FIELDS = new Set([
+  'GROUP_ID',
+  'RESPONSIBLE_ID',
+  'TAGS',
+  'PRIORITY',
+  'DEADLINE',
 ]);
 
 export function assertUserAction(method: string): void {

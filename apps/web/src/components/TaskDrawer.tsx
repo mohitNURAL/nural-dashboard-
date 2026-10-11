@@ -4,11 +4,19 @@ import { STAGE_COLORS } from '@nural/shared';
 import * as Dialog from '@radix-ui/react-dialog';
 import clsx from 'clsx';
 import type { ReactNode } from 'react';
-import type { StageMove, TaskRow } from '../api/types';
+import type { BoardStage, StageMove, TaskRow } from '../api/types';
 import { ageingText, bbcodeToText, fmtDate, fmtDateTime } from '../features/dev/format';
 import { useOpenTask, useTask } from '../features/tasks/api';
-import { StageSelect, StatusSelect } from '../features/tasks/TaskActions';
-import { Avatar, PriorityBadge, StageChip, TagChips } from './chips';
+import {
+  AssigneeCell,
+  DeadlineCell,
+  PriorityCell,
+  ProjectCell,
+  StageCell,
+  StatusCell,
+  TagsCell,
+} from '../features/tasks/TaskActions';
+import { Avatar, StageChip } from './chips';
 
 export function TaskDrawer() {
   const [taskId, setTaskId] = useOpenTask();
@@ -51,24 +59,7 @@ export function TaskDrawer() {
             {isError && <p className="text-bad">This task is not in the dashboard’s data.</p>}
             {t && data && (
               <>
-                <Section title="Change in Bitrix24">
-                  <div className="grid grid-cols-2 gap-3">
-                    <label className="space-y-1">
-                      <span className="font-heading text-label uppercase text-text-muted">
-                        Kanban column
-                      </span>
-                      <StageSelect task={t} board={data.board} />
-                    </label>
-                    <label className="space-y-1">
-                      <span className="font-heading text-label uppercase text-text-muted">
-                        Status
-                      </span>
-                      <StatusSelect task={t} />
-                    </label>
-                  </div>
-                </Section>
-                <Facts t={t} />
-                {t.tags.length > 0 && <TagChips tags={t.tags} max={20} />}
+                <Facts t={t} board={data.board} />
                 <Section title="Description">
                   {data.description ? (
                     <p className="whitespace-pre-wrap break-words text-body">
@@ -120,20 +111,27 @@ export function TaskDrawer() {
   );
 }
 
-function Facts({ t }: { t: TaskRow }) {
+/** The task's facts; editable ones change in place when clicked (as in the grids). */
+function Facts({ t, board }: { t: TaskRow; board: BoardStage[] }) {
   const rows: [string, ReactNode][] = [
-    ['Stage', <StageChip key="s" title={t.stageTitle ?? t.stage} color={t.stageColor} />],
-    ['Project', t.project?.name ?? '—'],
-    ['Assignee', <Person key="a" name={t.assignee.name} />],
+    ['Stage', <StageCell key="s" task={t} board={board} />],
+    ['Status', <StatusCell key="st" task={t} />],
+    ['Project', <ProjectCell key="pr" task={t} />],
+    ['Assignee', <AssigneeCell key="a" task={t} />],
     ['Creator', <Person key="c" name={t.creator.name} />],
-    ['Priority', <PriorityBadge key="p" priority={t.priority} />],
+    ['Priority', <PriorityCell key="p" task={t} />],
     [
       'Deadline',
-      <span key="d" className={clsx(t.overdue && 'font-bold text-bad')}>
-        {fmtDate(t.deadline)}
-        {t.ageingDays !== null && ` · ${ageingText(t.ageingDays)}`}
+      <span key="d" className="inline-flex flex-wrap items-center gap-1">
+        <DeadlineCell task={t} />
+        {t.ageingDays !== null && (
+          <span className={clsx(t.overdue && 'font-bold text-bad')}>
+            · {ageingText(t.ageingDays)}
+          </span>
+        )}
       </span>,
     ],
+    ['Tags', <TagsCell key="tg" task={t} max={20} />],
     ['Created', fmtDate(t.createdAt)],
     ...(t.closedAt ? [['Closed', fmtDate(t.closedAt)] as [string, string]] : []),
     ...(t.isIssue && t.rework

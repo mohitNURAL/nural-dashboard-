@@ -156,7 +156,12 @@ export async function buildServer({
   filterRoutes(app, scoping.dataset, opts);
   alertRoutes(app, scoping.dataset, opts);
   kpiRoutes(app, scoping.dataset, opts, scoping.viewer);
-  actionRoutes(app, scoping.dataset, { ...actions, userOf: sessionUserOf });
+  actionRoutes(app, scoping.dataset, {
+    now,
+    ...actions,
+    userOf: sessionUserOf,
+    viewer: scoping.viewer,
+  });
   streamRoutes(app, bus, config.WEB_ORIGIN, scoping.viewer);
   await hookRoutes(app, {
     token: config.BITRIX_OUTBOUND_TOKEN,

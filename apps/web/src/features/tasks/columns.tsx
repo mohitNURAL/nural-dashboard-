@@ -1,13 +1,22 @@
-// Task table columns. DEV-06..08: Bitrix ID, Title, Assignee, Project, Stage, Tags, Priority,
-// Deadline, Ageing ("All tasks" adds Creator and Created). QA-08..09: see issueColumns.
+// Task table columns. DEV-06..08: Bitrix ID, Title, Assignee, Project, Stage, Status, Tags,
+// Priority, Deadline, Ageing ("All tasks" adds Creator and Created). QA-08..09: see issueColumns.
+// Stage, Status, Project, Assignee, Tags, Priority and Deadline are edited in place (click a cell;
+// TaskActions.tsx), within what the signed-in person may change.
 import { createColumnHelper } from '@tanstack/react-table';
 import clsx from 'clsx';
 import type { TaskRow } from '../../api/types';
-import { PriorityBadge, StageChip, StatusChip, TagChips } from '../../components/chips';
 import type { Columns } from '../../components/DataTable';
 import { ageingText, fmtDate } from '../dev/format';
 import { LinkedTask } from './LinkedTask';
-import { StageSelect, StatusSelect } from './TaskActions';
+import {
+  AssigneeCell,
+  DeadlineCell,
+  PriorityCell,
+  ProjectCell,
+  StageCell,
+  StatusCell,
+  TagsCell,
+} from './TaskActions';
 
 const col = createColumnHelper<TaskRow>();
 
@@ -47,6 +56,7 @@ export function taskColumns({ withCreator = false } = {}): Columns<TaskRow> {
       id: 'assignee',
       header: 'Assignee',
       enableSorting: false,
+      cell: (c) => <AssigneeCell task={c.row.original} />,
     }),
     ...(withCreator
       ? [
@@ -61,43 +71,35 @@ export function taskColumns({ withCreator = false } = {}): Columns<TaskRow> {
       id: 'project',
       header: 'Project',
       enableSorting: false,
+      cell: (c) => <ProjectCell task={c.row.original} />,
     }),
     col.accessor('stage', {
       header: 'Stage',
       enableSorting: false,
-      cell: (c) => <StageChip title={c.getValue()} color={c.row.original.stageColor} />,
+      meta: {
+        info: 'Kanban column; under it the dashboard status (Completed: QA Backlog, In QA, Done or LIVE; On hold; Pending). Click to move.',
+      },
+      cell: (c) => <StageCell task={c.row.original} />,
     }),
-    col.accessor('status', {
+    col.accessor('bitrixStatus', {
+      id: 'status',
       header: 'Status',
       enableSorting: false,
       meta: {
-        info: 'Completed: QA Backlog, In QA, Done or LIVE. On hold: On Hold. Pending: any other stage behind QA Backlog.',
+        info: 'Bitrix24 status: Pending, In progress, Deferred, Completed. Click to change.',
       },
-      cell: (c) => <StatusChip status={c.getValue()} />,
-    }),
-    col.display({
-      id: 'moveTo',
-      header: 'Move to',
-      meta: { info: 'Move the task to another column of its board in Bitrix24 (as you).' },
-      cell: (c) => <StageSelect task={c.row.original} compact />,
-    }),
-    col.display({
-      id: 'bitrixStatus',
-      header: 'Bitrix24 status',
-      meta: {
-        info: 'Change the task status in Bitrix24 (as you): Pending, In progress, Deferred, Completed.',
-      },
-      cell: (c) => <StatusSelect task={c.row.original} compact />,
+      cell: (c) => <StatusCell task={c.row.original} />,
     }),
     col.accessor('tags', {
       header: 'Tags',
       enableSorting: false,
-      cell: (c) => <TagChips tags={c.getValue()} max={2} />,
+      meta: { info: 'Click to edit: several tags, comma-separated.' },
+      cell: (c) => <TagsCell task={c.row.original} />,
     }),
     col.accessor('priority', {
       header: 'Priority',
       enableSorting: false,
-      cell: (c) => <PriorityBadge priority={c.getValue()} />,
+      cell: (c) => <PriorityCell task={c.row.original} />,
     }),
     ...(withCreator
       ? [
@@ -109,11 +111,7 @@ export function taskColumns({ withCreator = false } = {}): Columns<TaskRow> {
       : []),
     col.accessor('deadline', {
       header: 'Deadline',
-      cell: (c) => (
-        <span className={clsx('whitespace-nowrap', c.row.original.overdue && 'text-bad')}>
-          {fmtDate(c.getValue())}
-        </span>
-      ),
+      cell: (c) => <DeadlineCell task={c.row.original} />,
     }),
     col.accessor('ageingDays', {
       header: 'Ageing',
@@ -173,8 +171,7 @@ export function issueColumns({ full = false } = {}): Columns<TaskRow> {
     pick('priority'),
     pick('stage'),
     pick('status'),
-    pick('moveTo'),
-    pick('bitrixStatus'),
+    pick('tags'),
     col.accessor('linkedTaskId', {
       header: 'Linked task',
       enableSorting: false,

@@ -19,6 +19,7 @@ const task = {
   events: [],
   responsibleId: 7,
   createdBy: 10,
+  tags: ['old'],
 };
 const other = { ...task, id: 42, responsibleId: 30, createdBy: 10 };
 const dataset = (async () => ({
@@ -28,8 +29,14 @@ const dataset = (async () => ({
     [42, other],
   ]),
   testers: new Set(),
-  users: new Map([[7, { id: 7, name: 'Neha', active: true }]]),
-  projects: new Map(),
+  users: new Map([
+    [7, { id: 7, name: 'Neha', active: true, deptGroup: 'Development' }],
+    [30, { id: 30, name: 'Vijay', active: true, deptGroup: 'Development' }],
+  ]),
+  projects: new Map([
+    [154, { id: 154, name: 'Moto India' }],
+    [148, { id: 148, name: 'Nural Edge' }],
+  ]),
   boards: new Map([
     [
       154,
@@ -51,7 +58,9 @@ afterEach(async () => {
 
 type Calls = { method: string; params: Params; token: string }[];
 
-async function server(opts: { scope?: string; fail?: BitrixError; token?: boolean } = {}) {
+async function server(
+  opts: { scope?: string; fail?: BitrixError; token?: boolean; full?: boolean } = {},
+) {
   const calls: Calls = [];
   const recorded: unknown[] = [];
   const enqueued: unknown[] = [];
@@ -70,6 +79,9 @@ async function server(opts: { scope?: string; fail?: BitrixError; token?: boolea
   app = await buildServer({
     getDataset: dataset,
     logger: false,
+    now: () => new Date('2026-10-11T06:30:00Z'),
+    // Neha (7) is a member unless the test makes her a team lead.
+    roles: { admins: [], pms: [], teamLeads: opts.full ? [7] : [], productOwners: [] },
     auth: {
       mode: 'bitrix',
       clientId: 'c',
@@ -188,5 +200,91 @@ describe('task actions (SRS 7)', () => {
     const user = createRawCaller({ baseUrl: `${PORTAL}/rest/`, mode: 'userAction' });
     await expect(user('tasks.task.delete', { auth: 't' })).rejects.toThrow(/not an allowed/);
     await expect(user('tasks.task.complete', {})).rejects.toThrow(/user token/);
+  });
+
+  it('a member can set several tags (comma-separated, replacing the list)', async () => {
+    const s = await server();
+    const res = await post('/api/tasks/41/field', {
+      field: 'tags',
+      value: 'bug,  Backend App , new-tag, BUG',
+    });
+    expect(res.statusCode).toBe(200);
+    expect(s.calls).toEqual([
+      {
+        method: 'tasks.task.update',
+        params: { taskId: 41, fields: { TAGS: ['bug', 'Backend App', 'new-tag'] } },
+        token: 'user-token',
+      },
+    ]);
+    expect(s.recorded[0]).toMatchObject({
+      action: 'field:tags',
+      toValue: 'bug, Backend App, new-tag',
+    });
+  });
+
+  it('a member cannot change project, assignee, priority or deadline', async () => {
+    const s = await server();
+    for (const [field, value] of [
+      ['project', 148],
+      ['assignee', 30],
+      ['priority', 'high'],
+      ['deadline', '2026-12-01T13:00:00Z'],
+    ] as const) {
+      const res = await post('/api/tasks/41/field', { field, value });
+      expect(res.statusCode, field).toBe(403);
+    }
+    expect(
+      (await app!.inject({ url: '/api/tasks/edit-options', headers: { cookie } })).statusCode,
+    ).toBe(403);
+    expect(s.calls).toHaveLength(0);
+  });
+
+  it('a manager can change every field', async () => {
+    const s = await server({ full: true });
+    for (const [field, value] of [
+      ['project', 148],
+      ['assignee', 30],
+      ['priority', 'high'],
+      ['deadline', '2026-12-01T13:00:00Z'],
+    ] as const) {
+      expect((await post('/api/tasks/41/field', { field, value })).statusCode, field).toBe(200);
+    }
+    expect(s.calls.map((c) => c.params.fields)).toEqual([
+      { GROUP_ID: 148 },
+      { RESPONSIBLE_ID: 30 },
+      { PRIORITY: '2' },
+      { DEADLINE: '2026-12-01T13:00:00.000Z' },
+    ]);
+    const opts = await app!.inject({ url: '/api/tasks/edit-options', headers: { cookie } });
+    expect(opts.json().projects.map((p: { name: string }) => p.name)).toEqual([
+      'Moto India',
+      'Nural Edge',
+    ]);
+  });
+
+  it('refuses a past deadline, an unknown project or person', async () => {
+    const s = await server({ full: true });
+    expect(
+      (
+        await post('/api/tasks/41/field', { field: 'deadline', value: '2026-10-10T10:00:00Z' })
+      ).json().error,
+    ).toMatch(/future/);
+    expect((await post('/api/tasks/41/field', { field: 'project', value: 999 })).statusCode).toBe(
+      400,
+    );
+    expect((await post('/api/tasks/41/field', { field: 'assignee', value: 999 })).statusCode).toBe(
+      400,
+    );
+    expect(s.calls).toHaveLength(0);
+  });
+
+  it('tasks.task.update may only carry the five editable fields', async () => {
+    const user = createRawCaller({ baseUrl: `${PORTAL}/rest/`, mode: 'userAction' });
+    await expect(
+      user('tasks.task.update', { auth: 't', taskId: 1, fields: { STATUS: 5 } }),
+    ).rejects.toThrow(/outside the editable set/);
+    await expect(user('tasks.task.update', { auth: 't', taskId: 1, fields: {} })).rejects.toThrow(
+      /outside the editable set/,
+    );
   });
 });
