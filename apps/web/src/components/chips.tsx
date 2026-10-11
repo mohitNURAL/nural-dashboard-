@@ -90,16 +90,23 @@ export function CountBadge({ n, tone }: { n: number | undefined; tone?: 'bad' })
   );
 }
 
-/** Completed / Pending (SRS 5). */
-export function StatusChip({ status }: { status: 'completed' | 'pending' }) {
+const STATUS_STYLE = {
+  completed: 'bg-accent-soft text-accent-darker',
+  pending: 'bg-warn/15 text-[#92400E]',
+  hold: 'bg-[#EF3000]/10 text-[#B42400]',
+} as const;
+const STATUS_TEXT = { completed: 'Completed', pending: 'Pending', hold: 'On hold' } as const;
+
+/** Completed / Pending / On hold (SRS 5). */
+export function StatusChip({ status }: { status: 'completed' | 'pending' | 'hold' }) {
   return (
     <span
       className={clsx(
         'whitespace-nowrap rounded px-1.5 py-0.5 font-heading text-label font-bold',
-        status === 'completed' ? 'bg-accent-soft text-accent-darker' : 'bg-warn/15 text-[#92400E]',
+        STATUS_STYLE[status],
       )}
     >
-      {status === 'completed' ? 'Completed' : 'Pending'}
+      {STATUS_TEXT[status]}
     </span>
   );
 }

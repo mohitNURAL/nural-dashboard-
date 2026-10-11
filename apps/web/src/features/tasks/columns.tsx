@@ -70,7 +70,7 @@ export function taskColumns({ withCreator = false } = {}): Columns<TaskRow> {
       header: 'Status',
       enableSorting: false,
       meta: {
-        info: 'Completed: in QA Backlog, In QA, Done or LIVE. Pending: any stage behind QA Backlog.',
+        info: 'Completed: QA Backlog, In QA, Done or LIVE. On hold: On Hold. Pending: any other stage behind QA Backlog.',
       },
       cell: (c) => <StatusChip status={c.getValue()} />,
     }),

@@ -1,7 +1,8 @@
 // "i" texts of the KPI tab (SRS 13): the rule behind every number, in one line each.
 export const KPI_INFO = {
   tab: 'Every task in every project, all departments. A task is closed when it first reaches QA Backlog (or, without QA stages, when Bitrix24 closes it).',
-  open: 'Tasks not closed yet. Department = the assignee’s department.',
+  open: 'Pending tasks: behind QA Backlog and not on hold. Department = the assignee’s department.',
+  hold: 'In On Hold: neither pending nor completed. Pending + completed + on hold = total.',
   overdue: 'Open tasks whose deadline has passed. "Over 30 days" = more than 30 days late.',
   closed:
     'Tasks closed in the period (first QA Backlog, else the Bitrix24 closed date). Clean-ups of 30+ tasks closed in one project on one day are left out.',

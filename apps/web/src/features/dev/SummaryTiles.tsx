@@ -1,4 +1,4 @@
-// DEV-01: one row of 6 summary tiles. Clicking a tile opens the matching task list. Under the
+// DEV-01: one row of 7 summary tiles. Clicking a tile opens the matching task list. Under the
 // number, All splits into Dev and Issues and Issues into Bug and Feedback; each part opens too.
 import type { DevPreset, SummaryPart } from '@nural/shared';
 import { StatTile } from '../../components/StatTile';
@@ -10,7 +10,8 @@ import { INFO } from '../info';
 
 const TILES: { preset: DevPreset; sub?: string }[] = [
   { preset: 'total' },
-  { preset: 'pending', sub: 'To do to Pending for QA' },
+  { preset: 'pending', sub: 'Behind QA Backlog, not on hold' },
+  { preset: 'hold', sub: 'In On Hold' },
   { preset: 'ready', sub: 'In Done' },
   { preset: 'deployed', sub: 'In LIVE' },
   { preset: 'overdue', sub: 'Pending, past deadline' },
@@ -38,7 +39,7 @@ export function SummaryTiles({ active, onSelect }: Props) {
   const drill = useDrillTo();
   const split = data?.split;
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7">
       {TILES.map(({ preset, sub }) => (
         <StatTile
           key={preset}

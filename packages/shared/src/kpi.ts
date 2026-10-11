@@ -2,7 +2,7 @@
 // project health, workload, activity and silent projects, for every task in every workgroup.
 // Hours, efficiency and scores wait for real effort data (section 12 stage clocks).
 import { addWorkingHours, dayHours, workingHours, type WorkCalendar } from './calendar';
-import { groupBy, isSentToQa, pct } from './metrics';
+import { groupBy, isOnHold, isPending, isSentToQa, pct } from './metrics';
 import { COMPLETED_STAGES, isReworkMove, type StageTitle } from './stages';
 import { dayKey, daysBetween } from './time';
 import type { MetricTask } from './types';
@@ -50,7 +50,10 @@ export interface KpiTask {
   actualEnd: Date | null;
   /** Bulk key of that completion: the move (project, day, person, from → to) or the close day. */
   endKey: string | null;
+  /** Pending: not completed and not on hold. */
   open: boolean;
+  /** In On Hold: neither open nor closed. */
+  hold: boolean;
   overdue: boolean;
   /** Calendar days past the deadline (open, overdue tasks). */
   daysOverdue: number;
@@ -61,12 +64,15 @@ export interface KpiTask {
 
 const isDoneStage = (s: StageTitle | null) => !!s && COMPLETED_STAGES.includes(s);
 
-/** Open = pending, closed = completed (QA Backlog, In QA, Done, LIVE): the rule of every tab. */
+/**
+ * Open = pending, closed = completed (QA Backlog, In QA, Done, LIVE), hold = On Hold: the rule of
+ * every tab.
+ */
 export function kpiTask(t: MetricTask, ctx: KpiContext): KpiTask {
-  const open = !isSentToQa(t);
+  const open = isPending(t);
   let actualEnd: Date | null = null;
   let endKey: string | null = null;
-  if (!open) {
+  if (isSentToQa(t)) {
     const move = [...t.events].reverse().find((e) => isDoneStage(e.to) && !isDoneStage(e.from));
     actualEnd = move?.at ?? t.closedAt ?? t.changedAt;
     const day = dayKey(actualEnd, ctx.tz);
@@ -81,6 +87,7 @@ export function kpiTask(t: MetricTask, ctx: KpiContext): KpiTask {
     actualEnd,
     endKey,
     open,
+    hold: isOnHold(t),
     overdue,
     daysOverdue: overdue ? Math.max(0, daysBetween(t.deadline!, ctx.now, ctx.tz)) : 0,
     onTime: !open && t.deadline ? actualEnd! <= t.deadline : null,
@@ -280,7 +287,7 @@ export function projectHealth(
       const idle = lastAction ? idleDays(lastAction, ctx) : null;
       const silent = r.open > 0 && idle !== null && idle >= KPI.silentWorkingDays;
       const oldestOverdueDays = Math.max(0, ...list.map((k) => k.daysOverdue));
-      const closed = list.filter((k) => !k.open).length;
+      const closed = list.filter((k) => k.actualEnd !== null).length;
       return {
         id,
         ownerId: ownerOf(id),
@@ -542,6 +549,7 @@ export function kpiSummary(
     ).length,
     silentProjects: projects.filter((p) => p.silent).length,
     noDeadline: scope.all.filter((k) => k.open && !k.t.deadline).length,
+    hold: scope.all.filter((k) => k.hold).length,
     noProject: { open: scope.noProject.filter((k) => k.open).length },
     bulkClosed: scope.bulk.size,
   };
@@ -652,6 +660,7 @@ export const KPI_LIST_PRESETS = [
   'silent',
   'dueSoon',
   'dueLater',
+  'hold',
 ] as const;
 export type KpiListPreset = (typeof KPI_LIST_PRESETS)[number];
 
@@ -684,6 +693,9 @@ export function kpiList(
     }
     case 'noDeadline':
       list = list.filter((k) => k.open && !k.t.deadline);
+      break;
+    case 'hold':
+      list = list.filter((k) => k.hold);
       break;
     case 'longInProgress':
       list = list.filter((k) => isLongInProgress(k, ctx));

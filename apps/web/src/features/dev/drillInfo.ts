@@ -6,6 +6,7 @@ const PRESET_RULE: Record<Drill['preset'], string> = {
   total: '',
   completed: INFO.colDone,
   pending: INFO.pending,
+  hold: INFO.hold,
   ready: INFO.ready,
   deployed: INFO.deployed,
   overdue: INFO.overdue,

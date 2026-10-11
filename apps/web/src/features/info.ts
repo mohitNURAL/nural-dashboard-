@@ -5,7 +5,8 @@ export const INFO = {
   total:
     'All tasks in the filters for the switch (Dev, Issues or both), Development department only.',
   pending:
-    'Behind QA Backlog: To do, In progress, On Hold, Pushed to Master, Merged to Development, Pending for QA, Issue Raised.',
+    'Behind QA Backlog and not on hold: To do, In progress, Pushed to Master, Merged to Development, Pending for QA, Issue Raised.',
+  hold: 'In On Hold: neither pending nor completed. Pending + completed + on hold = total.',
   ready: 'In the Done stage, ready to go live.',
   deployed: 'In the LIVE stage.',
   overdue: 'Pending, not On Hold, and the deadline has passed.',
@@ -16,7 +17,7 @@ export const INFO = {
   assigneeTable:
     'Per person or project. Done = sent to QA (QA Backlog to LIVE). Comp. today = reached QA Backlog today.',
   colTotal: 'All tasks of this row.',
-  colPending: 'Pending: any stage behind QA Backlog, Issue Raised included.',
+  colPending: 'Pending: any stage behind QA Backlog except On Hold, Issue Raised included.',
   colDone: 'Completed: in QA Backlog, In QA, Done or LIVE.',
   colDueToday: 'Deadline is today, not yet LIVE.',
   colCompToday: 'Reached QA Backlog for the first time today.',
@@ -35,7 +36,7 @@ export const INFO = {
   // QA tiles (QA-01)
   qaTotal: 'Every task tagged bug or feedback in the filters, whoever it is assigned to.',
   qaOpen:
-    'Open = pending: any stage behind QA Backlog (Issue Raised included). Resolved = QA Backlog, In QA, Done or LIVE. The ring shows the resolved %.',
+    'Open = pending: any stage behind QA Backlog except On Hold (Issue Raised included). Resolved = QA Backlog, In QA, Done or LIVE. On Hold is its own tile. The ring shows the resolved %.',
   qaLastFiled: 'Latest day an issue was created, and how many that day.',
   qaLastResolved:
     'Latest day issues were pushed to QA Backlog (a fix handed to QA), and how many that day.',

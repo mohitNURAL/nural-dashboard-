@@ -42,7 +42,7 @@ export interface TaskRow {
   stageColor: string | null;
   stageGroup: StageGroup | null;
   /** Completed (QA Backlog, In QA, Done, LIVE) or pending (any stage behind). */
-  status: 'completed' | 'pending';
+  status: 'completed' | 'pending' | 'hold';
   tags: string[];
   priority: Priority;
   deadline: string | null;
@@ -86,6 +86,8 @@ export interface DevSummary {
   total: number;
   completed: number;
   pending: number;
+  /** In On Hold: neither pending nor completed. */
+  hold: number;
   ready: number;
   deployed: number;
   overdue: number;
@@ -181,6 +183,8 @@ export interface QaSummary {
   total: number;
   open: number;
   resolved: number;
+  /** Issues in On Hold: neither open nor resolved. */
+  hold: number;
   resolvedPct: number;
   openPct: number;
   lastFiled: { date: string; isToday: boolean; count: number } | null;
@@ -338,6 +342,7 @@ export interface KpiSummary {
   activeProjects: number;
   silentProjects: number;
   noDeadline: number;
+  hold: number;
   noProject: { open: number };
   bulkClosed: number;
   asOf: string;

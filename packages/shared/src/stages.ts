@@ -20,18 +20,17 @@ export type StageTitle = (typeof STAGE_TITLES)[number];
 /** Bitrix24 STAGE_ID for a task never moved on the board; counts as To do. */
 export const DEFAULT_STAGE_ID = '0';
 
-export type StageGroup = 'pending' | 'sentToQa';
+export type StageGroup = 'pending' | 'sentToQa' | 'hold';
 
 /**
- * Pending vs completed (SRS 5, changed 2026-10-10): a task or issue is **completed** while it is
- * in QA Backlog, In QA, Done or LIVE, and **pending** in every stage behind QA Backlog,
- * including Issue Raised (sent back by QA) and On Hold. The same rule on every tab, so pending
- * + completed = total everywhere.
+ * Pending, completed and on hold (SRS 5, changed 2026-10-11): a task or issue is **completed**
+ * while it is in QA Backlog, In QA, Done or LIVE; **on hold** in On Hold (neither pending nor
+ * completed); and **pending** in every other stage behind QA Backlog, Issue Raised included.
+ * The same rule on every tab, so pending + completed + on hold = total everywhere.
  */
 export const PENDING_STAGES: readonly StageTitle[] = [
   'To do',
   'In progress',
-  'On Hold',
   'Pushed to Master',
   'Merged to Development',
   'Pending for QA',
@@ -41,6 +40,7 @@ export const PENDING_STAGES: readonly StageTitle[] = [
 /** Completed stages ("sent to QA" and beyond). */
 export const SENT_TO_QA_STAGES: readonly StageTitle[] = ['QA Backlog', 'In QA', 'Done', 'LIVE'];
 export const COMPLETED_STAGES = SENT_TO_QA_STAGES;
+export const HOLD_STAGE: StageTitle = 'On Hold';
 
 /** Subsets of "sent to QA" shown as their own tiles. */
 export const READY_FOR_DEPLOYMENT_STAGE: StageTitle = 'Done';
@@ -120,5 +120,6 @@ export function resolveStage(
 }
 
 export function stageGroupOf(stage: StageTitle): StageGroup {
+  if (stage === HOLD_STAGE) return 'hold';
   return PENDING_STAGES.includes(stage) ? 'pending' : 'sentToQa';
 }

@@ -11,12 +11,11 @@ import {
 } from './stages';
 
 describe('stages', () => {
-  it('has the 11 board stages, each in exactly one group', () => {
+  it('has the 11 board stages, each in exactly one group (pending, completed or On Hold)', () => {
     expect(STAGE_TITLES).toHaveLength(11);
     for (const s of STAGE_TITLES) {
-      const inPending = PENDING_STAGES.includes(s);
-      const inQa = SENT_TO_QA_STAGES.includes(s);
-      expect(inPending !== inQa, s).toBe(true);
+      const groups = [PENDING_STAGES.includes(s), SENT_TO_QA_STAGES.includes(s), s === 'On Hold'];
+      expect(groups.filter(Boolean).length, s).toBe(1);
       expect(STAGE_COLORS[s]).toMatch(/^#[0-9A-F]{6}$/);
     }
   });
@@ -44,7 +43,7 @@ describe('stages', () => {
   });
 
   it('groups stages', () => {
-    expect(stageGroupOf('On Hold')).toBe('pending');
+    expect(stageGroupOf('On Hold')).toBe('hold');
     expect(stageGroupOf('Issue Raised')).toBe('pending');
   });
 });

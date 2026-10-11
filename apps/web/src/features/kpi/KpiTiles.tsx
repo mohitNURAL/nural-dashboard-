@@ -16,7 +16,7 @@ export function KpiTiles({ onProjects }: { onProjects: () => void }) {
     open({ label, params, info });
 
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
       <StatTile
         label="Open tasks"
         value={s?.open}
@@ -43,6 +43,13 @@ export function KpiTiles({ onProjects }: { onProjects: () => void }) {
             },
           ]
         }
+      />
+      <StatTile
+        label="On hold"
+        value={s?.hold}
+        info={KPI_INFO.hold}
+        sub="Neither open nor closed"
+        onClick={() => list('On hold', { kpi: 'hold' }, KPI_INFO.hold)}
       />
       <StatTile
         label="Overdue"

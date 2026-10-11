@@ -2,6 +2,7 @@
 // No I/O and no clock: `now` and the time zone come in through MetricContext.
 import {
   DEPLOYED_STAGE,
+  HOLD_STAGE,
   isReworkMove,
   READY_FOR_DEPLOYMENT_STAGE,
   STAGE_TITLES,
@@ -146,15 +147,17 @@ export const stageGroup = (t: MetricTask): StageGroup | null =>
 export const isSentToQa = (t: MetricTask) =>
   stageGroup(t) === 'sentToQa' || (t.qaFlow === false && !!t.closedAt);
 export const isCompleted = isSentToQa;
-/** Pending: anything not completed, so pending + completed = total (unmapped stages too). */
-export const isPending = (t: MetricTask) => !isSentToQa(t);
+/** On hold: in On Hold and not completed; neither pending nor completed (SRS 5). */
+export const isOnHold = (t: MetricTask) => t.stage === HOLD_STAGE && !isSentToQa(t);
+/** Pending: neither completed nor on hold, so pending + completed + hold = total. */
+export const isPending = (t: MetricTask) => !isSentToQa(t) && !isOnHold(t);
 export const isReady = (t: MetricTask) => t.stage === READY_FOR_DEPLOYMENT_STAGE;
 export const isDeployed = (t: MetricTask) => t.stage === DEPLOYED_STAGE;
 /** An open issue is a pending one (QA tab "Open"); resolved = completed. Same rule as tasks. */
 export const isOpenIssue = isPending;
-/** "completed" / "pending", shown in every task list (SRS 5). */
-export const taskStatus = (t: MetricTask): 'completed' | 'pending' =>
-  isSentToQa(t) ? 'completed' : 'pending';
+/** "completed" / "pending" / "hold", shown in every task list (SRS 5). */
+export const taskStatus = (t: MetricTask): 'completed' | 'pending' | 'hold' =>
+  isSentToQa(t) ? 'completed' : isOnHold(t) ? 'hold' : 'pending';
 
 /**
  * When the task was completed (SRS 5): its first move into QA Backlog (the developer pressed
@@ -297,6 +300,8 @@ export interface DevSummary {
   total: number;
   completed: number;
   pending: number;
+  /** In On Hold: neither pending nor completed. */
+  hold: number;
   ready: number;
   deployed: number;
   overdue: number;
@@ -322,6 +327,7 @@ export function devSummary(
     total: tasks.length,
     completed: tasks.filter(isSentToQa).length,
     pending: tasks.filter(isPending).length,
+    hold: tasks.filter(isOnHold).length,
     ready: tasks.filter(isReady).length,
     deployed: tasks.filter(isDeployed).length,
     overdue: tasks.filter((t) => isOverdue(t, ctx)).length,
@@ -337,6 +343,7 @@ export interface SummaryPart {
   total: number;
   completed: number;
   pending: number;
+  hold: number;
   ready: number;
   deployed: number;
   overdue: number;
@@ -349,11 +356,11 @@ export interface SummaryPart {
  */
 export function devSummaryParts(tasks: readonly MetricTask[], ctx: MetricContext, scope: DevScope) {
   const part = (key: SummaryPart['key'], list: MetricTask[]): SummaryPart => {
-    const { total, completed, pending, ready, deployed, overdue, doneToday } = devSummary(
+    const { total, completed, pending, hold, ready, deployed, overdue, doneToday } = devSummary(
       list,
       ctx,
     );
-    return { key, total, completed, pending, ready, deployed, overdue, doneToday };
+    return { key, total, completed, pending, hold, ready, deployed, overdue, doneToday };
   };
   if (scope === 'all') {
     return [
@@ -660,6 +667,7 @@ export interface QaSummaryPart {
   /** Issues of this type pushed to QA Backlog on the overall Last resolved day. */
   lastResolved: number;
   rework: number;
+  hold: number;
 }
 
 /** QA-01 tile breakdown: every tile split into Bug and Feedback; the parts add up to the tile. */
@@ -672,6 +680,7 @@ export function qaSummaryParts(list: readonly MetricTask[], ctx: MetricContext):
       key,
       total: sub.length,
       open: sub.filter(isOpenIssue).length,
+      hold: sub.filter(isOnHold).length,
       lastFiled: day ? sub.filter((t) => dayKey(t.createdAt, ctx.tz) === day).length : 0,
       lastResolved: resolvedDay
         ? sub.filter((t) => qaBacklogDays(t, ctx.tz).includes(resolvedDay)).length
@@ -682,15 +691,17 @@ export function qaSummaryParts(list: readonly MetricTask[], ctx: MetricContext):
 }
 
 export function qaSummary(list: readonly MetricTask[], ctx: MetricContext) {
-  const resolved = list.filter((t) => !isOpenIssue(t)).length;
+  const resolved = list.filter(isSentToQa).length;
+  const hold = list.filter(isOnHold).length;
   const rework = list.map((t) => reworkCount(t));
   const reworkIssues = rework.filter((n) => n > 0).length;
   return {
     total: list.length,
-    open: list.length - resolved,
+    open: list.length - resolved - hold,
     resolved,
+    hold,
     resolvedPct: pct(resolved, list.length),
-    openPct: list.length ? round1(100 - pct(resolved, list.length)) : 0,
+    openPct: pct(list.length - resolved - hold, list.length),
     lastFiled: lastFiled(list, ctx),
     lastResolved: lastResolved(list, ctx),
     reworkIssues,
@@ -704,13 +715,15 @@ export function issuesByAssignee(list: readonly MetricTask[], by: GroupBy = 'ass
   return [...groupBy(list, groupKey(by))]
     .map(([id, l]) => {
       const open = l.filter(isOpenIssue).length;
+      // Open = pending, resolved = completed; on-hold issues are in neither.
       const n = (o: boolean, type: IssueType) =>
-        l.filter((t) => isOpenIssue(t) === o && t.issueType === type).length;
+        l.filter((t) => (o ? isOpenIssue(t) : isSentToQa(t)) && t.issueType === type).length;
       return {
         id,
         total: l.length,
         open,
-        resolved: l.length - open,
+        resolved: l.filter(isSentToQa).length,
+        hold: l.filter(isOnHold).length,
         bug: l.filter((t) => t.issueType === 'bug').length,
         feedback: l.filter((t) => t.issueType === 'feedback').length,
         // Cross split, so the chart can show bug / feedback inside open / resolved and back.
@@ -1046,6 +1059,7 @@ export const DEV_PRESETS = [
   'doneToday',
   'doneYesterday',
   'dueToday',
+  'hold',
 ] as const;
 export const ISSUE_PRESETS = [
   'all',
@@ -1055,6 +1069,7 @@ export const ISSUE_PRESETS = [
   'lastResolved',
   'rework',
   'retest',
+  'hold',
 ] as const;
 export type DevPreset = (typeof DEV_PRESETS)[number];
 export type IssuePreset = (typeof ISSUE_PRESETS)[number];
@@ -1091,7 +1106,9 @@ export function presetPredicate(
     case 'open':
       return isOpenIssue;
     case 'resolved':
-      return (t) => !isOpenIssue(t);
+      return isSentToQa;
+    case 'hold':
+      return isOnHold;
     case 'lastFiled':
       return (t) => !!lastFiledDate && dayKey(t.createdAt, ctx.tz) === lastFiledDate;
     case 'lastResolved':

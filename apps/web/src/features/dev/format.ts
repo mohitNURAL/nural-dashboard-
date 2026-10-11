@@ -83,6 +83,7 @@ export const TILE_LABELS: Record<DevPreset, string> = {
   total: 'Total tasks',
   completed: 'Completed',
   pending: 'Pending',
+  hold: 'On hold',
   ready: 'Ready',
   deployed: 'Deployed',
   overdue: 'Overdue',

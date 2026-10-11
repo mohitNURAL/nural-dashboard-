@@ -235,8 +235,9 @@ describe('Development tab', () => {
     expect(devSummary(tasks, ctx)).toMatchObject({
       total: 7,
       completed: 3,
-      // Everything not completed is pending (the unmapped task too): 3 + 4 = 7.
-      pending: 4,
+      // Completed 3 + pending 3 (the unmapped task too) + on hold 1 = 7.
+      pending: 3,
+      hold: 1,
       ready: 1,
       deployed: 1,
       overdue: 1,
@@ -288,8 +289,8 @@ describe('Development tab', () => {
 
   it('builds the assignee table with totals', () => {
     const { rows, totals } = assigneeTable(tasks, ctx);
-    expect(rows[0]).toMatchObject({ id: 30, total: 5, pending: 3, done: 2, completedToday: 1 });
-    expect(totals).toMatchObject({ total: 7, pending: 4, done: 3 });
+    expect(rows[0]).toMatchObject({ id: 30, total: 5, pending: 2, done: 2, completedToday: 1 });
+    expect(totals).toMatchObject({ total: 7, pending: 3, done: 3 });
   });
 
   it('groups the assignee table, ageing and matrix by project', () => {
@@ -557,6 +558,7 @@ describe('QA tab', () => {
       // Issues in QA Backlog or In QA count as resolved (completed), like tasks.
       open: 2,
       resolved: 3,
+      hold: 0,
       resolvedPct: 60,
       openPct: 40,
       lastFiled: { date: '2026-10-10', isToday: true, count: 1 },
@@ -576,6 +578,7 @@ describe('QA tab', () => {
       total: 2,
       open: 1,
       resolved: 1,
+      hold: 0,
       bug: 2,
       feedback: 0,
       openBug: 1,

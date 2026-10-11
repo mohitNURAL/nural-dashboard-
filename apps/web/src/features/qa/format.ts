@@ -34,6 +34,7 @@ export const ISSUE_PRESET_LABELS: Record<IssuePreset, string> = {
   all: 'All issues',
   open: 'Open',
   resolved: 'Resolved',
+  hold: 'On hold',
   lastFiled: 'Last filed',
   lastResolved: 'Last resolved',
   rework: 'Rework',

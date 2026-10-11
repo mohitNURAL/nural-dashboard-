@@ -1,4 +1,4 @@
-// QA-01: one row of 6 tiles. Each opens the matching list; under each number its parts (Bug and
+// QA-01: one row of 7 tiles. Each opens the matching list; under each number its parts (Bug and
 // Feedback, or for Retesting awaited Dev tasks and Issues) add up to it and open their own list.
 import type { IssuePreset, QaSummaryPart } from '@nural/shared';
 import { StatTile } from '../../components/StatTile';
@@ -40,7 +40,7 @@ export function QaTiles({ active, onSelect, onPart, onRetest }: Props) {
     : ({} as Record<string, string>);
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7">
       <StatTile
         label="Total issues filed"
         info={INFO.qaTotal}
@@ -63,6 +63,15 @@ export function QaTiles({ active, onSelect, onPart, onRetest }: Props) {
         active={active === 'open'}
         onClick={() => onSelect('open')}
         aside={data && <Ring resolvedPct={data.resolvedPct} />}
+      />
+      <StatTile
+        label="On hold"
+        info={INFO.hold}
+        value={data?.hold}
+        sub="Issues in On Hold"
+        parts={parts('On hold', 'hold', 'hold')}
+        active={active === 'hold'}
+        onClick={() => onSelect('hold')}
       />
       <StatTile
         label="Last filed"
