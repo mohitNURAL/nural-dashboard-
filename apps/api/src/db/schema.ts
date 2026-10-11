@@ -345,3 +345,26 @@ export const helpFiles = pgTable(
   },
   (t) => [index('help_files_feedback_idx').on(t.feedbackId)],
 );
+
+/**
+ * Every people or department change sent to Bitrix24 from the People directory (2026-10-12,
+ * SRS 17): who, which person or department, what, from, to, and whether Bitrix24 took it.
+ */
+export const peopleActions = pgTable(
+  'people_actions',
+  {
+    id: serial('id').primaryKey(),
+    at: tz('at').notNull().defaultNow(),
+    userId: integer('user_id').notNull(),
+    /** user | department */
+    subjectType: text('subject_type').notNull(),
+    subjectId: integer('subject_id'),
+    /** departments | position | add | rename | parent | head */
+    action: text('action').notNull(),
+    fromValue: text('from_value'),
+    toValue: text('to_value').notNull(),
+    ok: boolean('ok').notNull(),
+    error: text('error'),
+  },
+  (t) => [index('people_actions_at_idx').on(t.at)],
+);

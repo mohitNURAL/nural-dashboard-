@@ -363,6 +363,11 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
       title: 'People directory',
       text: 'Everyone with designation and department, what they can open (access areas), their dashboard status and sign-ins, when they were last active, and their open and overdue tasks. Search and filter above; Excel at the top right.',
     },
+    {
+      target: tour('people-departments'),
+      title: 'Edit people and departments',
+      text: 'Admins: Edit on a row changes the person’s dashboard role (here) and their designation and departments (in Bitrix24). Manage departments adds, renames and moves departments and sets their heads in Bitrix24. Every change is confirmed first and logged.',
+    },
   ],
   access: [
     {

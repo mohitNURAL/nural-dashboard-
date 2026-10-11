@@ -110,8 +110,11 @@ export function employeeRoutes(
           name: u.name,
           position: u.workPosition,
           departments: (u.departmentIds ?? []).map((d) => deptName.get(d) ?? String(d)),
+          departmentIds: u.departmentIds ?? [],
           active: u.active,
           role: r.role,
+          /** Admins in config/roles.json: their role cannot be changed. */
+          locked: r.locked,
           rights: r.rights,
           loginCount: a?.loginCount ?? 0,
           lastSignInAt: a?.lastSignInAt ?? null,

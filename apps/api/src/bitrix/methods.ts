@@ -36,6 +36,35 @@ export const EDITABLE_FIELDS = new Set([
   'DEADLINE',
 ]);
 
+/**
+ * People and departments (2026-10-12, SRS 17): the one exception besides task edits. Only an
+ * admin, with their own OAuth token, may add a department, change a department (name, parent,
+ * head), or change a person's departments and designation. Never a delete, never a new user.
+ */
+export const PEOPLE_ACTION_METHODS = new Set([
+  'department.add',
+  'department.update',
+  'user.update',
+]);
+
+/** The only fields each people method may send. */
+export const PEOPLE_FIELDS: Record<string, Set<string>> = {
+  'department.add': new Set(['NAME', 'PARENT', 'UF_HEAD']),
+  'department.update': new Set(['ID', 'NAME', 'PARENT', 'UF_HEAD']),
+  'user.update': new Set(['ID', 'UF_DEPARTMENT', 'WORK_POSITION']),
+};
+
+/** Throws unless it is an allowed people method with only its allowed fields (and `auth`). */
+export function assertPeopleAction(method: string, params: Record<string, unknown>): void {
+  const allowed = PEOPLE_FIELDS[method];
+  if (!PEOPLE_ACTION_METHODS.has(method) || !allowed) {
+    throw new Error(`Bitrix24 method "${method}" is not an allowed people action`);
+  }
+  const extra = Object.keys(params).filter((k) => k !== 'auth' && !allowed.has(k));
+  if (extra.length)
+    throw new Error(`${method} with fields outside the allowed set: ${extra.join(', ')}`);
+}
+
 export function assertUserAction(method: string): void {
   if (!USER_ACTION_METHODS.has(method)) {
     throw new Error(`Bitrix24 method "${method}" is not an allowed task action`);

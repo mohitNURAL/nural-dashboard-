@@ -1,6 +1,12 @@
 // Raw HTTP caller for the Bitrix24 inbound webhook. Never call this directly:
 // go through limiter.ts so every request respects the 2 calls/s limit.
-import { assertReadOnly, assertUserAction, EDITABLE_FIELDS } from './methods';
+import {
+  assertPeopleAction,
+  assertReadOnly,
+  assertUserAction,
+  EDITABLE_FIELDS,
+  PEOPLE_ACTION_METHODS,
+} from './methods';
 
 export type Params = Record<string, unknown>;
 
@@ -62,7 +68,9 @@ export function createRawCaller({
 
   return async function rawCall<T>(method: string, params: Params = {}) {
     if (mode === 'userAction') {
-      assertUserAction(method);
+      // People and departments (admins, own token) or task actions; nothing else.
+      if (PEOPLE_ACTION_METHODS.has(method)) assertPeopleAction(method, params);
+      else assertUserAction(method);
       if (typeof params.auth !== 'string') throw new Error('task action without a user token');
       if (method === 'tasks.task.update') {
         const fields = Object.keys((params.fields as Record<string, unknown> | undefined) ?? {});

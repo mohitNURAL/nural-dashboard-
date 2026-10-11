@@ -3,7 +3,7 @@
 import { Queue, QueueEvents, UnrecoverableError, Worker } from 'bullmq';
 import { Redis } from 'ioredis';
 import { BitrixError, type BitrixResponse, type Params, type RawCall } from './client';
-import { assertReadOnly, assertUserAction } from './methods';
+import { assertPeopleAction, assertReadOnly, assertUserAction } from './methods';
 
 export const QUEUE_NAME = 'bitrix-calls';
 export const CALLS_PER_SECOND = 2;
@@ -24,6 +24,15 @@ export interface BitrixLimiter {
    * and rate limit as every other call.
    */
   userCall: <T = unknown>(
+    method: string,
+    params: Params,
+    token: string,
+  ) => Promise<BitrixResponse<T>>;
+  /**
+   * A people or department change (SRS 17) by an admin, with their own OAuth token: only the
+   * methods and fields in methods.ts PEOPLE_FIELDS.
+   */
+  peopleCall: <T = unknown>(
     method: string,
     params: Params,
     token: string,
@@ -120,6 +129,11 @@ export function createBitrixLimiter({
     return run<T>({ method, params: { ...params, auth: token }, user: true }, true);
   }
 
+  async function peopleCall<T>(method: string, params: Params, token: string) {
+    assertPeopleAction(method, params);
+    return run<T>({ method, params: { ...params, auth: token }, user: true }, true);
+  }
+
   async function run<T>(data: CallJob, forget = false): Promise<BitrixResponse<T>> {
     await ready;
     const job = await queue.add(
@@ -142,6 +156,7 @@ export function createBitrixLimiter({
   return {
     call,
     userCall,
+    peopleCall,
     get callCount() {
       return callCount;
     },

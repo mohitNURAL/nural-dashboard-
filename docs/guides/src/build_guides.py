@@ -308,7 +308,8 @@ EXTRA = {
 <tr><td class="name">Signed in</td><td>Signed in less than 3 days ago: the session is still open.</td></tr>
 <tr><td class="name">Session ended</td><td>Last signed in more than 3 days ago.</td></tr>
 <tr><td class="name">Signed in earlier</td><td>Signed in before sign-in times were kept.</td></tr>
-<tr><td class="name">Never signed in</td><td>Active in Bitrix24, never used the dashboard.</td></tr></table>''',
+<tr><td class="name">Never signed in</td><td>Active in Bitrix24, never used the dashboard.</td></tr></table>
+<h3>Editing (admins)</h3><p><b>Edit</b> on a row changes the person's dashboard role (on the dashboard) and their designation and departments (in Bitrix24, in your name). <b>Manage departments</b> adds, renames and moves departments and sets their heads in Bitrix24. Each change is confirmed first and logged.</p>''',
     'access': '''<h3>The screen</h3><p>Pick a person or a department on the left. On the right every menu module is a card with a master switch; open it for its pages, each with its own switch, and the permissions under them. A dot shows where each value comes from (grey the role, blue a department, teal the person, red a locked admin, amber not saved yet); ↺ goes back to inherited. <b>Allow all modules</b>, <b>Remove all</b>, then <b>Save</b>.</p>
 <h3>The rights</h3><table><tr><th>Right</th><th>Values</th><th>What it controls</th></tr>
 <tr><td class="name">Data</td><td>All data / Own tasks</td><td>Every project and person, or only tasks assigned to or created by them.</td></tr>

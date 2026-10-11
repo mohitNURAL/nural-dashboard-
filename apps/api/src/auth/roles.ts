@@ -100,8 +100,9 @@ export function resolveFor(
   roles: RolesConfig,
   grants: Grants,
 ): Resolved & { role: Role; locked: boolean } {
-  const role = roleOf(id, ds, roles);
   const locked = roles.admins.includes(id);
+  // A role set in the People directory wins, except over a locked admin.
+  const role = (!locked && grants.users.get(id)?.role) || roleOf(id, ds, roles);
   const resolved = resolveRights(
     id,
     role,

@@ -17,6 +17,7 @@ import { memoryReportStore, type ReportStore } from './reports/store';
 import { actionRoutes, type ActionDeps } from './routes/actions';
 import { feedbackRoutes, memoryFeedbackStore, type FeedbackStore } from './routes/feedback';
 import { helpRoutes, memoryHelpStore, type HelpStore } from './routes/help';
+import { peopleRoutes, type PeopleDeps } from './routes/people';
 import { memoryPrefsStore, prefsRoutes, type PrefsStore } from './routes/prefs';
 import type { Call } from './bitrix/limiter';
 import { config } from './config';
@@ -73,6 +74,8 @@ export interface ServerOptions {
   };
   /** Task actions (move stage, change status) as the signed-in person; off without them. */
   actions?: Omit<Partial<ActionDeps>, 'userOf'>;
+  /** People directory edits sent to Bitrix24 (SRS 17): admin's token, audit, directory sync. */
+  people?: Pick<PeopleDeps, 'peopleCall' | 'tokens' | 'record' | 'refreshDirectory'>;
   /** Task description for the drawer, read live from Bitrix24 (not stored by the sync). */
   describe?: (taskId: number) => Promise<string | null>;
 }
@@ -90,6 +93,7 @@ export async function buildServer({
   roles,
   feedback,
   help,
+  people,
   prefs,
   access,
   reports,
@@ -160,11 +164,13 @@ export async function buildServer({
   });
 
   let dataset = getDataset;
+  let invalidateDataset = () => {};
   if (!dataset) {
     const cache = cachedDataset(loadDataset);
     // A change anywhere invalidates the in-memory dataset; the next query reloads it.
     bus.subscribe(() => cache.invalidate());
     dataset = cache.get;
+    invalidateDataset = cache.invalidate;
   }
   const ds = dataset;
   // Access overrides, kept in memory and reloaded on every change so it applies at once.
@@ -270,6 +276,20 @@ export async function buildServer({
     grants: () => grants,
     refresh: async () => {
       grants = await accessStore.load();
+    },
+  });
+  peopleRoutes(app, scoping.dataset, scoping.viewer, {
+    ...people,
+    userOf: sessionUserOf,
+    access: accessStore,
+    roles: rolesCfg,
+    grants: () => grants,
+    refreshGrants: async () => {
+      grants = await accessStore.load();
+    },
+    refreshDirectory: async () => {
+      await people?.refreshDirectory?.();
+      invalidateDataset();
     },
   });
   // Reports: built from the full dataset, then scoped per recipient (reports/scope.ts).
@@ -387,6 +407,18 @@ async function main() {
       enqueue: queue.enqueue,
       record: async (a) => {
         await dbm.db.insert(dbm.schema.taskActions).values(a);
+      },
+    },
+    people: {
+      peopleCall: bitrix.getBitrix().peopleCall,
+      tokens,
+      record: async (a) => {
+        await dbm.db.insert(dbm.schema.peopleActions).values(a);
+      },
+      // Users and departments again from Bitrix24 (read-only webhook), at once.
+      refreshDirectory: async () => {
+        const { syncDirectory } = await import('./sync/directory');
+        await syncDirectory(bitrix.getBitrix().call);
       },
     },
     hooks: {

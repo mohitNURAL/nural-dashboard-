@@ -23,7 +23,8 @@ export interface Rights {
 }
 export type RightKey = keyof Rights;
 /** Saved grants may still hold the old `employees` (company tree and people directory). */
-export type Grant = Partial<Rights> & { employees?: boolean };
+/** Saved grants may hold the dashboard role set in the People directory. */
+export type Grant = Partial<Rights> & { employees?: boolean; role?: Role };
 export type Source = 'role' | 'department' | 'person' | 'locked';
 export type Role = 'admin' | 'pm' | 'teamLead' | 'productOwner' | 'member' | 'local';
 export type SignInStatus = 'active' | 'signedIn' | 'ended' | 'earlier' | 'never';
@@ -44,6 +45,9 @@ export interface DeptNode {
 
 export interface Employee extends PersonRef {
   departments: string[];
+  departmentIds: number[];
+  /** A locked admin (config/roles.json): the role cannot be changed. */
+  locked: boolean;
   active: boolean;
   role: Role;
   rights: Rights;

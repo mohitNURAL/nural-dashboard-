@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-12-people-edit',
+    date: '2026-10-12',
+    tab: 'people',
+    title: 'Edit people and departments',
+    steps: [
+      {
+        target: '[data-tour="people-departments"]',
+        title: 'People and departments',
+        text: 'Admins can now change a person (Edit on their row): their dashboard role, and in Bitrix24 their designation and departments. Manage departments adds, renames and moves departments and sets their heads in Bitrix24. Each change is confirmed first and logged.',
+      },
+    ],
+  },
+  {
     id: '2026-10-12-help',
     date: '2026-10-12',
     tab: 'feedback',

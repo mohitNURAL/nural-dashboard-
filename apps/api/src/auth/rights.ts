@@ -88,6 +88,11 @@ export const grantSchema = z
     helpFaq: bool,
     /** Before 2026-10-12: company tree and people directory together. */
     employees: bool,
+    /**
+     * The person's dashboard role, set in the People directory (2026-10-12); it wins over
+     * config/roles.json and project ownership, except for locked admins. People only.
+     */
+    role: z.enum(['admin', 'pm', 'teamLead', 'productOwner', 'member']),
   })
   .partial()
   .strict();

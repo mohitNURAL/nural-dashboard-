@@ -4,14 +4,17 @@
 import { createColumnHelper } from '@tanstack/react-table';
 import clsx from 'clsx';
 import { useMemo, useState } from 'react';
+import { useMe } from '../../api/me';
 import { DataTable } from '../../components/DataTable';
 import { SortableGroup } from '../../components/layout/SortableGroup';
 import { StatTile } from '../../components/StatTile';
-import { IconDownload, IconPeople, IconSearch } from '../../components/ui/icons';
+import { IconDownload, IconPeople, IconSearch, IconTree } from '../../components/ui/icons';
 import { Tip } from '../../components/ui/Tip';
 import { useEmployees, type Employee, type SignInStatus } from './api';
 import { PageHead } from '../../components/ui/PageHead';
 import { Avatar, StatusPill } from './common';
+import { DepartmentsDialog } from './DepartmentsDialog';
+import { EditPerson } from './EditPerson';
 import { ROLE_NAME, STATUS, timeAgo } from './labels';
 
 const col = createColumnHelper<Employee>();
@@ -63,7 +66,7 @@ function AccessChips({ e }: { e: Employee }) {
   );
 }
 
-const columns = [
+const baseColumns = [
   col.accessor('name', {
     header: 'Employee',
     cell: (c) => (
@@ -133,7 +136,36 @@ const ORDER: Record<SignInStatus, number> = {
   never: 4,
 };
 
+/** The columns, with an Edit action for admins (People directory edits, SRS 17). */
+function columnsFor(onEdit?: (e: Employee) => void) {
+  if (!onEdit) return baseColumns;
+  return [
+    ...baseColumns,
+    col.display({
+      id: 'edit',
+      header: '',
+      cell: (c) =>
+        c.row.original.active ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(c.row.original);
+            }}
+            className="rounded-control border border-border px-2.5 py-1 font-heading text-button text-primary hover:border-primary"
+          >
+            Edit
+          </button>
+        ) : null,
+    }),
+  ];
+}
+
 export function PeoplePage() {
+  const { data: me } = useMe();
+  const [editing, setEditing] = useState<Employee | null>(null);
+  const [managing, setManaging] = useState(false);
+  const columns = useMemo(() => columnsFor(me?.admin ? setEditing : undefined), [me?.admin]);
   const { data, isLoading } = useEmployees();
   const rows = useMemo(() => data?.rows ?? [], [data]);
   const [q, setQ] = useState('');
@@ -208,6 +240,16 @@ export function PeoplePage() {
         sub="Who is who, what they can open, and who uses the dashboard"
         icon={<IconPeople size={24} />}
       >
+        {me?.admin && (
+          <button
+            type="button"
+            onClick={() => setManaging(true)}
+            data-tour="people-departments"
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-accent px-3.5 font-heading text-button text-white shadow-sm hover:brightness-110"
+          >
+            <IconTree size={18} /> Manage departments
+          </button>
+        )}
         <Tip label="Export to Excel" hint="Everyone, with access and activity">
           <a
             href="/api/employees/export"
@@ -315,6 +357,8 @@ export function PeoplePage() {
           },
         ]}
       />
+      {editing && <EditPerson person={editing} onClose={() => setEditing(null)} />}
+      {managing && <DepartmentsDialog onClose={() => setManaging(false)} />}
     </div>
   );
 }

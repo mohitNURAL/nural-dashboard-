@@ -1177,6 +1177,14 @@ For people with the **employees** right (by default admins, PM and team leads). 
   - open and overdue tasks (within the viewer's own data scope).
 - **Filters:** search, department, status, show inactive.
 
+**Editing people and departments (2026-10-12, admins):**
+- **People directory › Edit** (a side panel per person):
+  - **Dashboard role** (Admin, Project manager, Team lead, Product owner, Member): saved on the dashboard as `role` on the person's access grant. It wins over `config/roles.json` and project ownership; locked admins (roles.json) cannot be changed. Their default rights, data scope, reports and team follow it at once; the change is in Recent changes.
+  - **Designation** and **Departments** (several, from the department tree, with *+ New department* inline): sent to Bitrix24 (`user.update` with `UF_DEPARTMENT`, `WORK_POSITION` only).
+- **Manage departments** (dialog): add a department (name, parent, head; `department.add`), rename one, move it under another (never under itself or its own sub-department), change its head (`department.update`).
+- **How:** every Bitrix24 change goes with the admin's own Bitrix24 sign-in (OAuth token), never the webhook, only through the allowlist in `bitrix/methods.ts` (`PEOPLE_FIELDS`), checked in three places (route, limiter, REST client). No delete, no new users. A confirmation popup lists each change and where it goes. Every attempt is logged in `people_actions` (who, what, from, to, ok, error). On success the directory (users, departments) is synced from Bitrix24 at once, so the tree, the directory and department-based rights update.
+- **Bitrix24 setup:** the dashboard's local app needs the **Departments (department)** and **Users (user)** permissions, and the admin needs Bitrix24 admin rights; otherwise Bitrix24's refusal is shown in plain words (`PUT /api/people/:id`, `PUT /api/people/:id/role`, `POST /api/departments`, `PUT /api/departments/:id`).
+
 **Access permissions** (admins; section 7, Rights; redesigned 2026-10-12):
 - **One right per page.** The rights follow the menu (`packages/shared/src/modules.ts`, read by the menu, this screen and the tests), so a new page appears here by itself:
 
