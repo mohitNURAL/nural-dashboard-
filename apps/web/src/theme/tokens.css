@@ -26,6 +26,8 @@
   /* Top bar and tooltips: navy in every theme (headings use --primary-dark, which flips). */
   --chrome: #18244e;
   --neutral-chip: #efeeee;
+  /* Text on a strong --primary background (heat cells). */
+  --on-primary: #ffffff;
   color-scheme: light;
 }
 
@@ -49,6 +51,7 @@
   --border: #2a3150;
   --chrome: #0a0e1a;
   --neutral-chip: #2a3150;
+  --on-primary: #0d111e;
   color-scheme: dark;
 }
 

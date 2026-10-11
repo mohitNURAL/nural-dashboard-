@@ -23,11 +23,12 @@ export function ageingText(days: number | null): string {
 export function heatShade(count: number, max: number): { background?: string; color?: string } {
   if (!count || !max) return {};
   const t = Math.min(1, count / max);
-  // Mix B500 (#32499F) into white; at least 12% so a single task stays visible.
+  // Mix the theme's blue into the card colour (white on Light, dark on Dark); at least 12% so a
+  // single task stays visible. Strong cells use the text colour made for the blue.
   const pct = Math.round(12 + t * 78);
   return {
-    background: `color-mix(in srgb, var(--primary) ${pct}%, white)`,
-    color: pct > 55 ? 'white' : 'var(--primary-dark)',
+    background: `color-mix(in srgb, var(--primary) ${pct}%, var(--surface))`,
+    color: pct > 55 ? 'var(--on-primary)' : 'var(--primary-dark)',
   };
 }
 

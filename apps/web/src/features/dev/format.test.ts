@@ -32,10 +32,12 @@ describe('heatShade', () => {
     expect(heatShade(0, 10)).toEqual({});
     expect(heatShade(1, 0)).toEqual({});
     expect(heatShade(1, 100).background).toContain('13%');
+    // Mixed into the card colour, so it works on the light and the dark theme.
     expect(heatShade(10, 10)).toEqual({
-      background: 'color-mix(in srgb, var(--primary) 90%, white)',
-      color: 'white',
+      background: 'color-mix(in srgb, var(--primary) 90%, var(--surface))',
+      color: 'var(--on-primary)',
     });
+    expect(heatShade(2, 10).color).toBe('var(--primary-dark)');
   });
 });
 
