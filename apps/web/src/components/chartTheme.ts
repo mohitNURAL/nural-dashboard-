@@ -4,8 +4,16 @@
 export const token = (name: string) =>
   getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
-export const chartText = {
+/** Chart text in the current theme (read when a chart draws; charts redraw on a theme change). */
+export const chartText = () => ({
   fontFamily: '"Work Sans", system-ui, sans-serif',
   fontSize: 10,
-  color: '#231F20',
-};
+  color: token('--text'),
+});
+
+/** Tooltip look in the current theme. */
+export const chartTooltip = () => ({
+  backgroundColor: token('--surface'),
+  borderColor: token('--border'),
+  textStyle: { color: token('--text'), fontFamily: '"Work Sans", system-ui, sans-serif' },
+});

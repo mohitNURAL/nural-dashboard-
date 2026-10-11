@@ -23,6 +23,39 @@
   --text: #231f20;
   --border: #dfddde; /* Grey 200 */
   --text-muted: #b9b2b4; /* Grey 300 */
+  /* Top bar and tooltips: navy in every theme (headings use --primary-dark, which flips). */
+  --chrome: #18244e;
+  --neutral-chip: #efeeee;
+  color-scheme: light;
+}
+
+/*
+ * Dark theme (chosen in the top bar; "System" follows the computer's setting). Neutrals and the
+ * blue text roles flip; status colours (red, teal, amber) stay, so badges keep their meaning.
+ */
+:root[data-theme='dark'] {
+  --primary: #7b8fe0;
+  --primary-dark: #d4dbf5; /* headings and strong text */
+  --primary-deep: #e2e7f6;
+  --primary-deeper: #f1f3fb;
+  --primary-soft: #2a3460;
+  --primary-soft-100: #1d2440; /* hover rows, chips, toggles */
+  --primary-soft-300: #4b5891;
+  --primary-muted: #8d9edb;
+  --bg: #0d111e;
+  --surface: #151a2c;
+  --text: #e4e6ef;
+  --text-muted: #8b91a8;
+  --border: #2a3150;
+  --chrome: #0a0e1a;
+  --neutral-chip: #2a3150;
+  color-scheme: dark;
+}
+
+/* The top bar keeps light-on-navy text in every theme. */
+.chrome {
+  --primary-soft-300: #c6ceed;
+  --primary-muted: #8d9edb;
 }
 
 /* Shape and spacing: 4 px grid, 8 px card radius (SRS section 6). */

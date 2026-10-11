@@ -3,6 +3,7 @@
 import * as Popover from '@radix-ui/react-popover';
 import clsx from 'clsx';
 import { ROLE_LABEL, useMe } from '../api/me';
+import { useTheme, type ThemeChoice } from '../store/theme';
 import type { Tab } from '../features/filters/toParams';
 import { useLive } from '../store/live';
 import { AlertsBell } from './AlertsBell';
@@ -23,7 +24,7 @@ interface Props {
 
 export function TopBar({ tab, onTab, kpiAllowed }: Props) {
   return (
-    <header className="bg-primary-dark text-white">
+    <header className="chrome bg-chrome text-white">
       <div className="mx-auto flex h-14 max-w-page items-center gap-4 px-4 lg:gap-8 lg:px-6">
         <div className="flex items-baseline gap-3">
           <span className="font-heading text-title">Nural</span>
@@ -53,11 +54,90 @@ export function TopBar({ tab, onTab, kpiAllowed }: Props) {
         <div className="ml-auto flex items-center gap-4">
           <AlertsBell onTab={onTab} />
           <LiveIndicator />
+          <ThemeSwitch />
           <SignedIn />
           <UserMenu />
         </div>
       </div>
     </header>
+  );
+}
+
+const THEMES: { value: ThemeChoice; label: string; icon: JSX.Element }[] = [
+  {
+    value: 'light',
+    label: 'Light',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
+        <circle cx="8" cy="8" r="3" fill="currentColor" />
+        <path
+          d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6L13 13M3 13l1.4-1.4M11.6 4.4L13 3"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+        />
+      </svg>
+    ),
+  },
+  {
+    value: 'dark',
+    label: 'Dark',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
+        <path d="M13.5 10.2A6 6 0 0 1 5.8 2.5a6 6 0 1 0 7.7 7.7z" fill="currentColor" />
+      </svg>
+    ),
+  },
+  {
+    value: 'system',
+    label: 'System',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
+        <rect
+          x="1.5"
+          y="2.5"
+          width="13"
+          height="9"
+          rx="1.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.4"
+        />
+        <path
+          d="M5.5 14h5M8 11.5V14"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+        />
+      </svg>
+    ),
+  },
+];
+
+/** Light, Dark or System (follows the computer's setting); remembered in this browser. */
+function ThemeSwitch() {
+  const choice = useTheme((s) => s.choice);
+  const set = useTheme((s) => s.set);
+  return (
+    <div className="flex rounded-full bg-white/10 p-0.5" role="radiogroup" aria-label="Theme">
+      {THEMES.map((t) => (
+        <button
+          key={t.value}
+          type="button"
+          role="radio"
+          aria-checked={choice === t.value}
+          aria-label={`${t.label} theme`}
+          title={`${t.label} theme`}
+          onClick={() => set(t.value)}
+          className={clsx(
+            'grid h-7 w-7 place-items-center rounded-full',
+            choice === t.value ? 'bg-white text-chrome' : 'text-primary-soft-300 hover:text-white',
+          )}
+        >
+          {t.icon}
+        </button>
+      ))}
+    </div>
   );
 }
 

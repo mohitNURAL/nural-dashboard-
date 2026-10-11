@@ -99,7 +99,7 @@ export function TaskDrawer() {
                 href={t.url}
                 target="_blank"
                 rel="noreferrer"
-                className="flex h-10 w-full items-center justify-center rounded-control bg-primary font-heading text-button uppercase text-white hover:bg-primary-dark"
+                className="flex h-10 w-full items-center justify-center rounded-control bg-primary font-heading text-button uppercase text-white hover:brightness-110"
               >
                 Open in Bitrix24
               </a>

@@ -43,7 +43,7 @@ export function TagChips({ tags, max = 3 }: { tags: string[]; max?: number }) {
 
 const PRIORITY_STYLE: Record<Priority, string> = {
   high: 'bg-bad-soft text-bad-dark',
-  normal: 'bg-[#EFEEEE] text-text',
+  normal: 'bg-[var(--neutral-chip)] text-text',
   low: 'bg-primary-soft text-primary',
 };
 

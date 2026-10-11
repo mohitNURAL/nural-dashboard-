@@ -63,5 +63,5 @@ export const bulkRowClass = (r?: BulkResult) =>
       : r.state === 'skip'
         ? 'opacity-60'
         : r.state === 'done'
-          ? '!bg-accent-soft'
+          ? '!bg-good/15'
           : '!bg-primary-soft-100';

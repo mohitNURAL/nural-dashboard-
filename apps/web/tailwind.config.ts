@@ -28,6 +28,7 @@ export default {
           soft: 'var(--bad-soft)',
         },
         good: 'var(--good)',
+        chrome: 'var(--chrome)',
         warn: 'var(--warn)',
         bg: 'var(--bg)',
         surface: 'var(--surface)',

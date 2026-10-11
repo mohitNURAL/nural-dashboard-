@@ -331,7 +331,7 @@ export function BulkBar({ bulk, boards }: { bulk: Bulk; boards: Record<string, B
               onClick={() => {
                 if (window.confirm(`Change ${ready} tasks in Bitrix24?`)) void send('apply');
               }}
-              className="h-8 rounded-control bg-primary px-3 font-heading text-button text-white hover:bg-primary-dark disabled:opacity-50"
+              className="h-8 rounded-control bg-primary px-3 font-heading text-button text-white hover:brightness-110 disabled:opacity-50"
             >
               {busy ? 'Working…' : checked ? `Apply to ${ready}` : 'Apply'}
             </button>

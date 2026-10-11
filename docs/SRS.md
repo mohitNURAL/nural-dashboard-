@@ -337,6 +337,8 @@ Grey blocks stand for live numbers; Overdue is the only tile with a status borde
 
 The QA tab swaps the Tag filter for a Bug or Feedback filter and puts Rework in the only tile with a status border.
 
+**Themes (2026-10-11).** A switch in the top bar (sun, moon, screen icons) offers **Light** (the default, the palette above), **Dark** and **System** (follows the computer's light or dark setting, and changes with it). The choice is kept per browser (localStorage). Dark redefines the neutral and blue tokens: background `#0D111E`, cards `#151A2C`, text `#E4E6EF`, muted text `#8B91A8`, borders `#2A3150`, headings `#D4DBF5`, links and buttons `#7B8FE0`. The top bar and tooltips stay navy (`--chrome`) in every theme, and the status colours (red, teal, amber) do not change, so badges keep their meaning. Charts, toasts and form controls follow the theme; charts redraw when it changes.
+
 ## 7. Architecture and tech stack
 
 The browser never talks to Bitrix24. A Node.js backend holds both webhooks, keeps a copy of the tasks in PostgreSQL, computes the metrics, and pushes changes to open dashboards over Server-Sent Events.

@@ -3,10 +3,12 @@ import { NuqsAdapter } from 'nuqs/adapters/react';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import { Toaster } from 'sonner';
 import { queryClient } from './api/queries';
 import App from './App';
 import './index.css';
+// Applies the saved theme before the first paint (no flash of the wrong colours).
+import './store/theme';
+import { ThemedToaster } from './components/ThemedToaster';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -15,14 +17,7 @@ createRoot(document.getElementById('root')!).render(
         <Tooltip.Provider delayDuration={150}>
           <App />
         </Tooltip.Provider>
-        <Toaster
-          position="bottom-right"
-          visibleToasts={4}
-          toastOptions={{
-            className: '!font-body !text-body !border-border',
-            style: { borderLeft: '4px solid var(--accent)' },
-          }}
-        />
+        <ThemedToaster />
       </NuqsAdapter>
     </QueryClientProvider>
   </StrictMode>,
