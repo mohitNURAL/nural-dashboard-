@@ -9,7 +9,7 @@ import {
   type SortingState,
 } from '@tanstack/react-table';
 import clsx from 'clsx';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { InfoTip } from './InfoTip';
 
 export type { SortingState };
@@ -29,7 +29,15 @@ interface Props<T> {
   sorting?: SortingState;
   onSortingChange?: (s: SortingState) => void;
   initialSorting?: SortingState;
-  pagination?: { page: number; pageSize: number; total: number; onPage: (p: number) => void };
+  pagination?: {
+    page: number;
+    pageSize: number;
+    total: number;
+    onPage: (p: number) => void;
+    /** Rows per page choice (e.g. 10, 25, 50, 100); omitted = fixed size. */
+    onPageSize?: (n: number) => void;
+    pageSizes?: number[];
+  };
   maxHeight?: number;
   loading?: boolean;
   emptyText?: string;
@@ -201,32 +209,7 @@ export function DataTable<T>({
           )}
         </table>
       </div>
-      {pagination && pagination.total > pagination.pageSize && (
-        <div className="flex items-center justify-end gap-3 pt-3">
-          <span className="text-text-muted">
-            {(pagination.page - 1) * pagination.pageSize + 1}–
-            {Math.min(pagination.page * pagination.pageSize, pagination.total)} of{' '}
-            {pagination.total.toLocaleString('en-IN')}
-          </span>
-          <PageButton
-            label="Previous page"
-            disabled={pagination.page <= 1}
-            onClick={() => pagination.onPage(pagination.page - 1)}
-          >
-            ‹
-          </PageButton>
-          <span className="font-heading text-button">
-            {pagination.page} / {pages}
-          </span>
-          <PageButton
-            label="Next page"
-            disabled={pagination.page >= pages}
-            onClick={() => pagination.onPage(pagination.page + 1)}
-          >
-            ›
-          </PageButton>
-        </div>
-      )}
+      {pagination && pagination.total > 0 && <Pager {...pagination} pages={pages} />}
     </div>
   );
 }
@@ -252,5 +235,94 @@ function PageButton({
     >
       {children}
     </button>
+  );
+}
+
+/**
+ * Rows per page (10, 25, 50, 100), the range shown, first / previous / next / last, and a page
+ * box: type a page number and press Enter (or leave the box) to jump there.
+ */
+function Pager({
+  page,
+  pageSize,
+  total,
+  pages,
+  onPage,
+  onPageSize,
+  pageSizes = [10, 25, 50, 100],
+}: {
+  page: number;
+  pageSize: number;
+  total: number;
+  pages: number;
+  onPage: (p: number) => void;
+  onPageSize?: (n: number) => void;
+  pageSizes?: number[];
+}) {
+  const [draft, setDraft] = useState(String(page));
+  useEffect(() => setDraft(String(page)), [page]);
+  const go = () => {
+    const n = Math.round(Number(draft));
+    if (!Number.isFinite(n) || n < 1) return setDraft(String(page));
+    const target = Math.min(pages, n);
+    setDraft(String(target));
+    if (target !== page) onPage(target);
+  };
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 pt-3">
+      {onPageSize ? (
+        <label className="flex items-center gap-2 text-text-muted">
+          Rows per page
+          <select
+            aria-label="Rows per page"
+            value={pageSize}
+            onChange={(e) => onPageSize(Number(e.target.value))}
+            className="h-8 rounded-control border border-border bg-surface px-2 text-text focus:border-primary focus:outline-none"
+          >
+            {pageSizes.map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : (
+        <span />
+      )}
+      <div className="flex items-center gap-2">
+        <span className="text-text-muted">
+          {((page - 1) * pageSize + 1).toLocaleString('en-IN')}–
+          {Math.min(page * pageSize, total).toLocaleString('en-IN')} of{' '}
+          {total.toLocaleString('en-IN')}
+        </span>
+        <PageButton label="First page" disabled={page <= 1} onClick={() => onPage(1)}>
+          «
+        </PageButton>
+        <PageButton label="Previous page" disabled={page <= 1} onClick={() => onPage(page - 1)}>
+          ‹
+        </PageButton>
+        <label className="flex items-center gap-1.5 font-heading text-button">
+          Page
+          <input
+            type="number"
+            min={1}
+            max={pages}
+            aria-label="Go to page"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && go()}
+            onBlur={go}
+            className="h-8 w-14 rounded-control border border-border bg-surface px-1.5 text-center text-text focus:border-primary focus:outline-none"
+          />
+          of {pages.toLocaleString('en-IN')}
+        </label>
+        <PageButton label="Next page" disabled={page >= pages} onClick={() => onPage(page + 1)}>
+          ›
+        </PageButton>
+        <PageButton label="Last page" disabled={page >= pages} onClick={() => onPage(pages)}>
+          »
+        </PageButton>
+      </div>
+    </div>
   );
 }

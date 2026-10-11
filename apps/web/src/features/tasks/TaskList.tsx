@@ -25,6 +25,17 @@ interface Props {
 }
 
 const SEARCH_DEBOUNCE_MS = 300;
+/** Rows per page, remembered in this browser for every task list. */
+const PAGE_SIZES = [10, 25, 50, 100];
+const PAGE_SIZE_KEY = 'nural-page-size';
+function storedPageSize(): number {
+  try {
+    const n = Number(localStorage.getItem(PAGE_SIZE_KEY));
+    return PAGE_SIZES.includes(n) ? n : 50;
+  } catch {
+    return 50;
+  }
+}
 const select = createColumnHelper<TaskRow>();
 
 function toSorting(sort: TaskSort): SortingState {
@@ -48,6 +59,7 @@ export function TaskList({
   const [q, setQ] = useState('');
   const [sort, setSort] = useState<TaskSort>(defaultSort);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(storedPageSize);
 
   useEffect(() => {
     const t = setTimeout(() => setQ(search.trim()), SEARCH_DEBOUNCE_MS);
@@ -56,7 +68,15 @@ export function TaskList({
 
   // A new filter, preset, search or order starts again at page 1.
   const filterKey = JSON.stringify(filterParams);
-  useEffect(() => setPage(1), [filterKey, preset, q, sort]);
+  useEffect(() => setPage(1), [filterKey, preset, q, sort, pageSize]);
+  const changePageSize = (n: number) => {
+    setPageSize(n);
+    try {
+      localStorage.setItem(PAGE_SIZE_KEY, String(n));
+    } catch {
+      // Private mode: the choice lasts for this visit.
+    }
+  };
 
   const { data, isFetching, isError } = useTaskList(filterParams, {
     kind,
@@ -64,6 +84,7 @@ export function TaskList({
     q,
     sort,
     page,
+    pageSize,
   });
 
   useEffect(() => {
@@ -150,7 +171,14 @@ export function TaskList({
               if (key) setSort(`${first.desc ? '-' : ''}${key}` as TaskSort);
             }}
             pagination={
-              data && { page, pageSize: data.pageSize, total: data.total, onPage: setPage }
+              data && {
+                page,
+                pageSize: data.pageSize,
+                total: data.total,
+                onPage: setPage,
+                onPageSize: changePageSize,
+                pageSizes: PAGE_SIZES,
+              }
             }
             maxHeight={560}
             loading={isFetching}

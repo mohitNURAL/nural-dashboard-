@@ -3,6 +3,7 @@
 import * as Popover from '@radix-ui/react-popover';
 import clsx from 'clsx';
 import { ROLE_LABEL, useMe } from '../api/me';
+import { initials } from '../features/dev/format';
 import { useTheme, type ThemeChoice } from '../store/theme';
 import type { Tab } from '../features/filters/toParams';
 import { useLive } from '../store/live';
@@ -54,8 +55,6 @@ export function TopBar({ tab, onTab, kpiAllowed }: Props) {
         <div className="ml-auto flex items-center gap-4">
           <AlertsBell onTab={onTab} />
           <LiveIndicator />
-          <ThemeSwitch />
-          <SignedIn />
           <UserMenu />
         </div>
       </div>
@@ -114,91 +113,81 @@ const THEMES: { value: ThemeChoice; label: string; icon: JSX.Element }[] = [
   },
 ];
 
-/** Light, Dark or System (follows the computer's setting); remembered in this browser. */
-function ThemeSwitch() {
-  const choice = useTheme((s) => s.choice);
-  const set = useTheme((s) => s.set);
-  return (
-    <div className="flex rounded-full bg-white/10 p-0.5" role="radiogroup" aria-label="Theme">
-      {THEMES.map((t) => (
-        <button
-          key={t.value}
-          type="button"
-          role="radio"
-          aria-checked={choice === t.value}
-          aria-label={`${t.label} theme`}
-          title={`${t.label} theme`}
-          onClick={() => set(t.value)}
-          className={clsx(
-            'grid h-7 w-7 place-items-center rounded-full',
-            choice === t.value ? 'bg-white text-chrome' : 'text-primary-soft-300 hover:text-white',
-          )}
-        >
-          {t.icon}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 /** Sign out clears the session cookie and shows the signed-out page (sign in again from it). */
 async function signOut() {
   await fetch('/api/auth/logout', { method: 'POST' }).catch(() => undefined);
   window.location.href = '/api/auth/signed-out';
 }
 
-/** The signed-in name and a Sign out button; on a local copy, that sign-in is off. */
-function SignedIn() {
-  const { data: me } = useMe();
-  if (!me) return null;
-  if (me.auth !== 'bitrix') {
-    return (
-      <span
-        className="hidden rounded-control border border-primary px-2 py-1 text-table text-primary-soft-300 md:inline"
-        title="Sign in with Bitrix24 works on the live dashboard only; task changes are disabled here."
-      >
-        Local copy · sign-in off
-      </span>
-    );
-  }
-  return (
-    <span className="flex items-center gap-2">
-      <span className="hidden max-w-48 truncate text-body text-primary-soft-300 md:inline">
-        {me.name} · {ROLE_LABEL[me.role]}
-      </span>
-      <button
-        type="button"
-        onClick={() => void signOut()}
-        className="rounded-control border border-primary-muted px-3 py-1 font-heading text-button text-white hover:bg-primary"
-      >
-        Sign out
-      </button>
-    </span>
-  );
-}
-
+/**
+ * The profile button: the person's monogram (Mohit Srivastava → MS). Its panel holds the name and
+ * role, the theme (Light, Dark, System), live-update toasts and Sign out.
+ */
 function UserMenu() {
   const { data: me } = useMe();
   const toastsEnabled = useLive((s) => s.toastsEnabled);
   const setToastsEnabled = useLive((s) => s.setToastsEnabled);
+  const theme = useTheme((s) => s.choice);
+  const setTheme = useTheme((s) => s.set);
+  const signedIn = me?.auth === 'bitrix';
+  const name = signedIn ? me.name : 'Local copy';
+  const monogram = signedIn ? initials(me.name) : 'LC';
   return (
     <Popover.Root>
       <Popover.Trigger
-        aria-label="User menu"
-        className="grid h-8 w-8 place-items-center rounded-full bg-primary text-white hover:bg-primary-muted"
+        aria-label={`Profile: ${name}`}
+        title={name}
+        className="grid h-8 w-8 place-items-center rounded-full bg-primary font-heading text-button text-white ring-2 ring-white/20 hover:brightness-110"
       >
-        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
-          <circle cx="8" cy="5.5" r="3" fill="currentColor" />
-          <path d="M2 14c.8-3 3.2-4.5 6-4.5s5.2 1.5 6 4.5" fill="currentColor" />
-        </svg>
+        {monogram}
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content
           align="end"
-          sideOffset={6}
-          className="z-50 w-60 rounded-card border border-border bg-surface p-3 text-text shadow-pop"
+          sideOffset={8}
+          className="z-50 w-72 rounded-card border border-border bg-surface text-text shadow-pop"
         >
-          <label className="flex cursor-pointer items-center justify-between gap-3">
+          <div className="flex items-center gap-3 border-b border-border p-4">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary font-heading text-h3 text-white">
+              {monogram}
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate font-heading text-h3 text-primary-dark">{name}</span>
+              <span className="block text-table text-text-muted">
+                {me ? (signedIn ? ROLE_LABEL[me.role] : 'Sign-in off on this copy') : '…'}
+              </span>
+            </span>
+          </div>
+
+          <div className="space-y-2 border-b border-border p-4">
+            <span className="block font-heading text-label uppercase text-text-muted">Theme</span>
+            <div
+              className="grid grid-cols-3 gap-1 rounded-control bg-primary-soft-100 p-1"
+              role="radiogroup"
+              aria-label="Theme"
+            >
+              {THEMES.map((t) => (
+                <button
+                  key={t.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={theme === t.value}
+                  onClick={() => setTheme(t.value)}
+                  className={clsx(
+                    'flex items-center justify-center gap-1.5 rounded py-1.5 font-heading text-button',
+                    theme === t.value
+                      ? 'bg-surface text-primary shadow-sm'
+                      : 'text-text-muted hover:text-primary-dark',
+                  )}
+                >
+                  {t.icon}
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <label className="flex cursor-pointer items-center justify-between gap-3 p-4">
             <span>Show live update toasts</span>
             <input
               type="checkbox"
@@ -207,14 +196,24 @@ function UserMenu() {
               className="h-4 w-4 accent-[var(--primary)]"
             />
           </label>
-          {me?.auth === 'bitrix' && (
-            <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
-              <span className="truncate font-bold">{me.name}</span>
+
+          {signedIn && (
+            <div className="border-t border-border p-3">
               <button
                 type="button"
                 onClick={() => void signOut()}
-                className="shrink-0 font-heading text-button text-primary hover:underline"
+                className="flex h-9 w-full items-center justify-center gap-2 rounded-control border border-border font-heading text-button text-bad hover:border-bad hover:bg-bad-soft/20"
               >
+                <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
+                  <path
+                    d="M6 2.5H3.5a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1H6M10.5 11l3-3-3-3M13.5 8H6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
                 Sign out
               </button>
             </div>
