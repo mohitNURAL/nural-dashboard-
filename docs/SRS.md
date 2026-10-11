@@ -354,6 +354,34 @@ The QA tab swaps the Tag filter for a Bug or Feedback filter and puts Rework in 
 - Dropping a half-width card next to a full-width one (just before or after it) pairs them, and the full-width card turns half. The pair is saved per person (`<tab>.pairs`) and forgotten once the two are moved apart.
 - Rules: `rowSpans` and `pairOnDrop` in `components/layout/order.ts`, with tests.
 
+**Side drawer and page tools (2026-10-11).**
+
+*Side drawer:*
+- **Where pages are:** navigation lives in a side drawer on the left; the top bar keeps the logo, a breadcrumb ("Dashboard › QA"), alerts, live and the profile.
+- **Closed:** an icon rail (64 px).
+- **Open:** hovering or keyboard focus slides it open over the page (264 px), with each page's name and a short hint, and leaving closes it.
+- **Pinned:** the ☰ button pins it open, pushing the page aside, until clicked again (remembered in the browser).
+- **Small screens:** it opens from a menu button in the top bar.
+- **Groups:**
+  - *Dashboard*: KPI, Development, QA, Support;
+  - *Employees*: Company tree, People directory, Access permissions.
+- **Rights:** each page is shown only to those with its right, and a page someone may not open falls back to Development.
+- **What's new:** a teal dot on a page's icon marks it.
+
+*Page tools:* a glass dock at the right edge, with icon buttons named by tooltips:
+- **Customise** (its panel opens to the left);
+- **Guided tour** of the page;
+- **Voice** on / off;
+- **Reset layout** (with Undo).
+
+*Tooltips and icons:* text buttons became icons with tooltips (`components/ui/Tip.tsx`, `icons.tsx`):
+- the dock;
+- each data point's toolbar;
+- the focus view's Excel, PDF and close;
+- alerts and live.
+
+*Theme colours* take an opacity (`bg-accent/15`) through `color-mix` (tailwind.config.ts).
+
 **Data-point toolbar (2026-10-11).** Hovering any tile, card or task-list section shows a small toolbar on its top edge:
 - ⠿ move it;
 - **?** a guided tour of just that data point (in the person's own wording);
@@ -1062,3 +1090,33 @@ The dashboard shows each person around, in their own scope, and walks them throu
 - Tour bubbles: driver.js (MIT).
 
 **Keeping it current.** A new tile, card or section adds its step in `steps.ts`. A new feature adds a `whatsNew.ts` entry. Both are part of finishing a change.
+
+## 17. Employee module (2026-10-11)
+
+For people with the **employees** right (by default admins, PM and team leads). **Access permissions** needs the **admin** right. Pages open from the side drawer's *Employees* group. Data comes from Bitrix24 (users, departments) and the dashboard (sign-ins, activity, rights). Code: `apps/api/src/routes/employees.ts`, `access.ts`; `apps/web/src/features/employees`.
+
+**Company tree** (`GET /api/employees/tree`):
+- the company's departments as in Bitrix24, nested under their parents with connector lines;
+- each department shows its head (monogram, name, designation), its people (including sub-departments) and its number of teams;
+- opening a department lists its people with designations;
+- the top two levels start open; Expand all and Collapse all;
+- search finds a person, designation or department, highlights it and opens the way to it.
+
+**People directory** (`GET /api/employees`, Excel `GET /api/employees/export`):
+- **Tiles** (click to filter): employees (active in Bitrix24), signed in (session open), active now (last 5 minutes), never signed in.
+- **Table:**
+  - employee (monogram, name, designation);
+  - department;
+  - role;
+  - **access areas**: All data or Own tasks, KPI, Dev · QA, Support, Inbox, Employees, Edit all or Edit limited, Admin;
+  - **dashboard status:** *Active now*, *Signed in* (sign-in less than 3 days ago), *Session ended*, *Signed in earlier* (before sign-in times were kept), *Never signed in*, with the number of sign-ins;
+  - **last active;**
+  - open and overdue tasks (within the viewer's own data scope).
+- **Filters:** search, department, status, show inactive.
+
+**Access permissions** (admins; section 7, Rights):
+- **By person:** every person and every right. A right shows its value and a dot for where it comes from: grey the role, blue a department, teal the person, red a locked admin. Clicking it offers *Inherit (value)*, the allow value or the deny value.
+- **By department:** departments in tree order. A department's setting applies to its people and sub-departments.
+- **Saving:** changes save at once and apply from the person's next click.
+- **Recent changes:** lists the last 30 changes (who, for whom or which department, what, and what it was before).
+- **Locked:** admins in `config/roles.json` cannot be changed.

@@ -6,6 +6,8 @@ import { toast } from 'sonner';
 import { useInfoContext } from './infoContext';
 import { InfoTip } from './InfoTip';
 import { useFocusBox } from './layout/useFocusBox';
+import { IconClose, IconExcel, IconPdf } from './ui/icons';
+import { Tip } from './ui/Tip';
 
 interface Props {
   title: string;
@@ -82,40 +84,40 @@ export function Card({
             {focus.focused && (
               <span data-no-export className="flex items-center gap-1.5">
                 {(['xlsx', 'pdf'] as const).map((k) => (
-                  <button
+                  <Tip
                     key={k}
-                    type="button"
-                    onClick={() => void exportAs(k)}
-                    disabled={!!busy || loading}
-                    title={k === 'xlsx' ? 'Export this to Excel' : 'Export this to PDF'}
-                    className="flex h-7 items-center gap-1.5 rounded-control border border-border px-2.5 font-heading text-button text-primary hover:border-primary disabled:opacity-50"
+                    label={k === 'xlsx' ? 'Export to Excel' : 'Export to PDF'}
+                    hint={k === 'xlsx' ? 'This card’s data only' : 'A picture of this card'}
+                    side="bottom"
                   >
-                    <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden>
-                      <path
-                        d="M8 2v8m0 0 3-3m-3 3L5 7M3 12v2h10v-2"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.6"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    {busy === k ? '…' : k === 'xlsx' ? 'Excel' : 'PDF'}
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => void exportAs(k)}
+                      disabled={!!busy || loading}
+                      aria-label={k === 'xlsx' ? 'Export to Excel' : 'Export to PDF'}
+                      className={clsx(
+                        'grid h-8 w-8 place-items-center rounded-lg border border-border text-text-muted transition hover:border-primary hover:text-primary disabled:opacity-50',
+                        busy === k && 'animate-pulse',
+                      )}
+                    >
+                      {k === 'xlsx' ? <IconExcel size={16} /> : <IconPdf size={16} />}
+                    </button>
+                  </Tip>
                 ))}
               </span>
             )}
             {focus.focused && (
-              <button
-                type="button"
-                data-no-export
-                onClick={focus.close}
-                aria-label="Close focus view"
-                title="Close (Esc)"
-                className="grid h-7 w-7 place-items-center rounded-control text-text-muted hover:bg-primary-soft-100 hover:text-primary"
-              >
-                ✕
-              </button>
+              <Tip label="Close" hint="Or press Escape, or click outside" side="bottom">
+                <button
+                  type="button"
+                  data-no-export
+                  onClick={focus.close}
+                  aria-label="Close focus view"
+                  className="grid h-8 w-8 place-items-center rounded-lg text-text-muted hover:bg-primary-soft-100 hover:text-primary"
+                >
+                  <IconClose size={16} />
+                </button>
+              </Tip>
             )}
           </div>
         </header>

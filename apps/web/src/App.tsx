@@ -1,8 +1,16 @@
-import { CustomiseView } from './components/layout/CustomiseView';
+import clsx from 'clsx';
 import { TaskDrawer } from './components/TaskDrawer';
 import { TopBar } from './components/TopBar';
+import { ActionDock } from './components/shell/ActionDock';
+import { allowedPage, navFor } from './components/shell/nav';
+import { useDrawer } from './components/shell/drawerStore';
+import { SideDrawer } from './components/shell/SideDrawer';
 import { DevTab } from './features/dev/DevTab';
+import { AccessPage } from './features/employees/AccessPage';
+import { OrgTree } from './features/employees/OrgTree';
+import { PeoplePage } from './features/employees/PeoplePage';
 import { FilterBar } from './features/filters/FilterBar';
+import { isDashboardTab } from './features/filters/toParams';
 import { SupportTab } from './features/support/SupportTab';
 import { useMe, useSessionEnd } from './api/me';
 import { useTheme } from './store/theme';
@@ -18,12 +26,9 @@ export default function App() {
   const { data: me } = useMe();
   // Charts read the theme's colours when they draw: a theme change redraws the tab.
   const theme = useTheme((s) => s.resolved);
-  // NFR-4: the KPI tab is for full access only; members open on Development.
-  const kpiAllowed = me?.kpi ?? me?.full ?? false;
-  const supportAllowed = me?.support ?? false;
-  // KPI is for full access; Support for the support team and management. Others open on Development.
-  const tab =
-    (urlTab === 'kpi' && !kpiAllowed) || (urlTab === 'support' && !supportAllowed) ? 'dev' : urlTab;
+  const pinned = useDrawer((s) => s.pinned);
+  // Each page needs its right (the server enforces the same); anything else opens Development.
+  const tab = !me || allowedPage(me, urlTab) ? urlTab : 'dev';
   useLiveUpdates();
   useNewVersion();
   useSessionEnd();
@@ -32,27 +37,35 @@ export default function App() {
 
   return (
     <div className="min-h-screen">
-      <TopBar
-        tab={tab}
-        onTab={setTab}
-        kpiAllowed={kpiAllowed}
-        supportAllowed={supportAllowed}
-        newTabs={newTabs}
-      />
-      {tab !== 'support' && <FilterBar tab={tab} />}
-      <main key={theme} className="mx-auto max-w-page px-4 py-4 lg:px-6">
-        {!me ? null : tab === 'kpi' ? (
-          <KpiTab />
-        ) : tab === 'dev' ? (
-          <DevTab />
-        ) : tab === 'support' ? (
-          <SupportTab />
-        ) : (
-          <QaTab />
+      <TopBar tab={tab} onTab={setTab} />
+      <SideDrawer groups={navFor(me)} tab={tab} onTab={setTab} newTabs={newTabs} />
+      <div
+        className={clsx(
+          'transition-[padding] duration-200 ease-out md:pr-14',
+          pinned ? 'md:pl-[264px]' : 'md:pl-16',
         )}
-      </main>
+      >
+        {isDashboardTab(tab) && tab !== 'support' && <FilterBar tab={tab} />}
+        <main key={theme} className="mx-auto max-w-page px-4 py-4 lg:px-6">
+          {!me ? null : tab === 'kpi' ? (
+            <KpiTab />
+          ) : tab === 'dev' ? (
+            <DevTab />
+          ) : tab === 'support' ? (
+            <SupportTab />
+          ) : tab === 'org' ? (
+            <OrgTree />
+          ) : tab === 'people' ? (
+            <PeoplePage />
+          ) : tab === 'access' ? (
+            <AccessPage />
+          ) : (
+            <QaTab />
+          )}
+        </main>
+      </div>
       <TaskDrawer />
-      <CustomiseView />
+      {me && <ActionDock tourable />}
     </div>
   );
 }

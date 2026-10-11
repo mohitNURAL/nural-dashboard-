@@ -59,10 +59,11 @@ export function useGuidedTour(tab: Tab, setTab: (t: Tab) => void) {
   useEffect(() => {
     if (!me || !prefs || tourRunning()) return;
     const tabs = tourTabs(me);
-    if (!tabs.includes(tab)) return;
     const manual = requested !== handledRequest.current;
     handledRequest.current = requested;
-    const signedIn = me.auth === 'bitrix';
+    // Dashboard tabs play by themselves (first sign-ins, what's new); Employee pages on request.
+    if (!tabs.includes(tab) && !manual) return;
+    const signedIn = me.auth === 'bitrix' && tabs.includes(tab);
     const due = signedIn && tabTourDue(prefs.loginCount, prefs.tour, tab);
     const features = signedIn
       ? unseenFeatures(prefs.loginCount, prefs.tour, tabs, WHATS_NEW).filter(

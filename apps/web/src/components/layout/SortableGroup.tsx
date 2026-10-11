@@ -26,6 +26,7 @@ import clsx from 'clsx';
 import { useEffect, type CSSProperties, type ReactNode } from 'react';
 import { usePrefs, useSavePrefs } from '../../api/prefs';
 import { usePointTour } from '../../features/tour/usePointTour';
+import { Tip } from '../ui/Tip';
 import { applyOrder, pairOnDrop, rowSpans, type Pairs } from './order';
 import { hiddenKey, useLayoutRegistry } from './registry';
 
@@ -211,63 +212,66 @@ function Slot({
           isDragging && 'opacity-100',
         )}
       >
-        <button
-          ref={setActivatorNodeRef}
-          type="button"
-          aria-label={`Drag to move this ${noun}`}
-          title={`Drag to move this ${noun}`}
-          data-grip
-          {...attributes}
-          {...listeners}
-          className={clsx(TOOL, 'cursor-grab touch-none active:cursor-grabbing')}
-        >
-          <svg width="14" height="8" viewBox="0 0 16 8" aria-hidden>
-            {[2, 6, 10, 14].flatMap((x) =>
-              [2, 6].map((y) => (
-                <circle key={`${x}-${y}`} cx={x} cy={y} r="1.3" fill="currentColor" />
-              )),
-            )}
-          </svg>
-        </button>
-        <button
-          type="button"
-          aria-label={`Guided tour of this ${noun}`}
-          title={`Guided tour of this ${noun}`}
-          data-point-tour
-          onClick={() => tour(group, id)}
-          className={TOOL}
-        >
-          <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
-            <circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.4" />
-            <path
-              d="M6.2 6.3a1.9 1.9 0 0 1 3.6.7c0 1.3-1.8 1.6-1.8 2.7M8 11.6v.1"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.4"
-              strokeLinecap="round"
-            />
-          </svg>
-        </button>
-        {onHide && (
+        <Tip label="Move" hint={`Drag to move this ${noun}`}>
+          <button
+            ref={setActivatorNodeRef}
+            type="button"
+            aria-label={`Drag to move this ${noun}`}
+            data-grip
+            {...attributes}
+            {...listeners}
+            className={clsx(TOOL, 'cursor-grab touch-none active:cursor-grabbing')}
+          >
+            <svg width="14" height="8" viewBox="0 0 16 8" aria-hidden>
+              {[2, 6, 10, 14].flatMap((x) =>
+                [2, 6].map((y) => (
+                  <circle key={`${x}-${y}`} cx={x} cy={y} r="1.3" fill="currentColor" />
+                )),
+              )}
+            </svg>
+          </button>
+        </Tip>
+        <Tip label="Explain this" hint={`A guided tour of this ${noun}`}>
           <button
             type="button"
-            aria-label={`Hide this ${noun}`}
-            title={`Hide this ${noun} (bring it back with Customise, bottom left)`}
-            data-hide
-            onClick={onHide}
+            aria-label={`Guided tour of this ${noun}`}
+            data-point-tour
+            onClick={() => tour(group, id)}
             className={TOOL}
           >
             <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
+              <circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.4" />
               <path
-                d="M2 8s2.2-4 6-4 6 4 6 4-2.2 4-6 4-6-4-6-4Z"
+                d="M6.2 6.3a1.9 1.9 0 0 1 3.6.7c0 1.3-1.8 1.6-1.8 2.7M8 11.6v.1"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="1.3"
+                strokeWidth="1.4"
+                strokeLinecap="round"
               />
-              <circle cx="8" cy="8" r="1.8" fill="none" stroke="currentColor" strokeWidth="1.3" />
-              <path d="M2.5 13.5l11-11" stroke="currentColor" strokeWidth="1.3" />
             </svg>
           </button>
+        </Tip>
+        {onHide && (
+          <Tip label="Hide" hint="Bring it back with Customise, on the right">
+            <button
+              type="button"
+              aria-label={`Hide this ${noun}`}
+              data-hide
+              onClick={onHide}
+              className={TOOL}
+            >
+              <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
+                <path
+                  d="M2 8s2.2-4 6-4 6 4 6 4-2.2 4-6 4-6-4-6-4Z"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.3"
+                />
+                <circle cx="8" cy="8" r="1.8" fill="none" stroke="currentColor" strokeWidth="1.3" />
+                <path d="M2.5 13.5l11-11" stroke="currentColor" strokeWidth="1.3" />
+              </svg>
+            </button>
+          </Tip>
         )}
       </div>
     </div>

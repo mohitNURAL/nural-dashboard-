@@ -1,11 +1,7 @@
-// Top bar (SRS 6): Nural logo, app name, KPI, Development and QA tabs, alerts, Live indicator, user
-// menu.
+// Top bar (SRS 6): Nural logo, where you are (Dashboard › QA), alerts, Live indicator and the
+// profile menu. Navigation is in the side drawer (2026-10-11); page tools in the right-hand dock.
 import * as Popover from '@radix-ui/react-popover';
 import clsx from 'clsx';
-import { toast } from 'sonner';
-import { usePrefs, useResetLayout, useSavePrefs } from '../api/prefs';
-import { useTourRequest } from '../features/tour/useGuidedTour';
-import { voiceAvailable } from '../features/tour/voice';
 import { ROLE_LABEL, useMe } from '../api/me';
 import { initials } from '../features/dev/format';
 import { useTheme, type ThemeChoice } from '../store/theme';
@@ -13,75 +9,54 @@ import type { Tab } from '../features/filters/toParams';
 import { useLive } from '../store/live';
 import { AlertsBell } from './AlertsBell';
 import { LiveIndicator } from './LiveIndicator';
+import { crumbs } from './shell/nav';
+import { useDrawer } from './shell/drawerStore';
+import { IconChevron, IconMenu } from './ui/icons';
+import { Tip } from './ui/Tip';
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'kpi', label: 'KPI' },
-  { id: 'dev', label: 'Development' },
-  { id: 'qa', label: 'QA' },
-  { id: 'support', label: 'Support' },
-];
-
-interface Props {
-  tab: Tab;
-  onTab: (t: Tab) => void;
-  /** Full access only (NFR-4); members do not get the KPI tab. */
-  kpiAllowed: boolean;
-  /** The support team and management only. */
-  supportAllowed: boolean;
-  /** Tabs with what's new for this person (a dot after the name). */
-  newTabs?: Set<Tab>;
-}
-
-export function TopBar({ tab, onTab, kpiAllowed, supportAllowed, newTabs }: Props) {
+export function TopBar({ tab, onTab }: { tab: Tab; onTab: (t: Tab) => void }) {
+  const [group, page] = crumbs(tab);
+  const openMenu = useDrawer((s) => s.setMobileOpen);
   return (
-    <header className="chrome bg-chrome text-white">
-      <div className="mx-auto flex h-14 max-w-page items-center gap-4 px-4 lg:gap-8 lg:px-6">
+    <header className="chrome sticky top-0 z-[45] bg-chrome text-white shadow-[0_1px_0_rgba(255,255,255,0.06)]">
+      <div className="flex h-14 items-center gap-3 px-3 md:pl-5 lg:gap-6 lg:pr-6">
+        <button
+          type="button"
+          aria-label="Open the menu"
+          onClick={() => openMenu(true)}
+          className="grid h-10 w-10 place-items-center rounded-xl text-primary-soft-300 hover:bg-white/10 hover:text-white md:hidden"
+        >
+          <IconMenu />
+        </button>
         <div className="flex items-baseline gap-3">
-          <span className="font-heading text-title">Nural</span>
-          <span className="hidden text-h3 font-normal text-primary-soft-300 sm:inline">
+          <span className="bg-gradient-to-r from-white to-primary-soft-300 bg-clip-text font-heading text-title text-transparent">
+            Nural
+          </span>
+          <span className="hidden text-h3 font-normal text-primary-soft-300 lg:inline">
             Dev and QA Dashboard
           </span>
         </div>
-        <nav
-          className="flex h-full items-stretch gap-2"
-          role="tablist"
-          aria-label="Dashboard"
-          data-tour="tabs"
-        >
-          {TABS.filter(
-            (t) => (t.id !== 'kpi' || kpiAllowed) && (t.id !== 'support' || supportAllowed),
-          ).map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              role="tab"
-              aria-selected={tab === t.id}
-              onClick={() => onTab(t.id)}
-              className={clsx(
-                'border-b-[3px] px-3 font-heading text-h3 transition-colors',
-                tab === t.id
-                  ? 'border-accent text-white'
-                  : 'border-transparent text-primary-muted hover:text-white',
-              )}
-            >
-              {t.label}
-              {newTabs?.has(t.id) && (
-                <span
-                  className="ml-1.5 inline-block h-2 w-2 rounded-full bg-accent align-super"
-                  title="New here"
-                  aria-label="new"
-                />
-              )}
-            </button>
-          ))}
+        <nav aria-label="You are here" className="hidden items-center gap-1.5 sm:flex">
+          <span className="h-5 w-px bg-white/15" />
+          <span className="pl-2 font-heading text-button uppercase tracking-wider text-primary-soft-300">
+            {group}
+          </span>
+          <IconChevron size={14} className="text-primary-soft-300/60" />
+          <span className="font-heading text-h3 text-white" aria-current="page">
+            {page}
+          </span>
         </nav>
-        <div className="ml-auto flex items-center gap-4">
-          <span data-tour="bell" className="flex">
-            <AlertsBell onTab={onTab} />
-          </span>
-          <span data-tour="live" className="flex">
-            <LiveIndicator />
-          </span>
+        <div className="ml-auto flex items-center gap-3">
+          <Tip label="Alerts" hint="Overdue and stuck tasks" side="bottom">
+            <span data-tour="bell" className="flex">
+              <AlertsBell onTab={onTab} />
+            </span>
+          </Tip>
+          <Tip label="Live updates" hint="Changes in Bitrix24 arrive in seconds" side="bottom">
+            <span data-tour="live" className="flex">
+              <LiveIndicator />
+            </span>
+          </Tip>
           <UserMenu />
         </div>
       </div>
@@ -148,7 +123,8 @@ async function signOut() {
 
 /**
  * The profile button: the person's monogram (Mohit Srivastava → MS). Its panel holds the name and
- * role, the theme (Light, Dark, System), live-update toasts and Sign out.
+ * role, the theme (Light, Dark, System), live-update toasts and Sign out. The tour, voice and
+ * layout tools are in the right-hand dock.
  */
 function UserMenu() {
   const { data: me } = useMe();
@@ -156,10 +132,6 @@ function UserMenu() {
   const setToastsEnabled = useLive((s) => s.setToastsEnabled);
   const theme = useTheme((s) => s.choice);
   const setTheme = useTheme((s) => s.set);
-  const resetLayout = useResetLayout();
-  const { data: prefs } = usePrefs();
-  const savePrefs = useSavePrefs();
-  const requestTour = useTourRequest((s) => s.request);
   const signedIn = me?.auth === 'bitrix';
   const name = signedIn ? me.name : 'Local copy';
   const monogram = signedIn ? initials(me.name) : 'LC';
@@ -168,7 +140,6 @@ function UserMenu() {
       <Popover.Trigger
         aria-label={`Profile: ${name}`}
         data-tour="profile"
-        title={name}
         className="grid h-8 w-8 place-items-center rounded-full bg-primary font-heading text-button text-white ring-2 ring-white/20 hover:brightness-110"
       >
         {monogram}
@@ -228,51 +199,6 @@ function UserMenu() {
               className="h-4 w-4 accent-[var(--primary)]"
             />
           </label>
-
-          <div className="space-y-2 border-t border-border p-4">
-            <Popover.Close asChild>
-              <button
-                type="button"
-                onClick={requestTour}
-                className="flex h-9 w-full items-center justify-center gap-2 rounded-control bg-primary font-heading text-button text-white hover:brightness-110"
-              >
-                Take the tour of this tab
-              </button>
-            </Popover.Close>
-            {voiceAvailable() && (
-              <label className="flex cursor-pointer items-center justify-between gap-3">
-                <span>Read the tour aloud</span>
-                <input
-                  type="checkbox"
-                  checked={!!prefs?.tour.voice}
-                  onChange={(e) => {
-                    const voice = e.target.checked;
-                    savePrefs((p) => ({ tour: { ...p.tour, voice } }));
-                  }}
-                  className="h-4 w-4 accent-[var(--primary)]"
-                />
-              </label>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between gap-3 border-t border-border p-4">
-            <span>
-              Layout
-              <span className="block text-table text-text-muted">
-                Drag ⠿ to move tiles and cards
-              </span>
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                resetLayout();
-                toast.success('Layout reset to the default order.');
-              }}
-              className="rounded-control border border-border px-3 py-1.5 font-heading text-button text-primary hover:border-primary"
-            >
-              Reset
-            </button>
-          </div>
 
           {signedIn && (
             <div className="border-t border-border p-3">

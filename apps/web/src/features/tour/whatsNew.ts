@@ -18,6 +18,24 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-11-drawer',
+    date: '2026-10-11',
+    tab: 'dev',
+    title: 'New menu, page tools and Employee module',
+    steps: [
+      {
+        target: '[data-tour="drawer"]',
+        title: 'The new menu',
+        text: 'All pages are now in this menu on the left. Hover it to open; click ☰ to pin it open, and again to unpin. Admins, PM and team leads also find the Employee module here: Company tree, People directory and, for admins, Access permissions.',
+      },
+      {
+        target: '[data-tour="dock"]',
+        title: 'Page tools',
+        text: 'Customise, the guided tour, reading aloud and Reset layout are now icons on the right. Hover any icon for its name.',
+      },
+    ],
+  },
+  {
     id: '2026-10-11-customise',
     date: '2026-10-11',
     tab: 'dev',

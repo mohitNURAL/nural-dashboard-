@@ -89,6 +89,10 @@ export function accessRoutes(
       .sort((a, b) => a.name.localeCompare(b.name))
       .map((u) => {
         const r = resolveFor(u.id, ds, deps.roles, grants);
+        // What they would have without their own override (role, then departments).
+        const others = { users: new Map(grants.users), depts: grants.depts };
+        others.users.delete(u.id);
+        const inherited = resolveFor(u.id, ds, deps.roles, others).rights;
         return {
           id: u.id,
           name: u.name,
@@ -97,6 +101,7 @@ export function accessRoutes(
           role: r.role,
           locked: r.locked,
           defaults: r.defaults,
+          inherited,
           grant: grants.users.get(u.id) ?? null,
           rights: r.rights,
           source: r.source,

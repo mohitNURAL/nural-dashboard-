@@ -2,38 +2,47 @@ import type { Config } from 'tailwindcss';
 
 // Nural tokens (SRS section 6). Colours point at CSS variables in src/theme/tokens.css;
 // font sizes are named after the Figma text styles.
+
+/**
+ * A theme colour that also takes an opacity (`bg-accent/15`): the variable mixed with
+ * transparent; Tailwind fills in <alpha-value> (1 without a modifier). Plain `var(--x)` colours
+ * drop such classes silently.
+ */
+const v = (name: string) =>
+  `color-mix(in srgb, var(${name}) calc(<alpha-value> * 100%), transparent)`;
+
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
         primary: {
-          DEFAULT: 'var(--primary)',
-          dark: 'var(--primary-dark)',
-          deep: 'var(--primary-deep)',
-          muted: 'var(--primary-muted)',
-          soft: 'var(--primary-soft)',
-          'soft-100': 'var(--primary-soft-100)',
-          'soft-300': 'var(--primary-soft-300)',
+          DEFAULT: v('--primary'),
+          dark: v('--primary-dark'),
+          deep: v('--primary-deep'),
+          muted: v('--primary-muted'),
+          soft: v('--primary-soft'),
+          'soft-100': v('--primary-soft-100'),
+          'soft-300': v('--primary-soft-300'),
         },
         accent: {
-          DEFAULT: 'var(--accent)',
-          dark: 'var(--accent-dark)',
-          darker: 'var(--accent-darker)',
-          soft: 'var(--accent-soft)',
+          DEFAULT: v('--accent'),
+          dark: v('--accent-dark'),
+          darker: v('--accent-darker'),
+          soft: v('--accent-soft'),
         },
         bad: {
-          DEFAULT: 'var(--bad)',
-          dark: 'var(--bad-dark)',
-          soft: 'var(--bad-soft)',
+          DEFAULT: v('--bad'),
+          dark: v('--bad-dark'),
+          soft: v('--bad-soft'),
         },
-        good: 'var(--good)',
-        chrome: 'var(--chrome)',
-        warn: 'var(--warn)',
-        bg: 'var(--bg)',
-        surface: 'var(--surface)',
-        text: { DEFAULT: 'var(--text)', muted: 'var(--text-muted)' },
-        border: 'var(--border)',
+        good: v('--good'),
+        chrome: v('--chrome'),
+        warn: v('--warn'),
+        bg: v('--bg'),
+        surface: v('--surface'),
+        text: { DEFAULT: v('--text'), muted: v('--text-muted') },
+        border: v('--border'),
       },
       fontFamily: {
         heading: ['Manrope', 'system-ui', 'sans-serif'],

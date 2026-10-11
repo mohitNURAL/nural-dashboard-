@@ -28,14 +28,17 @@ export const TAB_LABEL: Record<Tab, string> = {
   dev: 'Development',
   qa: 'QA',
   support: 'Support',
+  org: 'Company tree',
+  people: 'People directory',
+  access: 'Access permissions',
 };
 
 /** Shown once per sign-in, before the first tab tour: the top bar, the same on every tab. */
 export const COMMON_STEPS: TourStep[] = [
   {
-    target: tour('tabs'),
-    title: 'Tabs',
-    text: 'Each tab is one view of the work. This tour covers every tab you can open; you can replay any of them from your profile menu.',
+    target: tour('drawer'),
+    title: 'The menu',
+    text: 'Every page is here: the dashboard tabs and, for managers, the Employee module. Hover the icons to open it; click ☰ to pin it open, and again to unpin.',
   },
   {
     target: tour('filters'),
@@ -55,9 +58,9 @@ export const COMMON_STEPS: TourStep[] = [
     text: 'Live means changes in Bitrix24 reach the dashboard within seconds; numbers refresh by themselves. Offline means the connection dropped and it is reconnecting.',
   },
   {
-    target: tour('customise'),
-    title: 'Customise',
-    text: 'Choose which tiles and cards this tab shows; hidden ones leave no gap and come back from here. Each data point also has a small toolbar on hover: ⠿ to move it, ? for a tour of just that point, and the eye to hide it.',
+    target: tour('dock'),
+    title: 'Page tools',
+    text: 'On the right: Customise (choose the tiles and cards to show), the guided tour of this page, reading tours aloud, and resetting the layout. Hover any icon for its name. Each data point also has a small toolbar on hover: ⠿ to move it, ? to explain it, the eye to hide it.',
   },
   {
     target: tour('profile'),
@@ -205,6 +208,37 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
       target: tour('kpi-all'),
       title: 'All tasks',
       text: 'Every number on this tab opens its tasks here. Edit in place, bulk edit and Excel export work as on the other tabs.',
+    },
+  ],
+  org: [
+    {
+      target: tour('org-tree'),
+      title: 'Company tree',
+      text: 'Departments as in Bitrix24, each with its head and people; sub-departments sit under their parent. Click a department to open or close it; search finds a person or department and opens the way to it.',
+    },
+  ],
+  people: [
+    {
+      target: tour('people-tiles'),
+      title: 'Who uses the dashboard',
+      text: 'Employees, who is signed in, who is active right now and who has never signed in. Click a tile to list them.',
+    },
+    {
+      target: '[data-tour="people-tiles"] ~ div table',
+      title: 'People directory',
+      text: 'Everyone with designation and department, what they can open (access areas), their dashboard status and sign-ins, when they were last active, and their open and overdue tasks. Search and filter above; Excel at the top right.',
+    },
+  ],
+  access: [
+    {
+      target: tour('access-table'),
+      title: 'Rights per person or department',
+      text: 'Each column is a right: data (all or own tasks), KPI, Support, Inbox, Employees, edit (all fields or limited) and Admin. Click a value to inherit it, allow it or deny it. The dot shows where it comes from: grey the role, blue the department, teal the person. Locked admins cannot be changed.',
+    },
+    {
+      target: tour('access-audit'),
+      title: 'Recent changes',
+      text: 'Every change: who made it, for whom, and what changed. A change applies from the person’s next click.',
     },
   ],
   support: [
