@@ -14,6 +14,11 @@ export interface TourStep {
   text: string;
   /** Wording for members (their own tasks only). */
   member?: string;
+  /**
+   * For a switch or filter (2026-10-12): the data points it changes. They glow while the step
+   * shows, so it is clear what follows the switch and what does not.
+   */
+  affects?: string[];
 }
 
 /** A tile, card or section in a drag group (components/layout/SortableGroup.tsx). */
@@ -42,6 +47,10 @@ export const TAB_LABEL: Record<Tab, string> = {
 
 /** Shown once per sign-in, before the first tab tour: the top bar, the same on every tab. */
 export const COMMON_STEPS: TourStep[] = [
+  {
+    title: 'One number, two places',
+    text: 'The same data point can show a different number on two pages, because each counts within its own department or group: Development counts the Development department, QA the bugs and feedback, KPI the whole company, Insights the period you chose. Click any number to see exactly which tasks it counts.',
+  },
   {
     target: tour('drawer'),
     title: 'The menu',
@@ -81,7 +90,8 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
     {
       target: tour('dev-scope'),
       title: 'All, Dev or Issues',
-      text: 'Development department only. Dev = development tasks, Issues = bugs and feedback, All = both. Every number on this tab follows this switch.',
+      text: 'Development department only. Dev = development tasks, Issues = bugs and feedback, All = both. It changes every tile, card and list on this page (they glow now).',
+      affects: ['[data-group="dev.tiles"]', '[data-group="dev.cards"]'],
     },
     {
       target: slot('dev.tiles', 'total'),
@@ -185,7 +195,13 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
     {
       target: tour('kpi-period'),
       title: 'Day, Week or Month',
-      text: `The period for closed, on-time and the people table, compared with the period before. ${KPI_INFO.tab}`,
+      text: `The period changes only the glowing data points: Closed, On-time, Project health (closed in the period) and People (delivered in the period), each compared with the period before. Open, On hold, Overdue, Active projects and No deadline are counted as of now, whatever the period. ${KPI_INFO.tab}`,
+      affects: [
+        slot('kpi.tiles', 'closed'),
+        slot('kpi.tiles', 'onTime'),
+        slot('kpi.cards', 'projectHealth'),
+        slot('kpi.cards', 'people'),
+      ],
     },
     {
       target: slot('kpi.tiles', 'open'),
@@ -221,9 +237,18 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
     {
       target: tour('insights-window'),
       title: 'Insights',
-      text: 'What is holding us back, worked out from Bitrix24 data: lagging projects and people, load, projects pulling people away and releases at risk. Choose how far back to look: 7, 14 or 30 days.',
+      text: 'What is holding us back, worked out from Bitrix24 data. 7, 14 or 30 days sets how far back activity is looked at: it changes the glowing data points (lagging projects and people, has room, the findings, projects, load and pulls). Overload, people split across projects and the release plan are counted as of now.',
       member:
-        'What is holding your work back: your load, your late tasks, and projects pulling you away from others. Choose how far back to look: 7, 14 or 30 days.',
+        'What is holding your work back. 7, 14 or 30 days sets how far back your activity is looked at: it changes the glowing data points; overload, split work and the release plan are as of now.',
+      affects: [
+        slot('insights.tiles', 'laggingProjects'),
+        slot('insights.tiles', 'laggingPeople'),
+        slot('insights.tiles', 'underloaded'),
+        slot('insights.cards', 'holding'),
+        slot('insights.cards', 'projects'),
+        slot('insights.cards', 'load'),
+        slot('insights.cards', 'overlap'),
+      ],
     },
     {
       target: slot('insights.tiles', 'laggingProjects'),

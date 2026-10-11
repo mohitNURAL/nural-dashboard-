@@ -343,3 +343,14 @@ h3 {
 .chrome ::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.18);
 }
+
+/* Tour: the data points a switch changes glow above the dimmed page (features/tour/runTour.ts). */
+.tour-affected {
+  position: relative;
+  z-index: 10001;
+  border-radius: 16px;
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--accent) 70%, transparent),
+    0 0 26px color-mix(in srgb, var(--accent) 55%, transparent);
+  animation: spot-pulse 1.8s ease-in-out infinite;
+}

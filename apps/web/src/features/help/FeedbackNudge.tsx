@@ -19,7 +19,9 @@ export function FeedbackNudge({ onGo }: { onGo: (t: Tab) => void }) {
   const text = `Hi ${first}! Enjoying the dashboard? Tell us what helps, what slows you down and what you wish it did. Your ideas shape what we build next.`;
 
   useEffect(() => {
-    if (!me || !prefs || me.helpFeedback === false || me.auth === 'off') return;
+    // Not for automated browsers (guide screenshots, checks).
+    if (!me || !prefs || me.helpFeedback === false || me.auth === 'off' || navigator.webdriver)
+      return;
     if (!shouldAsk(prefs, Date.now())) return;
     // A little after the page settles, and not over a tour.
     const t = window.setInterval(() => {

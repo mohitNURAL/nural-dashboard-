@@ -1,9 +1,13 @@
 {
  "COMMON_STEPS": [
   {
+   "title": "One number, two places",
+   "text": "The same data point can show a different number on two pages, because each counts within its own department or group: Development counts the Development department, QA the bugs and feedback, KPI the whole company, Insights the period you chose. Click any number to see exactly which tasks it counts."
+  },
+  {
    "target": "[data-tour=\"drawer\"]",
    "title": "The menu",
-   "text": "Every page is here: the dashboard tabs and, for managers, the Employee module. Hover the icons to open it; click ☰ to pin it open, and again to unpin."
+   "text": "Every page, by module (Dashboard, Insights, Employees, Integration). The module of the page you are on is highlighted and open; click another module to open it. Drag ⠿ to put modules in your order, and pages within their own module. Hover the icons to open the menu; click ☰ to pin it open."
   },
   {
    "target": "[data-tour=\"filters\"]",
@@ -24,7 +28,7 @@
   {
    "target": "[data-tour=\"dock\"]",
    "title": "Page tools",
-   "text": "On the right: Customise (choose the tiles and cards to show), the guided tour of this page, the PDF guides, reading tours aloud, and resetting the layout. Hover any icon for its name. Each data point also has a small toolbar on hover: ⠿ to move it, ? to explain it, the eye to hide it."
+   "text": "On the right: Customise (choose the tiles and cards to show), the guided tour of this page, the PDF guides, Export page (every data point on the page as one Excel workbook or PDF), reading tours aloud, and resetting the layout. Hover any icon for its name. Each data point also has a small toolbar on hover: ⠿ to move it, ? to explain it, the eye to hide it. Tables have Columns (choose and order them) and ⠿ on each row to put rows in your own order."
   },
   {
    "target": "[data-tour=\"profile\"]",
@@ -42,14 +46,22 @@
   "people": "People directory",
   "access": "Access permissions",
   "connections": "Connections",
-  "mailing": "Mailing"
+  "mailing": "Mailing",
+  "feedback": "Feedback",
+  "docs": "Documents",
+  "faq": "FAQs",
+  "finance": "Cost to company"
  },
  "TAB_STEPS": {
   "dev": [
    {
     "target": "[data-tour=\"dev-scope\"]",
     "title": "All, Dev or Issues",
-    "text": "Development department only. Dev = development tasks, Issues = bugs and feedback, All = both. Every number on this tab follows this switch."
+    "text": "Development department only. Dev = development tasks, Issues = bugs and feedback, All = both. It changes every tile, card and list on this page (they glow now).",
+    "affects": [
+     "[data-group=\"dev.tiles\"]",
+     "[data-group=\"dev.cards\"]"
+    ]
    },
    {
     "target": "[data-group=\"dev.tiles\"] [data-slot=\"total\"]",
@@ -196,7 +208,13 @@
    {
     "target": "[data-tour=\"kpi-period\"]",
     "title": "Day, Week or Month",
-    "text": "The period for closed, on-time and the people table, compared with the period before. Every task in every project, all departments. A task is closed when it first reaches QA Backlog (or, without QA stages, when Bitrix24 closes it)."
+    "text": "The period changes only the glowing data points: Closed, On-time, Project health (closed in the period) and People (delivered in the period), each compared with the period before. Open, On hold, Overdue, Active projects and No deadline are counted as of now, whatever the period. Every task in every project, all departments. A task is closed when it first reaches QA Backlog (or, without QA stages, when Bitrix24 closes it).",
+    "affects": [
+     "[data-group=\"kpi.tiles\"] [data-slot=\"closed\"]",
+     "[data-group=\"kpi.tiles\"] [data-slot=\"onTime\"]",
+     "[data-group=\"kpi.cards\"] [data-slot=\"projectHealth\"]",
+     "[data-group=\"kpi.cards\"] [data-slot=\"people\"]"
+    ]
    },
    {
     "target": "[data-group=\"kpi.tiles\"] [data-slot=\"open\"]",
@@ -268,13 +286,22 @@
    {
     "target": "[data-tour=\"insights-window\"]",
     "title": "Insights",
-    "text": "What is holding us back, worked out from Bitrix24 data: lagging projects and people, load, projects pulling people away and releases at risk. Choose how far back to look: 7, 14 or 30 days.",
-    "member": "What is holding your work back: your load, your late tasks, and projects pulling you away from others. Choose how far back to look: 7, 14 or 30 days."
+    "text": "What is holding us back, worked out from Bitrix24 data. 7, 14 or 30 days sets how far back activity is looked at: it changes the glowing data points (lagging projects and people, has room, the findings, projects, load and pulls). Overload, people split across projects and the release plan are counted as of now.",
+    "member": "What is holding your work back. 7, 14 or 30 days sets how far back your activity is looked at: it changes the glowing data points; overload, split work and the release plan are as of now.",
+    "affects": [
+     "[data-group=\"insights.tiles\"] [data-slot=\"laggingProjects\"]",
+     "[data-group=\"insights.tiles\"] [data-slot=\"laggingPeople\"]",
+     "[data-group=\"insights.tiles\"] [data-slot=\"underloaded\"]",
+     "[data-group=\"insights.cards\"] [data-slot=\"holding\"]",
+     "[data-group=\"insights.cards\"] [data-slot=\"projects\"]",
+     "[data-group=\"insights.cards\"] [data-slot=\"load\"]",
+     "[data-group=\"insights.cards\"] [data-slot=\"overlap\"]"
+    ]
    },
    {
     "target": "[data-group=\"insights.tiles\"] [data-slot=\"laggingProjects\"]",
     "title": "At a glance",
-    "text": "Lagging projects and people, the overloaded, those with room to help, people split across projects and releases at risk. Click a tile for its tasks."
+    "text": "Lagging projects and people, the overloaded, those with room to help, people split across projects and releases at risk. Click a tile for the projects or people it counts, with why each is there; click one of them for its tasks."
    },
    {
     "target": "[data-group=\"insights.cards\"] [data-slot=\"holding\"]",
@@ -327,6 +354,39 @@
     "text": "New reports start in Preview: only admins get them, with the list of who would. Preview shows the mail as any person would get it; Send test sends it to you; Go live sends it to everyone on schedule. Last runs show what went out."
    }
   ],
+  "feedback": [
+   {
+    "target": "[data-group=\"feedback.cards\"] [data-slot=\"form\"]",
+    "title": "Tell us",
+    "text": "An issue, an idea or a wish: about the dashboard, a page, a project or a person (only the ones you can see). Add screenshots (paste them with Ctrl+V), PDF, Excel or Word files, up to 5."
+   },
+   {
+    "target": "[data-group=\"feedback.cards\"] [data-slot=\"mine\"]",
+    "title": "My feedback",
+    "text": "What you sent, whether it has been reviewed, and the reply."
+   }
+  ],
+  "docs": [
+   {
+    "target": "[data-group=\"docs.cards\"] [data-slot=\"whole\"]",
+    "title": "Guides",
+    "text": "PDF guides for your level of access: the whole dashboard, and module by module. Only the pages you can open are in them."
+   }
+  ],
+  "faq": [
+   {
+    "target": "[data-group=\"faq.cards\"] [data-slot=\"the-numbers\"]",
+    "title": "FAQs",
+    "text": "Answers to the questions people ask most, by topic. Search at the top."
+   }
+  ],
+  "finance": [
+   {
+    "target": "[data-group=\"finance.cards\"] [data-slot=\"form\"]",
+    "title": "Cost to company",
+    "text": "Coming soon, for admins only. Tell us what it should show and which decisions it should help with."
+   }
+  ],
   "org": [
    {
     "target": "[data-group=\"org.tiles\"] [data-slot=\"departments\"]",
@@ -354,18 +414,18 @@
   "access": [
    {
     "target": "[data-group=\"access.tiles\"] [data-slot=\"people\"]",
-    "title": "Access at a glance",
-    "text": "How many rights are set per person and per department, how many admins, and who sees all data. Click the first two to switch the view."
+    "title": "Access permissions",
+    "text": "Who may open which page and what they may do there. Pick a person or a department on the left."
    },
    {
-    "target": "[data-group=\"access.cards\"] [data-slot=\"rights\"]",
-    "title": "Rights per person or department",
-    "text": "Each column is a right: data (all or own tasks), KPI, Support, Inbox, Employees, edit (all fields or limited) and Admin. Click a value to inherit it, allow it or deny it. The dot shows where it comes from: grey the role, blue the department, teal the person. Locked admins cannot be changed."
+    "target": "[data-tour=\"access-tree\"]",
+    "title": "Module by module",
+    "text": "Every menu module with a master switch; open it for its pages (each with its own switch) and the permissions under them: data scope, editing, inboxes. Grey dots come from the role, blue from a department, teal from the person, amber are not saved yet; ↺ goes back to inherited. Save at the bottom."
    },
    {
     "target": "[data-group=\"access.cards\"] [data-slot=\"changes\"]",
     "title": "Recent changes",
-    "text": "Every change: who made it, for whom, and what changed. A change applies from the person’s next click."
+    "text": "Every change: who made it, for whom, what it was before."
    }
   ],
   "support": [
@@ -485,6 +545,24 @@
    "live": "Live",
    "preview": "In preview",
    "paused": "Paused"
+  },
+  "feedback.tiles": {
+   "sent": "You sent",
+   "reviewed": "Reviewed",
+   "inbox": "Inbox: new"
+  },
+  "feedback.cards": {
+   "form": "Tell us",
+   "mine": "My feedback",
+   "inbox": "Feedback inbox"
+  },
+  "docs.cards": {
+   "whole": "The whole dashboard",
+   "modules": "Module by module"
+  },
+  "finance.cards": {
+   "quote": "We need your insights",
+   "form": "Share your needs"
   },
   "org.tiles": {
    "departments": "Departments",

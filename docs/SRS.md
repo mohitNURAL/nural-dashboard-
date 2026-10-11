@@ -370,11 +370,11 @@ The QA tab swaps the Tag filter for a Bug or Feedback filter and puts Rework in 
 
 | Set | Pages covered | Wording |
 |---|---|---|
-| member | Development, QA, My insights | "your tasks" |
-| support | Development, QA, Support, My insights | "your tasks" |
-| owner | KPI, Development, QA, Insights | all data |
-| manager | KPI, Development, QA, Support, Insights, Company tree, People directory | all data |
-| admin | everything, including Access permissions and Integration (Connections, Mailing) | all data |
+| member | Development, QA, My insights, Help | "your tasks" |
+| support | Development, QA, Support, My insights, Help | "your tasks" |
+| owner | KPI, Development, QA, Insights, Help | all data |
+| manager | KPI, Development, QA, Support, Insights, Company tree, People directory, Help | all data |
+| admin | everything, including Access permissions, Integration (Connections, Mailing), Help and Finance | all data |
 
 What each set holds:
 - **Chapters:** only the pages that level can open, worded for that level (members' own wording where the tour has one).
@@ -382,7 +382,10 @@ What each set holds:
 - **Names:** every person's and project's name, avatar initials and task titles are replaced by stand-ins. The full list of names is read with admin access, so a member's capture is checked too; a capture stops if a real name is left.
 - **Texts:** the data-point texts are the tour's own steps and the "i" definitions.
 
-Files: sources in `docs/guides/src` (`build_guides.py` with `SETS`, `print.mjs`), images in `docs/guides/img/<set>`, PDFs in `docs/guides/<set>` and served from `apps/web/public/guides/<set>`.
+- **Page guides (2026-10-12):** besides the User guide and the Module guide, each set has one short PDF per page it can open ("Development guide.pdf"), listed on Help › Documents.
+- **Notes in every guide:** why one number can differ between two places, what the top switches change, the spotlight, tables you shape and Export page.
+
+Files: sources in `docs/guides/src` (`build_guides.py` with `SETS` and `page_guide`, `print.mjs`), images in `docs/guides/img/<set>`, PDFs in `docs/guides/<set>` (page guides in `<set>/modules`) and served from `apps/web/public/guides/<set>`.
 
 Rebuild after a change people can see:
 1. export `steps.json` from `features/tour`;
@@ -1147,6 +1150,9 @@ The dashboard shows each person around, in their own scope, and walks them throu
 - Tour bubbles: driver.js (MIT).
 
 **Keeping it current.** A new tile, card or section adds its step in `steps.ts`. A new feature adds a `whatsNew.ts` entry. Both are part of finishing a change.
+
+**Switches name what they change (2026-10-12).** A tour step for a switch or filter lists the data points it changes (`affects` in `steps.ts`); while it shows they glow above the dimmed page, and the text says which data points do not follow it: KPI Day / Week / Month (Closed, On-time, Project health, People; not Open, On hold, Overdue, Active projects, No deadline), Development All / Dev / Issues (every tile and card), Insights 7 / 14 / 30 days (lagging, has room, findings, projects, load, pulls; not overload, split work, release plan). A common step explains that one number can differ between two places. Tour bubbles that land away from their element are moved next to it (`keepNear` in `runTour.ts`).
+
 
 ## 17. Employee module (2026-10-11)
 

@@ -84,11 +84,11 @@ IMG = '../../img/'
 
 # What each level can open, and how it reads (the dock picks the set from the person's rights).
 SETS = {
-    'member': dict(label='Members', who='a team member', pages=['dev', 'qa', 'insights'], member=True, edit='limited'),
-    'support': dict(label='Support team', who='a member of the Tech Support team', pages=['dev', 'qa', 'support', 'insights'], member=True, edit='limited'),
-    'owner': dict(label='Product owners', who='a product owner', pages=['kpi', 'dev', 'qa', 'insights'], member=False, edit='all'),
-    'manager': dict(label='Team leads and PM', who='a team lead or project manager', pages=['kpi', 'dev', 'qa', 'support', 'insights', 'org', 'people'], member=False, edit='all'),
-    'admin': dict(label='Admins', who='an admin', pages=['kpi', 'dev', 'qa', 'support', 'insights', 'org', 'people', 'access', 'connections', 'mailing'], member=False, edit='all'),
+    'member': dict(label='Members', who='a team member', pages=['dev', 'qa', 'insights', 'feedback', 'docs', 'faq'], member=True, edit='limited'),
+    'support': dict(label='Support team', who='a member of the Tech Support team', pages=['dev', 'qa', 'support', 'insights', 'feedback', 'docs', 'faq'], member=True, edit='limited'),
+    'owner': dict(label='Product owners', who='a product owner', pages=['kpi', 'dev', 'qa', 'insights', 'feedback', 'docs', 'faq'], member=False, edit='all'),
+    'manager': dict(label='Team leads and PM', who='a team lead or project manager', pages=['kpi', 'dev', 'qa', 'support', 'insights', 'org', 'people', 'feedback', 'docs', 'faq'], member=False, edit='all'),
+    'admin': dict(label='Admins', who='an admin', pages=['kpi', 'dev', 'qa', 'support', 'insights', 'org', 'people', 'access', 'connections', 'mailing', 'feedback', 'docs', 'faq', 'finance'], member=False, edit='all'),
 }
 
 
@@ -130,13 +130,17 @@ PAGE_CARD = {
     'insights': ('Insights', 'What is holding us back: lagging projects and people, overload, people with room to help, projects pulling people off others, and releases at risk. Every finding opens its tasks.'),
     'connections': ('Connections', 'Microsoft 365 mail, Slack and Infowan: connected or not, a test to yourself, and how to connect each.'),
     'mailing': ('Mailing', 'Performance reports by mail and Slack: when, to whom, what and how. New reports go only to admins until switched to Live.'),
+    'feedback': ('Feedback', 'Tell us about an issue or idea: about the dashboard, a page, a project or a person, with screenshots, PDF, Excel or Word files. Follow your own; the inbox reads everyone\'s.'),
+    'docs': ('Documents', 'These guides to download: the whole dashboard, or one page at a time.'),
+    'faq': ('FAQs', 'Answers to the questions people ask most, by topic, with search.'),
+    'finance': ('Cost to company', 'Coming soon, for admins only: tell us what it should show.'),
     'org': ('Company tree', 'Departments as in Bitrix24, with heads and people.'),
     'people': ('People directory', "Everyone's designation, department, access areas, dashboard status, last active, and open and overdue tasks."),
     'access': ('Access permissions', 'Set each right per person or department; every change is logged.'),
 }
 
 LEVELS_TABLE = '''<table><tr><th>Level</th><th>Data</th><th>Pages</th><th>Can change on tasks</th></tr>
-<tr><td class="name">Admin</td><td>Everything</td><td>All, including Access permissions and Integration (Connections, Mailing)</td><td>Every field</td></tr>
+<tr><td class="name">Admin</td><td>Everything</td><td>All, including Access permissions, Integration (Connections, Mailing) and Finance</td><td>Every field</td></tr>
 <tr><td class="name">Project manager, team lead</td><td>Everything</td><td>KPI, Development, QA, Support, Insights, Company tree, People directory</td><td>Every field</td></tr>
 <tr><td class="name">Product owner</td><td>Everything</td><td>KPI, Development, QA, Insights</td><td>Every field</td></tr>
 <tr><td class="name">Member</td><td>Tasks assigned to them or created by them</td><td>Development, QA, My insights (and Support for the Tech Support team)</td><td>Stage, status and tags</td></tr></table>'''
@@ -181,9 +185,12 @@ def user_guide(key):
     integ = [PAGE_CARD[p][0] for p in pages if p in ('connections', 'mailing')]
     if integ:
         groups.append('<b>Integration</b>: ' + ', '.join(integ) + '.')
+    groups.append('<b>Help</b>: Feedback, Documents, FAQs.')
+    if 'finance' in pages:
+        groups.append('<b>Finance</b>: Cost to company (admins only).')
     ch.append(('Finding your way', 'Menu, top bar and page tools',
-        f'<figure class="side"><img src="{IMG}{key}/drawer.jpg" alt=""><figcaption><b>The menu</b> sits on the left. Closed, it shows icons; hover it to open it, and move away to close it. '
-        'Click <b>☰</b> to pin it open until you click again. Click a group\'s name to fold it.<br><br>'
+        f'<figure class="side"><img src="{IMG}{key}/drawer.jpg" alt=""><figcaption><b>The menu</b> sits on the left, by module, each with its icon. Closed, it shows icons; hover it to open it, and move away to close it. '
+        'Click <b>☰</b> to pin it open. The module of the page you are on is highlighted and open; click another module to open it. Drag ⠿ to put modules, and pages within their module, in your order.<br><br>'
         + '<br>'.join(groups) + '<br><br>A teal dot on an icon means something new is there.</figcaption></figure>'
         '<h3>The top bar</h3><ul><li><b>Where you are</b>: e.g. Dashboard › QA.</li>'
         f'<li><b>Alerts</b> (bell): overdue tasks and tasks stuck over 5 days in one stage{" (yours)" if member else ""}; click for the list.</li>'
@@ -197,7 +204,9 @@ def user_guide(key):
         fig(key, 'tiles', 'Tiles: one number each, split into parts (e.g. Dev and Issues). Click a tile or a part to list its tasks.')
         + '<ul><li><b>Filters</b> under the top bar (project, assignee, tag or bug/feedback, date range) narrow every number on the page. <b>Reset filters</b> clears them.</li>'
         '<li>The <b>i</b> next to any number says exactly what it counts, and what your filters cover.</li>'
-        '<li><b>Click any number</b>, bar or cell to see the tasks behind it. The list below opens, narrowed to that number.</li></ul>'
+        '<li><b>Click any number</b>, bar or cell to see the tasks behind it: the page dims, the number stays lit and its list opens in the middle of the screen. Escape or ✕ puts it back.</li>'
+        '<li><b>Switches</b> at the top (Day / Week / Month, All / Dev / Issues, 7 / 14 / 30 days) change only some data points; the guided tour lights up exactly which.</li></ul>'
+        + callout('', 'One number, two places.', 'The same data point can show a different number on two pages, because each counts within its own department or group: Development counts the Development department, QA the bugs and feedback, KPI the whole company, Insights the period you chose. Click the number to see exactly which tasks it counts.')
         + (callout('', 'Your scope.', scope) if member else '')
         + fig(key, 'tasklist', 'A task list: sortable columns, edit in place, tick boxes for bulk edit, Excel export and pages of 10 to 100 rows.')
         + fig(key, 'taskview', 'Clicking a task opens its view: every detail, the description and its history, with Open in Bitrix24.')))
@@ -220,6 +229,8 @@ def user_guide(key):
         fig(key, 'toolbar', 'Hover any tile, card or list: ⠿ moves it, ? explains it, the eye hides it.', 'narrow')
         + '<ul><li><b>Drag</b> by ⠿ to put tiles, cards and lists in your order. Each stays in its own group, and cards resize to fill their row: drop a half-width card next to a full one and both become half.</li>'
         '<li><b>Hide</b> a tile or card with the eye; bring it back with <b>Customise</b>. Task lists cannot be hidden.</li>'
+        '<li><b>Tables</b>: <b>Columns</b> chooses and orders the columns (or drag a column header); drag a row by ⠿ to put rows in your own order (<b>Your order</b>). Excel files follow your columns and order.</li>'
+        '<li><b>Export page</b> in the page tools: every data point on the page as one Excel workbook or a PDF.</li>'
         '<li>Your layout is saved for you and follows you to any computer. <b>Reset layout</b> puts everything back.</li></ul>'
         + fig(key, 'customise', 'Customise: tick the tiles and cards to show on this page.', 'narrow')
         + '<h3>Focus view and export</h3><p>Click a card\'s title (or an empty part of it) to bring it to the centre, larger, with the page blurred behind. '
@@ -264,6 +275,10 @@ MODULES = [
     ('org', 'Company tree', 'Departments, heads and people', 'The company structure from Bitrix24: departments, their heads and people.'),
     ('people', 'People directory', 'Who has access, who is active', 'Everyone in Bitrix24 with what they can open on the dashboard and whether they use it.'),
     ('access', 'Access permissions', 'Rights per person or department', 'Who sees what and who may change what, set per person or department, with every change logged.'),
+    ('feedback', 'Feedback', 'Issues and ideas, with attachments', 'Send feedback about the dashboard, a page, a project or a person (only those you can see), with up to 5 attachments of 8 MB: images (paste a screenshot with Ctrl+V), PDF, Excel, Word. My feedback shows what you sent and the reply. The Feedback inbox (admins, PM and team leads) reads everyone\'s, replies and exports to Excel.'),
+    ('docs', 'Documents', 'The PDF guides', 'The guides for your level of access: the whole dashboard (User guide, Module guide) and one short guide per page you can open.'),
+    ('faq', 'FAQs', 'Common questions', 'Answers by topic: the numbers, clicking and filtering, changing tasks, making it yours, access and sign-in, Insights and reports. Search at the top.'),
+    ('finance', 'Cost to company', 'Finance, admins only', 'Coming soon. Admins tell us what Cost to company should show and which decisions it should help with; only admins read the answers.'),
     ('connections', 'Connections', 'Microsoft 365, Slack and Infowan', 'Where reports go and where leave comes from. Keys are kept only on the server; each service shows whether it is connected and sends a test to you.'),
     ('mailing', 'Mailing', 'Performance reports by mail and Slack', 'Design reports: when they go, to whom, what they hold and how they are sent. Each person gets their own part.'),
 ]
@@ -294,7 +309,8 @@ EXTRA = {
 <tr><td class="name">Session ended</td><td>Last signed in more than 3 days ago.</td></tr>
 <tr><td class="name">Signed in earlier</td><td>Signed in before sign-in times were kept.</td></tr>
 <tr><td class="name">Never signed in</td><td>Active in Bitrix24, never used the dashboard.</td></tr></table>''',
-    'access': '''<h3>The rights</h3><table><tr><th>Right</th><th>Values</th><th>What it controls</th></tr>
+    'access': '''<h3>The screen</h3><p>Pick a person or a department on the left. On the right every menu module is a card with a master switch; open it for its pages, each with its own switch, and the permissions under them. A dot shows where each value comes from (grey the role, blue a department, teal the person, red a locked admin, amber not saved yet); ↺ goes back to inherited. <b>Allow all modules</b>, <b>Remove all</b>, then <b>Save</b>.</p>
+<h3>The rights</h3><table><tr><th>Right</th><th>Values</th><th>What it controls</th></tr>
 <tr><td class="name">Data</td><td>All data / Own tasks</td><td>Every project and person, or only tasks assigned to or created by them.</td></tr>
 <tr><td class="name">KPI</td><td>On / Off</td><td>The KPI page.</td></tr>
 <tr><td class="name">Support</td><td>On / Off</td><td>The Support page and its feedback form.</td></tr>
@@ -348,10 +364,36 @@ def module_guide(key):
     return doc(f'Nural Dashboard: Module guide ({S["label"]})', body)
 
 
+def page_guide(key, mod):
+    """One page's guide (Help > Documents, module by module): what it is and every data point."""
+    S = SETS[key]
+    m = next(x for x in MODULES if x[0] == mod)
+    _, title, sub, purpose = m
+    rows = ''.join(
+        f'<tr><td class="name">{e(st["title"])}</td><td>{e(text_for(st, S["member"]))}</td></tr>'
+        for st in D['TAB_STEPS'].get(mod, [])
+    )
+    img = os.path.join(HERE, '..', 'img', key, f'page-{mod}.jpg')
+    body = cover(f'{title} guide', f'{sub}. What the page shows and how to use it.', S['label'])
+    body += chapter(1, title, sub,
+                    f'<p>{e(purpose)}</p>'
+                    + (fig(key, 'page-' + mod, f'{title}, as you see it (names replaced).') if os.path.exists(img) else '')
+                    + (f'<h3>Every data point</h3><table><tr><th>Data point</th><th>What it shows and how to use it</th></tr>{rows}</table>' if rows else '')
+                    + EXTRA.get(mod, ''))
+    return doc(f'Nural Dashboard: {title} guide ({S["label"]})', body.replace(IMG, '../' + IMG))
+
+
 if __name__ == '__main__':
     for key in SETS:
-        os.makedirs(os.path.join(HERE, key), exist_ok=True)
+        os.makedirs(os.path.join(HERE, key, 'modules'), exist_ok=True)
         for name, build in (('user-guide', user_guide), ('module-guide', module_guide)):
             with open(os.path.join(HERE, key, f'{name}.html'), 'w', encoding='utf8') as f:
                 f.write(build(key))
+        # One guide per page this set can open: "<page label> guide" (Help > Documents).
+        for mod in SETS[key]['pages']:
+            if not any(x[0] == mod for x in MODULES):
+                continue
+            label = next(x[1] for x in MODULES if x[0] == mod)
+            with open(os.path.join(HERE, key, 'modules', f'{label} guide.html'), 'w', encoding='utf8') as f:
+                f.write(page_guide(key, mod))
         print('wrote', key)

@@ -84,7 +84,10 @@ export function runTour(
       element: s.target ? () => resolve(s.target!) as Element : undefined,
       popover: { title: s.title, description: s.text },
     })),
-    onHighlightStarted: (el) => mark(el),
+    onHighlightStarted: (el, _step, { state }) => {
+      mark(el);
+      glow(steps[state.activeIndex ?? 0]?.affects);
+    },
     onHighlighted: (el, _step, { state }) => {
       mark(el);
       // A bubble moved by keepNear lost its arrow; each step starts with it again.
@@ -133,6 +136,7 @@ export function runTour(
       popover.footerButtons.prepend(btn);
     },
     onDestroyed: () => {
+      glow(undefined);
       window.clearInterval(follow);
       mark(undefined);
       stopSpeaking();
@@ -196,4 +200,11 @@ function keepNear(el: Element) {
   pop.style.right = 'auto';
   pop.style.bottom = 'auto';
   pop.querySelector<HTMLElement>('.driver-popover-arrow')?.style.setProperty('display', 'none');
+}
+
+/** Lights the data points a switch changes (step.affects) above the dimmed page; none clears. */
+function glow(selectors: string[] | undefined) {
+  document.querySelectorAll('.tour-affected').forEach((e) => e.classList.remove('tour-affected'));
+  for (const sel of selectors ?? [])
+    document.querySelectorAll(sel).forEach((e) => e.classList.add('tour-affected'));
 }
