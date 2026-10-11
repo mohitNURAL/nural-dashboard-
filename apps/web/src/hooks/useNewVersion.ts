@@ -3,12 +3,34 @@
 // every minute, when the tab is shown again and when the browser comes back online.
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+import { TAB_LABEL } from '../features/tour/steps';
+import { WHATS_NEW } from '../features/tour/whatsNew';
+import type { Tab } from '../features/filters/toParams';
 
 const CHECK_EVERY_MS = 60_000;
 
 /** True when the server has a different build than the one running. */
 export const isNewVersion = (running: string, served: unknown) =>
   typeof served === 'string' && served !== '' && served !== running;
+
+interface News {
+  id: string;
+  title: string;
+  tab: Tab;
+}
+
+/** What the new build brings that the running one does not know: "Title (Tab) · …". */
+export function whatsNewText(served: unknown, known: string[]): string {
+  const news = Array.isArray(served) ? (served as News[]) : [];
+  const fresh = news.filter((n) => n && typeof n.id === 'string' && !known.includes(n.id));
+  if (!fresh.length) return 'Improvements and fixes. Refresh to get the latest update.';
+  const list = fresh
+    .slice(0, 3)
+    .map((n) => `${n.title} (${TAB_LABEL[n.tab] ?? n.tab})`)
+    .join(' · ');
+  const more = fresh.length > 3 ? ` and ${fresh.length - 3} more` : '';
+  return `What's new: ${list}${more}. Refresh to see it; the dashboard will show you around.`;
+}
 
 export function useNewVersion() {
   useEffect(() => {
@@ -20,12 +42,15 @@ export function useNewVersion() {
       try {
         const res = await fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' });
         if (!res.ok) return;
-        const { build } = (await res.json()) as { build?: unknown };
+        const { build, news } = (await res.json()) as { build?: unknown; news?: unknown };
         if (!isNewVersion(__BUILD_ID__, build)) return;
         shown = true;
         toast('A new version of the dashboard is ready', {
           id: 'new-version',
-          description: 'Refresh to get the latest update.',
+          description: whatsNewText(
+            news,
+            WHATS_NEW.map((w) => w.id),
+          ),
           duration: Infinity,
           action: { label: 'Refresh', onClick: () => window.location.reload() },
           actionButtonStyle: { background: 'var(--primary)', color: 'var(--on-primary)' },

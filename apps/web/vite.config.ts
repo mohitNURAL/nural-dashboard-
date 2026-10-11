@@ -1,10 +1,12 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
+import { WHATS_NEW } from './src/features/tour/whatsNew';
 
 const api = 'http://localhost:4000';
 
-// Each build gets an ID, compiled into the app and written to /version.json. An open dashboard
-// compares the two to tell people a new version was deployed (hooks/useNewVersion.ts).
+// Each build gets an ID, compiled into the app and written to /version.json with the build's
+// what's-new list. An open dashboard compares the two to tell people a new version was deployed
+// and what it brings (hooks/useNewVersion.ts).
 const BUILD_ID = new Date().toISOString();
 const versionFile: Plugin = {
   name: 'version-file',
@@ -13,7 +15,10 @@ const versionFile: Plugin = {
     this.emitFile({
       type: 'asset',
       fileName: 'version.json',
-      source: JSON.stringify({ build: BUILD_ID }),
+      source: JSON.stringify({
+        build: BUILD_ID,
+        news: WHATS_NEW.map((w) => ({ id: w.id, title: w.title, tab: w.tab })),
+      }),
     });
   },
 };

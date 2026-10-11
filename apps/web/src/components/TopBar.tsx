@@ -3,7 +3,9 @@
 import * as Popover from '@radix-ui/react-popover';
 import clsx from 'clsx';
 import { toast } from 'sonner';
-import { useResetLayout } from '../api/prefs';
+import { usePrefs, useResetLayout, useSavePrefs } from '../api/prefs';
+import { useTourRequest } from '../features/tour/useGuidedTour';
+import { voiceAvailable } from '../features/tour/voice';
 import { ROLE_LABEL, useMe } from '../api/me';
 import { initials } from '../features/dev/format';
 import { useTheme, type ThemeChoice } from '../store/theme';
@@ -26,9 +28,11 @@ interface Props {
   kpiAllowed: boolean;
   /** The support team and management only. */
   supportAllowed: boolean;
+  /** Tabs with what's new for this person (a dot after the name). */
+  newTabs?: Set<Tab>;
 }
 
-export function TopBar({ tab, onTab, kpiAllowed, supportAllowed }: Props) {
+export function TopBar({ tab, onTab, kpiAllowed, supportAllowed, newTabs }: Props) {
   return (
     <header className="chrome bg-chrome text-white">
       <div className="mx-auto flex h-14 max-w-page items-center gap-4 px-4 lg:gap-8 lg:px-6">
@@ -38,7 +42,12 @@ export function TopBar({ tab, onTab, kpiAllowed, supportAllowed }: Props) {
             Dev and QA Dashboard
           </span>
         </div>
-        <nav className="flex h-full items-stretch gap-2" role="tablist" aria-label="Dashboard">
+        <nav
+          className="flex h-full items-stretch gap-2"
+          role="tablist"
+          aria-label="Dashboard"
+          data-tour="tabs"
+        >
           {TABS.filter(
             (t) => (t.id !== 'kpi' || kpiAllowed) && (t.id !== 'support' || supportAllowed),
           ).map((t) => (
@@ -56,12 +65,23 @@ export function TopBar({ tab, onTab, kpiAllowed, supportAllowed }: Props) {
               )}
             >
               {t.label}
+              {newTabs?.has(t.id) && (
+                <span
+                  className="ml-1.5 inline-block h-2 w-2 rounded-full bg-accent align-super"
+                  title="New here"
+                  aria-label="new"
+                />
+              )}
             </button>
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-4">
-          <AlertsBell onTab={onTab} />
-          <LiveIndicator />
+          <span data-tour="bell" className="flex">
+            <AlertsBell onTab={onTab} />
+          </span>
+          <span data-tour="live" className="flex">
+            <LiveIndicator />
+          </span>
           <UserMenu />
         </div>
       </div>
@@ -137,6 +157,9 @@ function UserMenu() {
   const theme = useTheme((s) => s.choice);
   const setTheme = useTheme((s) => s.set);
   const resetLayout = useResetLayout();
+  const { data: prefs } = usePrefs();
+  const savePrefs = useSavePrefs();
+  const requestTour = useTourRequest((s) => s.request);
   const signedIn = me?.auth === 'bitrix';
   const name = signedIn ? me.name : 'Local copy';
   const monogram = signedIn ? initials(me.name) : 'LC';
@@ -144,6 +167,7 @@ function UserMenu() {
     <Popover.Root>
       <Popover.Trigger
         aria-label={`Profile: ${name}`}
+        data-tour="profile"
         title={name}
         className="grid h-8 w-8 place-items-center rounded-full bg-primary font-heading text-button text-white ring-2 ring-white/20 hover:brightness-110"
       >
@@ -204,6 +228,32 @@ function UserMenu() {
               className="h-4 w-4 accent-[var(--primary)]"
             />
           </label>
+
+          <div className="space-y-2 border-t border-border p-4">
+            <Popover.Close asChild>
+              <button
+                type="button"
+                onClick={requestTour}
+                className="flex h-9 w-full items-center justify-center gap-2 rounded-control bg-primary font-heading text-button text-white hover:brightness-110"
+              >
+                Take the tour of this tab
+              </button>
+            </Popover.Close>
+            {voiceAvailable() && (
+              <label className="flex cursor-pointer items-center justify-between gap-3">
+                <span>Read the tour aloud</span>
+                <input
+                  type="checkbox"
+                  checked={!!prefs?.tour.voice}
+                  onChange={(e) => {
+                    const voice = e.target.checked;
+                    savePrefs((p) => ({ tour: { ...p.tour, voice } }));
+                  }}
+                  className="h-4 w-4 accent-[var(--primary)]"
+                />
+              </label>
+            )}
+          </div>
 
           <div className="flex items-center justify-between gap-3 border-t border-border p-4">
             <span>

@@ -246,7 +246,7 @@ const SCOPES: { value: DevScope; label: string; hint: string }[] = [
 function ScopeSwitch() {
   const [scope, setScope] = useDevScope();
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-wrap items-center gap-3" data-tour="dev-scope">
       <div
         className="inline-flex rounded-control border border-border bg-surface p-1"
         role="radiogroup"

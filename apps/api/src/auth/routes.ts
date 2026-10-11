@@ -31,9 +31,16 @@ export interface AuthOptions {
   /** An active portal user from our users table. */
   findUser: (id: number) => Promise<{ id: number; name: string; active: boolean } | undefined>;
   /** Role and access of the person on a request (NFR-4), for /api/auth/me. */
-  describeViewer?: (
-    req: FastifyRequest,
-  ) => Promise<{ role: string; full: boolean; support: boolean; admin: boolean; inbox: boolean }>;
+  describeViewer?: (req: FastifyRequest) => Promise<{
+    role: string;
+    full: boolean;
+    support: boolean;
+    admin: boolean;
+    inbox: boolean;
+    /** KPI department (dev, qa, support, other) and Bitrix24 designation, for the guided tour. */
+    dept?: string;
+    position?: string | null;
+  }>;
   /** Keeps the person's tokens for task actions (tokens.ts); optional. */
   saveTokens?: (userId: number, token: TokenResponse) => Promise<void>;
   /** Called after each successful sign-in (counts sign-ins for the guided tour). */

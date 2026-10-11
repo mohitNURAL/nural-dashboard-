@@ -23,7 +23,7 @@ export function FilterBar({ tab }: { tab: Tab }) {
   const nums = (v: string[]) => v.map(Number);
 
   return (
-    <div className="sticky top-0 z-30 border-b border-border bg-bg">
+    <div className="sticky top-0 z-30 border-b border-border bg-bg" data-tour="filters">
       <div className="mx-auto grid max-w-page grid-cols-2 gap-3 px-4 py-3 lg:grid-cols-[repeat(4,minmax(0,1fr))_auto] lg:px-6">
         <SearchCombobox
           label="Project"

@@ -348,6 +348,12 @@ The QA tab swaps the Tag filter for a Bug or Feedback filter and puts Rework in 
 - **After an update:** a new card appears after the one it follows by default, and removed ones drop out (`components/layout/order.ts`).
 - **Reset:** Profile → Layout → **Reset** restores the default order everywhere.
 
+**Card widths follow the order (2026-10-11).** Cards fill their rows with no gaps.
+- A full-width card has its own row. Two half-width cards side by side share one: a default pair keeps its split (7 + 5); other pairs split 6 + 6.
+- A half-width card left alone in its row widens to full.
+- Dropping a half-width card next to a full-width one (just before or after it) pairs them, and the full-width card turns half. The pair is saved per person (`<tab>.pairs`) and forgotten once the two are moved apart.
+- Rules: `rowSpans` and `pairOnDrop` in `components/layout/order.ts`, with tests.
+
 **Focus view (2026-10-11).**
 - **Opening:** clicking a card's title or empty area brings the card to the centre of the screen, up to 1100 px wide, with the page behind dimmed and blurred. Charts grow with it.
 - **Clicks that don't open it:** counts, bars, tables, buttons and fields keep their usual action (drill-downs, editing).
@@ -951,3 +957,51 @@ After a deploy, everyone who has the dashboard open gets a toast: **"A new versi
 - Each build has an ID (its build time). The ID is compiled into the app and written to `/version.json` (`apps/web/vite.config.ts`).
 - The open page reads `/version.json` every minute, when its browser tab is shown again and when the browser comes back online. It skips the check while offline or hidden. A different ID shows the toast, once (`hooks/useNewVersion.ts`).
 - Caddy serves the page and `/version.json` with `Cache-Control: no-cache`, so Refresh always loads the new build. The hashed `/assets/*` files stay cached for a year.
+- **What it says (2026-10-11):** the toast also lists what the new version brings: "What's new: Guided tour (Development) · …", from the build's what's-new entries the open page does not know yet (`/version.json` carries `news`). An update without new entries says "Improvements and fixes".
+
+## 16. Guided tour and what's new (2026-10-11)
+
+The dashboard shows each person around, in their own scope, and walks them through every new feature.
+
+**The tour of a tab** (`apps/web/src/features/tour`). Each step highlights one part of the page, with the rest dimmed and the part ringed in teal, and a bubble explains it: what the number counts (the same rules as the "i" icons) and how to use it (click a count to list its tasks, focus a card, drag ⠿, edit in place).
+- **Scope:** only parts on the person's screen are shown. A member never gets KPI steps, and the feedback inbox is shown only to its readers. Members get their own wording ("your tasks: assigned to you or created by you").
+- **Every tab they can open:** admins, PM, team leads and product owners get KPI, Development, QA (and Support); most members get Development and QA; the support team also gets Support. The last step of a tab offers "Next: <tab> tab →" until every tab has been shown on that sign-in.
+- **Role first.** The first tour of a sign-in opens with *Your role*:
+  - their name and Bitrix24 designation (e.g. "Neha Gautam, Software Developer");
+  - their role (Admin, Project Manager, Team lead, Product owner, team member);
+  - what they see: everything, or only tasks assigned to them or created by them;
+  - what they can change: every field, or stage, status and tags;
+  - for members, how their department uses the dashboard (developer, tester, support);
+  - for inbox readers, the feedback inbox.
+  - After the role, the top bar: tabs, filters, alerts, live, profile.
+
+**When it plays:**
+- on a person's first **3 sign-ins** (the count kept in `user_prefs`), each tab's tour plays once per sign-in when the tab is opened;
+- at any time from **Profile → Take the tour of this tab**;
+- with sign-in off (local copy) only from the profile.
+
+**Text or voice.**
+- Every bubble has **Voice on/off**, also in the profile as **Read the tour aloud**. The choice is saved per person.
+- The voice is the browser's own speech (Web Speech API). It prefers an Indian English voice, then a natural-sounding English one. It stops when the step changes or the tour closes, and it is hidden where the browser has no voice.
+
+**What's new** (`features/tour/whatsNew.ts`). Every update that changes what people see adds an entry `{ id, date, tab, title, steps }`.
+- **Signs of a new entry:**
+  - the "new version" toast lists its title;
+  - after refreshing, its tab shows a teal dot;
+  - a toast on load says "New on <tab>: <title>", with Show me.
+- **Walkthrough:** opening the tab walks through its steps once, titled "New: …". It is then saved as seen.
+- **Who gets it:** entries for tabs the person cannot open are skipped. During the first 3 sign-ins the full tour covers everything, so the entries count as seen.
+
+**Data and code:**
+- `user_prefs.tour` holds `{ voice, shown: { tab: sign-in number }, seen: [ids] }`.
+- The rules (`logic.ts`) are pure functions with Vitest tests:
+  - which tabs;
+  - when a tour is due;
+  - the role step's position;
+  - the next tab;
+  - unseen features;
+  - visible steps and member wording.
+- Content: `steps.ts`, `whatsNew.ts`.
+- Tour bubbles: driver.js (MIT).
+
+**Keeping it current.** A new tile, card or section adds its step in `steps.ts`. A new feature adds a `whatsNew.ts` entry. Both are part of finishing a change.

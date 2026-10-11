@@ -22,7 +22,7 @@ import { CSS } from '@dnd-kit/utilities';
 import clsx from 'clsx';
 import type { ReactNode } from 'react';
 import { usePrefs, useSavePrefs } from '../../api/prefs';
-import { applyOrder } from './order';
+import { applyOrder, pairOnDrop, rowSpans, type Pairs } from './order';
 
 export interface GroupItem {
   id: string;
@@ -41,6 +41,37 @@ interface Props {
   noun: string;
 }
 
+/**
+ * Card widths are literal classes so Tailwind keeps them: `lg:col-span-6` etc. A card's default
+ * width comes from its className; the shown width follows the row it lands in (order.ts).
+ */
+const SPAN: Record<string, Record<number, string>> = {
+  lg: {
+    4: 'lg:col-span-4',
+    5: 'lg:col-span-5',
+    6: 'lg:col-span-6',
+    7: 'lg:col-span-7',
+    8: 'lg:col-span-8',
+    12: 'lg:col-span-12',
+  },
+  xl: {
+    4: 'xl:col-span-4',
+    5: 'xl:col-span-5',
+    6: 'xl:col-span-6',
+    7: 'xl:col-span-7',
+    8: 'xl:col-span-8',
+    12: 'xl:col-span-12',
+  },
+};
+const SPAN_CLASS = /^(lg|xl):col-span-(\d+)$/;
+
+/** "dev.cards" → "dev.pairs": the cards the person put side by side, saved as a flat list. */
+const pairsKey = (group: string) => `${group.split('.')[0]}.pairs`;
+const toPairs = (flat: string[] = []): Pairs =>
+  flat.flatMap((id, i) =>
+    i % 2 === 0 && flat[i + 1] ? [[id, flat[i + 1]!] as [string, string]] : [],
+  );
+
 export function SortableGroup({ group, items, className, noun }: Props) {
   const { data: prefs } = usePrefs();
   const save = useSavePrefs();
@@ -49,6 +80,18 @@ export function SortableGroup({ group, items, className, noun }: Props) {
     prefs?.layout[group],
   );
   const byId = new Map(items.map((i) => [i.id, i]));
+  // Cards in a 12-column grid fill their rows: widths follow the order (no gaps).
+  const sized = items
+    .map((i) => ({ id: i.id, m: i.className?.match(SPAN_CLASS) }))
+    .filter((x): x is { id: string; m: RegExpMatchArray } => !!x.m);
+  const bp = sized[0]?.m[1];
+  const spans = new Map(sized.map((x) => [x.id, Number(x.m[2])]));
+  const pairs = toPairs(prefs?.layout[pairsKey(group)]);
+  const shown = bp && sized.length === items.length ? rowSpans(ids, spans, pairs) : undefined;
+  const slotClass = (id: string) => {
+    const w = shown?.get(id);
+    return w && bp ? SPAN[bp]?.[w] : byId.get(id)?.className;
+  };
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
@@ -57,7 +100,14 @@ export function SortableGroup({ group, items, className, noun }: Props) {
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return;
     const next = arrayMove(ids, ids.indexOf(String(active.id)), ids.indexOf(String(over.id)));
-    save((p) => ({ layout: { ...p.layout, [group]: next } }));
+    const paired = shown ? pairOnDrop(next, spans, pairs, String(active.id)) : [];
+    save((p) => ({
+      layout: {
+        ...p.layout,
+        [group]: next,
+        ...(shown && { [pairsKey(group)]: paired.flat() }),
+      },
+    }));
   };
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
@@ -66,7 +116,7 @@ export function SortableGroup({ group, items, className, noun }: Props) {
           {ids.map((id) => {
             const item = byId.get(id)!;
             return (
-              <Slot key={id} id={id} className={item.className} noun={noun}>
+              <Slot key={id} id={id} className={slotClass(id)} noun={noun}>
                 {item.node}
               </Slot>
             );

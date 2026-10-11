@@ -93,6 +93,7 @@ export function KpiTab() {
         />
 
         <Accordion
+          tour="kpi-all"
           ref={allRef}
           title={label}
           info={list.info ?? KPI_INFO.tab}
@@ -132,7 +133,7 @@ function PeriodSwitch({ range }: { range?: { start: string; end: string } }) {
   const { period, setPeriod } = useKpiControls();
   const end = range && new Date(new Date(range.end).getTime() - 1).toISOString();
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-wrap items-center gap-3" data-tour="kpi-period">
       <div
         className="inline-flex rounded-control border border-border bg-surface p-1"
         role="radiogroup"

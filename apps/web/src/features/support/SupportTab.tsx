@@ -93,7 +93,10 @@ export function SupportTab() {
 
 function ComingSoon() {
   return (
-    <section className="relative overflow-hidden rounded-card border border-border bg-surface p-6 lg:p-8">
+    <section
+      data-tour="support-hero"
+      className="relative overflow-hidden rounded-card border border-border bg-surface p-6 lg:p-8"
+    >
       <div
         aria-hidden
         className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-accent/15 blur-2xl"

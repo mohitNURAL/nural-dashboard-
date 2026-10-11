@@ -14,15 +14,18 @@ interface Props {
   children: ReactNode;
   /** One-line explanation behind the "i" icon at the right of the header. */
   info?: string;
+  /** Anchor for the guided tour (data-tour). */
+  tour?: string;
 }
 
 export const Accordion = forwardRef<HTMLElement, Props>(function Accordion(
-  { title, hint, count, tone, open, onOpenChange, children, info },
+  { title, hint, count, tone, open, onOpenChange, children, info, tour },
   ref,
 ) {
   return (
     <section
       ref={ref}
+      data-tour={tour}
       className={clsx(
         'scroll-mt-20 rounded-card border bg-surface',
         tone === 'bad' ? 'border-bad' : 'border-border',

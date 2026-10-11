@@ -145,7 +145,16 @@ export async function buildServer({
     onSignIn: (userId) => prefStore.signIn(userId),
     describeViewer: async (req) => {
       const v = await scoping.viewer(req);
-      return { role: v.role, full: v.full, support: v.support, admin: v.admin, inbox: v.inbox };
+      const d = await ds();
+      return {
+        role: v.role,
+        full: v.full,
+        support: v.support,
+        admin: v.admin,
+        inbox: v.inbox,
+        dept: d.kpiDept?.get(v.userId) ?? 'other',
+        position: d.users.get(v.userId)?.workPosition ?? null,
+      };
     },
     mode: config.AUTH,
     clientId: config.BITRIX_CLIENT_ID,

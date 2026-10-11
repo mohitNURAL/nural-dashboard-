@@ -17,6 +17,9 @@ export interface Me {
   admin: boolean;
   /** Reads the feedback inbox: admins and the head of Tech Support. */
   inbox: boolean;
+  /** Department (dev, qa, support, other) and Bitrix24 designation, for the guided tour. */
+  dept?: 'dev' | 'qa' | 'support' | 'other';
+  position?: string | null;
 }
 
 export const useMe = () => useApi<Me>('/api/auth/me', {});
