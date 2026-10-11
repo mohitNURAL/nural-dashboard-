@@ -2,6 +2,7 @@
 // Kept under its own query key (not 'api'), so live updates do not refetch it over a pending save.
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
+import { toast } from 'sonner';
 import { apiGet, apiPost } from './client';
 
 export interface TourPrefs {
@@ -44,7 +45,11 @@ export function useSavePrefs() {
         const latest = qc.getQueryData<Prefs>(PREFS_KEY);
         if (!latest) return;
         void apiPost('/api/prefs', { layout: latest.layout, tour: latest.tour }, 'PUT').catch(
-          () => undefined,
+          (e: unknown) =>
+            toast.error('Your layout could not be saved', {
+              id: 'prefs-save',
+              description: `${e instanceof Error ? e.message : ''} It is kept for now; try again later.`,
+            }),
         );
       }, 500);
     },

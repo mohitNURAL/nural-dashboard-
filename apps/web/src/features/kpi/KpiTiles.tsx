@@ -20,7 +20,7 @@ export function KpiTiles({ onProjects }: { onProjects: () => void }) {
     <SortableGroup
       group="kpi.tiles"
       noun="tile"
-      className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7"
+      className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-[repeat(var(--cols),minmax(0,1fr))]"
       items={[
         {
           id: 'open',

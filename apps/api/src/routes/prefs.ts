@@ -7,9 +7,12 @@ import type { Viewer } from '../auth/roles';
 
 const id = z.string().regex(/^[A-Za-z0-9._-]{1,60}$/);
 
-/** Order per group, e.g. { "dev.tiles": ["total", "pending"] }. */
+/**
+ * Per group: its order ("dev.tiles": ["total", "pending"]), the cards put side by side
+ * ("dev.pairs") and the data points hidden ("dev.tiles.hidden").
+ */
 export const layoutInput = z
-  .record(z.string().regex(/^[a-z]+\.[a-z]+$/), z.array(id).max(60))
+  .record(z.string().regex(/^[a-z]+\.[a-z]+(\.hidden)?$/), z.array(id).max(60))
   .refine((v) => Object.keys(v).length <= 40, 'Too many groups.');
 
 export const tourInput = z.object({

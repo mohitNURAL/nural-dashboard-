@@ -88,6 +88,8 @@ describe('per-person settings', () => {
   it('refuses bad input and needs a session', async () => {
     await server();
     expect((await put(7, { layout: { 'Bad Group': ['x'] } })).statusCode).toBe(400);
+    expect((await put(7, { layout: { 'dev.tiles.secret': ['x'] } })).statusCode).toBe(400);
+    expect((await put(7, { layout: { 'dev.tiles.hidden': ['overdue'] } })).statusCode).toBe(200);
     expect((await put(7, { layout: { 'dev.tiles': ['<script>'] } })).statusCode).toBe(400);
     expect((await put(7, { tour: { shown: { dev: -1 } } })).statusCode).toBe(400);
     expect((await put(7, { userId: 8 })).statusCode).toBe(400);

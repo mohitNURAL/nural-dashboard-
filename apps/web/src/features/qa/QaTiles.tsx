@@ -44,7 +44,7 @@ export function QaTiles({ active, onSelect, onPart, onRetest }: Props) {
     <SortableGroup
       group="qa.tiles"
       noun="tile"
-      className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7"
+      className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-[repeat(var(--cols),minmax(0,1fr))]"
       items={[
         {
           id: 'qaTotal',

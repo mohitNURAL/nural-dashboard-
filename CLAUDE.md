@@ -10,7 +10,7 @@ Build order: SRS section 10.5, milestones 1 to 9. Do one milestone per session, 
 - Match Kanban stages by title, never by ID (IDs differ per workgroup). stageId "0" = To do.
 - Every Bitrix24 call goes through bitrix/limiter.ts (2 calls/s) and uses batch.ts when making more than one call.
 - The webhook is read-only: no Bitrix24 write methods through it (bitrix/methods.ts READ_METHODS). The only writes are task edits a signed-in person makes (column: task.stages.movetask; status: tasks.task.complete/defer/start/pause/renew; fields: tasks.task.update with only GROUP_ID, RESPONSIBLE_ID, TAGS, PRIORITY, DEADLINE), run with that person's own OAuth token via limiter.userCall (USER_ACTION_METHODS, EDITABLE_FIELDS), recorded in task_actions (SRS 7, Task actions). Members may change only stage, status and tags. Never add *.add or *.delete.
-- Guided tour (SRS 16): a new tile, card or section adds its step in apps/web/src/features/tour/steps.ts; every user-visible change adds an entry at the top of features/tour/whatsNew.ts (the refresh toast lists it and the tab walks people through it).
+- Guided tour (SRS 16): a new tile, card or section adds its step in apps/web/src/features/tour/steps.ts and its name in features/tour/labels.ts; every user-visible change adds an entry at the top of features/tour/whatsNew.ts (the refresh toast lists it and the tab walks people through it).
 - Metric logic lives in packages/shared/src/metrics.ts as pure functions with Vitest tests.
 - "Today" and "overdue" use APP_TIMEZONE (Asia/Kolkata).
 - Scope: all workgroups (DEV_GROUP_IDS empty = all; a comma list narrows it).

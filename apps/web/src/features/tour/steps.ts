@@ -55,6 +55,11 @@ export const COMMON_STEPS: TourStep[] = [
     text: 'Live means changes in Bitrix24 reach the dashboard within seconds; numbers refresh by themselves. Offline means the connection dropped and it is reconnecting.',
   },
   {
+    target: tour('customise'),
+    title: 'Customise',
+    text: 'Choose which tiles and cards this tab shows; hidden ones leave no gap and come back from here. Each data point also has a small toolbar on hover: ⠿ to move it, ? for a tour of just that point, and the eye to hide it.',
+  },
+  {
     target: tour('profile'),
     title: 'Your profile',
     text: 'Your name and role, the theme (Light, Dark, System), live-update toasts, Reset layout, this tour (replay, voice on or off) and Sign out. You are signed out 3 days after signing in.',

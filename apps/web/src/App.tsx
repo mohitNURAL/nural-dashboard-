@@ -1,3 +1,4 @@
+import { CustomiseView } from './components/layout/CustomiseView';
 import { TaskDrawer } from './components/TaskDrawer';
 import { TopBar } from './components/TopBar';
 import { DevTab } from './features/dev/DevTab';
@@ -51,6 +52,7 @@ export default function App() {
         )}
       </main>
       <TaskDrawer />
+      <CustomiseView />
     </div>
   );
 }

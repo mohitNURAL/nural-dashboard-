@@ -18,6 +18,29 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-11-customise',
+    date: '2026-10-11',
+    tab: 'dev',
+    title: 'Customise, tour any point, export one card',
+    steps: [
+      {
+        target: '[data-tour="customise"]',
+        title: 'Customise',
+        text: 'Choose which tiles and cards to show on each tab. Hidden ones leave no gap, and you bring them back here.',
+      },
+      {
+        target: slot('dev.cards', 'assignees'),
+        title: 'A toolbar on every data point',
+        text: 'Hover any tile, card or list: ⠿ moves it, ? explains just that point, the eye hides it.',
+      },
+      {
+        target: slot('dev.cards', 'ageing'),
+        title: 'Export one card',
+        text: 'Click a card’s title to bring it to the centre, then Excel or PDF exports only that card, with the filters and time on it.',
+      },
+    ],
+  },
+  {
     id: '2026-10-11-tour',
     date: '2026-10-11',
     tab: 'dev',

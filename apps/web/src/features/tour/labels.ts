@@ -1,0 +1,74 @@
+// Names of the data points in each drag group, for the Customise panel and the per-point tour.
+// Add one here with every new tile, card or section (with its step in steps.ts).
+export const POINT_LABELS: Record<string, Record<string, string>> = {
+  'dev.tiles': {
+    total: 'Total tasks',
+    pending: 'Pending',
+    hold: 'On hold',
+    ready: 'Ready',
+    deployed: 'Deployed',
+    overdue: 'Overdue',
+    doneToday: 'Done today',
+  },
+  'dev.cards': {
+    assignees: 'Assignee-wise tasks',
+    pendingDone: 'Pending vs Done',
+    ageing: 'Task ageing',
+    ranking: 'Fastest to QA Backlog',
+    matrix: 'Tasks by stage',
+  },
+  'dev.sections': {
+    dueToday: 'Tasks due today',
+    overdue: 'Overdue tasks',
+    all: 'All tasks',
+    alerts: 'Alert details',
+  },
+  'qa.tiles': {
+    qaTotal: 'Total issues filed',
+    qaOpen: 'Open / pending',
+    hold: 'On hold',
+    qaLastFiled: 'Last filed',
+    qaLastResolved: 'Last resolved',
+    qaRework: 'Rework issues',
+    retestAwaited: 'Retesting awaited',
+  },
+  'qa.cards': {
+    issuesByAssignee: 'Issues by assignee',
+    rework: 'Rework by developer',
+    testing: 'Testing team workload',
+    retest: 'Waiting for retest',
+    retestByGroup: 'Retesting awaited by assignee',
+    issueTrend: 'Issue trend',
+    issueAgeing: 'Issue ageing',
+    issueStage: 'Issues by stage',
+  },
+  'qa.sections': {
+    latest: 'Latest filed issues',
+    resolved: 'Latest resolved issues',
+    all: 'All issues',
+  },
+  'kpi.tiles': {
+    open: 'Open tasks',
+    hold: 'On hold',
+    overdue: 'Overdue',
+    closed: 'Closed',
+    onTime: 'On-time',
+    active: 'Active projects',
+    noDeadline: 'No deadline',
+  },
+  'kpi.cards': {
+    insights: 'Insights',
+    projectHealth: 'Project health',
+    overdue: 'Overdue breakdown',
+    workload: 'Workload',
+    people: 'People',
+    activity: 'Activity',
+  },
+  'support.cards': {
+    form: 'Share your needs',
+    mine: 'My feedback',
+    inbox: 'Feedback inbox',
+  },
+};
+
+export const pointLabel = (group: string, id: string) => POINT_LABELS[group]?.[id] ?? id;

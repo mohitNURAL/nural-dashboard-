@@ -43,7 +43,7 @@ export function SummaryTiles({ active, onSelect }: Props) {
     <SortableGroup
       group="dev.tiles"
       noun="tile"
-      className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7"
+      className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-[repeat(var(--cols),minmax(0,1fr))]"
       items={TILES.map(({ preset, sub }) => ({
         id: preset,
         node: (

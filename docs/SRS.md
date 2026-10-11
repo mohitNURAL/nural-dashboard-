@@ -354,12 +354,26 @@ The QA tab swaps the Tag filter for a Bug or Feedback filter and puts Rework in 
 - Dropping a half-width card next to a full-width one (just before or after it) pairs them, and the full-width card turns half. The pair is saved per person (`<tab>.pairs`) and forgotten once the two are moved apart.
 - Rules: `rowSpans` and `pairOnDrop` in `components/layout/order.ts`, with tests.
 
+**Data-point toolbar (2026-10-11).** Hovering any tile, card or task-list section shows a small toolbar on its top edge:
+- ⠿ move it;
+- **?** a guided tour of just that data point (in the person's own wording);
+- the eye: hide it. Tiles and cards only; task-list sections cannot be hidden.
+
+**Customise (2026-10-11).** A floating **Customise** button at the bottom left (the toasts are bottom right) opens a panel listing the tab's tiles and cards with tick boxes.
+- **Hide or bring back:** untick to hide, tick to bring back, **Show all** to restore everything. The button shows how many are hidden.
+- **Nothing leaves a gap:** on wide screens the tiles spread over the row (as many columns as tiles shown); cards fill their rows as described above.
+- **Saved per person:** `user_prefs.layout["<tab>.<group>.hidden"]`. If a save fails, a toast says so.
+
 **Focus view (2026-10-11).**
 - **Opening:** clicking a card's title or empty area brings the card to the centre of the screen, up to 1100 px wide, with the page behind dimmed and blurred. Charts grow with it.
 - **Clicks that don't open it:** counts, bars, tables, buttons and fields keep their usual action (drill-downs, editing).
 - **Closing:** a click outside, Escape or the ✕ returns the card to its place.
 - **Nothing is reloaded:** sorting, paging and chart choices stay as they were.
 - **Motion:** the move is animated, except when the computer asks for reduced motion.
+- **Export that card only:** the centred card has **Excel** and **PDF** buttons. Both carry the card's title, the filters in force ("Showing: …") and the time in IST.
+  - **Excel:** the card's table (header row without the "i" icons, numbers as numbers). For a chart, its data: one row per category in the order shown, one column per series. Otherwise its text.
+  - **PDF:** a picture of the whole card, every row of its lists included, on A4. Long cards continue over pages.
+  - Code: `components/layout/exportPoint.ts`, loaded on first use (write-excel-file, html-to-image, jsPDF).
 
 **Themes (2026-10-11).** The profile panel offers **Light** (the default, the palette above), **Dark** and **System** (follows the computer's light or dark setting, and changes with it). The choice is kept per browser (localStorage). Dark redefines the neutral and blue tokens: background `#0D111E`, cards `#151A2C`, text `#E4E6EF`, muted text `#8B91A8`, borders `#2A3150`, headings `#D4DBF5`, links and buttons `#7B8FE0`. The top bar and tooltips stay navy (`--chrome`) in every theme, and the status colours (red, teal, amber) do not change, so badges keep their meaning. Charts, toasts and form controls follow the theme; charts redraw when it changes.
 
@@ -974,6 +988,8 @@ The dashboard shows each person around, in their own scope, and walks them throu
   - for members, how their department uses the dashboard (developer, tester, support);
   - for inbox readers, the feedback inbox.
   - After the role, the top bar: tabs, filters, alerts, live, profile.
+
+**Placement (fixed 2026-10-11).** The bubble sits next to its data point and follows it while cards above load and grow. The tour tracks the current element itself, since driver.js could leave its mark on earlier ones and place a bubble beside the wrong card. A data point taller than most of the screen (an open list) is pointed at by its header, so the bubble stays visible. The bubble shows the tour kind ("Guided tour", "What's new", "About this"), the step count and a progress bar.
 
 **When it plays:**
 - on a person's first **3 sign-ins** (the count kept in `user_prefs`), each tab's tour plays once per sign-in when the tab is opened;

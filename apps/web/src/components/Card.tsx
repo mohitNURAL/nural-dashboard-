@@ -1,7 +1,9 @@
 // Card (SRS 6): title, optional toggle (table or chart), body, empty state and loading skeleton.
 import clsx from 'clsx';
 import type { GroupBy } from '@nural/shared';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { toast } from 'sonner';
+import { useInfoContext } from './infoContext';
 import { InfoTip } from './InfoTip';
 import { useFocusBox } from './layout/useFocusBox';
 
@@ -29,6 +31,25 @@ export function Card({
 }: Props) {
   // Clicking the title or empty area brings the card to the centre (focus view).
   const focus = useFocusBox<HTMLElement>();
+  const showing = useInfoContext();
+  const [busy, setBusy] = useState<'xlsx' | 'pdf' | null>(null);
+  // Focus view: export this data point only (loaded on first use).
+  const exportAs = async (kind: 'xlsx' | 'pdf') => {
+    if (!focus.ref.current) return;
+    setBusy(kind);
+    try {
+      const m = await import('./layout/exportPoint');
+      await (kind === 'xlsx' ? m.exportPointExcel : m.exportPointPdf)(
+        focus.ref.current,
+        title,
+        showing,
+      );
+    } catch (e) {
+      toast.error('Export failed', { description: e instanceof Error ? e.message : '' });
+    } finally {
+      setBusy(null);
+    }
+  };
   return (
     <>
       {focus.placeholder}
@@ -59,8 +80,35 @@ export function Card({
           <div className="flex items-center gap-2">
             {action}
             {focus.focused && (
+              <span data-no-export className="flex items-center gap-1.5">
+                {(['xlsx', 'pdf'] as const).map((k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => void exportAs(k)}
+                    disabled={!!busy || loading}
+                    title={k === 'xlsx' ? 'Export this to Excel' : 'Export this to PDF'}
+                    className="flex h-7 items-center gap-1.5 rounded-control border border-border px-2.5 font-heading text-button text-primary hover:border-primary disabled:opacity-50"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden>
+                      <path
+                        d="M8 2v8m0 0 3-3m-3 3L5 7M3 12v2h10v-2"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    {busy === k ? '…' : k === 'xlsx' ? 'Excel' : 'PDF'}
+                  </button>
+                ))}
+              </span>
+            )}
+            {focus.focused && (
               <button
                 type="button"
+                data-no-export
                 onClick={focus.close}
                 aria-label="Close focus view"
                 title="Close (Esc)"

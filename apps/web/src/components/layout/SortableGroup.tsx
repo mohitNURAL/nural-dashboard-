@@ -1,6 +1,9 @@
 // Drag to rearrange (2026-10-11): one group of tiles, cards or sections. Items move only within
-// their own group (each group is its own drag area), by the grip that shows on hover, or with the
-// keyboard (Space, arrows, Space). The order is saved per person (api/prefs.ts).
+// their own group (each group is its own drag area), by the grip in the small toolbar that shows
+// on hover, or with the keyboard (Space, arrows, Space). The toolbar also starts a guided tour of
+// that data point and, for tiles and cards, hides it (sections cannot be hidden). The order, the
+// pairs of cards side by side and the hidden data points are saved per person (api/prefs.ts).
+// The rest closes up: tiles spread over the row, cards fill their rows (order.ts).
 import {
   closestCenter,
   DndContext,
@@ -20,9 +23,11 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import clsx from 'clsx';
-import type { ReactNode } from 'react';
+import { useEffect, type CSSProperties, type ReactNode } from 'react';
 import { usePrefs, useSavePrefs } from '../../api/prefs';
+import { usePointTour } from '../../features/tour/usePointTour';
 import { applyOrder, pairOnDrop, rowSpans, type Pairs } from './order';
+import { hiddenKey, useLayoutRegistry } from './registry';
 
 export interface GroupItem {
   id: string;
@@ -37,8 +42,8 @@ interface Props {
   items: GroupItem[];
   /** The group's own layout, e.g. its grid. */
   className?: string;
-  /** What one item is, for the grip's label: tile, card or section. */
-  noun: string;
+  /** What one item is: tile, card or section. Sections cannot be hidden. */
+  noun: 'tile' | 'card' | 'section';
 }
 
 /**
@@ -75,10 +80,19 @@ const toPairs = (flat: string[] = []): Pairs =>
 export function SortableGroup({ group, items, className, noun }: Props) {
   const { data: prefs } = usePrefs();
   const save = useSavePrefs();
-  const ids = applyOrder(
-    items.map((i) => i.id),
-    prefs?.layout[group],
-  );
+  const register = useLayoutRegistry((s) => s.register);
+  const unregister = useLayoutRegistry((s) => s.unregister);
+  const allIds = items.map((i) => i.id);
+  const key = allIds.join(',');
+  // The Customise panel lists the data points of the groups on screen.
+  useEffect(() => {
+    register(group, noun, key ? key.split(',') : []);
+    return () => unregister(group);
+  }, [group, noun, key, register, unregister]);
+
+  const hidden = new Set(noun === 'section' ? [] : (prefs?.layout[hiddenKey(group)] ?? []));
+  const ids = applyOrder(allIds, prefs?.layout[group]);
+  const shownIds = ids.filter((id) => !hidden.has(id));
   const byId = new Map(items.map((i) => [i.id, i]));
   // Cards in a 12-column grid fill their rows: widths follow the order (no gaps).
   const sized = items
@@ -87,11 +101,12 @@ export function SortableGroup({ group, items, className, noun }: Props) {
   const bp = sized[0]?.m[1];
   const spans = new Map(sized.map((x) => [x.id, Number(x.m[2])]));
   const pairs = toPairs(prefs?.layout[pairsKey(group)]);
-  const shown = bp && sized.length === items.length ? rowSpans(ids, spans, pairs) : undefined;
+  const shown = bp && sized.length === items.length ? rowSpans(shownIds, spans, pairs) : undefined;
   const slotClass = (id: string) => {
     const w = shown?.get(id);
     return w && bp ? SPAN[bp]?.[w] : byId.get(id)?.className;
   };
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
@@ -99,8 +114,14 @@ export function SortableGroup({ group, items, className, noun }: Props) {
   );
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return;
-    const next = arrayMove(ids, ids.indexOf(String(active.id)), ids.indexOf(String(over.id)));
-    const paired = shown ? pairOnDrop(next, spans, pairs, String(active.id)) : [];
+    // Hidden items keep their place in the saved order, after the visible ones moved.
+    const nextShown = arrayMove(
+      shownIds,
+      shownIds.indexOf(String(active.id)),
+      shownIds.indexOf(String(over.id)),
+    );
+    const next = [...nextShown, ...ids.filter((id) => hidden.has(id))];
+    const paired = shown ? pairOnDrop(nextShown, spans, pairs, String(active.id)) : [];
     save((p) => ({
       layout: {
         ...p.layout,
@@ -109,33 +130,54 @@ export function SortableGroup({ group, items, className, noun }: Props) {
       },
     }));
   };
+  const hide = (id: string) =>
+    save((p) => ({
+      layout: {
+        ...p.layout,
+        [hiddenKey(group)]: [...new Set([...(p.layout[hiddenKey(group)] ?? []), id])],
+      },
+    }));
+
+  // Tiles spread over the row: as many columns as tiles shown (wide screens).
+  const style = noun === 'tile' ? ({ '--cols': shownIds.length } as CSSProperties) : undefined;
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-      <SortableContext items={ids} strategy={rectSortingStrategy}>
-        <div className={className} data-group={group}>
-          {ids.map((id) => {
-            const item = byId.get(id)!;
-            return (
-              <Slot key={id} id={id} className={slotClass(id)} noun={noun}>
-                {item.node}
-              </Slot>
-            );
-          })}
+      <SortableContext items={shownIds} strategy={rectSortingStrategy}>
+        <div className={className} style={style} data-group={group}>
+          {shownIds.map((id) => (
+            <Slot
+              key={id}
+              id={id}
+              group={group}
+              className={slotClass(id)}
+              noun={noun}
+              onHide={noun === 'section' ? undefined : () => hide(id)}
+            >
+              {byId.get(id)!.node}
+            </Slot>
+          ))}
         </div>
       </SortableContext>
     </DndContext>
   );
 }
 
+const TOOL =
+  'grid h-6 w-6 place-items-center rounded-full text-text-muted hover:bg-primary-soft-100 hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary';
+
 function Slot({
   id,
+  group,
   className,
   noun,
+  onHide,
   children,
 }: {
   id: string;
+  group: string;
   className?: string;
   noun: string;
+  onHide?: () => void;
   children: ReactNode;
 }) {
   const {
@@ -147,6 +189,7 @@ function Slot({
     transition,
     isDragging,
   } = useSortable({ id });
+  const tour = usePointTour();
   return (
     <div
       ref={setNodeRef}
@@ -159,28 +202,74 @@ function Slot({
       )}
     >
       {children}
-      <button
-        ref={setActivatorNodeRef}
-        type="button"
-        aria-label={`Drag to move this ${noun}`}
-        title={`Drag to move this ${noun}`}
-        data-grip
-        {...attributes}
-        {...listeners}
+      {/* Toolbar on the top edge: move, guided tour of this data point, hide. */}
+      <div
+        data-toolbar
         className={clsx(
-          'absolute left-1/2 top-0 z-10 flex h-4 -translate-x-1/2 -translate-y-1/2 cursor-grab touch-none items-center rounded-full border border-border bg-surface px-1.5 text-text-muted shadow-sm hover:text-primary active:cursor-grabbing',
-          'opacity-0 transition-opacity focus-visible:opacity-100 group-hover/slot:opacity-100',
+          'absolute left-1/2 top-0 z-10 flex -translate-x-1/2 -translate-y-1/2 items-center gap-0.5 rounded-full border border-border bg-surface px-1 shadow-sm transition-opacity',
+          'opacity-0 focus-within:opacity-100 group-hover/slot:opacity-100',
           isDragging && 'opacity-100',
         )}
       >
-        <svg width="16" height="8" viewBox="0 0 16 8" aria-hidden>
-          {[2, 6, 10, 14].flatMap((x) =>
-            [2, 6].map((y) => (
-              <circle key={`${x}-${y}`} cx={x} cy={y} r="1.2" fill="currentColor" />
-            )),
-          )}
-        </svg>
-      </button>
+        <button
+          ref={setActivatorNodeRef}
+          type="button"
+          aria-label={`Drag to move this ${noun}`}
+          title={`Drag to move this ${noun}`}
+          data-grip
+          {...attributes}
+          {...listeners}
+          className={clsx(TOOL, 'cursor-grab touch-none active:cursor-grabbing')}
+        >
+          <svg width="14" height="8" viewBox="0 0 16 8" aria-hidden>
+            {[2, 6, 10, 14].flatMap((x) =>
+              [2, 6].map((y) => (
+                <circle key={`${x}-${y}`} cx={x} cy={y} r="1.3" fill="currentColor" />
+              )),
+            )}
+          </svg>
+        </button>
+        <button
+          type="button"
+          aria-label={`Guided tour of this ${noun}`}
+          title={`Guided tour of this ${noun}`}
+          data-point-tour
+          onClick={() => tour(group, id)}
+          className={TOOL}
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
+            <circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.4" />
+            <path
+              d="M6.2 6.3a1.9 1.9 0 0 1 3.6.7c0 1.3-1.8 1.6-1.8 2.7M8 11.6v.1"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+        {onHide && (
+          <button
+            type="button"
+            aria-label={`Hide this ${noun}`}
+            title={`Hide this ${noun} (bring it back with Customise, bottom left)`}
+            data-hide
+            onClick={onHide}
+            className={TOOL}
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
+              <path
+                d="M2 8s2.2-4 6-4 6 4 6 4-2.2 4-6 4-6-4-6-4Z"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.3"
+              />
+              <circle cx="8" cy="8" r="1.8" fill="none" stroke="currentColor" strokeWidth="1.3" />
+              <path d="M2.5 13.5l11-11" stroke="currentColor" strokeWidth="1.3" />
+            </svg>
+          </button>
+        )}
+      </div>
     </div>
   );
 }
