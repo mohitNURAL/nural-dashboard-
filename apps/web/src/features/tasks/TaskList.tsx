@@ -1,10 +1,13 @@
 // Paginated, server-sorted task list for accordions (DEV-06..08, QA-08..09). Row click opens
 // the drawer.
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { TaskRow } from '../../api/types';
 import { DataTable, type Columns, type SortingState } from '../../components/DataTable';
 import { taskExportUrl, useOpenTask, useTaskList, type TaskListKind, type TaskSort } from './api';
+import { createColumnHelper } from '@tanstack/react-table';
 import { BoardsContext } from './boards';
+import { bulkRowClass, useBulk } from './bulk';
+import { BulkBar, SelectAllCell, SelectCell } from './BulkEdit';
 import { SORTABLE } from './columns';
 
 interface Props {
@@ -22,6 +25,7 @@ interface Props {
 }
 
 const SEARCH_DEBOUNCE_MS = 300;
+const select = createColumnHelper<TaskRow>();
 
 function toSorting(sort: TaskSort): SortingState {
   const key = sort.replace('-', '');
@@ -65,6 +69,23 @@ export function TaskList({
   useEffect(() => {
     if (data) onTotal?.(data.total);
   }, [data, onTotal]);
+
+  // Bulk edit: ticks are kept across pages of this list and reset when the list changes.
+  const bulk = useBulk(JSON.stringify([filterParams, kind, preset, q]));
+  const rows = useMemo(() => data?.rows ?? [], [data]);
+  const withSelect = useMemo(
+    () =>
+      [
+        select.display({
+          id: 'select',
+          header: () => <SelectAllCell rows={rows} bulk={bulk} />,
+          enableSorting: false,
+          cell: (c) => <SelectCell row={c.row.original} bulk={bulk} />,
+        }),
+        ...columns,
+      ] as Columns<TaskRow>,
+    [columns, rows, bulk],
+  );
 
   return (
     <div className="space-y-3">
@@ -114,8 +135,11 @@ export function TaskList({
         </p>
       ) : (
         <BoardsContext.Provider value={data?.boards ?? {}}>
+          <BulkBar bulk={bulk} boards={data?.boards ?? {}} />
           <DataTable
-            columns={columns}
+            columns={withSelect}
+            rowClassName={(r) => bulkRowClass(bulk.results.get(r.id))}
+            rowTitle={(r) => bulk.results.get(r.id)?.reason}
             data={data?.rows ?? []}
             rowKey={(r) => r.id}
             onRowClick={(r) => void openTask(r.id)}

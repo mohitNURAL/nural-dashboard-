@@ -427,6 +427,14 @@ Every task grid and the task view edit a task where it is shown. Each cell is a 
 - **Audit.** Every change is recorded in `task_actions`: person, task, `move`, `status` or `field:<name>`, from, to, and whether Bitrix24 accepted it (with its error). After a change the task is re-synced, so every open dashboard shows it within seconds.
 - API: `POST /api/tasks/:id/stage {stageId}`, `POST /api/tasks/:id/status {status}`, `POST /api/tasks/:id/field {field: project|assignee|tags|priority|deadline, value}`, `GET /api/tasks/edit-options` (projects and people; full access only).
 
+**Bulk edit (2026-10-11)**
+
+- Every task list has a **tick box on each row**; the box in the header **selects or clears every row on the page** (it shows a dash when only some are ticked). Ticks are kept across pages of the same list, up to **100 tasks**, and are cleared when the list changes (filters, tile, search).
+- While tasks are ticked a bar shows: *N selected · item · value · Check · Apply · Clear selection*. Items: Stage, Status and Tags for everyone; Project, Assignee, Priority and Deadline for full access. Tags: **Add tags** (keep each task's own and add these) or **Replace tags with**. Stage: if every ticked task is on one board, that board's columns; otherwise the dashboard stages, mapped to each board's own column.
+- **Check** validates every ticked task on the server, changing nothing, with the same rules as a single edit. A task that cannot take the change is **highlighted in red** (row outline, red dot, the reason on hover) and listed under the bar, e.g. "Its board (Motorola India Support) has no QA Backlog column", "Not on a Kanban board (no project)", "Vijay is no longer active", "The deadline must be in the future", "Only managers can change …", "Not found, or outside your scope". A task already so is greyed and skipped.
+- **Apply** (after Check, with a confirmation) sends only the valid tasks to Bitrix24, one after another through the rate limiter; a task Bitrix24 refuses is highlighted red with Bitrix24's reason, the others go green. Each change is recorded in `task_actions`; the dashboard refreshes when the changes sync back.
+- API: `POST /api/tasks/bulk/check` and `POST /api/tasks/bulk/apply` with `{ ids (≤ 100), edit: { kind: stage (stageId or stage) | status | field (field, value, tagsMode) } }`, answering one `{ id, state: ok|skip|error|done|failed, reason }` per task.
+
 **Deployment (milestone 9)**
 
 - `docker-compose.prod.yml` (project `nural-prod`) runs `postgres`, `redis`, `api` and `web` with no database or Redis port exposed.

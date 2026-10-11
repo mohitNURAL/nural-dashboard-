@@ -34,6 +34,9 @@ interface Props<T> {
   loading?: boolean;
   emptyText?: string;
   dense?: boolean;
+  /** Extra classes and a hover note for a row (e.g. bulk-edit validation). */
+  rowClassName?: (row: T) => string | undefined;
+  rowTitle?: (row: T) => string | undefined;
 }
 
 export function DataTable<T>({
@@ -50,6 +53,8 @@ export function DataTable<T>({
   loading,
   emptyText = 'Nothing matches these filters.',
   dense,
+  rowClassName,
+  rowTitle,
 }: Props<T>) {
   const [localSorting, setLocalSorting] = useState<SortingState>(initialSorting);
   const manual = controlledSorting !== undefined;
@@ -138,7 +143,12 @@ export function DataTable<T>({
               <tr
                 key={row.id}
                 onClick={onRowClick ? () => onRowClick(row.original) : undefined}
-                className={clsx('hover:bg-primary-soft-100', onRowClick && 'cursor-pointer')}
+                title={rowTitle?.(row.original)}
+                className={clsx(
+                  'hover:bg-primary-soft-100',
+                  onRowClick && 'cursor-pointer',
+                  rowClassName?.(row.original),
+                )}
               >
                 {row.getVisibleCells().map((c) => {
                   const align = (c.column.columnDef.meta as { align?: string } | undefined)?.align;
