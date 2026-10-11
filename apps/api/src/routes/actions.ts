@@ -6,7 +6,7 @@ import type { FastifyInstance, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import type { TokenStore } from '../auth/tokens';
 import { BitrixError, type BitrixResponse, type Params } from '../bitrix';
-import type { DatasetProvider } from '../data/dataset';
+import type { RequestDataset } from '../auth/roles';
 import type { Enqueue } from '../sync/worker';
 
 /** Bitrix24 task statuses the dropdown offers, and their codes. */
@@ -100,7 +100,7 @@ function explain(err: unknown): { status: number; message: string } {
   return { status: 502, message: 'Bitrix24 could not be reached. Try again.' };
 }
 
-export function actionRoutes(app: FastifyInstance, getDataset: DatasetProvider, deps: ActionDeps) {
+export function actionRoutes(app: FastifyInstance, getDataset: RequestDataset, deps: ActionDeps) {
   /** The person and their token, or a reply explaining why not. */
   async function actor(req: unknown, reply: FastifyReply) {
     const user = deps.userOf(req);
@@ -145,7 +145,7 @@ export function actionRoutes(app: FastifyInstance, getDataset: DatasetProvider, 
   app.post('/api/tasks/:id/stage', async (req, reply) => {
     const { id } = idParam.parse(req.params);
     const { stageId } = z.object({ stageId: z.coerce.number().int().positive() }).parse(req.body);
-    const ds = await getDataset();
+    const ds = await getDataset(req);
     const t = ds.byId.get(id);
     if (!t) return reply.code(404).send({ error: 'Task not found' });
     const board = ds.boards?.get(t.groupId) ?? [];
@@ -171,7 +171,7 @@ export function actionRoutes(app: FastifyInstance, getDataset: DatasetProvider, 
   app.post('/api/tasks/:id/status', async (req, reply) => {
     const { id } = idParam.parse(req.params);
     const { status } = z.object({ status: z.enum(TASK_STATUSES) }).parse(req.body);
-    const ds = await getDataset();
+    const ds = await getDataset(req);
     const t = ds.byId.get(id);
     if (!t) return reply.code(404).send({ error: 'Task not found' });
     const plan = statusPlan(t.status, status);

@@ -6,6 +6,7 @@ Build order: SRS section 10.5, milestones 1 to 9. Do one milestone per session, 
 ## Rules
 
 - The Bitrix24 webhook URL and token live only in the root `.env`, read by apps/api. Never import them in apps/web, never log them, never commit `.env`.
+- Scoping (NFR-4): routes read data only via the per-request `getDataset(req)` (auth/roles.ts). Never read the base dataset in a route, never cache a result across people, and keep `people` on every task.changed. Run auth/scoping.test.ts after any data or route change.
 - Match Kanban stages by title, never by ID (IDs differ per workgroup). stageId "0" = To do.
 - Every Bitrix24 call goes through bitrix/limiter.ts (2 calls/s) and uses batch.ts when making more than one call.
 - The webhook is read-only: no Bitrix24 write methods through it (bitrix/methods.ts READ_METHODS). The only writes are task actions a signed-in person makes (move column: task.stages.movetask; status: tasks.task.complete/defer/start/pause/renew), run with that person's own OAuth token via limiter.userCall (USER_ACTION_METHODS), recorded in task_actions (SRS 7, Task actions). Never add *.add, *.update or *.delete.

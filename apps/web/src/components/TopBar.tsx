@@ -2,7 +2,7 @@
 // menu.
 import * as Popover from '@radix-ui/react-popover';
 import clsx from 'clsx';
-import { useApi } from '../api/queries';
+import { ROLE_LABEL, useMe } from '../api/me';
 import type { Tab } from '../features/filters/toParams';
 import { useLive } from '../store/live';
 import { AlertsBell } from './AlertsBell';
@@ -17,9 +17,11 @@ const TABS: { id: Tab; label: string }[] = [
 interface Props {
   tab: Tab;
   onTab: (t: Tab) => void;
+  /** Full access only (NFR-4); members do not get the KPI tab. */
+  kpiAllowed: boolean;
 }
 
-export function TopBar({ tab, onTab }: Props) {
+export function TopBar({ tab, onTab, kpiAllowed }: Props) {
   return (
     <header className="bg-primary-dark text-white">
       <div className="mx-auto flex h-14 max-w-page items-center gap-4 px-4 lg:gap-8 lg:px-6">
@@ -30,7 +32,7 @@ export function TopBar({ tab, onTab }: Props) {
           </span>
         </div>
         <nav className="flex h-full items-stretch gap-2" role="tablist" aria-label="Dashboard">
-          {TABS.map((t) => (
+          {TABS.filter((t) => t.id !== 'kpi' || kpiAllowed).map((t) => (
             <button
               key={t.id}
               type="button"
@@ -65,9 +67,6 @@ async function signOut() {
   window.location.href = '/api/auth/signed-out';
 }
 
-const useMe = () =>
-  useApi<{ id: number; name: string; auth: 'off' | 'bitrix' }>('/api/auth/me', {});
-
 /** The signed-in name and a Sign out button; on a local copy, that sign-in is off. */
 function SignedIn() {
   const { data: me } = useMe();
@@ -84,8 +83,8 @@ function SignedIn() {
   }
   return (
     <span className="flex items-center gap-2">
-      <span className="hidden max-w-40 truncate text-body text-primary-soft-300 md:inline">
-        {me.name}
+      <span className="hidden max-w-48 truncate text-body text-primary-soft-300 md:inline">
+        {me.name} · {ROLE_LABEL[me.role]}
       </span>
       <button
         type="button"

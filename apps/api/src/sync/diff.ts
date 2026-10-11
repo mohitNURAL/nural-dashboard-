@@ -8,6 +8,8 @@ export interface StoredTask {
   groupId: number;
   deleted: boolean;
   changedAt: Date;
+  /** Assignee before this change (live-stream scoping: the previous owner is told too). */
+  responsibleId?: number;
 }
 
 export interface NextTask {

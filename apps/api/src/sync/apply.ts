@@ -147,6 +147,7 @@ export async function applyTasks(
           groupId: schema.tasks.groupId,
           deleted: schema.tasks.deleted,
           changedAt: schema.tasks.changedAt,
+          responsibleId: schema.tasks.responsibleId,
         })
         .from(schema.tasks)
         .where(inArray(schema.tasks.id, ids))
@@ -192,6 +193,13 @@ export async function applyTasks(
       deleted: false,
       source,
       at,
+      people: [
+        ...new Set(
+          [row.responsibleId, row.createdBy, stored.get(row.id)?.responsibleId].filter(
+            (id): id is number => !!id,
+          ),
+        ),
+      ],
     });
   }
 
@@ -221,6 +229,8 @@ export async function markDeleted(ids: number[], source: ChangeSource, bus?: Eve
       groupId: schema.tasks.groupId,
       stage: schema.tasks.stage,
       isIssue: schema.tasks.isIssue,
+      responsibleId: schema.tasks.responsibleId,
+      createdBy: schema.tasks.createdBy,
     });
   const at = new Date().toISOString();
   const changes: TaskChanged[] = rows.map((r) => ({
@@ -237,6 +247,7 @@ export async function markDeleted(ids: number[], source: ChangeSource, bus?: Eve
     deleted: true,
     source,
     at,
+    people: [...new Set([r.responsibleId, r.createdBy])],
   }));
   if (bus) for (const c of changes) await bus.publish(c);
   return changes;

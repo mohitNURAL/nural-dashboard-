@@ -3,6 +3,7 @@ import Fastify from 'fastify';
 import { pathToFileURL } from 'node:url';
 import { ZodError } from 'zod';
 import { authRoutes, sessionUserOf, type AuthOptions } from './auth/routes';
+import { loadRoles, requestDataset, type RolesConfig } from './auth/roles';
 import { actionRoutes, type ActionDeps } from './routes/actions';
 import type { Call } from './bitrix/limiter';
 import { config } from './config';
@@ -36,6 +37,8 @@ export interface ServerOptions {
   };
   /** Sign-in; defaults to the config (AUTH, client ID and secret, SESSION_SECRET). */
   auth?: Partial<AuthOptions>;
+  /** Who sees everything (NFR-4); defaults to config/roles.json. */
+  roles?: RolesConfig;
   /** Task actions (move stage, change status) as the signed-in person; off without them. */
   actions?: Omit<Partial<ActionDeps>, 'userOf'>;
   /** Task description for the drawer, read live from Bitrix24 (not stored by the sync). */
@@ -52,6 +55,7 @@ export async function buildServer({
   describe,
   auth = {},
   actions = {},
+  roles,
 }: ServerOptions = {}) {
   const app = Fastify({
     logger: logger && {
@@ -126,7 +130,13 @@ export async function buildServer({
     dataset = cache.get;
   }
   const ds = dataset;
+  // NFR-4: every route reads data through this, per request; a member gets only their tasks.
+  const scoping = requestDataset(ds, roles ?? loadRoles(), (auth.mode ?? config.AUTH) === 'bitrix');
   authRoutes(app, {
+    describeViewer: async (req) => {
+      const v = await scoping.viewer(req);
+      return { role: v.role, full: v.full };
+    },
     mode: config.AUTH,
     clientId: config.BITRIX_CLIENT_ID,
     clientSecret: config.BITRIX_CLIENT_SECRET,
@@ -140,14 +150,14 @@ export async function buildServer({
     ...auth,
   });
   const opts = { tz: config.APP_TIMEZONE, now };
-  devRoutes(app, dataset, opts);
-  qaRoutes(app, dataset, opts);
-  taskRoutes(app, dataset, opts, { describe });
-  filterRoutes(app, dataset, opts);
-  alertRoutes(app, dataset, opts);
-  kpiRoutes(app, dataset, opts);
-  actionRoutes(app, dataset, { ...actions, userOf: sessionUserOf });
-  streamRoutes(app, bus, config.WEB_ORIGIN);
+  devRoutes(app, scoping.dataset, opts);
+  qaRoutes(app, scoping.dataset, opts);
+  taskRoutes(app, scoping.dataset, opts, { describe, viewer: scoping.viewer });
+  filterRoutes(app, scoping.dataset, opts);
+  alertRoutes(app, scoping.dataset, opts);
+  kpiRoutes(app, scoping.dataset, opts, scoping.viewer);
+  actionRoutes(app, scoping.dataset, { ...actions, userOf: sessionUserOf });
+  streamRoutes(app, bus, config.WEB_ORIGIN, scoping.viewer);
   await hookRoutes(app, {
     token: config.BITRIX_OUTBOUND_TOKEN,
     ...hooks,

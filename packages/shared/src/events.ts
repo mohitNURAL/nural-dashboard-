@@ -16,4 +16,9 @@ export interface TaskChanged {
   deleted: boolean;
   source: 'webhook' | 'reconcile' | 'nightly';
   at: string;
+  /**
+   * Who may receive it (NFR-4 scoping): assignee, creator and, after a reassignment, the
+   * previous assignee. Absent only on the nightly notice (taskId 0), which carries no task.
+   */
+  people?: number[];
 }

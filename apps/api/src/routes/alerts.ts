@@ -4,7 +4,7 @@
 // The filter bar does not apply: the bell shows the whole picture.
 import { alerts, boardStageCount, devTasks, PENDING_STAGES, STUCK_DAYS } from '@nural/shared';
 import type { FastifyInstance } from 'fastify';
-import type { DatasetProvider } from '../data/dataset';
+import type { RequestDataset } from '../auth/roles';
 import { boardUrl, contextOf, person, project, type AppOptions } from './context';
 
 /** Overdue = pending and not On Hold (SRS 5), so the Bitrix24 link uses these stages. */
@@ -18,9 +18,9 @@ const ownerFilter = (r: { role: 'assignee' | 'tester' | 'qaLead'; personId: numb
       ? { createdBy: r.personId }
       : {};
 
-export function alertRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts: AppOptions) {
-  app.get('/api/alerts', async () => {
-    const ds = await getDataset();
+export function alertRoutes(app: FastifyInstance, getDataset: RequestDataset, opts: AppOptions) {
+  app.get('/api/alerts', async (req) => {
+    const ds = await getDataset(req);
     const ctx = contextOf(ds, opts);
     const a = alerts(devTasks(ds.tasks, ctx, 'all'), ctx);
     const names = <R extends { personId: number; projectId: number }>(r: R) => ({

@@ -9,10 +9,24 @@ import { statusPlan } from './actions';
 
 const SECRET = 'x'.repeat(40);
 const PORTAL = 'https://portal.example';
-const task = { id: 41, groupId: 154, stage: 'To do', stageTitle: 'To Do', status: 2, events: [] };
+// Task 41 is Neha's (7); task 42 is someone else's, outside her scope (NFR-4).
+const task = {
+  id: 41,
+  groupId: 154,
+  stage: 'To do',
+  stageTitle: 'To Do',
+  status: 2,
+  events: [],
+  responsibleId: 7,
+  createdBy: 10,
+};
+const other = { ...task, id: 42, responsibleId: 30, createdBy: 10 };
 const dataset = (async () => ({
-  tasks: [task],
-  byId: new Map([[41, task]]),
+  tasks: [task, other],
+  byId: new Map([
+    [41, task],
+    [42, other],
+  ]),
   testers: new Set(),
   users: new Map([[7, { id: 7, name: 'Neha', active: true }]]),
   projects: new Map(),
@@ -122,6 +136,13 @@ describe('task actions (SRS 7)', () => {
     expect(s.calls.map((c) => [c.method, c.params])).toEqual([
       ['tasks.task.complete', { taskId: 41 }],
     ]);
+  });
+
+  it('cannot change a task outside the person’s scope (another person’s task)', async () => {
+    const s = await server();
+    expect((await post('/api/tasks/42/status', { status: 'completed' })).statusCode).toBe(404);
+    expect((await post('/api/tasks/42/stage', { stageId: 1002 })).statusCode).toBe(404);
+    expect(s.calls).toHaveLength(0);
   });
 
   it('refuses a column from another board', async () => {

@@ -1,18 +1,35 @@
 // GET /api/stream (SRS 7 module 6): Server-Sent Events. The browser only listens; it
 // refetches the queries a task.changed message affects.
-import type { FastifyInstance } from 'fastify';
-import type { EventBus } from '../events/bus';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { Viewer } from '../auth/roles';
+import type { EventBus, TaskChanged } from '../events/bus';
 
 const HEARTBEAT_MS = 25_000;
 
-export function streamRoutes(app: FastifyInstance, bus: EventBus, webOrigin: string) {
-  const clients = new Set<(chunk: string) => void>();
+/**
+ * NFR-4: a full viewer gets every change; a member only changes that name them (assignee,
+ * creator, previous assignee). The nightly notice (taskId 0) carries no task and goes to all.
+ * A change naming no one is not sent (fail closed).
+ */
+export const mayReceive = (viewer: Viewer, change: TaskChanged) =>
+  viewer.full || change.taskId === 0 || (change.people ?? []).includes(viewer.userId);
+
+export function streamRoutes(
+  app: FastifyInstance,
+  bus: EventBus,
+  webOrigin: string,
+  viewerOf?: (req: FastifyRequest) => Promise<Viewer>,
+) {
+  const clients = new Map<(chunk: string) => void, Viewer>();
   bus.subscribe((change) => {
     const chunk = `event: ${change.type}\ndata: ${JSON.stringify(change)}\n\n`;
-    for (const send of clients) send(chunk);
+    for (const [send, viewer] of clients) if (mayReceive(viewer, change)) send(chunk);
   });
 
-  app.get('/api/stream', (req, reply) => {
+  app.get('/api/stream', async (req, reply) => {
+    const viewer: Viewer = viewerOf
+      ? await viewerOf(req)
+      : { userId: 0, role: 'local', full: true };
     reply.hijack();
     const res = reply.raw;
     res.writeHead(200, {
@@ -27,7 +44,7 @@ export function streamRoutes(app: FastifyInstance, bus: EventBus, webOrigin: str
     send(
       `retry: 3000\nevent: hello\ndata: ${JSON.stringify({ at: new Date().toISOString() })}\n\n`,
     );
-    clients.add(send);
+    clients.set(send, viewer);
     const ping = setInterval(() => send(`: ping\n\n`), HEARTBEAT_MS);
     req.raw.on('close', () => {
       clearInterval(ping);

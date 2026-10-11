@@ -14,9 +14,10 @@ import {
   type Dept,
   type KpiContext,
 } from '@nural/shared';
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import type { Dataset, DatasetProvider } from '../data/dataset';
+import type { RequestDataset, Viewer } from '../auth/roles';
+import type { Dataset } from '../data/dataset';
 import { kpiConfig } from '../data/kpiConfig';
 import { person, project, withPeople, type AppOptions } from './context';
 import { parseQuery } from './params';
@@ -45,10 +46,13 @@ function compute(ds: Dataset, query: unknown, opts: AppOptions) {
 }
 
 /** One computation per (dataset, query) for a minute; the endpoints read from it. */
-function computer(getDataset: DatasetProvider, opts: AppOptions) {
+function computer(getDataset: RequestDataset, opts: AppOptions) {
+  // Keyed by query and checked against the very dataset object: a scoped dataset is a different
+  // object per person, so one person's numbers can never be served to another.
   const cache = new Map<string, { ds: Dataset; at: number; value: ReturnType<typeof compute> }>();
-  return async (query: unknown) => {
-    const ds = await getDataset();
+  return async (req: FastifyRequest) => {
+    const query = req.query;
+    const ds = await getDataset(req);
     const key = JSON.stringify(query ?? {});
     const hit = cache.get(key);
     if (hit && hit.ds === ds && Date.now() - hit.at < 60_000) return { ds, ...hit.value };
@@ -65,11 +69,23 @@ const ownerOf = (ds: Dataset, id: number) => {
   return o ? person(ds, o) : null;
 };
 
-export function kpiRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts: AppOptions) {
+export function kpiRoutes(
+  app: FastifyInstance,
+  getDataset: RequestDataset,
+  opts: AppOptions,
+  viewer: (req: FastifyRequest) => Promise<Viewer>,
+) {
   const get = computer(getDataset, opts);
+  // The KPI tab is for full access only (admin, directors, PM, team leads, product owners).
+  app.addHook('preHandler', async (req, reply) => {
+    if (!req.url.startsWith('/api/kpi/')) return;
+    if (!(await viewer(req)).full) {
+      return reply.code(403).send({ error: 'The KPI tab is for managers only.' });
+    }
+  });
 
   app.get('/api/kpi/summary', async (req) => {
-    const { ds, q, ctx, scope, projects } = await get(req.query);
+    const { ds, q, ctx, scope, projects } = await get(req);
     return {
       ...kpiSummary(scope, ctx, q.period, projects),
       asOf: ctx.now,
@@ -78,14 +94,14 @@ export function kpiRoutes(app: FastifyInstance, getDataset: DatasetProvider, opt
   });
 
   app.get('/api/kpi/projects', async (req) => {
-    const { ds, projects } = await get(req.query);
+    const { ds, projects } = await get(req);
     return {
       rows: projects.map((p) => ({ ...p, name: projectName(ds, p.id), owner: ownerOf(ds, p.id) })),
     };
   });
 
   app.get('/api/kpi/people', async (req) => {
-    const { ds, q, ctx, scope } = await get(req.query);
+    const { ds, q, ctx, scope } = await get(req);
     const rows = peoplePerformance(scope, ctx, q.period);
     const load = new Map(workload(scope, ctx).map((w) => [w.id, w]));
     return {
@@ -98,14 +114,14 @@ export function kpiRoutes(app: FastifyInstance, getDataset: DatasetProvider, opt
   });
 
   app.get('/api/kpi/workload', async (req) => {
-    const { ds, ctx, scope } = await get(req.query);
+    const { ds, ctx, scope } = await get(req);
     return {
       rows: withPeople(ds, workload(scope, ctx)).map((r) => ({ ...r, name: r.person.name })),
     };
   });
 
   app.get('/api/kpi/overdue', async (req) => {
-    const { ds, scope } = await get(req.query);
+    const { ds, scope } = await get(req);
     const o = overdueBreakdown(scope);
     return {
       ...o,
@@ -115,7 +131,7 @@ export function kpiRoutes(app: FastifyInstance, getDataset: DatasetProvider, opt
   });
 
   app.get('/api/kpi/activity', async (req) => {
-    const { ds, ctx, scope, projects } = await get(req.query);
+    const { ds, ctx, scope, projects } = await get(req);
     return {
       hot: hotProjects(scope, ctx).map((h) => ({
         ...h,
@@ -138,7 +154,7 @@ export function kpiRoutes(app: FastifyInstance, getDataset: DatasetProvider, opt
   });
 
   app.get('/api/kpi/insights', async (req) => {
-    const { ds, ctx, scope, projects } = await get(req.query);
+    const { ds, ctx, scope, projects } = await get(req);
     return {
       insights: insights(scope, ctx, projects, {
         person: (id) => person(ds, id).name,

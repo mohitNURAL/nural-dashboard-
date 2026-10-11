@@ -3,19 +3,19 @@
 import { devTasks, filterOptions, issues, testingTasks } from '@nural/shared';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import type { DatasetProvider } from '../data/dataset';
+import type { RequestDataset } from '../auth/roles';
 import { contextOf, person, project, type AppOptions } from './context';
 import { parseQuery, scopeParam } from './params';
 
 const GROUP_ORDER = { Development: 0, Testing: 1, Other: 2 } as const;
 
-export function filterRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts: AppOptions) {
+export function filterRoutes(app: FastifyInstance, getDataset: RequestDataset, opts: AppOptions) {
   app.get('/api/filters/options', async (req) => {
     const { query, filters } = parseQuery(req.query, {
       tab: z.enum(['kpi', 'dev', 'qa']).default('dev'),
       ...scopeParam,
     });
-    const ds = await getDataset();
+    const ds = await getDataset(req);
     const ctx = contextOf(ds, opts);
     // QA tab covers issues plus testing work (QA-06); the Development tab its own tasks.
     // KPI tab: every task in every workgroup (SRS 13).

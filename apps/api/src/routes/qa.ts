@@ -20,21 +20,21 @@ import {
   testingWorkload,
   waitingForRetest,
 } from '@nural/shared';
-import type { FastifyInstance } from 'fastify';
-import type { DatasetProvider } from '../data/dataset';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { RequestDataset } from '../auth/roles';
 import { contextOf, withGroupNames, withPeople, type AppOptions } from './context';
 import { groupByParam, parseQuery } from './params';
 
-export function qaRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts: AppOptions) {
-  async function scope(query: unknown) {
-    const { filters } = parseQuery(query);
-    const ds = await getDataset();
+export function qaRoutes(app: FastifyInstance, getDataset: RequestDataset, opts: AppOptions) {
+  async function scope(req: FastifyRequest) {
+    const { filters } = parseQuery(req.query);
+    const ds = await getDataset(req);
     const ctx = contextOf(ds, opts);
     return { filters, ds, ctx };
   }
 
   app.get('/api/qa/summary', async (req) => {
-    const { filters, ds, ctx } = await scope(req.query);
+    const { filters, ds, ctx } = await scope(req);
     const list = applyFilters(issues(ds.tasks), filters, ctx.tz);
     return {
       ...qaSummary(list, ctx),
@@ -48,7 +48,7 @@ export function qaRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts
   app.get('/api/qa/issues', async (req) => {
     const { query, filters } = parseQuery(req.query, groupByParam);
     const by = query.groupBy;
-    const ds = await getDataset();
+    const ds = await getDataset(req);
     const ctx = contextOf(ds, opts);
     const list = applyFilters(issues(ds.tasks), filters, ctx.tz);
     const age = issueAgeByAssignee(list, ctx, by);
@@ -103,7 +103,7 @@ export function qaRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts
   // Retesting awaited: every task in QA Backlog or In QA, dev tasks and issues, per row.
   app.get('/api/qa/retest', async (req) => {
     const { query, filters } = parseQuery(req.query, groupByParam);
-    const ds = await getDataset();
+    const ds = await getDataset(req);
     const ctx = contextOf(ds, opts);
     const r = retestBreakdown(applyFilters(ds.tasks, filters, ctx.tz), query.groupBy);
     return {
@@ -114,7 +114,7 @@ export function qaRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts
   });
 
   app.get('/api/qa/testing', async (req) => {
-    const { filters, ds, ctx } = await scope(req.query);
+    const { filters, ds, ctx } = await scope(req);
     const list = applyFilters(testingTasks(ds.tasks, ctx), filters, ctx.tz);
     return { total: list.length, rows: withPeople(ds, testingWorkload(list, ctx)) };
   });

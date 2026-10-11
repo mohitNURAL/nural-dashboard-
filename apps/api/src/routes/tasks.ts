@@ -24,9 +24,9 @@ import {
   testingTasks,
   type MetricTask,
 } from '@nural/shared';
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import type { DatasetProvider } from '../data/dataset';
+import type { RequestDataset, Viewer } from '../auth/roles';
 import { contextOf, person, taskRow, type AppOptions } from './context';
 import { kpiContext } from './kpi';
 import { contentDisposition, tasksWorkbook } from './export';
@@ -89,18 +89,23 @@ function sorter(sort: (typeof SORTS)[number]) {
 export interface TaskRouteDeps {
   /** Live description lookup (tasks.task.get); the drawer works without it. */
   describe?: (taskId: number) => Promise<string | null>;
+  /** Access of the person (NFR-4): KPI task lists are for full access only. */
+  viewer?: (req: FastifyRequest) => Promise<Viewer>;
 }
 
 export function taskRoutes(
   app: FastifyInstance,
-  getDataset: DatasetProvider,
+  getDataset: RequestDataset,
   opts: AppOptions,
-  { describe }: TaskRouteDeps = {},
+  { describe, viewer }: TaskRouteDeps = {},
 ) {
   /** The task list for these query params: filters, drill-downs, search and order (no paging). */
-  async function selectTasks(rawQuery: unknown) {
-    const { query, filters } = parseQuery(rawQuery, listParams);
-    const ds = await getDataset();
+  async function selectTasks(req: FastifyRequest) {
+    const { query, filters } = parseQuery(req.query, listParams);
+    if (query.kind === 'kpi' && viewer && !(await viewer(req)).full) {
+      throw Object.assign(new Error('The KPI tab is for managers only.'), { statusCode: 403 });
+    }
+    const ds = await getDataset(req);
     const ctx = contextOf(ds, opts);
     const base =
       query.kind === 'issues'
@@ -157,7 +162,7 @@ export function taskRoutes(
   }
 
   app.get('/api/tasks', async (req) => {
-    const { query, ds, ctx, list } = await selectTasks(req.query);
+    const { query, ds, ctx, list } = await selectTasks(req);
     const start = (query.page - 1) * query.pageSize;
     return {
       total: list.length,
@@ -178,7 +183,7 @@ export function taskRoutes(
     const { name } = z
       .object({ name: z.string().trim().max(120).optional() })
       .parse(req.query ?? {});
-    const { ds, ctx, list } = await selectTasks(req.query);
+    const { ds, ctx, list } = await selectTasks(req);
     const title = name || 'Tasks';
     const file = await tasksWorkbook(
       list.map((t) => taskRow(ds, ctx, t)),
@@ -193,7 +198,7 @@ export function taskRoutes(
 
   app.get('/api/tasks/:id', async (req, reply) => {
     const { id } = z.object({ id: z.coerce.number().int().positive() }).parse(req.params);
-    const ds = await getDataset();
+    const ds = await getDataset(req);
     const t = ds.byId.get(id);
     if (!t) return reply.code(404).send({ error: 'Task not found' });
     const ctx = contextOf(ds, opts);

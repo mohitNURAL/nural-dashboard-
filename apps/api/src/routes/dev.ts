@@ -12,16 +12,16 @@ import {
   type DevScope,
   type GroupBy,
 } from '@nural/shared';
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import type { DatasetProvider } from '../data/dataset';
+import type { RequestDataset } from '../auth/roles';
 import { contextOf, person, project, withGroupNames, withPeople, type AppOptions } from './context';
 import { groupByParam, parseQuery, scopeParam } from './params';
 
-export function devRoutes(app: FastifyInstance, getDataset: DatasetProvider, opts: AppOptions) {
-  async function scope(query: unknown, extra?: z.ZodRawShape) {
-    const { query: q, filters } = parseQuery(query, { ...scopeParam, ...extra });
-    const ds = await getDataset();
+export function devRoutes(app: FastifyInstance, getDataset: RequestDataset, opts: AppOptions) {
+  async function scope(req: FastifyRequest, extra?: z.ZodRawShape) {
+    const { query: q, filters } = parseQuery(req.query, { ...scopeParam, ...extra });
+    const ds = await getDataset(req);
     const ctx = contextOf(ds, opts);
     const sq = q as typeof q & { groupBy?: GroupBy; scope: DevScope };
     return {
@@ -34,7 +34,7 @@ export function devRoutes(app: FastifyInstance, getDataset: DatasetProvider, opt
   }
 
   app.get('/api/dev/summary', async (req) => {
-    const { ds, ctx, tasks, filters, q } = await scope(req.query);
+    const { ds, ctx, tasks, filters, q } = await scope(req);
     const s = devSummary(tasks, ctx, filters);
     return {
       ...s,
@@ -53,7 +53,7 @@ export function devRoutes(app: FastifyInstance, getDataset: DatasetProvider, opt
   });
 
   app.get('/api/dev/assignees', async (req) => {
-    const { ds, ctx, tasks, q } = await scope(req.query, groupByParam);
+    const { ds, ctx, tasks, q } = await scope(req, groupByParam);
     const by = q.groupBy ?? 'assignee';
     const table = assigneeTable(tasks, ctx, by);
     const ageing = ageingByAssignee(tasks, ctx, by);
@@ -66,7 +66,7 @@ export function devRoutes(app: FastifyInstance, getDataset: DatasetProvider, opt
   });
 
   app.get('/api/dev/ranking', async (req) => {
-    const { ds, tasks, q } = await scope(req.query, {
+    const { ds, tasks, q } = await scope(req, {
       minTasks: z.coerce.number().int().min(1).optional(),
     });
     const minTasks = (q as { minTasks?: number }).minTasks ?? 3;
@@ -78,7 +78,7 @@ export function devRoutes(app: FastifyInstance, getDataset: DatasetProvider, opt
   });
 
   app.get('/api/dev/matrix', async (req) => {
-    const { ds, ctx, tasks, q } = await scope(req.query, {
+    const { ds, ctx, tasks, q } = await scope(req, {
       splitTag: z.string().min(1).optional(),
       ...groupByParam,
     });
