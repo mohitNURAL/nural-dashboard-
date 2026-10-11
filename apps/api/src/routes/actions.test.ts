@@ -141,11 +141,15 @@ describe('task actions (SRS 7)', () => {
       /Sign in again/,
     );
     await app!.close();
-    const s = await server({ scope: 'user' });
+    // A missing Tasks permission is Bitrix24's own answer (insufficient_scope), not a guess.
+    const s = await server({
+      scope: 'app',
+      fail: new BitrixError('tasks.task.complete', 'insufficient_scope', '', false),
+    });
     const res = await post('/api/tasks/41/status', { status: 'completed' });
     expect(res.statusCode).toBe(403);
     expect(res.json().error).toMatch(/Tasks permission/);
-    expect(s.calls).toHaveLength(0);
+    expect(s.recorded[0]).toMatchObject({ ok: false });
   });
 
   it('reports a Bitrix24 refusal and records it', async () => {

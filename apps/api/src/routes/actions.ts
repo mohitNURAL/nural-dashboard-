@@ -80,6 +80,13 @@ const idParam = z.object({ id: z.coerce.number().int().positive() });
 
 /** A Bitrix24 error as a short message for the person; permission problems read as such. */
 function explain(err: unknown): { status: number; message: string } {
+  if (err instanceof BitrixError && /insufficient_scope/i.test(`${err.code} ${err.description}`)) {
+    return {
+      status: 403,
+      message:
+        'The Bitrix24 app is missing the Tasks permission. Ask the Bitrix24 admin to add it, then sign out and sign in again.',
+    };
+  }
   if (err instanceof BitrixError) {
     if (
       /ACCESS_DENIED|insufficient_scope|NO_AUTH|expired_token|invalid_token/i.test(
@@ -106,19 +113,8 @@ export function actionRoutes(app: FastifyInstance, getDataset: DatasetProvider, 
       reply.code(403).send({ error: 'Sign in again with Bitrix24 to change tasks.' });
       return null;
     }
-    if (
-      token.scope &&
-      !token.scope
-        .split(',')
-        .map((s) => s.trim())
-        .includes('task')
-    ) {
-      reply.code(403).send({
-        error:
-          'The Bitrix24 app is missing the Tasks permission. Ask the Bitrix24 admin to add it, then sign in again.',
-      });
-      return null;
-    }
+    // No check of the token's scope label: portals report it differently (e.g. just "app"),
+    // so Bitrix24 itself decides; a missing permission comes back as insufficient_scope.
     return { user, token: token.accessToken };
   }
 

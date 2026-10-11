@@ -408,7 +408,7 @@ Every task list (grid) and the task view have two dropdowns, so a task can be ch
 
 - **As the person.** Actions run with the signed-in person's own Bitrix24 OAuth token, so Bitrix24 history shows their name and their Bitrix24 permissions apply; a refusal (e.g. no access to the project) is shown to them as Bitrix24's message.
 - The tokens are kept from sign-in, encrypted (AES-256-GCM, key from `SESSION_SECRET`) in `user_tokens`, and renewed with the refresh token. They are never logged or sent to the browser. With sign-in off (`AUTH=off`, local development) the dropdowns are shown but disabled.
-- **The local app needs the Tasks permission** (scope `task`) besides `user`; after the admin adds it, everyone signs in once more.
+- **The local app needs the Tasks permission** (scope `task`) besides `user`; after the admin adds it, everyone signs in once more. The dashboard does not judge the token's scope label (portals report it differently, e.g. just `app`); Bitrix24 decides, and its `insufficient_scope` answer is shown as "missing the Tasks permission".
 - **Guard rails.** The webhook stays read-only (`READ_METHODS`). Task actions are a separate allowlist (`USER_ACTION_METHODS`: the six methods above) and run only with a person's token, through the same rate limiter. A column must belong to the task's board.
 - **Audit.** Every action is recorded in `task_actions`: person, task, move or status, from, to, and whether Bitrix24 accepted it (with its error).
 - After an action the task is re-synced (same queue as webhook events), so every open dashboard shows the change within seconds.
