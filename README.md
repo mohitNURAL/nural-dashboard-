@@ -1,4 +1,8 @@
-# Nural Dev & QA Dashboard
+# Nural Pulse
+
+The live heartbeat of every project and person: Nural's development and QA dashboard on Bitrix24. Powered by Bitrix24 and Nural.
+
+(Formerly Nural Dev & QA Dashboard.)
 
 Live Development and QA dashboard over Bitrix24 (nural.bitrix24.in). Full spec: [docs/SRS.md](docs/SRS.md).
 

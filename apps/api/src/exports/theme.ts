@@ -22,7 +22,7 @@ const FONT = 'Arial';
  */
 export function brandSheet(ws: ExcelJS.Worksheet, title: string, subtitle: string, when: string) {
   const width = ws.columnCount;
-  ws.spliceRows(1, 0, [title], [subtitle], [`Exported ${when} · Nural Dev and QA Dashboard`]);
+  ws.spliceRows(1, 0, [title], [subtitle], [`Exported ${when} · Nural Pulse · Powered by Bitrix24 and Nural`]);
   const band = (n: number, argb: string, font: Partial<ExcelJS.Font>, height: number) => {
     ws.mergeCells(n, 1, n, width);
     const row = ws.getRow(n);

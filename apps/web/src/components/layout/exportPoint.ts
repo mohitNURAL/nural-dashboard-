@@ -192,7 +192,9 @@ export async function exportPointPdf(el: HTMLElement, title: string, showing?: s
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(9);
   pdf.text(
-    [showing ?? '', `Exported ${stamp()} IST · Nural Dev and QA Dashboard`].filter(Boolean),
+    [showing ?? '', `Exported ${stamp()} IST · Nural Pulse · Powered by Bitrix24 and Nural`].filter(
+      Boolean,
+    ),
     m,
     m + 20,
   );

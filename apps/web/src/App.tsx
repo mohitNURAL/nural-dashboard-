@@ -7,6 +7,7 @@ import { allowedPage, firstPage, navFor } from './components/shell/nav';
 import { useDrawer } from './components/shell/drawerStore';
 import { ConfirmHost } from './components/ui/ConfirmDialog';
 import { trackClicks } from './components/spotlight/spotlight';
+import { AppFooter } from './components/shell/AppFooter';
 import { SideDrawer } from './components/shell/SideDrawer';
 import { DevTab } from './features/dev/DevTab';
 import { AccessPage } from './features/employees/AccessPage';
@@ -91,6 +92,7 @@ export default function App() {
             <QaTab />
           )}
         </main>
+        <AppFooter />
       </div>
       <TaskDrawer />
       {me && <ActionDock tourable onFeedback={() => setTab('feedback')} />}

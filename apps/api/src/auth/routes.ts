@@ -113,16 +113,17 @@ export function authRoutes(app: FastifyInstance, opts: AuthOptions) {
       .type('text/html')
       .send(
         '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
-          '<title>Signed out · Nural dashboard</title>' +
+          '<title>Signed out · Nural Pulse</title>' +
           '<body style="font-family:system-ui,sans-serif;background:#f8f9fd;color:#231f20;display:grid;place-items:center;min-height:100vh;margin:0">' +
           '<main style="background:#fff;border:1px solid #dfddde;border-radius:8px;padding:32px;text-align:center;max-width:360px">' +
           (req.query.expired
             ? `<h1 style="font-size:18px;color:#18244e;margin:0 0 8px">Your session ended</h1>` +
               `<p style="margin:0 0 20px;color:#6b6567">For security you are signed out ${SESSION_DAYS} days after signing in. Sign in again to continue.</p>`
             : '<h1 style="font-size:18px;color:#18244e;margin:0 0 8px">You are signed out</h1>' +
-              '<p style="margin:0 0 20px;color:#6b6567">Nural Dev and QA Dashboard</p>') +
+              '<p style="margin:0 0 20px;color:#6b6567">Nural Pulse</p>') +
           '<a href="/api/auth/login" style="display:inline-block;background:#32499f;color:#fff;text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:700">Sign in with Bitrix24</a>' +
-          '</main></body>',
+          '</main>' +
+          '<p style="margin-top:16px;font-size:12px;color:#8b91a8;text-align:center">Powered by <b>Bitrix24</b> and <b>Nural</b></p></body>',
       ),
   );
 

@@ -18,6 +18,18 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-12-nural-pulse',
+    date: '2026-10-12',
+    tab: 'dev',
+    title: 'Meet Nural Pulse',
+    steps: [
+      {
+        title: 'Nural Pulse',
+        text: 'The dashboard has a name: Nural Pulse, the live heartbeat of every project and person. Powered by Bitrix24 and Nural.',
+      },
+    ],
+  },
+  {
     id: '2026-10-12-people-edit',
     date: '2026-10-12',
     tab: 'people',

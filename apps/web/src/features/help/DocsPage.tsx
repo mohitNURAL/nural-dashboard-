@@ -12,12 +12,12 @@ import { PageHead } from '../../components/ui/PageHead';
 
 const WHOLE = [
   {
-    file: 'Nural Dashboard - User guide.pdf',
+    file: 'Nural Pulse - User guide.pdf',
     title: 'User guide',
     hint: 'The whole dashboard: signing in, finding your way, reading the numbers, changing tasks, making it yours',
   },
   {
-    file: 'Nural Dashboard - Module guide.pdf',
+    file: 'Nural Pulse - Module guide.pdf',
     title: 'Module guide',
     hint: 'Every page you can open, module by module, with what each tile, card and list shows',
   },

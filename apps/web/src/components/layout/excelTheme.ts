@@ -42,7 +42,7 @@ export function themedSheet(title: string, showing: string | null | undefined, r
       alignVertical: 'center',
     }),
     band(showing || 'All data in your view', { textColor: XL.accent, fontSize: 10 }),
-    band(`Exported ${stamp()} IST · Nural Dev and QA Dashboard`, {
+    band(`Exported ${stamp()} IST · Nural Pulse · Powered by Bitrix24 and Nural`, {
       textColor: '#8B91A8',
       fontSize: 9,
     }),

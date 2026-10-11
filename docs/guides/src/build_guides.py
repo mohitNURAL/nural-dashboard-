@@ -107,10 +107,10 @@ def chapter(n, title, sub, body):
 
 def cover(title, lead, label):
     return (f'<div class="cover"><div class="orb"></div><div class="orb two"></div>'
-            f'<div class="brand">Nural<span>Dev and QA Dashboard</span></div>'
+            f'<div class="brand">Nural<span>Pulse</span></div>'
             f'<h1>{e(title)}</h1><p class="lead">{e(lead)}</p>'
             f'<p class="lead" style="margin-top:6mm;font-size:12pt;opacity:.75">For {e(label)}</p>'
-            f'<div class="meta"><span>NURALTECH · internal</span><span>{TODAY}</span></div></div>')
+            f'<div class="meta"><span>NURALTECH · internal · Powered by Bitrix24 and Nural</span><span>{TODAY}</span></div></div>')
 
 
 def toc(items):
@@ -160,7 +160,7 @@ def user_guide(key):
     ch = []
 
     ch.append(('Welcome', 'What the dashboard is for',
-        '<p>The Nural Dev and QA Dashboard shows work in one place, live from Bitrix24: tasks, deadlines, bugs and feedback, and how things are going. '
+        '<p>Nural Pulse, the live heartbeat of every project and person, shows work in one place, live from Bitrix24: tasks, deadlines, bugs and feedback, and how things are going. '
         'A change made in Bitrix24 reaches the dashboard within seconds, and a change made on the dashboard is made in Bitrix24, in your name.</p>'
         f'<p>This guide is for <b>{e(S["label"].lower())}</b>. {scope} It covers the pages you can open: {e(names)}.</p>'
         + fig(key, 'page-' + pages[0], f'The {PAGE_CARD[pages[0]][0]} page as you see it: the menu on the left, page tools on the right (names replaced).')))
@@ -261,7 +261,7 @@ def user_guide(key):
     body = cover('User guide', 'Signing in, finding your way, reading the numbers, changing tasks and making the dashboard yours.', S['label'])
     body += toc([(t, s) for t, s, _ in ch])
     body += ''.join(chapter(i + 1, t, s, b) for i, (t, s, b) in enumerate(ch))
-    return doc(f'Nural Dashboard: User guide ({S["label"]})', body)
+    return doc(f'Nural Pulse: User guide ({S["label"]})', body)
 
 
 # ---------------------------------------------------------------- Module guide
@@ -362,7 +362,7 @@ def module_guide(key):
     body = cover('Module guide', 'Every page you can open, module by module: what every tile, card and list shows and how to use it.', S['label'])
     body += toc([(t, s) for t, s, _ in secs])
     body += ''.join(chapter(i + 1, t, s, b) for i, (t, s, b) in enumerate(secs))
-    return doc(f'Nural Dashboard: Module guide ({S["label"]})', body)
+    return doc(f'Nural Pulse: Module guide ({S["label"]})', body)
 
 
 def page_guide(key, mod):
@@ -381,7 +381,7 @@ def page_guide(key, mod):
                     + (fig(key, 'page-' + mod, f'{title}, as you see it (names replaced).') if os.path.exists(img) else '')
                     + (f'<h3>Every data point</h3><table><tr><th>Data point</th><th>What it shows and how to use it</th></tr>{rows}</table>' if rows else '')
                     + EXTRA.get(mod, ''))
-    return doc(f'Nural Dashboard: {title} guide ({S["label"]})', body.replace(IMG, '../' + IMG))
+    return doc(f'Nural Pulse: {title} guide ({S["label"]})', body.replace(IMG, '../' + IMG))
 
 
 if __name__ == '__main__':

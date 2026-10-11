@@ -1,4 +1,6 @@
-# Nural Dev & QA Dashboard: Software Requirements Specification
+# Nural Pulse (formerly Nural Dev & QA Dashboard): Software Requirements Specification
+
+**Name (2026-10-12):** the product is **Nural Pulse**, "the live heartbeat of every project and person". The name shows in the top bar (Nural · Pulse with a live dot), the browser title, the sign-in page, report mails, Excel and PDF exports, and the guides (files "Nural Pulse - User guide.pdf", "Nural Pulse - Module guide.pdf"). Every page ends with **Powered by Bitrix24 and Nural**, as do report mails, exports and guide footers.
 
 Oct 9, 2026 · @Mohit
 

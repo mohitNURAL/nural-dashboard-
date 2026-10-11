@@ -28,12 +28,17 @@ export function TopBar({ tab, onTab }: { tab: Tab; onTab: (t: Tab) => void }) {
         >
           <IconMenu />
         </button>
-        <div className="flex items-baseline gap-3">
+        {/* Nural Pulse: the live heartbeat of every project and person. */}
+        <div className="flex items-center gap-2" aria-label="Nural Pulse">
           <span className="bg-gradient-to-r from-white to-primary-soft-300 bg-clip-text font-heading text-title text-transparent">
             Nural
           </span>
-          <span className="hidden text-h3 font-normal text-primary-soft-300 lg:inline">
-            Dev and QA Dashboard
+          <span className="relative flex items-center gap-1.5 font-heading text-title font-extrabold text-accent">
+            Pulse
+            <span aria-hidden className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
+            </span>
           </span>
         </div>
         <nav aria-label="You are here" className="hidden items-center gap-1.5 sm:flex">

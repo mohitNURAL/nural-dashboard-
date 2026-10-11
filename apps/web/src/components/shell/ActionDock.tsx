@@ -31,12 +31,12 @@ import { Tip } from '../ui/Tip';
  */
 const GUIDES = [
   {
-    file: 'Nural Dashboard - User guide.pdf',
+    file: 'Nural Pulse - User guide.pdf',
     title: 'User guide',
     hint: 'The whole dashboard: signing in, finding your way, changing tasks, making it yours',
   },
   {
-    file: 'Nural Dashboard - Module guide.pdf',
+    file: 'Nural Pulse - Module guide.pdf',
     title: 'Module guide',
     hint: 'Page by page: who can open it and what every tile, card and list shows',
   },

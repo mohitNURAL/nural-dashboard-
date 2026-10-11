@@ -79,7 +79,7 @@ export async function tasksWorkbook(
 ): Promise<Buffer> {
   const rows = inRowOrder(input, layout.order);
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'Nural Dev & QA Dashboard';
+  wb.creator = 'Nural Pulse';
   const ws = wb.addWorksheet('Tasks', { views: [{ state: 'frozen', ySplit: 1 }] });
   ws.columns = arrange(
     [
@@ -180,7 +180,7 @@ export async function tasksWorkbook(
     ['Exported', `${dayKey(new Date(), tz)} (Asia/Kolkata)`],
     [
       'Source',
-      'Nural Dev & QA Dashboard: the list as shown, with its filters, search and order (all pages).',
+      'Nural Pulse: the list as shown, with its filters, search and order (all pages).',
     ],
     [
       'Not included',

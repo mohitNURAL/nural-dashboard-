@@ -1,4 +1,4 @@
-# Nural Dev & QA Dashboard
+# Nural Pulse (Nural Dev & QA Dashboard)
 
 Spec: docs/SRS.md (diagrams in docs/images). Read the section named in each task before coding.
 Build order: SRS section 10.5, milestones 1 to 9. Do one milestone per session, start in plan mode.

@@ -70,7 +70,7 @@ export function renderEmail(data: ReportData, meta: RenderMeta): { subject: stri
   const html = `<!doctype html><html><body style="margin:0;background:#eef1f8;padding:24px 0">
 <table role="presentation" align="center" cellpadding="0" cellspacing="0" style="width:640px;max-width:100%;background:#ffffff;border-radius:14px;overflow:hidden">
 <tr><td style="background:${NAVY};padding:20px 24px">
-<div style="font:800 20px Arial,sans-serif;color:#ffffff">Nural <span style="font-weight:400;font-size:13px;color:#b9c3ec">Dev and QA Dashboard</span></div>
+<div style="font:800 20px Arial,sans-serif;color:#ffffff">Nural <span style="color:#05cfd3">Pulse</span></div>
 <div style="height:3px;background:linear-gradient(90deg,${BLUE},${TEAL});margin-top:12px;border-radius:3px"></div>
 <div style="font:700 18px Arial,sans-serif;color:#ffffff;margin-top:12px">${esc(data.title)}</div>
 <div style="font:13px Arial,sans-serif;color:#b9c3ec;margin-top:2px">${esc(data.periodLabel)} · ${esc(meta.scopeLabel)} · for ${esc(meta.recipientName)}</div>
@@ -79,7 +79,7 @@ ${note ? `<tr><td style="padding:12px 24px;background:#fff8e6;font:13px Arial,sa
 ${data.sections.map((s) => sectionHtml(s, meta)).join('\n')}
 <tr><td style="padding:18px 24px;border-top:1px solid #e3e1e6;font:12px Arial,sans-serif;color:${MUTED}">
 <a href="${esc(meta.dashboardUrl)}" style="display:inline-block;background:${BLUE};color:#ffffff;text-decoration:none;padding:9px 16px;border-radius:8px;font-weight:700">Open the dashboard</a>
-<p style="margin:12px 0 0">Sent by the Nural Dev and QA Dashboard. Your admins choose what these reports contain and when they arrive.</p>
+<p style="margin:12px 0 0">Sent by Nural Pulse. Your admins choose what these reports contain and when they arrive. Powered by Bitrix24 and Nural.</p>
 </td></tr></table></body></html>`;
   return { subject: subjectOf(data, meta), html };
 }

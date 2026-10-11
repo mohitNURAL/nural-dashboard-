@@ -9,7 +9,7 @@ const here = fileURLToPath(new URL('.', import.meta.url));
 const out = fileURLToPath(new URL('..', import.meta.url));
 const pub = fileURLToPath(new URL('../../../apps/web/public/guides/', import.meta.url));
 const SETS = ['member', 'support', 'owner', 'manager', 'admin'];
-const FILE = { 'user-guide': 'Nural Dashboard - User guide.pdf', 'module-guide': 'Nural Dashboard - Module guide.pdf' };
+const FILE = { 'user-guide': 'Nural Pulse - User guide.pdf', 'module-guide': 'Nural Pulse - Module guide.pdf' };
 
 // The two whole guides of each set, then its one-page guides (src/<set>/modules/<Page> guide.html,
 // printed to <set>/modules/ and served from public/guides/<set>/modules/).
@@ -51,7 +51,7 @@ for (const { set, name, src, dest, pub: pubPath } of JOBS) {
     displayHeaderFooter: true,
     headerTemplate: '<span></span>',
     footerTemplate:
-      '<div style="width:100%;font-size:8px;color:#8a8589;font-family:sans-serif;padding:0 15mm;display:flex;justify-content:space-between"><span>Nural Dev and QA Dashboard</span><span><span class="pageNumber"></span> / <span class="totalPages"></span></span></div>',
+      '<div style="width:100%;font-size:8px;color:#8a8589;font-family:sans-serif;padding:0 15mm;display:flex;justify-content:space-between"><span>Nural Pulse · Powered by Bitrix24 and Nural</span><span><span class="pageNumber"></span> / <span class="totalPages"></span></span></div>',
   });
   mkdirSync(`${out}${set}/modules`, { recursive: true });
   mkdirSync(`${pub}${set}/modules`, { recursive: true });
