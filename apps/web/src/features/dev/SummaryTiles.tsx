@@ -1,6 +1,7 @@
 // DEV-01: one row of 7 summary tiles. Clicking a tile opens the matching task list. Under the
 // number, All splits into Dev and Issues and Issues into Bug and Feedback; each part opens too.
 import type { DevPreset, SummaryPart } from '@nural/shared';
+import { SortableGroup } from '../../components/layout/SortableGroup';
 import { StatTile } from '../../components/StatTile';
 import { useDevScope } from '../filters/useFilters';
 import { useDevSummary } from './api';
@@ -39,29 +40,34 @@ export function SummaryTiles({ active, onSelect }: Props) {
   const drill = useDrillTo();
   const split = data?.split;
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7">
-      {TILES.map(({ preset, sub }) => (
-        <StatTile
-          key={preset}
-          label={preset === 'total' && scope === 'issues' ? 'Total issues' : TILE_LABELS[preset]}
-          info={INFO[preset as keyof typeof INFO]}
-          value={data?.[preset as keyof typeof data] as number | undefined}
-          sub={preset === 'total' && split?.items.length ? splitLine(split.items) : sub}
-          tone={preset === 'overdue' ? 'bad' : undefined}
-          active={active === preset}
-          onClick={() => onSelect(preset)}
-          parts={data?.parts.map((p) => ({
-            label: PART[p.key].label,
-            value: p[preset as Count],
-            onClick: () =>
-              drill({
-                label: `${TILE_LABELS[preset]} · ${PART[p.key].label}`,
-                preset,
-                params: PART[p.key].params,
-              }),
-          }))}
-        />
-      ))}
-    </div>
+    <SortableGroup
+      group="dev.tiles"
+      noun="tile"
+      className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7"
+      items={TILES.map(({ preset, sub }) => ({
+        id: preset,
+        node: (
+          <StatTile
+            label={preset === 'total' && scope === 'issues' ? 'Total issues' : TILE_LABELS[preset]}
+            info={INFO[preset as keyof typeof INFO]}
+            value={data?.[preset as keyof typeof data] as number | undefined}
+            sub={preset === 'total' && split?.items.length ? splitLine(split.items) : sub}
+            tone={preset === 'overdue' ? 'bad' : undefined}
+            active={active === preset}
+            onClick={() => onSelect(preset)}
+            parts={data?.parts.map((p) => ({
+              label: PART[p.key].label,
+              value: p[preset as Count],
+              onClick: () =>
+                drill({
+                  label: `${TILE_LABELS[preset]} · ${PART[p.key].label}`,
+                  preset,
+                  params: PART[p.key].params,
+                }),
+            }))}
+          />
+        ),
+      }))}
+    />
   );
 }

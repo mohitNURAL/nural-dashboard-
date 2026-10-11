@@ -3,6 +3,7 @@
 import clsx from 'clsx';
 import { useEffect, useRef, useState } from 'react';
 import { Accordion } from '../../components/Accordion';
+import { SortableGroup } from '../../components/layout/SortableGroup';
 import { InfoContext } from '../../components/infoContext';
 import { InfoTip } from '../../components/InfoTip';
 import { keepInView } from '../../components/keepInView';
@@ -73,14 +74,23 @@ export function KpiTab() {
         />
         {summary && summary.noProject.open > 0 && <NoProjectNote n={summary.noProject.open} />}
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-          <InsightsCard className="lg:col-span-12" />
-          <ProjectHealthCard ref={projectsRef} className="lg:col-span-12" />
-          <OverdueCard className="lg:col-span-6" />
-          <WorkloadCard className="lg:col-span-6" />
-          <PeopleCard className="lg:col-span-12" />
-          <ActivityCard className="lg:col-span-12" />
-        </div>
+        <SortableGroup
+          group="kpi.cards"
+          noun="card"
+          className="grid grid-cols-1 gap-4 lg:grid-cols-12"
+          items={[
+            { id: 'insights', className: 'lg:col-span-12', node: <InsightsCard /> },
+            {
+              id: 'projectHealth',
+              className: 'lg:col-span-12',
+              node: <ProjectHealthCard ref={projectsRef} />,
+            },
+            { id: 'overdue', className: 'lg:col-span-6', node: <OverdueCard /> },
+            { id: 'workload', className: 'lg:col-span-6', node: <WorkloadCard /> },
+            { id: 'people', className: 'lg:col-span-12', node: <PeopleCard /> },
+            { id: 'activity', className: 'lg:col-span-12', node: <ActivityCard /> },
+          ]}
+        />
 
         <Accordion
           ref={allRef}

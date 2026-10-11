@@ -2,6 +2,8 @@
 // menu.
 import * as Popover from '@radix-ui/react-popover';
 import clsx from 'clsx';
+import { toast } from 'sonner';
+import { useResetLayout } from '../api/prefs';
 import { ROLE_LABEL, useMe } from '../api/me';
 import { initials } from '../features/dev/format';
 import { useTheme, type ThemeChoice } from '../store/theme';
@@ -134,6 +136,7 @@ function UserMenu() {
   const setToastsEnabled = useLive((s) => s.setToastsEnabled);
   const theme = useTheme((s) => s.choice);
   const setTheme = useTheme((s) => s.set);
+  const resetLayout = useResetLayout();
   const signedIn = me?.auth === 'bitrix';
   const name = signedIn ? me.name : 'Local copy';
   const monogram = signedIn ? initials(me.name) : 'LC';
@@ -201,6 +204,25 @@ function UserMenu() {
               className="h-4 w-4 accent-[var(--primary)]"
             />
           </label>
+
+          <div className="flex items-center justify-between gap-3 border-t border-border p-4">
+            <span>
+              Layout
+              <span className="block text-table text-text-muted">
+                Drag ⠿ to move tiles and cards
+              </span>
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                resetLayout();
+                toast.success('Layout reset to the default order.');
+              }}
+              className="rounded-control border border-border px-3 py-1.5 font-heading text-button text-primary hover:border-primary"
+            >
+              Reset
+            </button>
+          </div>
 
           {signedIn && (
             <div className="border-t border-border p-3">

@@ -19,3 +19,13 @@ h3 {
     @apply animate-pulse rounded bg-primary-soft-100;
   }
 }
+
+/* Focus view backdrop (components/layout/useFocusBox.tsx). */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

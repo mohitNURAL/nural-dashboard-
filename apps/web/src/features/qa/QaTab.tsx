@@ -2,6 +2,7 @@
 import type { IssuePreset } from '@nural/shared';
 import { useEffect, useRef, useState } from 'react';
 import { Accordion } from '../../components/Accordion';
+import { SortableGroup } from '../../components/layout/SortableGroup';
 import { InfoContext } from '../../components/infoContext';
 import { keepInView } from '../../components/keepInView';
 import { useFilterSummary, useFilters } from '../filters/useFilters';
@@ -133,99 +134,131 @@ export function QaTab() {
           }
         />
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-          <IssuesByAssigneeCard className="lg:col-span-6" />
-          <ReworkCard className="lg:col-span-6" />
-          <TestingCard className="lg:col-span-6" />
-          <RetestCard className="lg:col-span-6" onShow={() => showAll('retest')} />
-          <RetestByGroupCard className="lg:col-span-12" />
-          <IssueTrendCard className="lg:col-span-12" />
-          <IssueAgeingCard className="lg:col-span-12" />
-          {/* Full width like the Development tab's stage matrix. */}
-          <IssueStageCard className="lg:col-span-12" />
-        </div>
+        <SortableGroup
+          group="qa.cards"
+          noun="card"
+          className="grid grid-cols-1 gap-4 lg:grid-cols-12"
+          items={[
+            { id: 'issuesByAssignee', className: 'lg:col-span-6', node: <IssuesByAssigneeCard /> },
+            { id: 'rework', className: 'lg:col-span-6', node: <ReworkCard /> },
+            { id: 'testing', className: 'lg:col-span-6', node: <TestingCard /> },
+            {
+              id: 'retest',
+              className: 'lg:col-span-6',
+              node: <RetestCard onShow={() => showAll('retest')} />,
+            },
+            { id: 'retestByGroup', className: 'lg:col-span-12', node: <RetestByGroupCard /> },
+            { id: 'issueTrend', className: 'lg:col-span-12', node: <IssueTrendCard /> },
+            { id: 'issueAgeing', className: 'lg:col-span-12', node: <IssueAgeingCard /> },
+            { id: 'issueStage', className: 'lg:col-span-12', node: <IssueStageCard /> },
+          ]}
+        />
 
-        <Accordion
-          ref={refs.latest}
-          title="Latest filed issues"
-          info={INFO.latestFiled}
-          hint="Filed on the Last filed date, newest first"
-          count={summary?.lastFiled?.count}
-          open={open.latest}
-          onOpenChange={(o) => setOpen((p) => ({ ...p, latest: o }))}
-        >
-          <TaskList
-            filterParams={params}
-            kind="issues"
-            preset="lastFiled"
-            exportName="Latest filed issues"
-            defaultSort="-created"
-            columns={LATEST_COLUMNS}
-          />
-        </Accordion>
-
-        <Accordion
-          ref={refs.resolved}
-          title="Latest resolved issues"
-          info={INFO.latestResolved}
-          hint="Pushed to QA Backlog on the Last resolved date"
-          count={summary?.lastResolved?.count}
-          open={open.resolved}
-          onOpenChange={(o) => setOpen((p) => ({ ...p, resolved: o }))}
-        >
-          <TaskList
-            filterParams={params}
-            kind="issues"
-            preset="lastResolved"
-            exportName="Latest resolved issues"
-            defaultSort="-created"
-            columns={LATEST_COLUMNS}
-          />
-        </Accordion>
-
-        <Accordion
-          ref={refs.all}
-          info={
-            testing ? INFO.testing : everyTask ? INFO.retestAwaited : ISSUE_LIST_INFO[allPreset]
-          }
-          title={
-            list.label
-              ? `${listNoun}: ${list.label}`
-              : allPreset === 'all'
-                ? 'All issues (bug and feedback)'
-                : `All issues: ${ISSUE_PRESET_LABELS[allPreset]}`
-          }
-          hint="Row click opens the issue"
-          count={allCount}
-          open={open.all}
-          onOpenChange={(o) => setOpen((p) => ({ ...p, all: o }))}
-        >
-          {(allPreset !== 'all' || list.params || testing || everyTask) && (
-            <button
-              type="button"
-              onClick={reset}
-              className="mb-3 font-heading text-button text-primary hover:underline"
-            >
-              Show all issues
-            </button>
-          )}
-          <TaskList
-            filterParams={list.params ? { ...params, ...list.params } : params}
-            kind={list.kind ?? 'issues'}
-            preset={list.preset}
-            exportName={
-              list.label
-                ? `${listNoun} · ${list.label}`
-                : allPreset === 'all'
-                  ? 'All issues'
-                  : `All issues · ${ISSUE_PRESET_LABELS[allPreset]}`
-            }
-            defaultSort={testing || everyTask ? '-deadline' : '-created'}
-            columns={testing ? TESTING_COLUMNS : everyTask ? ALL_TASK_COLUMNS : ALL_COLUMNS}
-            searchable
-            onTotal={setListTotal}
-          />
-        </Accordion>
+        <SortableGroup
+          group="qa.sections"
+          noun="section"
+          className="space-y-4"
+          items={[
+            {
+              id: 'latest',
+              node: (
+                <Accordion
+                  ref={refs.latest}
+                  title="Latest filed issues"
+                  info={INFO.latestFiled}
+                  hint="Filed on the Last filed date, newest first"
+                  count={summary?.lastFiled?.count}
+                  open={open.latest}
+                  onOpenChange={(o) => setOpen((p) => ({ ...p, latest: o }))}
+                >
+                  <TaskList
+                    filterParams={params}
+                    kind="issues"
+                    preset="lastFiled"
+                    exportName="Latest filed issues"
+                    defaultSort="-created"
+                    columns={LATEST_COLUMNS}
+                  />
+                </Accordion>
+              ),
+            },
+            {
+              id: 'resolved',
+              node: (
+                <Accordion
+                  ref={refs.resolved}
+                  title="Latest resolved issues"
+                  info={INFO.latestResolved}
+                  hint="Pushed to QA Backlog on the Last resolved date"
+                  count={summary?.lastResolved?.count}
+                  open={open.resolved}
+                  onOpenChange={(o) => setOpen((p) => ({ ...p, resolved: o }))}
+                >
+                  <TaskList
+                    filterParams={params}
+                    kind="issues"
+                    preset="lastResolved"
+                    exportName="Latest resolved issues"
+                    defaultSort="-created"
+                    columns={LATEST_COLUMNS}
+                  />
+                </Accordion>
+              ),
+            },
+            {
+              id: 'all',
+              node: (
+                <Accordion
+                  ref={refs.all}
+                  info={
+                    testing
+                      ? INFO.testing
+                      : everyTask
+                        ? INFO.retestAwaited
+                        : ISSUE_LIST_INFO[allPreset]
+                  }
+                  title={
+                    list.label
+                      ? `${listNoun}: ${list.label}`
+                      : allPreset === 'all'
+                        ? 'All issues (bug and feedback)'
+                        : `All issues: ${ISSUE_PRESET_LABELS[allPreset]}`
+                  }
+                  hint="Row click opens the issue"
+                  count={allCount}
+                  open={open.all}
+                  onOpenChange={(o) => setOpen((p) => ({ ...p, all: o }))}
+                >
+                  {(allPreset !== 'all' || list.params || testing || everyTask) && (
+                    <button
+                      type="button"
+                      onClick={reset}
+                      className="mb-3 font-heading text-button text-primary hover:underline"
+                    >
+                      Show all issues
+                    </button>
+                  )}
+                  <TaskList
+                    filterParams={list.params ? { ...params, ...list.params } : params}
+                    kind={list.kind ?? 'issues'}
+                    preset={list.preset}
+                    exportName={
+                      list.label
+                        ? `${listNoun} · ${list.label}`
+                        : allPreset === 'all'
+                          ? 'All issues'
+                          : `All issues · ${ISSUE_PRESET_LABELS[allPreset]}`
+                    }
+                    defaultSort={testing || everyTask ? '-deadline' : '-created'}
+                    columns={testing ? TESTING_COLUMNS : everyTask ? ALL_TASK_COLUMNS : ALL_COLUMNS}
+                    searchable
+                    onTotal={setListTotal}
+                  />
+                </Accordion>
+              ),
+            },
+          ]}
+        />
       </div>
     </InfoContext.Provider>
   );

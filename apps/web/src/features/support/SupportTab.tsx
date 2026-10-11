@@ -9,6 +9,7 @@ import { apiPost } from '../../api/client';
 import { useMe } from '../../api/me';
 import { API_KEY, useApi } from '../../api/queries';
 import { Card } from '../../components/Card';
+import { SortableGroup } from '../../components/layout/SortableGroup';
 import { fmtDateTime } from '../dev/format';
 
 const TOPICS = [
@@ -76,11 +77,16 @@ export function SupportTab() {
   return (
     <div className="space-y-4">
       <ComingSoon />
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-        <FeedbackForm className="xl:col-span-7" />
-        <MyEntries className="xl:col-span-5" />
-      </div>
-      {me?.inbox && <Inbox />}
+      <SortableGroup
+        group="support.cards"
+        noun="card"
+        className="grid grid-cols-1 gap-4 xl:grid-cols-12"
+        items={[
+          { id: 'form', className: 'xl:col-span-7', node: <FeedbackForm /> },
+          { id: 'mine', className: 'xl:col-span-5', node: <MyEntries /> },
+          ...(me?.inbox ? [{ id: 'inbox', className: 'xl:col-span-12', node: <Inbox /> }] : []),
+        ]}
+      />
     </div>
   );
 }

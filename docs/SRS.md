@@ -337,9 +337,23 @@ Grey blocks stand for live numbers; Overdue is the only tile with a status borde
 
 The QA tab swaps the Tag filter for a Bug or Feedback filter and puts Rework in the only tile with a status border.
 
-**Profile (2026-10-11).** The round button at the right of the top bar shows the person's monogram (Mohit Srivastava → MS). Its panel holds the name and role (Admin, PM, Team lead, Product owner or My tasks), the theme choice, live-update toasts and **Sign out**.
+**Profile (2026-10-11).** The round button at the right of the top bar shows the person's monogram (Mohit Srivastava → MS). Its panel holds the name and role (Admin, PM, Team lead, Product owner or My tasks), the theme choice, live-update toasts, **Layout: Reset** and **Sign out**.
 
 **Task list paging (2026-10-11).** Every task list has **Rows per page** (10, 25, 50, 100; remembered in the browser, default 50), the range shown (e.g. 61–70 of 2,439), first / previous / next / last buttons and a **page box**: type a page number and press Enter to jump there.
+
+**Drag to rearrange (2026-10-11).** Tiles, cards and sections (accordions) can be put in any order.
+- **How:** drag the grip (⠿) that shows at the top of a tile, card or section on hover. With the keyboard: focus the grip, then Space, the arrow keys and Space.
+- **Within its own group only.** Each tab has a tiles group, a cards group and a sections group (Support has one cards group), and an item never leaves its group. For example, the task lists stay below the cards. Each card keeps its width.
+- **Saved per person** on the server (`user_prefs.layout`, by group: `dev.tiles`, `dev.cards`, `dev.sections`, `qa.*`, `kpi.*`, `support.cards`), so it follows them on any computer.
+- **After an update:** a new card appears after the one it follows by default, and removed ones drop out (`components/layout/order.ts`).
+- **Reset:** Profile → Layout → **Reset** restores the default order everywhere.
+
+**Focus view (2026-10-11).**
+- **Opening:** clicking a card's title or empty area brings the card to the centre of the screen, up to 1100 px wide, with the page behind dimmed and blurred. Charts grow with it.
+- **Clicks that don't open it:** counts, bars, tables, buttons and fields keep their usual action (drill-downs, editing).
+- **Closing:** a click outside, Escape or the ✕ returns the card to its place.
+- **Nothing is reloaded:** sorting, paging and chart choices stay as they were.
+- **Motion:** the move is animated, except when the computer asks for reduced motion.
 
 **Themes (2026-10-11).** The profile panel offers **Light** (the default, the palette above), **Dark** and **System** (follows the computer's light or dark setting, and changes with it). The choice is kept per browser (localStorage). Dark redefines the neutral and blue tokens: background `#0D111E`, cards `#151A2C`, text `#E4E6EF`, muted text `#8B91A8`, borders `#2A3150`, headings `#D4DBF5`, links and buttons `#7B8FE0`. The top bar and tooltips stay navy (`--chrome`) in every theme, and the status colours (red, teal, amber) do not change, so badges keep their meaning. Charts, toasts and form controls follow the theme; charts redraw when it changes.
 

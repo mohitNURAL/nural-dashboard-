@@ -40,9 +40,9 @@ export async function apiGet<T>(
 }
 
 /** POST JSON; the error message comes from the API's `error` field. */
-export async function apiPost<T>(path: string, body: unknown): Promise<T> {
+export async function apiPost<T>(path: string, body: unknown, method = 'POST'): Promise<T> {
   const res = await fetch(path, {
-    method: 'POST',
+    method,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });

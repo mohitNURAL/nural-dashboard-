@@ -5,6 +5,7 @@ import clsx from 'clsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Accordion } from '../../components/Accordion';
 import { keepInView } from '../../components/keepInView';
+import { SortableGroup } from '../../components/layout/SortableGroup';
 import { InfoContext } from '../../components/infoContext';
 import { useDevScope, useFilterSummary, useFilters } from '../filters/useFilters';
 import { taskColumns } from '../tasks/columns';
@@ -118,89 +119,118 @@ export function DevTab() {
           onSelect={onTile}
         />
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-          <AssigneeTableCard className="lg:col-span-7" />
-          <PendingDoneCard className="lg:col-span-5" />
-          <TaskAgeingCard className="lg:col-span-6" />
-          <RankingCard className="lg:col-span-6" />
-          <StageMatrixCard className="lg:col-span-12" />
-        </div>
+        <SortableGroup
+          group="dev.cards"
+          noun="card"
+          className="grid grid-cols-1 gap-4 lg:grid-cols-12"
+          items={[
+            { id: 'assignees', className: 'lg:col-span-7', node: <AssigneeTableCard /> },
+            { id: 'pendingDone', className: 'lg:col-span-5', node: <PendingDoneCard /> },
+            { id: 'ageing', className: 'lg:col-span-6', node: <TaskAgeingCard /> },
+            { id: 'ranking', className: 'lg:col-span-6', node: <RankingCard /> },
+            { id: 'matrix', className: 'lg:col-span-12', node: <StageMatrixCard /> },
+          ]}
+        />
 
-        <Accordion
-          ref={refs.dueToday}
-          title="Tasks due today"
-          info={INFO.dueToday}
-          hint="Latest deadline first"
-          count={assignees?.totals.dueToday}
-          open={open.dueToday}
-          onOpenChange={toggle('dueToday')}
-        >
-          <TaskList
-            filterParams={params}
-            preset="dueToday"
-            columns={LIST_COLUMNS}
-            exportName="Tasks due today"
-          />
-        </Accordion>
-
-        <Accordion
-          ref={refs.overdue}
-          title="Overdue tasks"
-          info={INFO.overdue}
-          hint="Pending tasks past their deadline"
-          count={summary?.overdue}
-          tone="bad"
-          open={open.overdue}
-          onOpenChange={toggle('overdue')}
-        >
-          <TaskList
-            filterParams={params}
-            preset="overdue"
-            columns={LIST_COLUMNS}
-            exportName="Overdue tasks"
-          />
-        </Accordion>
-
-        <Accordion
-          ref={refs.all}
-          title={drill ? `All tasks: ${drill.label}` : 'All tasks'}
-          info={drillInfo(drill, alerts?.stuckDays)}
-          hint="Row click opens the task"
-          count={allCount}
-          open={open.all}
-          onOpenChange={toggle('all')}
-        >
-          {drill && (
-            <button
-              type="button"
-              onClick={clear}
-              className="mb-3 font-heading text-button text-primary hover:underline"
-            >
-              Show all tasks
-            </button>
-          )}
-          <TaskList
-            filterParams={listParams}
-            preset={drill?.preset ?? 'total'}
-            exportName={drill ? `All tasks · ${drill.label}` : 'All tasks'}
-            columns={ALL_COLUMNS}
-            searchable
-            onTotal={setListTotal}
-          />
-        </Accordion>
-
-        <Accordion
-          ref={refs.alerts}
-          title="Alert details"
-          info={INFO.alerts}
-          hint="Overdue and over 5 days in a stage, project-wise or assignee-wise"
-          count={alerts?.total}
-          tone="bad"
-          open={open.alerts}
-          onOpenChange={toggle('alerts')}
-        >
-          <AlertDetails />
-        </Accordion>
+        <SortableGroup
+          group="dev.sections"
+          noun="section"
+          className="space-y-4"
+          items={[
+            {
+              id: 'dueToday',
+              node: (
+                <Accordion
+                  ref={refs.dueToday}
+                  title="Tasks due today"
+                  info={INFO.dueToday}
+                  hint="Latest deadline first"
+                  count={assignees?.totals.dueToday}
+                  open={open.dueToday}
+                  onOpenChange={toggle('dueToday')}
+                >
+                  <TaskList
+                    filterParams={params}
+                    preset="dueToday"
+                    columns={LIST_COLUMNS}
+                    exportName="Tasks due today"
+                  />
+                </Accordion>
+              ),
+            },
+            {
+              id: 'overdue',
+              node: (
+                <Accordion
+                  ref={refs.overdue}
+                  title="Overdue tasks"
+                  info={INFO.overdue}
+                  hint="Pending tasks past their deadline"
+                  count={summary?.overdue}
+                  tone="bad"
+                  open={open.overdue}
+                  onOpenChange={toggle('overdue')}
+                >
+                  <TaskList
+                    filterParams={params}
+                    preset="overdue"
+                    columns={LIST_COLUMNS}
+                    exportName="Overdue tasks"
+                  />
+                </Accordion>
+              ),
+            },
+            {
+              id: 'all',
+              node: (
+                <Accordion
+                  ref={refs.all}
+                  title={drill ? `All tasks: ${drill.label}` : 'All tasks'}
+                  info={drillInfo(drill, alerts?.stuckDays)}
+                  hint="Row click opens the task"
+                  count={allCount}
+                  open={open.all}
+                  onOpenChange={toggle('all')}
+                >
+                  {drill && (
+                    <button
+                      type="button"
+                      onClick={clear}
+                      className="mb-3 font-heading text-button text-primary hover:underline"
+                    >
+                      Show all tasks
+                    </button>
+                  )}
+                  <TaskList
+                    filterParams={listParams}
+                    preset={drill?.preset ?? 'total'}
+                    exportName={drill ? `All tasks · ${drill.label}` : 'All tasks'}
+                    columns={ALL_COLUMNS}
+                    searchable
+                    onTotal={setListTotal}
+                  />
+                </Accordion>
+              ),
+            },
+            {
+              id: 'alerts',
+              node: (
+                <Accordion
+                  ref={refs.alerts}
+                  title="Alert details"
+                  info={INFO.alerts}
+                  hint="Overdue and over 5 days in a stage, project-wise or assignee-wise"
+                  count={alerts?.total}
+                  tone="bad"
+                  open={open.alerts}
+                  onOpenChange={toggle('alerts')}
+                >
+                  <AlertDetails />
+                </Accordion>
+              ),
+            },
+          ]}
+        />
       </div>
     </InfoContext.Provider>
   );

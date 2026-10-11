@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import type { GroupBy } from '@nural/shared';
 import type { ReactNode } from 'react';
 import { InfoTip } from './InfoTip';
+import { useFocusBox } from './layout/useFocusBox';
 
 interface Props {
   title: string;
@@ -26,32 +27,63 @@ export function Card({
   children,
   info,
 }: Props) {
+  // Clicking the title or empty area brings the card to the centre (focus view).
+  const focus = useFocusBox<HTMLElement>();
   return (
-    <section
-      className={clsx(
-        'flex min-w-0 flex-col rounded-card border border-border bg-surface p-4',
-        className,
-      )}
-    >
-      <header className="mb-3 flex min-h-7 items-center justify-between gap-3">
-        <h2 className="flex items-center gap-1.5 text-h3 text-primary-dark">
-          {title}
-          {info && <InfoTip text={info} label={title} />}
-        </h2>
-        {action}
-      </header>
-      {loading ? (
-        <div className="space-y-2" aria-busy>
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="skeleton h-4" style={{ width: `${90 - i * 12}%` }} />
-          ))}
-        </div>
-      ) : empty ? (
-        <p className="py-6 text-center text-text-muted">{emptyText}</p>
-      ) : (
-        children
-      )}
-    </section>
+    <>
+      {focus.placeholder}
+      {focus.backdrop}
+      <section
+        ref={focus.ref}
+        onClick={focus.onClick}
+        style={focus.style}
+        role={focus.focused ? 'dialog' : undefined}
+        aria-label={focus.focused ? title : undefined}
+        className={clsx(
+          'flex min-w-0 flex-col rounded-card border border-border bg-surface p-4',
+          focus.focused && 'h-auto',
+          className,
+        )}
+      >
+        <header className="mb-3 flex min-h-7 items-center justify-between gap-3">
+          <h2
+            className={clsx(
+              'flex items-center gap-1.5 text-h3 text-primary-dark',
+              !focus.focused && 'cursor-zoom-in',
+            )}
+            title={focus.focused ? undefined : 'Click to focus'}
+          >
+            {title}
+            {info && <InfoTip text={info} label={title} />}
+          </h2>
+          <div className="flex items-center gap-2">
+            {action}
+            {focus.focused && (
+              <button
+                type="button"
+                onClick={focus.close}
+                aria-label="Close focus view"
+                title="Close (Esc)"
+                className="grid h-7 w-7 place-items-center rounded-control text-text-muted hover:bg-primary-soft-100 hover:text-primary"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </header>
+        {loading ? (
+          <div className="space-y-2" aria-busy>
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="skeleton h-4" style={{ width: `${90 - i * 12}%` }} />
+            ))}
+          </div>
+        ) : empty ? (
+          <p className="py-6 text-center text-text-muted">{emptyText}</p>
+        ) : (
+          children
+        )}
+      </section>
+    </>
   );
 }
 

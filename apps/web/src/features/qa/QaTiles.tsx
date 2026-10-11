@@ -1,6 +1,7 @@
 // QA-01: one row of 7 tiles. Each opens the matching list; under each number its parts (Bug and
 // Feedback, or for Retesting awaited Dev tasks and Issues) add up to it and open their own list.
 import type { IssuePreset, QaSummaryPart } from '@nural/shared';
+import { SortableGroup } from '../../components/layout/SortableGroup';
 import { StatTile } from '../../components/StatTile';
 import { useQaRetest, useQaSummary } from './api';
 import { lastFiledText } from './format';
@@ -40,94 +41,134 @@ export function QaTiles({ active, onSelect, onPart, onRetest }: Props) {
     : ({} as Record<string, string>);
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7">
-      <StatTile
-        label="Total issues filed"
-        info={INFO.qaTotal}
-        value={data?.total}
-        sub="Tagged bug or feedback"
-        parts={parts('Total', 'total', 'all')}
-        active={active === 'all'}
-        onClick={() => onSelect('all')}
-      />
-      <StatTile
-        label="Open / pending"
-        info={INFO.qaOpen}
-        value={data?.open}
-        sub={
-          data
-            ? `Resolved ${data.resolved.toLocaleString('en-IN')} · ${data.resolvedPct}%`
-            : undefined
-        }
-        parts={parts('Open', 'open', 'open')}
-        active={active === 'open'}
-        onClick={() => onSelect('open')}
-        aside={data && <Ring resolvedPct={data.resolvedPct} />}
-      />
-      <StatTile
-        label="On hold"
-        info={INFO.hold}
-        value={data?.hold}
-        sub="Issues in On Hold"
-        parts={parts('On hold', 'hold', 'hold')}
-        active={active === 'hold'}
-        onClick={() => onSelect('hold')}
-      />
-      <StatTile
-        label="Last filed"
-        info={INFO.qaLastFiled}
-        value={data && lastFiledText(last ?? null)}
-        sub="Latest day an issue was filed"
-        parts={parts('Last filed', 'lastFiled', 'all', lastDay)}
-        active={active === 'lastFiled'}
-        onClick={() => onSelect('lastFiled')}
-      />
-      <StatTile
-        label="Last resolved"
-        info={INFO.qaLastResolved}
-        value={data && lastFiledText(data.lastResolved ?? null)}
-        sub="Latest day fixes reached QA Backlog"
-        parts={parts(
-          'Last resolved',
-          'lastResolved',
-          'lastResolved',
-          data?.lastResolved ? { day: data.lastResolved.date } : {},
-        )}
-        active={active === 'lastResolved'}
-        onClick={() => onSelect('lastResolved')}
-      />
-      <StatTile
-        label="Rework issues"
-        info={INFO.qaRework}
-        value={data?.reworkIssues}
-        sub="Sent back from QA for a fix"
-        parts={parts('Rework', 'rework', 'rework')}
-        tone="bad"
-        active={active === 'rework'}
-        onClick={() => onSelect('rework')}
-      />
-      <StatTile
-        label="Retesting awaited"
-        info={INFO.retestAwaited}
-        value={retest?.totals.total}
-        sub="In QA Backlog or In QA"
-        parts={
-          retest && [
-            {
-              label: 'Dev tasks',
-              value: retest.totals.dev,
-              onClick: () => onRetest('Retesting awaited · Dev tasks', false),
-            },
-            {
-              label: 'Issues',
-              value: retest.totals.issues,
-              onClick: () => onRetest('Retesting awaited · Issues', true),
-            },
-          ]
-        }
-        onClick={() => onRetest('Retesting awaited')}
-      />
-    </div>
+    <SortableGroup
+      group="qa.tiles"
+      noun="tile"
+      className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7"
+      items={[
+        {
+          id: 'qaTotal',
+          node: (
+            <StatTile
+              label="Total issues filed"
+              info={INFO.qaTotal}
+              value={data?.total}
+              sub="Tagged bug or feedback"
+              parts={parts('Total', 'total', 'all')}
+              active={active === 'all'}
+              onClick={() => onSelect('all')}
+            />
+          ),
+        },
+        {
+          id: 'qaOpen',
+          node: (
+            <StatTile
+              label="Open / pending"
+              info={INFO.qaOpen}
+              value={data?.open}
+              sub={
+                data
+                  ? `Resolved ${data.resolved.toLocaleString('en-IN')} · ${data.resolvedPct}%`
+                  : undefined
+              }
+              parts={parts('Open', 'open', 'open')}
+              active={active === 'open'}
+              onClick={() => onSelect('open')}
+              aside={data && <Ring resolvedPct={data.resolvedPct} />}
+            />
+          ),
+        },
+        {
+          id: 'hold',
+          node: (
+            <StatTile
+              label="On hold"
+              info={INFO.hold}
+              value={data?.hold}
+              sub="Issues in On Hold"
+              parts={parts('On hold', 'hold', 'hold')}
+              active={active === 'hold'}
+              onClick={() => onSelect('hold')}
+            />
+          ),
+        },
+        {
+          id: 'qaLastFiled',
+          node: (
+            <StatTile
+              label="Last filed"
+              info={INFO.qaLastFiled}
+              value={data && lastFiledText(last ?? null)}
+              sub="Latest day an issue was filed"
+              parts={parts('Last filed', 'lastFiled', 'all', lastDay)}
+              active={active === 'lastFiled'}
+              onClick={() => onSelect('lastFiled')}
+            />
+          ),
+        },
+        {
+          id: 'qaLastResolved',
+          node: (
+            <StatTile
+              label="Last resolved"
+              info={INFO.qaLastResolved}
+              value={data && lastFiledText(data.lastResolved ?? null)}
+              sub="Latest day fixes reached QA Backlog"
+              parts={parts(
+                'Last resolved',
+                'lastResolved',
+                'lastResolved',
+                data?.lastResolved ? { day: data.lastResolved.date } : {},
+              )}
+              active={active === 'lastResolved'}
+              onClick={() => onSelect('lastResolved')}
+            />
+          ),
+        },
+        {
+          id: 'qaRework',
+          node: (
+            <StatTile
+              label="Rework issues"
+              info={INFO.qaRework}
+              value={data?.reworkIssues}
+              sub="Sent back from QA for a fix"
+              parts={parts('Rework', 'rework', 'rework')}
+              tone="bad"
+              active={active === 'rework'}
+              onClick={() => onSelect('rework')}
+            />
+          ),
+        },
+        {
+          id: 'retestAwaited',
+          node: (
+            <StatTile
+              label="Retesting awaited"
+              info={INFO.retestAwaited}
+              value={retest?.totals.total}
+              sub="In QA Backlog or In QA"
+              parts={
+                retest && [
+                  {
+                    label: 'Dev tasks',
+                    value: retest.totals.dev,
+                    onClick: () => onRetest('Retesting awaited · Dev tasks', false),
+                  },
+                  {
+                    label: 'Issues',
+                    value: retest.totals.issues,
+                    onClick: () => onRetest('Retesting awaited · Issues', true),
+                  },
+                ]
+              }
+              onClick={() => onRetest('Retesting awaited')}
+            />
+          ),
+        },
+      ]}
+    />
   );
 }
 
