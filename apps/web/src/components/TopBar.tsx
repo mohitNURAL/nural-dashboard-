@@ -51,6 +51,7 @@ export function TopBar({ tab, onTab }: Props) {
         <div className="ml-auto flex items-center gap-4">
           <AlertsBell onTab={onTab} />
           <LiveIndicator />
+          <SignedIn />
           <UserMenu />
         </div>
       </div>
@@ -58,17 +59,47 @@ export function TopBar({ tab, onTab }: Props) {
   );
 }
 
-/** Sign out clears the session cookie, then the next API call sends the page to sign-in. */
+/** Sign out clears the session cookie and shows the signed-out page (sign in again from it). */
 async function signOut() {
   await fetch('/api/auth/logout', { method: 'POST' }).catch(() => undefined);
-  window.location.href = '/api/auth/login';
+  window.location.href = '/api/auth/signed-out';
+}
+
+const useMe = () =>
+  useApi<{ id: number; name: string; auth: 'off' | 'bitrix' }>('/api/auth/me', {});
+
+/** The signed-in name and a Sign out button; on a local copy, that sign-in is off. */
+function SignedIn() {
+  const { data: me } = useMe();
+  if (!me) return null;
+  if (me.auth !== 'bitrix') {
+    return (
+      <span
+        className="hidden rounded-control border border-primary px-2 py-1 text-table text-primary-soft-300 md:inline"
+        title="Sign in with Bitrix24 works on the live dashboard only; task changes are disabled here."
+      >
+        Local copy · sign-in off
+      </span>
+    );
+  }
+  return (
+    <span className="flex items-center gap-2">
+      <span className="hidden max-w-40 truncate text-body text-primary-soft-300 md:inline">
+        {me.name}
+      </span>
+      <button
+        type="button"
+        onClick={() => void signOut()}
+        className="rounded-control border border-primary-muted px-3 py-1 font-heading text-button text-white hover:bg-primary"
+      >
+        Sign out
+      </button>
+    </span>
+  );
 }
 
 function UserMenu() {
-  const { data: me } = useApi<{ id: number; name: string; auth: 'off' | 'bitrix' }>(
-    '/api/auth/me',
-    {},
-  );
+  const { data: me } = useMe();
   const toastsEnabled = useLive((s) => s.toastsEnabled);
   const setToastsEnabled = useLive((s) => s.setToastsEnabled);
   return (

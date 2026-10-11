@@ -66,6 +66,23 @@ export function authRoutes(app: FastifyInstance, opts: AuthOptions) {
     return { id: s.userId, name: s.name, auth: opts.mode };
   });
 
+  // After Sign out: a plain page with a way back in (signing in again also picks up new
+  // Bitrix24 permissions, e.g. Tasks).
+  app.get('/api/auth/signed-out', async (_req, reply) =>
+    reply
+      .type('text/html')
+      .send(
+        '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+          '<title>Signed out · Nural dashboard</title>' +
+          '<body style="font-family:system-ui,sans-serif;background:#f8f9fd;color:#231f20;display:grid;place-items:center;min-height:100vh;margin:0">' +
+          '<main style="background:#fff;border:1px solid #dfddde;border-radius:8px;padding:32px;text-align:center;max-width:360px">' +
+          '<h1 style="font-size:18px;color:#18244e;margin:0 0 8px">You are signed out</h1>' +
+          '<p style="margin:0 0 20px;color:#6b6567">Nural Dev and QA Dashboard</p>' +
+          '<a href="/api/auth/login" style="display:inline-block;background:#32499f;color:#fff;text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:700">Sign in with Bitrix24</a>' +
+          '</main></body>',
+      ),
+  );
+
   app.post('/api/auth/logout', async (_req, reply) => {
     reply.header('Set-Cookie', cookie(SESSION_COOKIE, '', 0, opts.secure));
     return { ok: true };

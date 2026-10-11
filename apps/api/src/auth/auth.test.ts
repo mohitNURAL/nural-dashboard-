@@ -123,6 +123,15 @@ describe('Sign in with Bitrix24', () => {
     expect(readSession(good, SECRET)?.userId).toBe(7);
   });
 
+  it('signs out to a page with a way back in, open without a session', async () => {
+    const a = await server();
+    const out = await a.inject({ method: 'POST', url: '/api/auth/logout' });
+    expect(String(out.headers['set-cookie'])).toMatch(/Max-Age=0/);
+    const page = await a.inject('/api/auth/signed-out');
+    expect(page.statusCode).toBe(200);
+    expect(page.body).toContain('href="/api/auth/login"');
+  });
+
   it('lets everything through with AUTH=off', async () => {
     const a = await server('off');
     expect((await a.inject('/api/dev/summary')).statusCode).toBe(200);

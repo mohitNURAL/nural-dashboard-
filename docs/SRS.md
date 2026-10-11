@@ -395,7 +395,7 @@ SSE is chosen over WebSocket because the browser only receives; filters are sent
 - Bitrix24 returns to the local app's handler path (the site root) with `?code=&state=`, even when `redirect_uri` is given. Caddy redirects that to `GET /api/auth/callback`. The API checks the `state` and exchanges the code at `https://oauth.bitrix.info/oauth/token/`. It accepts the result only when its `client_endpoint` is our portal and the `user_id` is an active user in our `users` table. The access token is not used or kept: sign-in makes no REST call and writes nothing to Bitrix24.
 - The session is a signed cookie (HMAC-SHA256 with `SESSION_SECRET`): HttpOnly, SameSite=Lax, Secure on HTTPS, valid 7 days, holding the user ID and name. There is no session table, and changing `SESSION_SECRET` signs everyone out.
 - With sign-in on, every `/api` call other than `/api/auth/*` needs the session, or it gets 401 and the web app goes to sign-in. `/health` and `/hooks/bitrix` (checked by its application token) stay open.
-- `GET /api/auth/me` returns the signed-in name, shown in the user menu with Sign out (`POST /api/auth/logout`).
+- `GET /api/auth/me` returns the signed-in name, shown in the top bar with a **Sign out** button (`POST /api/auth/logout`). Sign out ends on a "You are signed out" page (`GET /api/auth/signed-out`) with **Sign in with Bitrix24**; it does not go straight back to Bitrix24, which would sign a person who is still logged in to Bitrix24 straight back in. On a local copy (sign-in off) the top bar says so.
 
 **Task actions (2026-10-11)**
 
