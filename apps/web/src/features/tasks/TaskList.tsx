@@ -158,6 +158,7 @@ export function TaskList({
         <BoardsContext.Provider value={data?.boards ?? {}}>
           <BulkBar bulk={bulk} boards={data?.boards ?? {}} />
           <DataTable
+            tableId="tasks"
             columns={withSelect}
             rowClassName={(r) => bulkRowClass(bulk.results.get(r.id))}
             rowTitle={(r) => bulk.results.get(r.id)?.reason}

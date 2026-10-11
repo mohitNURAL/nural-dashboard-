@@ -291,6 +291,7 @@ export function PeoplePage() {
                   </span>
                 </div>
                 <DataTable
+                  tableId="people"
                   columns={columns}
                   data={shown}
                   rowKey={(r) => r.id}

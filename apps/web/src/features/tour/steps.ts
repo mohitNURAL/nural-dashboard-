@@ -63,7 +63,7 @@ export const COMMON_STEPS: TourStep[] = [
   {
     target: tour('dock'),
     title: 'Page tools',
-    text: 'On the right: Customise (choose the tiles and cards to show), the guided tour of this page, the PDF guides, Export page (every data point on the page as one Excel workbook or PDF), reading tours aloud, and resetting the layout. Hover any icon for its name. Each data point also has a small toolbar on hover: ⠿ to move it, ? to explain it, the eye to hide it.',
+    text: 'On the right: Customise (choose the tiles and cards to show), the guided tour of this page, the PDF guides, Export page (every data point on the page as one Excel workbook or PDF), reading tours aloud, and resetting the layout. Hover any icon for its name. Each data point also has a small toolbar on hover: ⠿ to move it, ? to explain it, the eye to hide it. Tables have Columns (choose and order them) and ⠿ on each row to put rows in your own order.',
   },
   {
     target: tour('profile'),

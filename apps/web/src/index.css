@@ -224,7 +224,6 @@ h3 {
   );
   color: color-mix(in srgb, var(--primary-dark) 80%, var(--text-muted));
   border-bottom: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border));
-  backdrop-filter: blur(6px);
 }
 .nural-table thead th:first-child {
   border-top-left-radius: 13px;
@@ -307,4 +306,40 @@ h3 {
       0 0 0 7px color-mix(in srgb, var(--accent) 15%, transparent),
       0 0 36px color-mix(in srgb, var(--accent) 75%, transparent);
   }
+}
+
+/* Scrollbars in the dashboard's look (2026-10-12): slim, rounded, the brand blue fading to teal
+   on hover, on a transparent track; the same in light and dark. */
+/* Firefox (Chrome and Edge use the rounded ::-webkit-scrollbar look below). */
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--primary) 45%, transparent) transparent;
+  }
+  .chrome * {
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  }
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  background-color: color-mix(in srgb, var(--primary) 40%, transparent);
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--accent) 70%, var(--primary));
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+/* Inside the dark menu the thumb is lighter. */
+.chrome ::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.18);
 }

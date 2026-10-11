@@ -168,6 +168,7 @@ export const ProjectHealthCard = forwardRef<HTMLDivElement, { className?: string
         >
           {data && (
             <DataTable
+              tableId="kpi-projects"
               columns={columns}
               data={data.rows}
               rowKey={(r) => r.id}

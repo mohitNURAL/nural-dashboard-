@@ -179,6 +179,7 @@ export function AgeingCard({
       )}
       {data && view === 'table' && (
         <DataTable
+          tableId="ageing"
           columns={columns}
           data={data.rows}
           rowKey={(r) => r.id}

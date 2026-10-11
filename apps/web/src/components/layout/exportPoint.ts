@@ -29,11 +29,12 @@ function fromTable(el: HTMLElement): Value[][] | null {
     );
     return clean(c.textContent);
   };
-  const head = [...table.querySelectorAll('thead tr')].map((tr) =>
-    [...tr.querySelectorAll('th')].map(label),
-  );
+  // Not the drag handles of a table the reader can order.
+  const cells = (tr: Element, sel: string) =>
+    [...tr.querySelectorAll(sel)].filter((c) => !c.hasAttribute('data-grip'));
+  const head = [...table.querySelectorAll('thead tr')].map((tr) => cells(tr, 'th').map(label));
   const body = [...table.querySelectorAll('tbody tr, tfoot tr')].map((tr) =>
-    [...tr.querySelectorAll('th, td')].map((td) => num(clean(td.textContent))),
+    cells(tr, 'th, td').map((td) => num(clean(td.textContent))),
   );
   return [...head.slice(-1), ...body];
 }

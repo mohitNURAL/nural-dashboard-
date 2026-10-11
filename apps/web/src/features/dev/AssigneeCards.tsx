@@ -103,6 +103,7 @@ export function AssigneeTableCard({ className }: { className?: string }) {
       action={<GroupToggle value={by} onChange={setBy} />}
     >
       <DataTable
+        tableId="dev-assignees"
         columns={columns}
         data={data?.rows ?? []}
         rowKey={(r) => r.id}

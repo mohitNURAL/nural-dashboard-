@@ -9,11 +9,24 @@ const id = z.string().regex(/^[A-Za-z0-9._-]{1,60}$/);
 
 /**
  * Per group: its order ("dev.tiles": ["total", "pending"]), the cards put side by side
- * ("dev.pairs") and the data points hidden ("dev.tiles.hidden").
+ * ("dev.pairs") and the data points hidden ("dev.tiles.hidden"). The menu's order of modules and
+ * of the pages in each ("menu.modules", "menu.Dashboard"). Per table (2026-10-12): its column
+ * order and hidden columns ("table.tasks.cols", "table.tasks.hidden"), the person's own row
+ * order ("table.tasks.rows", up to 2,000 row keys) and whether it is in use ("table.tasks.mode").
  */
+const GROUP = /^[a-z]+\.[a-z]+(\.hidden)?$/;
+const MENU = /^menu\.[A-Za-z]{1,30}$/;
+const TABLE = /^table\.[a-z][a-z0-9-]{0,40}\.(cols|hidden|rows|mode)$/;
 export const layoutInput = z
-  .record(z.string().regex(/^[a-z]+\.[a-z]+(\.hidden)?$/), z.array(id).max(60))
-  .refine((v) => Object.keys(v).length <= 40, 'Too many groups.');
+  .record(
+    z.string().refine((k) => GROUP.test(k) || MENU.test(k) || TABLE.test(k), 'Unknown layout key.'),
+    z.array(id).max(2000),
+  )
+  .refine((v) => Object.keys(v).length <= 200, 'Too many groups.')
+  .refine(
+    (v) => Object.entries(v).every(([k, list]) => k.endsWith('.rows') || list.length <= 60),
+    'Too many items in a group.',
+  );
 
 export const tourInput = z.object({
   /** Read steps aloud (browser voice). */

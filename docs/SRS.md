@@ -430,7 +430,15 @@ Rebuild after a change people can see:
 - **Nothing leaves a gap:** on wide screens the tiles spread over the row (as many columns as tiles shown); cards fill their rows as described above.
 - **Saved per person:** `user_prefs.layout["<tab>.<group>.hidden"]`. If a save fails, a toast says so.
 
-**Spotlight (2026-10-12).** Clicking a number, tile, bar or cell no longer scrolls the page to the list at the bottom. The page dims, the clicked data point stays lit with a glowing ring (a whole tile, or the count, cell or chart mark), and the list it opens comes to the centre, under the data point when there is room. The list works as usual there (search, sort, pages, edit, Excel, row click opens the task). Escape, a click on the dimmed page or ✕ puts it back. Applies to Development, QA, KPI (and its Active projects tile), Insights and the alerts bell (`components/spotlight/spotlight.ts`).
+**Spotlight (2026-10-12).** Clicking a number, tile, bar or cell no longer scrolls the page to the list at the bottom. The page dims, the clicked data point stays lit with a glowing ring (a whole tile, or the count, cell or chart mark), and the list it opens comes to the centre: under the data point when more than half the screen is left there, else at full height from the top. It is placed once (and on resize), so it never jitters. The list works as usual there (search, sort, pages, edit, Excel, row click opens the task). Escape, a click on the dimmed page or ✕ puts it back. Applies to Development, QA, KPI (and its Active projects tile), Insights and the alerts bell (`components/spotlight/spotlight.ts`).
+
+**Tables you shape (2026-10-12).** Every table with a `tableId` (task lists, Assignee-wise tasks, People, Project health, issue tables, testing and retest tables, ageing tables, People directory) has:
+- **Columns:** a menu to tick the columns to show (at least one stays) and drag them into order; *Reset columns*.
+- **Column headers** can be dragged into another order.
+- **Rows** can be dragged by ⠿ into the reader's own order, shown as **Your order** (on/off); clicking a sort header switches back to that sort. The header and totals rows never move. On paged lists the order applies within the page shown; rows never placed keep their order after the placed ones.
+- Saved per person (`table.<id>.cols|hidden|rows|mode` in the layout, rows up to 2,000 keys); Reset layout clears it. A card's Excel and the page export follow the columns shown and their order; a task list's Excel holds every detail as before.
+
+**Scrollbars (2026-10-12).** Slim, rounded scrollbars in the brand blue (teal on hover) on a clear track everywhere; lighter in the dark menu.
 
 **Confirmations (2026-10-12).** Confirmations use the dashboard's own popup (`components/ui/ConfirmDialog.tsx`), never the browser's: completing a task, applying a bulk change, deleting a report. The popup names what will change (task, from → to) and its tone (good, warn, bad) colours the button.
 

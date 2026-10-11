@@ -1,5 +1,9 @@
 // Data table (SRS 6): sticky header, sort arrows, row hover, optional row click, totals row and
 // pagination. Sorting is client-side unless `sorting` is controlled (server-sorted lists).
+// With a `tableId` (2026-10-12) the reader shapes it: a Columns menu (show, hide, order), column
+// headers dragged into another order, and rows dragged by the grip into their own order ("Your
+// order"; a click on a sort header switches back to that sort). The header and totals rows never
+// move. Saved per person (table/useTableLayout.ts).
 import {
   flexRender,
   getCoreRowModel,
@@ -9,8 +13,11 @@ import {
   type SortingState,
 } from '@tanstack/react-table';
 import clsx from 'clsx';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { InfoTip } from './InfoTip';
+import { ColumnsMenu } from './table/ColumnsMenu';
+import { dropRow, inOrder, moveTo, useTableLayout } from './table/useTableLayout';
+import { IconGrip } from './ui/icons';
 
 export type { SortingState };
 
@@ -45,6 +52,8 @@ interface Props<T> {
   /** Extra classes and a hover note for a row (e.g. bulk-edit validation). */
   rowClassName?: (row: T) => string | undefined;
   rowTitle?: (row: T) => string | undefined;
+  /** Lets the reader choose and order columns and order rows, saved under this id. */
+  tableId?: string;
 }
 
 export function DataTable<T>({
@@ -63,16 +72,37 @@ export function DataTable<T>({
   dense,
   rowClassName,
   rowTitle,
+  tableId,
 }: Props<T>) {
   const [localSorting, setLocalSorting] = useState<SortingState>(initialSorting);
   const manual = controlledSorting !== undefined;
-  const sorting = manual ? controlledSorting : localSorting;
+  const lay = useTableLayout(tableId);
+  // In "Your order" no sort arrow shows: the rows are in the reader's order.
+  const sorting = lay.custom ? [] : manual ? controlledSorting : localSorting;
+  // What is being dragged: kept in refs (read by drop at once) and in state (for the faded look).
+  const [dragCol, setDragColState] = useState<string | null>(null);
+  const [dragRow, setDragRowState] = useState<string | null>(null);
+  const colRef = useRef<string | null>(null);
+  const rowRef = useRef<string | null>(null);
+  const setDragCol = (v: string | null) => {
+    colRef.current = v;
+    setDragColState(v);
+  };
+  const setDragRow = (v: string | null) => {
+    rowRef.current = v;
+    setDragRowState(v);
+  };
 
   const table = useReactTable({
     data,
     columns,
-    state: { sorting },
+    state: {
+      sorting,
+      columnOrder: lay.cols ?? [],
+      columnVisibility: Object.fromEntries(lay.hidden.map((h) => [h, false])),
+    },
     onSortingChange: (updater) => {
+      if (lay.custom) lay.setCustom(false);
       const next = typeof updater === 'function' ? updater(sorting) : updater;
       if (manual) onSortingChange?.(next);
       else setLocalSorting(next);
@@ -85,10 +115,50 @@ export function DataTable<T>({
   });
 
   const cell = dense ? 'px-2 py-1.5' : 'px-3 py-2';
+  const allIds = table.getAllLeafColumns().map((c) => c.id);
+  const saved = lay.cols ?? [];
+  const orderedIds = lay.cols
+    ? [...saved.filter((id) => allIds.includes(id)), ...allIds.filter((id) => !saved.includes(id))]
+    : allIds;
+  const baseRows = table.getRowModel().rows;
+  const rows = lay.custom ? inOrder(baseRows, (r) => r.id, lay.rows) : baseRows;
+  const grip = lay.enabled;
   const pages = pagination ? Math.max(1, Math.ceil(pagination.total / pagination.pageSize)) : 1;
 
   return (
     <div className="min-w-0">
+      {lay.enabled && (
+        <div className="flex flex-wrap items-center justify-end gap-2 pb-2" data-no-export>
+          {lay.rows.length > 0 && (
+            <button
+              type="button"
+              aria-pressed={lay.custom}
+              onClick={() => lay.setCustom(!lay.custom)}
+              title={
+                lay.custom ? 'Rows in your order; click to use the sort' : 'Put rows in your order'
+              }
+              className={clsx(
+                'inline-flex h-8 items-center gap-1.5 rounded-control border px-2.5 font-heading text-button',
+                lay.custom
+                  ? 'border-accent bg-accent/10 text-accent-dark'
+                  : 'border-border text-text-muted hover:border-primary hover:text-primary',
+              )}
+            >
+              <IconGrip size={13} /> Your order
+            </button>
+          )}
+          <ColumnsMenu
+            columns={orderedIds.map((id) => {
+              const c = table.getColumn(id)!;
+              const h = c.columnDef.header;
+              return { id, label: typeof h === 'string' ? h : '', shown: c.getIsVisible() };
+            })}
+            onOrder={lay.setCols}
+            onHidden={lay.setHidden}
+            onReset={lay.resetColumns}
+          />
+        </div>
+      )}
       <div
         className={clsx(
           'nural-table-wrap overflow-auto',
@@ -100,6 +170,13 @@ export function DataTable<T>({
           <thead>
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>
+                {grip && (
+                  <th
+                    aria-label="Drag to order rows"
+                    data-grip
+                    className="sticky top-0 z-10 w-6 px-1"
+                  />
+                )}
                 {hg.headers.map((h) => {
                   const sort = h.column.getIsSorted();
                   const meta = h.column.columnDef.meta as
@@ -108,6 +185,22 @@ export function DataTable<T>({
                   return (
                     <th
                       key={h.id}
+                      draggable={lay.enabled}
+                      onDragStart={(e) => {
+                        setDragCol(h.column.id);
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
+                      onDragOver={(e) => {
+                        if (colRef.current) e.preventDefault();
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (colRef.current)
+                          lay.setCols(moveTo(orderedIds, colRef.current, h.column.id));
+                        setDragCol(null);
+                      }}
+                      onDragEnd={() => setDragCol(null)}
+                      title={lay.enabled ? 'Drag to move this column' : undefined}
                       scope="col"
                       aria-sort={
                         sort === 'asc' ? 'ascending' : sort === 'desc' ? 'descending' : undefined
@@ -116,6 +209,8 @@ export function DataTable<T>({
                         'sticky top-0 z-10 whitespace-nowrap font-heading text-label font-bold uppercase',
                         cell,
                         align === 'right' ? 'text-right' : 'text-left',
+                        lay.enabled && 'cursor-grab active:cursor-grabbing',
+                        dragCol === h.column.id && 'opacity-50',
                       )}
                     >
                       {h.column.getCanSort() ? (
@@ -150,13 +245,51 @@ export function DataTable<T>({
             ))}
           </thead>
           <tbody>
-            {table.getRowModel().rows.map((row) => (
+            {rows.map((row) => (
               <tr
                 key={row.id}
                 onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                 title={rowTitle?.(row.original)}
-                className={clsx(onRowClick && 'cursor-pointer', rowClassName?.(row.original))}
+                onDragOver={(e) => {
+                  if (rowRef.current) e.preventDefault();
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const from = rowRef.current;
+                  if (from)
+                    lay.setRows(
+                      dropRow(
+                        rows.map((x) => x.id),
+                        lay.rows,
+                        from,
+                        row.id,
+                      ),
+                    );
+                  setDragRow(null);
+                }}
+                className={clsx(
+                  onRowClick && 'cursor-pointer',
+                  dragRow === row.id && 'opacity-40',
+                  rowClassName?.(row.original),
+                )}
               >
+                {grip && (
+                  <td
+                    data-grip
+                    draggable
+                    onClick={(e) => e.stopPropagation()}
+                    onDragStart={(e) => {
+                      setDragRow(row.id);
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    onDragEnd={() => setDragRow(null)}
+                    aria-label="Drag to move this row"
+                    title="Drag to put rows in your own order"
+                    className="w-6 cursor-grab px-1 text-text-muted/60 hover:text-primary active:cursor-grabbing"
+                  >
+                    <IconGrip size={13} />
+                  </td>
+                )}
                 {row.getVisibleCells().map((c) => {
                   const align = (c.column.columnDef.meta as { align?: string } | undefined)?.align;
                   return (
@@ -176,7 +309,10 @@ export function DataTable<T>({
             ))}
             {!data.length && (
               <tr>
-                <td colSpan={columns.length} className="py-6 text-center text-text-muted">
+                <td
+                  colSpan={columns.length + (grip ? 1 : 0)}
+                  className="py-6 text-center text-text-muted"
+                >
                   {loading ? 'Loading…' : emptyText}
                 </td>
               </tr>
@@ -186,6 +322,7 @@ export function DataTable<T>({
             <tfoot>
               {table.getFooterGroups().map((fg) => (
                 <tr key={fg.id}>
+                  {grip && <td data-grip className="sticky bottom-0" />}
                   {fg.headers.map((h) => {
                     const align = (h.column.columnDef.meta as { align?: string } | undefined)
                       ?.align;

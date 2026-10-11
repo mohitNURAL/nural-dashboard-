@@ -114,6 +114,7 @@ export function TestingCard({ className }: { className?: string }) {
       }
     >
       <DataTable
+        tableId="qa-testing"
         columns={columns}
         data={data?.rows ?? []}
         rowKey={(r) => r.id}
@@ -189,6 +190,7 @@ export function RetestCard({ className, onShow }: { className?: string; onShow: 
             <span className="text-text-muted">issues in QA Backlog or In QA</span>
           </p>
           <DataTable
+            tableId="qa-retest"
             columns={columns}
             data={retest.byCreator}
             rowKey={(r) => r.id}

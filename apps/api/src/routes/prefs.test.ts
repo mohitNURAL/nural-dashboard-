@@ -91,6 +91,26 @@ describe('per-person settings', () => {
     expect((await put(7, { layout: { 'dev.tiles.secret': ['x'] } })).statusCode).toBe(400);
     expect((await put(7, { layout: { 'dev.tiles.hidden': ['overdue'] } })).statusCode).toBe(200);
     expect((await put(7, { layout: { 'dev.tiles': ['<script>'] } })).statusCode).toBe(400);
+    // The menu and tables (2026-10-12).
+    expect(
+      (
+        await put(7, {
+          layout: {
+            'menu.modules': ['Insights', 'Dashboard'],
+            'menu.Dashboard': ['qa', 'dev'],
+            'table.tasks.cols': ['title', 'id'],
+            'table.tasks.hidden': ['creator'],
+            'table.tasks.rows': Array.from({ length: 500 }, (_, i) => String(i)),
+            'table.tasks.mode': ['custom'],
+          },
+        })
+      ).statusCode,
+    ).toBe(200);
+    expect((await put(7, { layout: { 'table.tasks.secret': ['x'] } })).statusCode).toBe(400);
+    expect(
+      (await put(7, { layout: { 'dev.tiles': Array.from({ length: 61 }, (_, i) => `t${i}`) } }))
+        .statusCode,
+    ).toBe(400);
     expect((await put(7, { tour: { shown: { dev: -1 } } })).statusCode).toBe(400);
     expect((await put(7, { userId: 8 })).statusCode).toBe(400);
     expect((await app!.inject({ url: '/api/prefs' })).statusCode).toBe(401);

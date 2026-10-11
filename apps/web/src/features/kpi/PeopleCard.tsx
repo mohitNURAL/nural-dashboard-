@@ -146,6 +146,7 @@ export function PeopleCard({ className }: { className?: string }) {
     >
       {data && (
         <DataTable
+          tableId="kpi-people"
           columns={columns}
           data={data.rows}
           rowKey={(r) => r.id}

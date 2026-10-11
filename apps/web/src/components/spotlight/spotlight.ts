@@ -71,6 +71,7 @@ export function spotlight(panel: HTMLElement | null, opts: { onClose?: () => voi
   const ring = layer.querySelector<HTMLElement>('.spot-ring')!;
   const btn = layer.querySelector<HTMLButtonElement>('.spot-close')!;
 
+  // The ring and the hole follow the data point (cards above may still load and move it).
   const place = () => {
     const W = window.innerWidth;
     const H = window.innerHeight;
@@ -96,11 +97,18 @@ export function spotlight(panel: HTMLElement | null, opts: { onClose?: () => voi
         width: `${hole.w}px`,
         height: `${hole.h}px`,
       });
+  };
 
-    // The panel under the point when there is room, else over the middle of the screen.
+  // The list is placed once (and again if the window is resized), never per frame: a tile lifting
+  // on hover would otherwise make it jitter. Under the point when most of the screen is left
+  // there, else at full height from the top.
+  const placePanel = () => {
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    const a = anchor?.isConnected ? anchor.getBoundingClientRect() : null;
     const width = Math.min(1100, Math.round(W * 0.94));
-    const below = hole ? hole.y + hole.h + GAP : 0;
-    const top = hole && H - below > 320 ? below : Math.max(TOP_BAR + 8, Math.round(H * 0.08));
+    const below = a && a.bottom > 0 && a.top < H ? a.bottom + PAD + GAP : 0;
+    const top = below && H - below >= H * 0.55 ? below : TOP_BAR + 12;
     Object.assign(panel.style, {
       position: 'fixed',
       zIndex: '46',
@@ -122,7 +130,9 @@ export function spotlight(panel: HTMLElement | null, opts: { onClose?: () => voi
     place();
     frame = requestAnimationFrame(follow);
   };
+  placePanel();
   follow();
+  window.addEventListener('resize', placePanel);
   if (!reduceMotion()) {
     panel.animate(
       [
@@ -151,6 +161,7 @@ export function spotlight(panel: HTMLElement | null, opts: { onClose?: () => voi
   close = () => {
     cancelAnimationFrame(frame);
     window.removeEventListener('keydown', onKey);
+    window.removeEventListener('resize', placePanel);
     layer.remove();
     placeholder.remove();
     panel.style.cssText = saved;

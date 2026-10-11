@@ -190,6 +190,7 @@ export function IssuesByAssigneeCard({ className }: { className?: string }) {
     >
       {data && view === 'table' && (
         <DataTable
+          tableId="qa-issues"
           columns={columns}
           data={data.table.rows}
           rowKey={(r) => r.id}

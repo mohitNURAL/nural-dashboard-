@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-12-tables',
+    date: '2026-10-12',
+    tab: 'dev',
+    title: 'Tables you can shape',
+    steps: [
+      {
+        target: '[data-group="dev.cards"] [data-slot="assignees"]',
+        title: 'Columns and your own order',
+        text: 'Columns: choose which columns show and their order (or drag a column header). Drag a row by ⠿ to put rows in your own order; Your order switches it on or off, and a click on a column header sorts again. Saved for you.',
+      },
+    ],
+  },
+  {
     id: '2026-10-12-spotlight',
     date: '2026-10-12',
     tab: 'insights',

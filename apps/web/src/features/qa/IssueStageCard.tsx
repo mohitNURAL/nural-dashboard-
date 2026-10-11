@@ -157,6 +157,7 @@ export function IssueStageCard({ className }: { className?: string }) {
       )}
       {table && view === 'table' && (
         <DataTable
+          tableId="qa-stages"
           columns={columns}
           data={table.rows}
           rowKey={(r) => r.id}
