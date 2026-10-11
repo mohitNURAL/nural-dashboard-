@@ -26,6 +26,11 @@ export interface Viewer {
   role: Role;
   /** Sees everything, including the KPI tab. */
   full: boolean;
+  /** Sees the Support tab: the Tech Support team, PM, team leads and admins. */
+  support: boolean;
+  admin: boolean;
+  /** Reads the feedback inbox: admins and the head of Tech Support. */
+  inbox: boolean;
 }
 
 const EMPTY: RolesConfig = { admins: [], pms: [], teamLeads: [], productOwners: [] };
@@ -46,11 +51,12 @@ export function loadRoles(): RolesConfig {
 /** The role of a signed-in person; `authOn` false (local copy) means full access. */
 export function viewerOf(
   userId: number | null,
-  ds: Pick<Dataset, 'owners'>,
+  ds: Pick<Dataset, 'owners' | 'kpiDept' | 'supportLead'>,
   roles: RolesConfig,
   authOn: boolean,
 ): Viewer {
-  if (!authOn) return { userId: 0, role: 'local', full: true };
+  if (!authOn)
+    return { userId: 0, role: 'local', full: true, support: true, admin: true, inbox: true };
   const id = userId ?? -1;
   const ownsProject = [...(ds.owners?.values() ?? [])].includes(id);
   const role: Role = roles.admins.includes(id)
@@ -62,7 +68,11 @@ export function viewerOf(
         : roles.productOwners.includes(id) || ownsProject
           ? 'productOwner'
           : 'member';
-  return { userId: id, role, full: role !== 'member' };
+  const support =
+    role === 'admin' || role === 'pm' || role === 'teamLead' || ds.kpiDept?.get(id) === 'support';
+  const admin = role === 'admin';
+  const inbox = admin || (ds.supportLead != null && ds.supportLead === id);
+  return { userId: id, role, full: role !== 'member', support: support || inbox, admin, inbox };
 }
 
 /** A task is in a member's scope when it is assigned to them or they created it. */
@@ -104,7 +114,14 @@ export function requestDataset(
   roles: RolesConfig,
   authOn: boolean,
 ): { dataset: RequestDataset; viewer: (req: FastifyRequest) => Promise<Viewer> } {
-  const local: Viewer = { userId: 0, role: 'local', full: true };
+  const local: Viewer = {
+    userId: 0,
+    role: 'local',
+    full: true,
+    support: true,
+    admin: true,
+    inbox: true,
+  };
   const viewer = async (req: FastifyRequest) =>
     authOn ? viewerOf(sessionUserOf(req)?.userId ?? null, await base(), roles, authOn) : local;
   const dataset = async (req: FastifyRequest) => {

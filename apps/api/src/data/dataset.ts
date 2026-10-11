@@ -44,6 +44,8 @@ export interface Dataset {
   /** KPI tab (SRS 13): department per user, project owner per workgroup, recent comments. */
   kpiDept?: Map<number, Dept>;
   owners?: Map<number, number>;
+  /** Head of the top Tech Support department (reads the Support tab feedback inbox). */
+  supportLead?: number | null;
   comments?: { taskId: number; at: Date }[];
   /** Board colours etc. are fixed; this is just the portal origin for "Open in Bitrix24". */
   portalOrigin: string;
@@ -206,6 +208,7 @@ export async function loadDataset(): Promise<Dataset> {
     projects: new Map(groupRows.map((g) => [g.id, { id: g.id, name: g.name }])),
     boards: boardsOf(stageRows),
     kpiDept: kpiDepartments(userRows, deptRows),
+    supportLead: supportLead(deptRows),
     owners: new Map(
       groupRows.flatMap((g) => {
         const owner = kpiConfig().owners.get(g.id) ?? g.ownerId;
@@ -239,6 +242,13 @@ function boardsOf(
     out.set(r.groupId, list);
   }
   return out;
+}
+
+/** Head of the top support department (config/departments.json "support"). */
+function supportLead(depts: (Department & { headId: number | null })[]): number | null {
+  const wanted = new Set(kpiConfig().departments.support.map((n) => n.trim().toLowerCase()));
+  const tree = departmentTree(depts, (name) => wanted.has(name.trim().toLowerCase()));
+  return depts.find((d) => tree.has(d.id) && !tree.has(d.parentId ?? -1))?.headId ?? null;
 }
 
 /** KPI department of each user from config/departments.json (sub-departments included). */

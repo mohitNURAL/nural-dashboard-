@@ -409,6 +409,8 @@ SSE is chosen over WebSocket because the browser only receives; filters are sent
 - **A member's scope** is the tasks assigned to them or created by them (a tester thus sees the issues they filed). Everything they get is computed from those tasks only: tiles, tables, charts, alerts, filter dropdown options, task lists, the Excel export, the task view (another person's task is "not found"), task actions (another person's task cannot be changed) and the QA retest counts.
 - **Enforced on the server.** Routes get data only through one per-request provider (`requestDataset` in `auth/roles.ts`, `req` required); a member gets a scoped copy of the dataset, memoised per person and per data load and never shared between people. The KPI endpoints and KPI task lists answer 403 to members; the web app hides the KPI tab and opens members on Development.
 - **Live updates.** Each change message names the people it concerns (assignee, creator, previous assignee); a member's stream carries only changes naming them (`mayReceive`, fail closed). Full access receives all.
+- **Roles today (2026-10-11):** admins Company Admin (1), Bhanu SSavant (18), Deepak SShetty (40), Mohit Srivastava (14), Balram Jha (10); team leads Adnan Mubeen (12), Faiz Arsalan (44), Kuku Jat (50), Mishaal (54); `pms` empty (Balram is an admin).
+- **Support tab and feedback inbox** (section 14): the Support tab is shown to the Tech Support department (`config/departments.json` "support"), PM, team leads and admins; the feedback inbox to admins and the head of the top Tech Support department in Bitrix24 (today Kuku Jat). `/api/auth/me` also returns `support`, `admin` and `inbox`.
 - `/api/auth/me` returns `role` and `full`; the top bar shows the role (e.g. "Team lead", "My tasks"). With sign-in off (local copy) everyone has full access.
 - Tested by equivalence: for every member, every endpoint must answer exactly what a server holding only that member's tasks answers (and full access exactly what one holding everything answers); deliberately breaking the scoping, the stream filter or the KPI guard makes those tests fail. Checked on real data against SQL (2026-10-11): Neha Gautam 252 tasks and 186 issues, Deepankar Shisodia 62 and 36, Adnan Mubeen everything.
 
@@ -502,7 +504,7 @@ Two webhooks are created in the portal by an administrator: an **inbound** webho
 | NFR-1 | Freshness | A change in Bitrix24 shows on open dashboards within 5 seconds; worst case 10 minutes (reconcile) |
 | NFR-2 | Speed | First load under 2 seconds; filter change under 500 ms for up to 20,000 tasks |
 | NFR-3 | Security | Webhook secrets only in backend env; HTTPS only; outbound calls checked by application token; no Bitrix24 URL or token in browser code |
-| NFR-4 | Access | **Full access** (everything, KPI tab): admins and directors, PM, team leads and product owners (`config/roles.json`, plus every Bitrix24 workgroup owner). **Everyone else** sees only tasks assigned to them or created by them, on every number, list, dropdown, export, task view, task action and live update; the KPI tab is hidden and refused. Enforced on the server (section 7, Access and scoping); 2026-10-11 |
+| NFR-4 | Access | **Full access** (everything, KPI tab): admins and directors, PM, team leads and product owners (`config/roles.json`, plus every Bitrix24 workgroup owner). **Everyone else** sees only tasks assigned to them or created by them, on every number, list, dropdown, export, task view, task action and live update; the KPI tab is hidden and refused. The Support tab and feedback inbox have their own audiences (section 14). Enforced on the server (section 7, Access and scoping); 2026-10-11 |
 | NFR-5 | Rate limits | Never more than 2 Bitrix24 calls per second; batch where possible |
 | NFR-6 | Time zone | All "today" and "overdue" logic in Asia/Kolkata |
 | NFR-7 | Responsive | Desktop first (1440 px); usable at 1280 px and on tablet; tables scroll inside their card on phone |
@@ -882,3 +884,42 @@ Every card and tile has an "i" note with its rule.
 - Computed per request from the in-memory dataset: about 0.1 s for 8,600 tasks, cached for a minute per query.
 - Checked on 2026-10-10 against independent SQL on the full database, after the pending / completed rule was unified across tabs. Open 507 (Development 468, matching the Development tab's Pending), overdue 391 and no deadline 83 all matched.
 - Who sees it: full access only (admins and directors, PM, team leads, product owners; NFR-4). Members do not get the tab, and its endpoints refuse them.
+
+## 14. Support tab (coming soon: feedback first, 2026-10-11)
+
+The Support tab will be built from what the support team and management need. Until then it is a **Coming soon** page that collects that input.
+
+**Who sees what**
+
+| Part | Who | Enforced |
+| --- | --- | --- |
+| Support tab, feedback form, "My feedback" | Tech Support department (with sub-departments), PM, team leads, admins | Server: `POST /api/feedback` and `GET /api/feedback/mine` answer 403 to others; the web app hides the tab and opens others on Development |
+| Feedback inbox (every entry), review, note, Excel export | Admins and the head of the top Tech Support department in Bitrix24 (today Kuku Jat) | Server: `GET /api/feedback`, `POST /api/feedback/:id/review` and `GET /api/feedback/export` answer 403 to everyone else |
+
+Each person sees only their own entries under "My feedback".
+
+**Page**
+
+- Header: "Coming soon", the title "The Support tab" and the quote *"Great support is built by listening first. Tell us what slows you down, and we will build the tab that speeds you up."*
+- **Share your needs** form:
+  - What is it about (Support tab / dashboard idea / something not working / other);
+  - what the Support tab should show (tick boxes: open tickets by project or client, ageing and SLA breaches, first response time, time to resolve, volume per client, tickets per support person, reopened, escalated to development, trend, team workload, alerts, Excel export);
+  - how often they would use it (daily, a few times a week, weekly, monthly);
+  - **biggest problem today (required, at least 10 characters)**;
+  - reports made by hand;
+  - the decision it would help make;
+  - importance (must / should / nice to have);
+  - a 1–5 star rating of the dashboard so far;
+  - anything else.
+- **My feedback**: the person's own entries, with New or Reviewed.
+- **Feedback inbox** (inbox readers only):
+  - filters New, Must have and All, with counts;
+  - each entry opens to show every answer, with a private note and Mark reviewed / Mark as new;
+  - **Excel** downloads every entry.
+
+**Data**
+
+- Table `feedback`, migration 0004.
+- Each entry records the person's name, role and department at the time.
+- Nothing is sent to Bitrix24.
+- Code: `apps/api/src/routes/feedback.ts`, tests in `feedback.test.ts`; `apps/web/src/features/support/SupportTab.tsx`.

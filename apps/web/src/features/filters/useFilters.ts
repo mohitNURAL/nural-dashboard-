@@ -24,7 +24,7 @@ const filterParsers = {
 };
 
 // KPI is the first tab and the default (SRS 13); its URL has no `tab`.
-const tabParser = parseAsStringLiteral(['kpi', 'dev', 'qa'] as const).withDefault('kpi');
+const tabParser = parseAsStringLiteral(['kpi', 'dev', 'qa', 'support'] as const).withDefault('kpi');
 
 export function useTab() {
   const [tab, setTabRaw] = useQueryState('tab', tabParser);

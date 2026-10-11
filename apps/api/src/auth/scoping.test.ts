@@ -341,14 +341,26 @@ describe('live stream', () => {
     at: NOW.toISOString(),
     people,
   });
-  const member = (userId: number) => ({ userId, role: 'member' as const, full: false });
+  const member = (userId: number) => ({
+    userId,
+    role: 'member' as const,
+    full: false,
+    support: false,
+    admin: false,
+    inbox: false,
+  });
 
   it('a member receives only changes naming them; full viewers receive all', () => {
     expect(mayReceive(member(28), change([28, 10]))).toBe(true);
     expect(mayReceive(member(30), change([28, 10]))).toBe(false);
     expect(mayReceive(member(30), change(undefined))).toBe(false); // names no one: not sent
     expect(mayReceive(member(30), change(undefined, 0))).toBe(true); // nightly notice
-    expect(mayReceive({ userId: 12, role: 'teamLead', full: true }, change([28]))).toBe(true);
+    expect(
+      mayReceive(
+        { userId: 12, role: 'teamLead', full: true, support: true, admin: false, inbox: false },
+        change([28]),
+      ),
+    ).toBe(true);
   });
 
   it('end to end: a member’s stream carries their change and not another person’s', async () => {

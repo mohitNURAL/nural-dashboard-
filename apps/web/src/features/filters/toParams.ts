@@ -1,6 +1,6 @@
 // URL filter state -> API query params. The URL uses the API's own parameter names so a
 // shared link and the request it makes read the same.
-export type Tab = 'kpi' | 'dev' | 'qa';
+export type Tab = 'kpi' | 'dev' | 'qa' | 'support';
 export type IssueTypeFilter = 'bug' | 'feedback';
 export type DateField = 'created' | 'deadline';
 
@@ -29,6 +29,7 @@ export const tabOnlyFacet: Record<Tab, 'tag' | 'type' | null> = {
   kpi: null,
   dev: 'tag',
   qa: 'type',
+  support: null,
 };
 
 /** Query params for a metrics request; empty filters are left out, lists sorted for stable keys. */

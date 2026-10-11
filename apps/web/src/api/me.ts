@@ -8,6 +8,11 @@ export interface Me {
   auth: 'off' | 'bitrix';
   role: 'admin' | 'pm' | 'teamLead' | 'productOwner' | 'member' | 'local';
   full: boolean;
+  /** Sees the Support tab (Tech Support team, PM, team leads, admins). */
+  support: boolean;
+  admin: boolean;
+  /** Reads the feedback inbox: admins and the head of Tech Support. */
+  inbox: boolean;
 }
 
 export const useMe = () => useApi<Me>('/api/auth/me', {});

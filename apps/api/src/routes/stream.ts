@@ -29,7 +29,7 @@ export function streamRoutes(
   app.get('/api/stream', async (req, reply) => {
     const viewer: Viewer = viewerOf
       ? await viewerOf(req)
-      : { userId: 0, role: 'local', full: true };
+      : { userId: 0, role: 'local', full: true, support: true, admin: true, inbox: true };
     reply.hijack();
     const res = reply.raw;
     res.writeHead(200, {

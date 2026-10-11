@@ -1,7 +1,7 @@
 {
   "_note": "Who sees everything (NFR-4). Everyone else sees only tasks assigned to them or created by them. Bitrix24 workgroup owners are product owners automatically; productOwners adds extra people. Values are Bitrix24 user IDs.",
-  "admins": [1, 18, 40],
-  "pms": [10],
-  "teamLeads": [12, 14, 44, 50, 54],
+  "admins": [1, 18, 40, 14, 10],
+  "pms": [],
+  "teamLeads": [12, 44, 50, 54],
   "productOwners": []
 }

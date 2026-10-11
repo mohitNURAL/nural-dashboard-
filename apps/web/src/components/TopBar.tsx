@@ -14,6 +14,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'kpi', label: 'KPI' },
   { id: 'dev', label: 'Development' },
   { id: 'qa', label: 'QA' },
+  { id: 'support', label: 'Support' },
 ];
 
 interface Props {
@@ -21,9 +22,11 @@ interface Props {
   onTab: (t: Tab) => void;
   /** Full access only (NFR-4); members do not get the KPI tab. */
   kpiAllowed: boolean;
+  /** The support team and management only. */
+  supportAllowed: boolean;
 }
 
-export function TopBar({ tab, onTab, kpiAllowed }: Props) {
+export function TopBar({ tab, onTab, kpiAllowed, supportAllowed }: Props) {
   return (
     <header className="chrome bg-chrome text-white">
       <div className="mx-auto flex h-14 max-w-page items-center gap-4 px-4 lg:gap-8 lg:px-6">
@@ -34,7 +37,9 @@ export function TopBar({ tab, onTab, kpiAllowed }: Props) {
           </span>
         </div>
         <nav className="flex h-full items-stretch gap-2" role="tablist" aria-label="Dashboard">
-          {TABS.filter((t) => t.id !== 'kpi' || kpiAllowed).map((t) => (
+          {TABS.filter(
+            (t) => (t.id !== 'kpi' || kpiAllowed) && (t.id !== 'support' || supportAllowed),
+          ).map((t) => (
             <button
               key={t.id}
               type="button"

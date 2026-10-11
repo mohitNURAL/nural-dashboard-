@@ -178,3 +178,35 @@ export const taskActions = pgTable(
   },
   (t) => [index('task_actions_task_idx').on(t.taskId, t.at)],
 );
+
+/**
+ * Feedback from the Support tab (support team and management), to shape the dashboard. Readable
+ * only by admins; each person sees their own entries.
+ */
+export const feedback = pgTable(
+  'feedback',
+  {
+    id: serial('id').primaryKey(),
+    at: tz('at').notNull().defaultNow(),
+    userId: integer('user_id').notNull(),
+    name: text('name').notNull(),
+    role: text('role').notNull(),
+    dept: text('dept').notNull(),
+    topic: text('topic').notNull(),
+    needs: text('needs')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    frequency: text('frequency'),
+    problem: text('problem').notNull(),
+    manualReports: text('manual_reports'),
+    decision: text('decision'),
+    priority: text('priority').notNull(),
+    rating: integer('rating'),
+    details: text('details'),
+    /** new | reviewed (set by an admin). */
+    status: text('status').notNull().default('new'),
+    adminNote: text('admin_note'),
+  },
+  (t) => [index('feedback_user_idx').on(t.userId, t.at)],
+);

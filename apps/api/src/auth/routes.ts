@@ -29,7 +29,9 @@ export interface AuthOptions {
   /** An active portal user from our users table. */
   findUser: (id: number) => Promise<{ id: number; name: string; active: boolean } | undefined>;
   /** Role and access of the person on a request (NFR-4), for /api/auth/me. */
-  describeViewer?: (req: FastifyRequest) => Promise<{ role: string; full: boolean }>;
+  describeViewer?: (
+    req: FastifyRequest,
+  ) => Promise<{ role: string; full: boolean; support: boolean; admin: boolean; inbox: boolean }>;
   /** Keeps the person's tokens for task actions (tokens.ts); optional. */
   saveTokens?: (userId: number, token: TokenResponse) => Promise<void>;
   /** Defaults to the real code exchange; tests pass a stub. */
@@ -65,7 +67,13 @@ export function authRoutes(app: FastifyInstance, opts: AuthOptions) {
   app.get('/api/auth/me', async (req, reply) => {
     const s = session(req);
     if (!s) return reply.code(401).send({ error: 'Sign in required' });
-    const access = (await opts.describeViewer?.(req)) ?? { role: 'local', full: true };
+    const access = (await opts.describeViewer?.(req)) ?? {
+      role: 'local',
+      full: true,
+      support: true,
+      admin: true,
+      inbox: true,
+    };
     return { id: s.userId, name: s.name, auth: opts.mode, ...access };
   });
 
