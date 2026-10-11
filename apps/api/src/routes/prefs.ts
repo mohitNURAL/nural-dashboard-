@@ -45,6 +45,8 @@ export type Layout = z.infer<typeof layoutInput>;
 export type TourPrefs = z.infer<typeof tourInput>;
 export interface Prefs {
   loginCount: number;
+  /** First sign-in, ISO (null before 2026-10-12 until the next sign-in). */
+  firstSignInAt?: string | null;
   layout: Layout;
   tour: TourPrefs;
 }
@@ -80,7 +82,11 @@ export function memoryPrefsStore(): PrefsStore {
     get: async (userId) => structuredClone(row(userId)),
     async signIn(userId) {
       const r = row(userId);
-      rows.set(userId, { ...r, loginCount: r.loginCount + 1 });
+      rows.set(userId, {
+        ...r,
+        loginCount: r.loginCount + 1,
+        firstSignInAt: r.firstSignInAt ?? new Date().toISOString(),
+      });
       const now = new Date();
       acts.set(userId, { loginCount: r.loginCount + 1, lastSignInAt: now, lastSeenAt: now });
     },
@@ -122,7 +128,12 @@ export async function dbPrefsStore(): Promise<PrefsStore> {
   const get = async (userId: number): Promise<Prefs> => {
     const [r] = await db.select().from(t).where(eq(t.userId, userId));
     return r
-      ? { loginCount: r.loginCount, layout: r.layout as Layout, tour: r.tour as TourPrefs }
+      ? {
+          loginCount: r.loginCount,
+          firstSignInAt: r.firstSignInAt?.toISOString() ?? null,
+          layout: r.layout as Layout,
+          tour: r.tour as TourPrefs,
+        }
       : EMPTY();
   };
   return {
@@ -130,11 +141,18 @@ export async function dbPrefsStore(): Promise<PrefsStore> {
     async signIn(userId) {
       await db
         .insert(t)
-        .values({ userId, loginCount: 1, lastSignInAt: new Date(), lastSeenAt: new Date() })
+        .values({
+          userId,
+          loginCount: 1,
+          firstSignInAt: new Date(),
+          lastSignInAt: new Date(),
+          lastSeenAt: new Date(),
+        })
         .onConflictDoUpdate({
           target: t.userId,
           set: {
             loginCount: sql`${t.loginCount} + 1`,
+            firstSignInAt: sql`coalesce(${t.firstSignInAt}, now())`,
             lastSignInAt: new Date(),
             lastSeenAt: new Date(),
             updatedAt: new Date(),

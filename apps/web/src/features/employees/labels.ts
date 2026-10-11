@@ -1,4 +1,5 @@
 // Names used across the Employee module: roles, rights, sign-in status, "5 min ago".
+import { MODULES } from '@nural/shared';
 import type { RightKey, Role, SignInStatus } from './api';
 
 export const ROLE_NAME: Record<Role, string> = {
@@ -10,41 +11,29 @@ export const ROLE_NAME: Record<Role, string> = {
   local: 'Local copy',
 };
 
+/** Every right with its two values, in menu order (packages/shared modules.ts). */
 export const RIGHTS: {
   key: RightKey;
   label: string;
   /** Names of the two values: [on / all, off / own or limited]. */
   values: [string, string];
   hint: string;
-}[] = [
-  {
-    key: 'scope',
-    label: 'Data',
-    values: ['All data', 'Own tasks'],
-    hint: 'Every project and person, or only tasks assigned to or created by them',
-  },
-  { key: 'kpi', label: 'KPI', values: ['On', 'Off'], hint: 'The KPI tab' },
-  {
-    key: 'support',
-    label: 'Support',
-    values: ['On', 'Off'],
-    hint: 'The Support tab and its feedback form',
-  },
-  { key: 'inbox', label: 'Inbox', values: ['On', 'Off'], hint: 'The Support feedback inbox' },
-  {
-    key: 'employees',
-    label: 'Employees',
-    values: ['On', 'Off'],
-    hint: 'Company tree and People directory',
-  },
-  {
-    key: 'edit',
-    label: 'Edit',
-    values: ['All fields', 'Limited'],
-    hint: 'Every task field, or only stage, status and tags',
-  },
-  { key: 'admin', label: 'Admin', values: ['On', 'Off'], hint: 'Manage access (this screen)' },
-];
+}[] = MODULES.flatMap((m) =>
+  m.pages.flatMap((pg) => [
+    {
+      key: pg.right as RightKey,
+      label: pg.label,
+      values: ['On', 'Off'] as [string, string],
+      hint: pg.hint,
+    },
+    ...(pg.permissions ?? []).map((x) => ({
+      key: x.key as RightKey,
+      label: x.label,
+      values: x.values,
+      hint: x.hint,
+    })),
+  ]),
+);
 
 /** The value as stored ('all' / true, …) → is it the "on" side? */
 export const isOn = (key: RightKey, v: unknown) =>

@@ -87,6 +87,10 @@ export function runTour(
     onHighlightStarted: (el) => mark(el),
     onHighlighted: (el, _step, { state }) => {
       mark(el);
+      // A bubble moved by keepNear lost its arrow; each step starts with it again.
+      document
+        .querySelector<HTMLElement>('.driver-popover.nural-tour .driver-popover-arrow')
+        ?.style.removeProperty('display');
       read(state.activeIndex ?? 0);
       // Cards still loading can move the element: place the bubble again once settled.
       window.setTimeout(() => d.refresh(), 350);
@@ -146,8 +150,50 @@ export function runTour(
     const now = `${Math.round(r.left)},${Math.round(r.top)},${Math.round(r.width)},${Math.round(r.height)}`;
     if (last && now !== last) d.refresh();
     last = now;
+    keepNear(el);
   }, 250);
 
   active = d;
   d.drive();
+}
+
+/**
+ * The bubble belongs next to its element. driver.js places it before our header and progress bar
+ * are added, which can leave it far off (a wide card: the bubble ends up across the screen).
+ * When it is more than a short gap away, put it right under the element (or above, or beside it
+ * when there is no room), kept on screen, without the arrow.
+ */
+function keepNear(el: Element) {
+  const pop = document.querySelector<HTMLElement>('.driver-popover.nural-tour');
+  if (!pop) return;
+  const e = el.getBoundingClientRect();
+  const p = pop.getBoundingClientRect();
+  const gapX = Math.max(e.left - p.right, p.left - e.right, 0);
+  const gapY = Math.max(e.top - p.bottom, p.top - e.bottom, 0);
+  if (Math.max(gapX, gapY) <= 48) return;
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+  const m = 14;
+  const clampX = (x: number) => Math.min(Math.max(8, x), W - p.width - 8);
+  const clampY = (y: number) => Math.min(Math.max(8, y), H - p.height - 8);
+  let left: number;
+  let top: number;
+  if (H - e.bottom >= p.height + m) {
+    left = clampX(e.left + Math.min(24, e.width / 4));
+    top = e.bottom + m;
+  } else if (e.top >= p.height + m) {
+    left = clampX(e.left + Math.min(24, e.width / 4));
+    top = e.top - p.height - m;
+  } else if (e.left >= p.width + m) {
+    left = e.left - p.width - m;
+    top = clampY(e.top);
+  } else {
+    left = clampX(e.right + m);
+    top = clampY(e.top);
+  }
+  pop.style.left = `${Math.round(left)}px`;
+  pop.style.top = `${Math.round(top)}px`;
+  pop.style.right = 'auto';
+  pop.style.bottom = 'auto';
+  pop.querySelector<HTMLElement>('.driver-popover-arrow')?.style.setProperty('display', 'none');
 }

@@ -1,17 +1,29 @@
 // Employee module data (apps/api/src/routes/employees.ts and access.ts).
 import { useApi } from '../../api/queries';
 
+/** Every right (apps/api/src/auth/rights.ts): one per menu page, plus the permissions under them. */
 export interface Rights {
   scope: 'all' | 'own';
+  edit: 'all' | 'limited';
   kpi: boolean;
+  dev: boolean;
+  qa: boolean;
   support: boolean;
   inbox: boolean;
-  employees: boolean;
-  edit: 'all' | 'limited';
+  insights: boolean;
+  org: boolean;
+  people: boolean;
   admin: boolean;
+  connections: boolean;
+  mailing: boolean;
+  helpFeedback: boolean;
+  helpInbox: boolean;
+  helpDocs: boolean;
+  helpFaq: boolean;
 }
 export type RightKey = keyof Rights;
-export type Grant = Partial<Rights>;
+/** Saved grants may still hold the old `employees` (company tree and people directory). */
+export type Grant = Partial<Rights> & { employees?: boolean };
 export type Source = 'role' | 'department' | 'person' | 'locked';
 export type Role = 'admin' | 'pm' | 'teamLead' | 'productOwner' | 'member' | 'local';
 export type SignInStatus = 'active' | 'signedIn' | 'ended' | 'earlier' | 'never';

@@ -1,10 +1,14 @@
-// What the side drawer offers: the dashboard tabs and the Employee module, each shown only to
-// those with the right (the server enforces the same rights).
+// What the side drawer offers: the menu modules and their pages, each shown only to those with
+// that page's right (packages/shared modules.ts; the server enforces the same rights).
 import type { ReactNode } from 'react';
 import type { Me } from '../../api/me';
 import type { Tab } from '../../features/filters/toParams';
 import {
+  IconBook,
+  IconCoin,
   IconDev,
+  IconFeedback,
+  IconHelp,
   IconGrid,
   IconInsights,
   IconKpi,
@@ -52,14 +56,14 @@ const ALL: {
         label: 'Development',
         hint: 'Tasks, issues, deadlines',
         icon: <IconDev />,
-        allowed: () => true,
+        allowed: (me) => me.dev !== false,
       },
       {
         id: 'qa',
         label: 'QA',
         hint: 'Bugs, feedback, retesting',
         icon: <IconQa />,
-        allowed: () => true,
+        allowed: (me) => me.qa !== false,
       },
       {
         id: 'support',
@@ -79,8 +83,7 @@ const ALL: {
         label: 'Insights',
         hint: 'What is holding us back',
         icon: <IconInsights />,
-        // Everyone: members see their own work, managers the company (the data is scoped).
-        allowed: () => true,
+        allowed: (me) => me.insights !== false,
       },
     ],
   },
@@ -93,14 +96,14 @@ const ALL: {
         label: 'Company tree',
         hint: 'Departments, heads and teams',
         icon: <IconTree />,
-        allowed: (me) => !!me.employees,
+        allowed: (me) => me.org ?? !!me.employees,
       },
       {
         id: 'people',
         label: 'People directory',
         hint: 'Who has access, who is active',
         icon: <IconPeople />,
-        allowed: (me) => !!me.employees,
+        allowed: (me) => me.people ?? !!me.employees,
       },
       {
         id: 'access',
@@ -120,13 +123,54 @@ const ALL: {
         label: 'Connections',
         hint: 'Microsoft 365, Slack, Infowan',
         icon: <IconPlug />,
-        allowed: (me) => me.admin,
+        allowed: (me) => me.connections ?? me.admin,
       },
       {
         id: 'mailing',
         label: 'Mailing',
         hint: 'Reports by mail and Slack',
         icon: <IconMail />,
+        allowed: (me) => me.mailing ?? me.admin,
+      },
+    ],
+  },
+  {
+    label: 'Help',
+    icon: <IconHelp />,
+    items: [
+      {
+        id: 'feedback',
+        label: 'Feedback',
+        hint: 'Tell us about an issue or idea',
+        icon: <IconFeedback />,
+        allowed: (me) => me.helpFeedback !== false,
+      },
+      {
+        id: 'docs',
+        label: 'Documents',
+        hint: 'PDF guides to download',
+        icon: <IconBook />,
+        allowed: (me) => me.helpDocs !== false,
+      },
+      {
+        id: 'faq',
+        label: 'FAQs',
+        hint: 'Answers to common questions',
+        icon: <IconHelp />,
+        allowed: (me) => me.helpFaq !== false,
+      },
+    ],
+  },
+  {
+    label: 'Finance',
+    icon: <IconCoin />,
+    items: [
+      {
+        id: 'finance',
+        label: 'Cost to company',
+        hint: 'Coming soon: tell us what you need',
+        icon: <IconCoin />,
+        // Admins only, always: not grantable on the Access screen.
         allowed: (me) => me.admin,
       },
     ],
@@ -142,6 +186,9 @@ export function navFor(me: Me | undefined): NavGroup[] {
     items: g.items.filter((i) => i.allowed(me)),
   })).filter((g) => g.items.length);
 }
+
+/** The first page this person may open (where a page they may not open sends them). */
+export const firstPage = (me: Me | undefined): Tab => navFor(me)[0]?.items[0]?.id ?? 'dev';
 
 /** May this person open the page? */
 export const allowedPage = (me: Me | undefined, tab: Tab) =>

@@ -24,6 +24,18 @@ export interface Me {
   admin: boolean;
   /** Reads the feedback inbox: admins and the head of Tech Support. */
   inbox: boolean;
+  /** One right per page (2026-10-12, Access permissions); missing on an older server. */
+  dev?: boolean;
+  qa?: boolean;
+  insights?: boolean;
+  org?: boolean;
+  people?: boolean;
+  connections?: boolean;
+  mailing?: boolean;
+  helpFeedback?: boolean;
+  helpInbox?: boolean;
+  helpDocs?: boolean;
+  helpFaq?: boolean;
   /** Department (dev, qa, support, other) and Bitrix24 designation, for the guided tour. */
   dept?: 'dev' | 'qa' | 'support' | 'other';
   position?: string | null;

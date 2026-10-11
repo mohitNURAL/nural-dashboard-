@@ -17,36 +17,101 @@ const asDate = (d: Date | string | null, tz: string) => {
   return new Date(`${key}T00:00:00Z`);
 };
 
-export async function tasksWorkbook(rows: Row[], title: string, tz: string): Promise<Buffer> {
+/** The list's columns on screen (apps/web features/tasks/columns.tsx) and the file's columns. */
+const SCREEN: Record<string, string> = {
+  id: 'id',
+  title: 'title',
+  issueType: 'type',
+  assignee: 'assignee',
+  creator: 'creator',
+  project: 'project',
+  stage: 'stage',
+  status: 'group',
+  tags: 'tags',
+  priority: 'priority',
+  createdAt: 'created',
+  deadline: 'deadline',
+  ageingDays: 'ageing',
+  ageDays: 'age',
+  rework: 'rework',
+  linkedTaskId: 'linked',
+};
+
+/**
+ * The reader's layout of the list (2026-10-12): `cols` the columns shown, in their order;
+ * `hidden` the ones they hid; `order` task IDs in their own row order. The file follows it: the
+ * shown columns first, in that order, then the details the list does not show (IDs, links),
+ * without the hidden ones; rows in their order, the rest after.
+ */
+export interface ListLayout {
+  cols?: string[];
+  hidden?: string[];
+  order?: number[];
+}
+
+export function arrange<T extends { key?: string }>(defs: T[], layout: ListLayout = {}): T[] {
+  const hidden = new Set((layout.hidden ?? []).map((c) => SCREEN[c]).filter(Boolean));
+  const shown = (layout.cols ?? []).map((c) => SCREEN[c]).filter((k): k is string => !!k);
+  if (!shown.length && !hidden.size) return defs;
+  const byKey = new Map(defs.map((d) => [d.key, d]));
+  const first = shown
+    .filter((k) => !hidden.has(k))
+    .map((k) => byKey.get(k))
+    .filter((d): d is T => !!d);
+  const rest = defs.filter((d) => !first.includes(d) && !hidden.has(d.key ?? ''));
+  return [...first, ...rest];
+}
+
+export function inRowOrder<R extends { id: number }>(rows: R[], order: number[] = []): R[] {
+  if (!order.length) return rows;
+  const at = new Map(order.map((id, i) => [id, i]));
+  return rows
+    .map((r, i) => ({ r, i, k: at.get(r.id) }))
+    .sort((a, b) => (a.k ?? Infinity) - (b.k ?? Infinity) || a.i - b.i)
+    .map((x) => x.r);
+}
+
+export async function tasksWorkbook(
+  input: Row[],
+  title: string,
+  tz: string,
+  layout: ListLayout = {},
+): Promise<Buffer> {
+  const rows = inRowOrder(input, layout.order);
   const wb = new ExcelJS.Workbook();
   wb.creator = 'Nural Dev & QA Dashboard';
   const ws = wb.addWorksheet('Tasks', { views: [{ state: 'frozen', ySplit: 1 }] });
-  ws.columns = [
-    { header: 'Task ID', key: 'id', width: 10 },
-    { header: 'Title', key: 'title', width: 60 },
-    { header: 'Type', key: 'type', width: 10 },
-    { header: 'Project ID', key: 'projectId', width: 10 },
-    { header: 'Project', key: 'project', width: 26 },
-    { header: 'Stage', key: 'stage', width: 20 },
-    { header: 'Bitrix24 stage', key: 'stageTitle', width: 20 },
-    { header: 'Status', key: 'group', width: 12 },
-    { header: 'Assignee ID', key: 'assigneeId', width: 10 },
-    { header: 'Assignee', key: 'assignee', width: 20 },
-    { header: 'Assignee department', key: 'dept', width: 16 },
-    { header: 'Creator ID', key: 'creatorId', width: 10 },
-    { header: 'Creator', key: 'creator', width: 20 },
-    { header: 'Priority', key: 'priority', width: 9 },
-    { header: 'Tags', key: 'tags', width: 30 },
-    { header: 'Created', key: 'created', width: 12 },
-    { header: 'Deadline', key: 'deadline', width: 12 },
-    { header: 'Closed', key: 'closed', width: 12 },
-    { header: 'Days past deadline', key: 'ageing', width: 10 },
-    { header: 'Overdue', key: 'overdue', width: 9 },
-    { header: 'Issue age (days)', key: 'age', width: 10 },
-    { header: 'Rework', key: 'rework', width: 8 },
-    { header: 'Linked task', key: 'linked', width: 11 },
-    { header: 'Open in Bitrix24', key: 'url', width: 18 },
-  ];
+  ws.columns = arrange(
+    [
+      { header: 'Task ID', key: 'id', width: 10 },
+      { header: 'Title', key: 'title', width: 60 },
+      { header: 'Type', key: 'type', width: 10 },
+      { header: 'Project ID', key: 'projectId', width: 10 },
+      { header: 'Project', key: 'project', width: 26 },
+      { header: 'Stage', key: 'stage', width: 20 },
+      { header: 'Bitrix24 stage', key: 'stageTitle', width: 20 },
+      { header: 'Status', key: 'group', width: 12 },
+      { header: 'Assignee ID', key: 'assigneeId', width: 10 },
+      { header: 'Assignee', key: 'assignee', width: 20 },
+      { header: 'Assignee department', key: 'dept', width: 16 },
+      { header: 'Creator ID', key: 'creatorId', width: 10 },
+      { header: 'Creator', key: 'creator', width: 20 },
+      { header: 'Priority', key: 'priority', width: 9 },
+      { header: 'Tags', key: 'tags', width: 30 },
+      { header: 'Created', key: 'created', width: 12 },
+      { header: 'Deadline', key: 'deadline', width: 12 },
+      { header: 'Closed', key: 'closed', width: 12 },
+      { header: 'Days past deadline', key: 'ageing', width: 10 },
+      { header: 'Overdue', key: 'overdue', width: 9 },
+      { header: 'Issue age (days)', key: 'age', width: 10 },
+      { header: 'Rework', key: 'rework', width: 8 },
+      { header: 'Linked task', key: 'linked', width: 11 },
+      { header: 'Open in Bitrix24', key: 'url', width: 18 },
+    ],
+    layout,
+  );
+  const has = (key: string) => ws.columns.some((c) => c.key === key);
+  const titleCol = has('title') ? ws.getColumn('title').number : -1;
 
   for (const r of rows) {
     const row = ws.addRow({
@@ -75,7 +140,7 @@ export async function tasksWorkbook(rows: Row[], title: string, tz: string): Pro
       linked: r.linkedTaskId ?? null,
       url: { text: 'Open', hyperlink: r.url },
     });
-    row.getCell('id').value = { text: String(r.id), hyperlink: r.url };
+    if (has('id')) row.getCell('id').value = { text: String(r.id), hyperlink: r.url };
   }
 
   // Look: Arial, dates as dates, links blue, overdue red; then the dashboard's band and header.
@@ -83,9 +148,9 @@ export async function tasksWorkbook(rows: Row[], title: string, tz: string): Pro
     if (n === 1) return;
     row.eachCell({ includeEmpty: true }, (c) => {
       c.font = { name: 'Arial', size: 10 };
-      c.alignment = { vertical: 'top', wrapText: Number(c.col) === 2 };
+      c.alignment = { vertical: 'top', wrapText: Number(c.col) === titleCol };
     });
-    for (const key of ['id', 'url']) {
+    for (const key of ['id', 'url'].filter(has)) {
       row.getCell(key).font = {
         name: 'Arial',
         size: 10,
@@ -93,7 +158,7 @@ export async function tasksWorkbook(rows: Row[], title: string, tz: string): Pro
         underline: true,
       };
     }
-    if (row.getCell('overdue').value === 'Yes') {
+    if (has('overdue') && row.getCell('overdue').value === 'Yes') {
       row.getCell('overdue').font = {
         name: 'Arial',
         size: 10,
@@ -102,7 +167,8 @@ export async function tasksWorkbook(rows: Row[], title: string, tz: string): Pro
       };
     }
   });
-  for (const key of ['created', 'deadline', 'closed']) ws.getColumn(key).numFmt = 'dd mmm yyyy';
+  for (const key of ['created', 'deadline', 'closed'].filter(has))
+    ws.getColumn(key).numFmt = 'dd mmm yyyy';
   brandSheet(ws, title, `${rows.length} tasks, as listed on the dashboard`, exportedAt(tz));
 
   // What the file is: the list title, the row count, and how it was made.

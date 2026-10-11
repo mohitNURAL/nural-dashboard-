@@ -1,18 +1,31 @@
-// Access permissions (SRS 7 and 17): every person's rights with where each comes from, changed per
-// person or per department. A right is either inherited (from the role, or a department for a
-// person) or set: Allow / Deny (All / Own for data, All fields / Limited for edit). Admins in
-// config/roles.json are locked. Every change is saved at once and logged under Recent changes.
-// Admins only; the server checks every change.
-import * as Popover from '@radix-ui/react-popover';
+// Access permissions (SRS 7 and 17; redesigned 2026-10-12). Pick a person or a department on the
+// left; on the right every menu module opens into its pages and the permissions under them
+// (packages/shared modules.ts, so a new page shows here by itself). Each switch shows its value
+// and where it comes from (role, department, person, locked admin); a change is a draft until
+// Save. A whole module, or every module, can be switched at once. Admins only; the server checks
+// every change and logs it under Recent changes.
+import { MODULES, type ModuleDef, type PageDef, type PermissionDef } from '@nural/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { apiPost } from '../../api/client';
 import { API_KEY } from '../../api/queries';
-import { IconLock, IconSearch, IconShield } from '../../components/ui/icons';
 import { SortableGroup } from '../../components/layout/SortableGroup';
 import { StatTile } from '../../components/StatTile';
+import {
+  IconChevron,
+  IconGrid,
+  IconHelp,
+  IconInsights,
+  IconLock,
+  IconPeople,
+  IconPlug,
+  IconReset,
+  IconSearch,
+  IconShield,
+} from '../../components/ui/icons';
+import { PageHead } from '../../components/ui/PageHead';
 import { Tip } from '../../components/ui/Tip';
 import {
   useAccess,
@@ -21,40 +34,44 @@ import {
   type AccessPerson,
   type Grant,
   type RightKey,
+  type Rights,
   type Source,
 } from './api';
-import { PageHead } from '../../components/ui/PageHead';
 import { Avatar } from './common';
 import { isOn, RIGHTS, ROLE_NAME, timeAgo, valueOf } from './labels';
 
-const SOURCE: Record<Source, { label: string; dot: string }> = {
+const MODULE_ICON: Record<string, ReactNode> = {
+  Dashboard: <IconGrid size={18} />,
+  Insights: <IconInsights size={18} />,
+  Employees: <IconPeople size={18} />,
+  Integration: <IconPlug size={18} />,
+  Help: <IconHelp size={18} />,
+};
+
+const SOURCE: Record<Source | 'draft', { label: string; dot: string }> = {
   role: { label: 'from the role', dot: 'bg-text-muted' },
-  department: { label: 'set for the department', dot: 'bg-primary' },
+  department: { label: 'from a department', dot: 'bg-primary' },
   person: { label: 'set for this person', dot: 'bg-accent' },
   locked: { label: 'locked admin (roles.json)', dot: 'bg-bad' },
+  draft: { label: 'changed, not saved yet', dot: 'bg-warn' },
 };
+
+type Subject = { type: 'user'; p: AccessPerson } | { type: 'dept'; d: AccessDept };
+
+/** An old grant in today's terms: `employees` covers both Employee pages. */
+const normalize = (g: Grant | null): Grant => {
+  if (!g) return {};
+  const { employees, ...rest } = g;
+  return employees === undefined ? rest : { org: employees, people: employees, ...rest };
+};
+
+const pageKeys = (m: ModuleDef) => m.pages.map((pg) => pg.right as RightKey);
 
 export function AccessPage() {
   const { data, isLoading } = useAccess();
   const [view, setView] = useState<'people' | 'departments'>('people');
   const [q, setQ] = useState('');
-  const qc = useQueryClient();
-
-  const save = async (type: 'user' | 'dept', id: number, name: string, grant: Grant | null) => {
-    try {
-      await apiPost(
-        `/api/access/${type}/${id}`,
-        { rights: grant && Object.keys(grant).length ? grant : null },
-        'PUT',
-      );
-      toast.success(`Access updated for ${name}`, {
-        description: 'In effect from their next click.',
-      });
-      void qc.invalidateQueries({ queryKey: [API_KEY] });
-    } catch (e) {
-      toast.error('Not saved', { description: e instanceof Error ? e.message : '' });
-    }
-  };
+  const [picked, setPicked] = useState<{ type: 'user' | 'dept'; id: number } | null>(null);
 
   const people = useMemo(
     () =>
@@ -67,40 +84,32 @@ export function AccessPage() {
       ),
     [data, q],
   );
+  const departments = useMemo(
+    () =>
+      (data?.departments ?? []).filter((d) => !q || d.name.toLowerCase().includes(q.toLowerCase())),
+    [data, q],
+  );
+  const subject: Subject | null = useMemo(() => {
+    if (!data || !picked) return null;
+    if (picked.type === 'user') {
+      const p = data.people.find((x) => x.id === picked.id);
+      return p ? { type: 'user', p } : null;
+    }
+    const d = data.departments.find((x) => x.id === picked.id);
+    return d ? { type: 'dept', d } : null;
+  }, [data, picked]);
+  // Start with the first person, so the screen is never empty.
+  useEffect(() => {
+    if (!picked && data?.people[0]) setPicked({ type: 'user', id: data.people[0].id });
+  }, [data, picked]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <PageHead
         title="Access permissions"
-        sub="Who sees what and who may change what, per person or department"
+        sub="Who may open which module and page, and what they may do there, per person or department"
         icon={<IconShield size={24} />}
-      >
-        <div
-          className="flex rounded-xl border border-border bg-surface p-1"
-          role="radiogroup"
-          aria-label="View"
-        >
-          {(['people', 'departments'] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              role="radio"
-              aria-checked={view === v}
-              onClick={() => setView(v)}
-              className={clsx(
-                'rounded-lg px-4 py-1.5 font-heading text-button transition',
-                view === v
-                  ? 'bg-gradient-to-r from-primary to-accent text-white shadow-sm'
-                  : 'text-text-muted hover:text-primary',
-              )}
-            >
-              {v === 'people' ? 'By person' : 'By department'}
-            </button>
-          ))}
-        </div>
-      </PageHead>
-
-      <Legend />
+      />
 
       <div data-tour="access-tiles">
         <SortableGroup
@@ -164,70 +173,128 @@ export function AccessPage() {
       <SortableGroup
         group="access.cards"
         noun="card"
-        className="grid grid-cols-1 gap-5 xl:grid-cols-12"
+        className="grid grid-cols-1 gap-4 xl:grid-cols-12"
         items={[
           {
             id: 'rights',
             className: 'xl:col-span-12',
             node: (
-              <div className="min-w-0 rounded-card border border-border bg-surface p-4">
-                {view === 'people' && (
-                  <label className="relative mb-3 block w-72">
-                    <IconSearch
-                      size={16}
-                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
-                    />
+              <div className="grid min-w-0 grid-cols-1 gap-4 rounded-card border border-border bg-surface p-3 lg:grid-cols-[300px_minmax(0,1fr)]">
+                <aside className="flex min-h-0 flex-col gap-2 lg:max-h-[78vh]">
+                  <div
+                    className="flex rounded-xl border border-border bg-bg p-1"
+                    role="radiogroup"
+                    aria-label="Set access for"
+                  >
+                    {(['people', 'departments'] as const).map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        role="radio"
+                        aria-checked={view === v}
+                        onClick={() => setView(v)}
+                        className={clsx(
+                          'flex-1 rounded-lg px-3 py-1.5 font-heading text-button transition',
+                          view === v
+                            ? 'bg-gradient-to-r from-primary to-accent text-white shadow-sm'
+                            : 'text-text-muted hover:text-primary',
+                        )}
+                      >
+                        {v === 'people' ? 'People' : 'Departments'}
+                      </button>
+                    ))}
+                  </div>
+                  <label className="relative block">
+                    <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted">
+                      <IconSearch size={15} />
+                    </span>
                     <input
                       value={q}
                       onChange={(e) => setQ(e.target.value)}
-                      placeholder="Search people"
-                      className="h-9 w-full rounded-xl border border-border bg-surface pl-9 pr-3 text-body text-text focus:border-primary focus:outline-none"
+                      placeholder={view === 'people' ? 'Search people' : 'Search departments'}
+                      className="h-9 w-full rounded-control border border-border bg-surface pl-8 pr-3 text-table focus:border-primary focus:outline-none"
                     />
                   </label>
-                )}
-                <div className="overflow-x-auto">
-                  <table
-                    className="w-full min-w-[920px] border-separate border-spacing-0 text-table"
-                    data-tour="access-table"
-                  >
-                    <thead>
-                      <tr>
-                        <th className="sticky left-0 z-10 bg-surface px-2 py-2 text-left font-heading text-label uppercase tracking-wider text-text-muted">
-                          {view === 'people' ? 'Person' : 'Department'}
-                        </th>
-                        {RIGHTS.map((r) => (
-                          <th
-                            key={r.key}
-                            className="px-1 py-2 text-center font-heading text-label uppercase tracking-wider text-text-muted"
-                          >
-                            <Tip label={r.label} hint={r.hint}>
-                              <span className="cursor-help border-b border-dotted border-text-muted/60">
-                                {r.label}
+                  <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto pr-1">
+                    {isLoading && <li className="skeleton h-40" />}
+                    {view === 'people'
+                      ? people.map((p) => (
+                          <li key={p.id}>
+                            <button
+                              type="button"
+                              onClick={() => setPicked({ type: 'user', id: p.id })}
+                              className={clsx(
+                                'flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left transition',
+                                picked?.type === 'user' && picked.id === p.id
+                                  ? 'bg-gradient-to-r from-primary/15 to-accent/10 shadow-[inset_3px_0_0_var(--accent)]'
+                                  : 'hover:bg-primary-soft-100',
+                              )}
+                            >
+                              <Avatar id={p.id} name={p.name} size={28} />
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate font-heading text-button text-primary-dark">
+                                  {p.name}
+                                </span>
+                                <span className="block truncate text-[11px] text-text-muted">
+                                  {ROLE_NAME[p.role]}
+                                  {p.departments[0] ? ` · ${p.departments[0]}` : ''}
+                                </span>
                               </span>
-                            </Tip>
-                          </th>
+                              {p.locked ? (
+                                <IconLock size={14} className="text-bad" />
+                              ) : (
+                                p.grant && (
+                                  <span
+                                    className="h-2 w-2 rounded-full bg-accent"
+                                    title="Set for this person"
+                                  />
+                                )
+                              )}
+                            </button>
+                          </li>
+                        ))
+                      : departments.map((d) => (
+                          <li key={d.id}>
+                            <button
+                              type="button"
+                              onClick={() => setPicked({ type: 'dept', id: d.id })}
+                              style={{ paddingLeft: 8 + Math.min(d.depth, 6) * 12 }}
+                              className={clsx(
+                                'flex w-full items-center gap-2 rounded-xl py-1.5 pr-2 text-left transition',
+                                picked?.type === 'dept' && picked.id === d.id
+                                  ? 'bg-gradient-to-r from-primary/15 to-accent/10 shadow-[inset_3px_0_0_var(--accent)]'
+                                  : 'hover:bg-primary-soft-100',
+                              )}
+                            >
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate font-heading text-button text-primary-dark">
+                                  {d.name}
+                                </span>
+                                <span className="block truncate text-[11px] text-text-muted">
+                                  {d.members} people{d.head ? ` · head ${d.head}` : ''}
+                                </span>
+                              </span>
+                              {d.grant && (
+                                <span
+                                  className="h-2 w-2 rounded-full bg-primary"
+                                  title="Set for this department"
+                                />
+                              )}
+                            </button>
+                          </li>
                         ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {isLoading && (
-                        <tr>
-                          <td
-                            colSpan={RIGHTS.length + 1}
-                            className="p-6 text-center text-text-muted"
-                          >
-                            Loading…
-                          </td>
-                        </tr>
-                      )}
-                      {view === 'people'
-                        ? people.map((p) => <PersonRow key={p.id} p={p} save={save} />)
-                        : (data?.departments ?? []).map((d) => (
-                            <DeptRow key={d.id} d={d} save={save} />
-                          ))}
-                    </tbody>
-                  </table>
-                </div>
+                  </ul>
+                </aside>
+                <section className="min-w-0" data-tour="access-tree">
+                  {subject ? (
+                    <Editor
+                      key={`${subject.type}-${subject.type === 'user' ? subject.p.id : subject.d.id}`}
+                      subject={subject}
+                    />
+                  ) : (
+                    <p className="p-6 text-text-muted">Pick a person or a department.</p>
+                  )}
+                </section>
               </div>
             ),
           },
@@ -238,209 +305,435 @@ export function AccessPage() {
   );
 }
 
-function Legend() {
+/** The rights of one person or department, module by module, with a draft until Save. */
+function Editor({ subject }: { subject: Subject }) {
+  const qc = useQueryClient();
+  const person = subject.type === 'user' ? subject.p : null;
+  const locked = !!person?.locked;
+  const saved = normalize(subject.type === 'user' ? subject.p.grant : subject.d.grant);
+  const [draft, setDraft] = useState<Grant>(saved);
+  const [open, setOpen] = useState<string[]>(['Dashboard']);
+  const [busy, setBusy] = useState(false);
+  const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
+  const changes = RIGHTS.filter((r) => draft[r.key] !== saved[r.key]).length;
+
+  /** The value shown: set here (draft), else inherited (role and departments). */
+  const valueOfKey = (k: RightKey): { value: unknown; source: Source | 'draft' | 'inherit' } => {
+    if (draft[k] !== undefined)
+      return {
+        value: draft[k],
+        source: draft[k] !== saved[k] ? 'draft' : subject.type === 'user' ? 'person' : 'department',
+      };
+    if (person) {
+      const src = person.source[k];
+      return {
+        value: person.inherited[k],
+        source: src === 'person' ? 'role' : src === 'locked' ? 'locked' : src,
+      };
+    }
+    return { value: undefined, source: 'inherit' };
+  };
+  const set = (k: RightKey, v: unknown | undefined) =>
+    setDraft((g) => {
+      const next = { ...g } as Record<string, unknown>;
+      if (v === undefined) delete next[k];
+      else next[k] = v;
+      return next as Grant;
+    });
+  const setMany = (keys: RightKey[], on: boolean) =>
+    setDraft((g) => {
+      const next = { ...g } as Record<string, unknown>;
+      for (const k of keys) next[k] = valueOf(k, on);
+      return next as Grant;
+    });
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      const id = subject.type === 'user' ? subject.p.id : subject.d.id;
+      await apiPost(
+        `/api/access/${subject.type}/${id}`,
+        { rights: Object.keys(draft).length ? draft : null },
+        'PUT',
+      );
+      toast.success(
+        `Access saved for ${person ? person.name : (subject as { d: AccessDept }).d.name}`,
+        {
+          description: 'In effect from their next click.',
+        },
+      );
+      void qc.invalidateQueries({ queryKey: [API_KEY] });
+    } catch (e) {
+      toast.error('Not saved', { description: e instanceof Error ? e.message : '' });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // The Access page itself is never switched on in bulk: making someone an admin is explicit.
+  const bulkKeys = MODULES.flatMap(pageKeys).filter((k) => k !== 'admin');
+
   return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-card border border-border bg-surface px-4 py-3 text-table text-text-muted">
-      <span className="font-heading text-label uppercase tracking-wider">
-        Where a right comes from
-      </span>
-      {(Object.keys(SOURCE) as Source[]).map((s) => (
-        <span key={s} className="flex items-center gap-1.5">
-          <span className={clsx('h-2 w-2 rounded-full', SOURCE[s].dot)} />
-          {SOURCE[s].label}
-        </span>
-      ))}
-      <span className="ml-auto">Click a right to change it. Changes apply at once.</span>
+    <div className="flex min-h-0 flex-col lg:max-h-[78vh]">
+      <header className="flex flex-wrap items-center gap-3 border-b border-border pb-3">
+        {person ? (
+          <Avatar id={person.id} name={person.name} size={40} />
+        ) : (
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary">
+            <IconPeople size={20} />
+          </span>
+        )}
+        <div className="min-w-0 flex-1">
+          <h2 className="truncate font-heading text-h2 text-primary-dark">
+            {person ? person.name : (subject as { d: AccessDept }).d.name}
+          </h2>
+          <p className="truncate text-table text-text-muted">
+            {person
+              ? `${ROLE_NAME[person.role]}${person.position ? ` · ${person.position}` : ''}${
+                  person.departments.length ? ` · ${person.departments.join(', ')}` : ''
+                }`
+              : 'Reaches everyone in this department and its sub-departments, unless set lower down'}
+          </p>
+        </div>
+        {!locked && (
+          <span className="flex flex-wrap gap-1.5">
+            <button
+              type="button"
+              onClick={() => setMany(bulkKeys, true)}
+              className="h-8 rounded-control border border-good/40 px-2.5 font-heading text-button text-good hover:bg-good/10"
+            >
+              Allow all modules
+            </button>
+            <button
+              type="button"
+              onClick={() => setMany([...bulkKeys, 'admin'], false)}
+              className="h-8 rounded-control border border-bad/40 px-2.5 font-heading text-button text-bad hover:bg-bad/10"
+            >
+              Remove all
+            </button>
+            <Tip label="Back to inherited" hint="Clear everything set here">
+              <button
+                type="button"
+                aria-label="Back to inherited"
+                onClick={() => setDraft({})}
+                className="grid h-8 w-8 place-items-center rounded-control border border-border text-text-muted hover:border-primary hover:text-primary"
+              >
+                <IconReset size={15} />
+              </button>
+            </Tip>
+          </span>
+        )}
+      </header>
+      {locked && (
+        <p className="mt-3 flex items-center gap-2 rounded-xl bg-bad/10 px-3 py-2 text-table text-bad">
+          <IconLock size={14} /> A locked admin (config/roles.json) always has every right.
+        </p>
+      )}
+      <Legend />
+
+      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto py-3 pr-1">
+        {MODULES.map((m) => {
+          const keys = pageKeys(m);
+          const onCount = keys.filter((k) => isOn(k, valueOfKey(k).value)).length;
+          const expanded = open.includes(m.label);
+          return (
+            <div
+              key={m.label}
+              className={clsx(
+                'rounded-2xl border transition',
+                expanded ? 'border-primary/30 bg-primary-soft-100/40' : 'border-border',
+              )}
+            >
+              <div className="flex items-center gap-3 px-3 py-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setOpen((o) =>
+                      o.includes(m.label) ? o.filter((x) => x !== m.label) : [...o, m.label],
+                    )
+                  }
+                  aria-expanded={expanded}
+                  className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                >
+                  <span className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent text-white shadow-sm">
+                    {MODULE_ICON[m.label]}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-heading text-h3 font-extrabold text-primary-dark">
+                      {m.label}
+                    </span>
+                    <span className="block text-[11px] text-text-muted">
+                      {onCount} of {keys.length} pages open
+                    </span>
+                  </span>
+                  <IconChevron
+                    size={14}
+                    className={clsx(
+                      'text-text-muted transition-transform',
+                      expanded && 'rotate-90',
+                    )}
+                  />
+                </button>
+                <Toggle
+                  on={onCount === keys.length}
+                  partial={onCount > 0 && onCount < keys.length}
+                  disabled={locked}
+                  label={`${m.label}: all pages`}
+                  onChange={(on) =>
+                    setMany(
+                      on ? keys.filter((k) => k !== 'admin' || onCount === keys.length) : keys,
+                      on,
+                    )
+                  }
+                />
+              </div>
+              {expanded && (
+                <ul className="space-y-1 px-3 pb-3">
+                  {m.pages.map((pg) => (
+                    <PageRow key={pg.id} pg={pg} locked={locked} get={valueOfKey} set={set} />
+                  ))}
+                </ul>
+              )}
+            </div>
+          );
+        })}
+        <p className="px-1 text-[11px] text-text-muted">
+          Finance is for admins only and cannot be given here.
+        </p>
+      </div>
+
+      {!locked && (
+        <footer
+          className={clsx(
+            'sticky bottom-0 flex items-center justify-between gap-3 rounded-xl border px-3 py-2 transition',
+            dirty ? 'border-warn/50 bg-warn/10' : 'border-border bg-surface',
+          )}
+        >
+          <span className="text-table text-text-muted">
+            {dirty ? `${changes} change${changes === 1 ? '' : 's'} not saved yet` : 'No changes'}
+          </span>
+          <span className="flex gap-2">
+            <button
+              type="button"
+              disabled={!dirty || busy}
+              onClick={() => setDraft(saved)}
+              className="h-9 rounded-control border border-border px-3 font-heading text-button text-text-muted hover:border-primary disabled:opacity-40"
+            >
+              Discard
+            </button>
+            <button
+              type="button"
+              disabled={!dirty || busy}
+              onClick={() => void save()}
+              className="h-9 rounded-control bg-gradient-to-r from-primary to-accent px-4 font-heading text-button text-white shadow-sm hover:brightness-110 disabled:opacity-40"
+            >
+              {busy ? 'Saving…' : 'Save'}
+            </button>
+          </span>
+        </footer>
+      )}
     </div>
   );
 }
 
-type Save = (type: 'user' | 'dept', id: number, name: string, grant: Grant | null) => Promise<void>;
+type Get = (k: RightKey) => { value: unknown; source: Source | 'draft' | 'inherit' };
+type Set = (k: RightKey, v: unknown | undefined) => void;
 
-function PersonRow({ p, save }: { p: AccessPerson; save: Save }) {
+function PageRow({ pg, locked, get, set }: { pg: PageDef; locked: boolean; get: Get; set: Set }) {
+  const k = pg.right as RightKey;
+  const v = get(k);
   return (
-    <tr className="group">
-      <td className="sticky left-0 z-10 border-t border-border bg-surface px-2 py-2 group-hover:bg-primary-soft-100">
-        <span className="flex items-center gap-2.5">
-          <Avatar id={p.id} name={p.name} size={32} />
-          <span className="min-w-0">
-            <span className="flex items-center gap-1.5 font-heading text-button text-primary-dark">
-              <span className="truncate">{p.name}</span>
-              {p.locked && (
-                <Tip label="Locked admin" hint="Set in config/roles.json: always has every right">
-                  <span className="text-bad">
-                    <IconLock size={14} />
-                  </span>
-                </Tip>
-              )}
-            </span>
-            <span className="block max-w-[220px] truncate text-table text-text-muted">
-              {ROLE_NAME[p.role]} · {p.departments.join(', ') || 'No department'}
-            </span>
+    <li className="rounded-xl bg-surface px-3 py-2 shadow-[0_1px_0_rgba(16,24,64,0.04)]">
+      <div className="flex items-center gap-3">
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-2 font-heading text-button text-primary-dark">
+            {pg.label}
+            <SourceDot source={v.source} />
           </span>
+          <span className="block truncate text-[11px] text-text-muted">{pg.hint}</span>
         </span>
-      </td>
-      {RIGHTS.map((r) => (
-        <td
-          key={r.key}
-          className="border-t border-border px-1 py-2 text-center group-hover:bg-primary-soft-100"
-        >
-          <RightCell
-            right={r.key}
-            value={p.rights[r.key]}
-            source={p.source[r.key]}
-            set={p.grant?.[r.key]}
-            inheritLabel={`Inherit (${r.values[isOn(r.key, p.inherited[r.key]) ? 0 : 1]})`}
-            disabled={p.locked}
-            onChange={(v) => {
-              const grant = { ...(p.grant ?? {}) } as Record<string, unknown>;
-              if (v === undefined) delete grant[r.key];
-              else grant[r.key] = v;
-              void save('user', p.id, p.name, grant as Grant);
-            }}
-          />
-        </td>
-      ))}
-    </tr>
+        <ResetButton
+          show={!locked && v.source !== 'inherit' && v.source !== 'role' && v.source !== 'locked'}
+          onClick={() => set(k, undefined)}
+        />
+        <Toggle
+          on={isOn(k, v.value)}
+          unknown={v.value === undefined}
+          disabled={locked}
+          label={pg.label}
+          onChange={(on) => set(k, valueOf(k, on))}
+        />
+      </div>
+      {pg.permissions && pg.permissions.length > 0 && (
+        <ul className="mt-2 space-y-1.5 border-l-2 border-accent/30 pl-3">
+          {pg.permissions.map((perm) => (
+            <PermissionRow key={perm.key} perm={perm} locked={locked} get={get} set={set} />
+          ))}
+        </ul>
+      )}
+    </li>
   );
 }
 
-function DeptRow({ d, save }: { d: AccessDept; save: Save }) {
-  return (
-    <tr className="group">
-      <td className="sticky left-0 z-10 border-t border-border bg-surface px-2 py-2 group-hover:bg-primary-soft-100">
-        <span className="flex items-center gap-2" style={{ paddingLeft: d.depth * 18 }}>
-          {d.depth > 0 && <span className="h-px w-3 bg-border" />}
-          <span className="min-w-0">
-            <span className="block truncate font-heading text-button text-primary-dark">
-              {d.name}
-            </span>
-            <span className="block truncate text-table text-text-muted">
-              {d.members} people{d.head ? ` · head ${d.head}` : ''}
-            </span>
-          </span>
-        </span>
-      </td>
-      {RIGHTS.map((r) => (
-        <td
-          key={r.key}
-          className="border-t border-border px-1 py-2 text-center group-hover:bg-primary-soft-100"
-        >
-          <RightCell
-            right={r.key}
-            value={d.grant?.[r.key]}
-            source={d.grant?.[r.key] !== undefined ? 'department' : 'role'}
-            set={d.grant?.[r.key]}
-            inheritLabel="Inherit (each person's role)"
-            onChange={(v) => {
-              const grant = { ...(d.grant ?? {}) } as Record<string, unknown>;
-              if (v === undefined) delete grant[r.key];
-              else grant[r.key] = v;
-              void save('dept', d.id, d.name, grant as Grant);
-            }}
-          />
-        </td>
-      ))}
-    </tr>
-  );
-}
-
-/** One right: its value as a chip with a dot for its source; click to inherit, allow or deny. */
-function RightCell({
-  right,
-  value,
-  source,
+function PermissionRow({
+  perm,
+  locked,
+  get,
   set,
-  inheritLabel,
+}: {
+  perm: PermissionDef;
+  locked: boolean;
+  get: Get;
+  set: Set;
+}) {
+  const k = perm.key as RightKey;
+  const v = get(k);
+  const on = v.value === undefined ? null : isOn(k, v.value);
+  return (
+    <li className="flex flex-wrap items-center gap-2">
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-2 text-table font-bold text-text">
+          {perm.label}
+          <SourceDot source={v.source} />
+        </span>
+        <span className="block truncate text-[11px] text-text-muted">{perm.hint}</span>
+      </span>
+      <ResetButton
+        show={!locked && v.source !== 'inherit' && v.source !== 'role' && v.source !== 'locked'}
+        onClick={() => set(k, undefined)}
+      />
+      <span
+        className="inline-flex rounded-lg border border-border bg-bg p-0.5"
+        role="radiogroup"
+        aria-label={perm.label}
+      >
+        {perm.values.map((label, i) => {
+          const active = on === (i === 0);
+          return (
+            <button
+              key={label}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              disabled={locked}
+              onClick={() => set(k, valueOf(k, i === 0))}
+              className={clsx(
+                'rounded-md px-2.5 py-1 font-heading text-[12px] transition disabled:cursor-not-allowed',
+                active
+                  ? i === 0
+                    ? 'bg-gradient-to-r from-primary to-accent text-white shadow-sm'
+                    : 'bg-[color-mix(in_srgb,var(--text)_70%,var(--surface))] text-surface'
+                  : 'text-text-muted hover:text-primary',
+              )}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </span>
+    </li>
+  );
+}
+
+function Toggle({
+  on,
+  partial,
+  unknown,
   disabled,
+  label,
   onChange,
 }: {
-  right: RightKey;
-  /** The effective value (people) or the department's setting (undefined = inherit). */
-  value: unknown;
-  source: Source;
-  /** The override set here, if any. */
-  set: unknown;
-  inheritLabel: string;
+  on: boolean;
+  partial?: boolean;
+  unknown?: boolean;
   disabled?: boolean;
-  onChange: (v: unknown) => void;
+  label: string;
+  onChange: (on: boolean) => void;
 }) {
-  const meta = RIGHTS.find((r) => r.key === right)!;
-  const inherit = value === undefined;
-  const on = isOn(right, value);
-  const chip = (
-    <span
-      className={clsx(
-        'relative inline-flex min-w-[64px] items-center justify-center gap-1 rounded-lg px-2 py-1 font-heading text-label font-bold transition',
-        inherit
-          ? 'border border-dashed border-border text-text-muted'
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={partial ? 'mixed' : on}
+      aria-label={label}
+      disabled={disabled}
+      onClick={() => onChange(!on)}
+      title={
+        unknown
+          ? 'Inherited from higher up'
           : on
-            ? 'bg-good/15 text-good'
-            : 'bg-border/50 text-text-muted',
-        !disabled && 'hover:ring-2 hover:ring-primary/30',
+            ? 'On: click to turn off'
+            : 'Off: click to turn on'
+      }
+      className={clsx(
+        'relative h-6 w-11 shrink-0 rounded-full transition disabled:cursor-not-allowed disabled:opacity-60',
+        unknown
+          ? 'bg-[color-mix(in_srgb,var(--text)_14%,var(--surface))]'
+          : on
+            ? 'bg-gradient-to-r from-primary to-accent shadow-[0_0_10px_color-mix(in_srgb,var(--accent)_45%,transparent)]'
+            : partial
+              ? 'bg-gradient-to-r from-[color-mix(in_srgb,var(--primary)_55%,var(--surface))] to-[color-mix(in_srgb,var(--accent)_55%,var(--surface))]'
+              : 'bg-[color-mix(in_srgb,var(--text)_32%,var(--surface))]',
       )}
     >
-      {inherit ? 'Inherit' : meta.values[on ? 0 : 1]}
-      {!inherit && (
-        <span
-          className={clsx('h-1.5 w-1.5 rounded-full', SOURCE[source].dot)}
-          aria-label={SOURCE[source].label}
-        />
-      )}
-    </span>
-  );
-  if (disabled) return chip;
-  const options: { label: string; v: unknown }[] = [
-    { label: inheritLabel, v: undefined },
-    { label: meta.values[0], v: valueOf(right, true) },
-    { label: meta.values[1], v: valueOf(right, false) },
-  ];
-  return (
-    <Popover.Root>
-      <Popover.Trigger asChild>
-        <button type="button" aria-label={`${meta.label}: change`}>
-          {chip}
-        </button>
-      </Popover.Trigger>
-      <Popover.Portal>
-        <Popover.Content
-          sideOffset={6}
-          collisionPadding={12}
-          className="z-50 w-56 rounded-xl border border-border bg-surface p-1.5 text-text shadow-pop"
-        >
-          <p className="px-2 pb-1 pt-0.5 font-heading text-label uppercase tracking-wider text-text-muted">
-            {meta.label}: {meta.hint}
-          </p>
-          {options.map((o) => {
-            const current = o.v === undefined ? set === undefined : set === o.v;
-            return (
-              <Popover.Close asChild key={o.label}>
-                <button
-                  type="button"
-                  onClick={() => !current && onChange(o.v)}
-                  className={clsx(
-                    'flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-body hover:bg-primary-soft-100',
-                    current && 'font-bold text-primary',
-                  )}
-                >
-                  {o.label}
-                  {current && <span aria-hidden>✓</span>}
-                </button>
-              </Popover.Close>
-            );
-          })}
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
+      <span
+        className={clsx(
+          'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all',
+          unknown ? 'left-3' : on ? 'left-[22px]' : partial ? 'left-3' : 'left-0.5',
+        )}
+      />
+    </button>
   );
 }
 
-const describe = (g: Grant | null) =>
-  !g || !Object.keys(g).length
+function SourceDot({ source }: { source: Source | 'draft' | 'inherit' }) {
+  if (source === 'inherit')
+    return <span className="text-[10px] font-normal text-text-muted">inherited</span>;
+  const s = SOURCE[source];
+  return (
+    <Tip label={s.label}>
+      <span className={clsx('inline-block h-2 w-2 rounded-full', s.dot)} aria-label={s.label} />
+    </Tip>
+  );
+}
+
+function ResetButton({ show, onClick }: { show: boolean; onClick: () => void }) {
+  if (!show) return null;
+  return (
+    <Tip label="Back to inherited">
+      <button
+        type="button"
+        aria-label="Back to inherited"
+        onClick={onClick}
+        className="grid h-7 w-7 place-items-center rounded-lg text-text-muted hover:bg-primary-soft-100 hover:text-primary"
+      >
+        <IconReset size={13} />
+      </button>
+    </Tip>
+  );
+}
+
+function Legend() {
+  return (
+    <p className="flex flex-wrap gap-x-4 gap-y-1 pt-2 text-[11px] text-text-muted">
+      {(Object.keys(SOURCE) as (keyof typeof SOURCE)[]).map((k) => (
+        <span key={k} className="inline-flex items-center gap-1.5">
+          <span className={clsx('h-2 w-2 rounded-full', SOURCE[k].dot)} />
+          {SOURCE[k].label}
+        </span>
+      ))}
+    </p>
+  );
+}
+
+const describe = (g: Grant | null) => {
+  const n = normalize(g);
+  return !Object.keys(n).length
     ? 'inherit everything'
-    : RIGHTS.filter((r) => g[r.key] !== undefined)
-        .map((r) => `${r.label} ${r.values[isOn(r.key, g[r.key]) ? 0 : 1]}`)
+    : RIGHTS.filter((r) => n[r.key] !== undefined)
+        .map((r) => `${r.label} ${r.values[isOn(r.key, n[r.key as keyof Rights]) ? 0 : 1]}`)
         .join(', ');
+};
 
 function RecentChanges() {
   const { data } = useAudit();
@@ -450,10 +743,13 @@ function RecentChanges() {
       {!data?.rows.length ? (
         <p className="text-table text-text-muted">No changes yet. Every change is listed here.</p>
       ) : (
-        <ol className="space-y-3">
+        <ol className="grid gap-2 md:grid-cols-2">
           {data.rows.slice(0, 30).map((r) => (
-            <li key={r.id} className="relative border-l-2 border-accent/40 pl-3">
-              <span className="block text-table text-text-muted">
+            <li
+              key={r.id}
+              className="relative rounded-xl border-l-2 border-accent/50 bg-bg/60 px-3 py-2"
+            >
+              <span className="block text-[11px] text-text-muted">
                 {timeAgo(r.at)} · {r.by}
               </span>
               <span className="block font-heading text-button text-primary-dark">

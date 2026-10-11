@@ -3,6 +3,7 @@
 // from Bitrix24 (users, departments); sign-in and activity from user_prefs; access areas are each
 // person's effective rights (auth/rights.ts); open and overdue tasks from the request's dataset.
 import { isOverdue, isPending } from '@nural/shared';
+import { MODULES } from '@nural/shared';
 import ExcelJS from 'exceljs';
 import { brandSheet, exportedAt } from '../exports/theme';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
@@ -58,7 +59,9 @@ export function employeeRoutes(
 ) {
   app.addHook('preHandler', async (req, reply) => {
     if (!req.url.startsWith('/api/employees')) return;
-    if (!(await viewer(req)).employees) {
+    const v = await viewer(req);
+    const ok = req.url.startsWith('/api/employees/tree') ? v.org : v.people || v.mailing || v.admin;
+    if (!ok) {
       return reply
         .code(403)
         .send({ error: 'The Employee module is for admins, PM and team leads.' });
@@ -142,15 +145,12 @@ export function employeeRoutes(
       { header: 'Overdue', key: 'overdue', width: 9 },
     ];
     for (const r of list) {
+      // Every page they may open, in menu order, then the permissions under them.
       const areas = [
-        r.rights.kpi && 'KPI',
-        'Development',
-        'QA',
-        r.rights.support && 'Support',
-        r.rights.inbox && 'Feedback inbox',
-        r.rights.employees && 'Employees',
+        ...MODULES.flatMap((m) => m.pages.filter((pg) => r.rights[pg.right]).map((pg) => pg.label)),
+        r.rights.inbox && 'Support inbox',
+        r.rights.helpInbox && 'Feedback inbox',
         r.rights.edit === 'all' ? 'Edit all fields' : 'Edit stage, status, tags',
-        r.rights.admin && 'Access admin',
       ].filter(Boolean);
       sheet.addRow({
         ...r,

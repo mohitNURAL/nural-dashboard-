@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import { TaskDrawer } from './components/TaskDrawer';
 import { TopBar } from './components/TopBar';
 import { ActionDock } from './components/shell/ActionDock';
-import { allowedPage, navFor } from './components/shell/nav';
+import { allowedPage, firstPage, navFor } from './components/shell/nav';
 import { useDrawer } from './components/shell/drawerStore';
 import { ConfirmHost } from './components/ui/ConfirmDialog';
 import { trackClicks } from './components/spotlight/spotlight';
@@ -15,6 +15,11 @@ import { PeoplePage } from './features/employees/PeoplePage';
 import { FilterBar } from './features/filters/FilterBar';
 import { ConnectionsPage } from './features/integrations/ConnectionsPage';
 import { MailingPage } from './features/integrations/MailingPage';
+import { FinancePage } from './features/finance/FinancePage';
+import { DocsPage } from './features/help/DocsPage';
+import { FaqPage } from './features/help/FaqPage';
+import { FeedbackNudge } from './features/help/FeedbackNudge';
+import { FeedbackPage } from './features/help/FeedbackPage';
 import { InsightsPage } from './features/insights/InsightsPage';
 import { isDashboardTab } from './features/filters/toParams';
 import { SupportTab } from './features/support/SupportTab';
@@ -34,7 +39,7 @@ export default function App() {
   const theme = useTheme((s) => s.resolved);
   const pinned = useDrawer((s) => s.pinned);
   // Each page needs its right (the server enforces the same); anything else opens Development.
-  const tab = !me || allowedPage(me, urlTab) ? urlTab : 'dev';
+  const tab = !me || allowedPage(me, urlTab) ? urlTab : firstPage(me);
   useLiveUpdates();
   useNewVersion();
   useSessionEnd();
@@ -72,6 +77,14 @@ export default function App() {
             <ConnectionsPage />
           ) : tab === 'mailing' ? (
             <MailingPage />
+          ) : tab === 'feedback' ? (
+            <FeedbackPage />
+          ) : tab === 'docs' ? (
+            <DocsPage />
+          ) : tab === 'faq' ? (
+            <FaqPage />
+          ) : tab === 'finance' ? (
+            <FinancePage />
           ) : tab === 'access' ? (
             <AccessPage />
           ) : (
@@ -80,7 +93,8 @@ export default function App() {
         </main>
       </div>
       <TaskDrawer />
-      {me && <ActionDock tourable />}
+      {me && <ActionDock tourable onFeedback={() => setTab('feedback')} />}
+      {me && <FeedbackNudge onGo={setTab} />}
     </div>
   );
 }

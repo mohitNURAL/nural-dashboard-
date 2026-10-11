@@ -20,10 +20,15 @@ export function taskExportUrl(
   filterParams: Record<string, string>,
   { kind = 'tasks', preset, q, sort }: TaskListQuery,
   name: string,
+  /** The reader's columns and row order (table/useTableLayout.ts): the file follows them. */
+  layout: { cols?: string[]; hidden?: string[]; order?: string[] } = {},
 ): string {
   const params: Record<string, string> = { ...filterParams, kind, preset, name };
   if (q) params.q = q;
   if (sort) params.sort = sort;
+  if (layout.cols?.length) params.cols = layout.cols.join(',');
+  if (layout.hidden?.length) params.hidden = layout.hidden.join(',');
+  if (layout.order?.length) params.order = layout.order.slice(0, 1000).join(',');
   return `/api/tasks/export?${new URLSearchParams(params).toString()}`;
 }
 

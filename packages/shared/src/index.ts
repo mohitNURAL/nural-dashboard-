@@ -8,3 +8,4 @@ export * from './calendar';
 export * from './kpi';
 export * from './insights';
 export * from './reports';
+export * from './modules';

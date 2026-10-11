@@ -13,10 +13,16 @@ import {
   type SortingState,
 } from '@tanstack/react-table';
 import clsx from 'clsx';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { InfoTip } from './InfoTip';
 import { ColumnsMenu } from './table/ColumnsMenu';
 import { dropRow, inOrder, moveTo, useTableLayout } from './table/useTableLayout';
+import { SortableRow, SortableTh, TableDnd } from './table/sortable';
+import {
+  horizontalListSortingStrategy,
+  SortableContext,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import { IconGrip } from './ui/icons';
 
 export type { SortingState };
@@ -79,19 +85,6 @@ export function DataTable<T>({
   const lay = useTableLayout(tableId);
   // In "Your order" no sort arrow shows: the rows are in the reader's order.
   const sorting = lay.custom ? [] : manual ? controlledSorting : localSorting;
-  // What is being dragged: kept in refs (read by drop at once) and in state (for the faded look).
-  const [dragCol, setDragColState] = useState<string | null>(null);
-  const [dragRow, setDragRowState] = useState<string | null>(null);
-  const colRef = useRef<string | null>(null);
-  const rowRef = useRef<string | null>(null);
-  const setDragCol = (v: string | null) => {
-    colRef.current = v;
-    setDragColState(v);
-  };
-  const setDragRow = (v: string | null) => {
-    rowRef.current = v;
-    setDragRowState(v);
-  };
 
   const table = useReactTable({
     data,
@@ -166,184 +159,175 @@ export function DataTable<T>({
         )}
         style={maxHeight ? { maxHeight } : undefined}
       >
-        <table className="nural-table w-full border-separate border-spacing-0 font-body text-table">
-          <thead>
-            {table.getHeaderGroups().map((hg) => (
-              <tr key={hg.id}>
-                {grip && (
-                  <th
-                    aria-label="Drag to order rows"
-                    data-grip
-                    className="sticky top-0 z-10 w-6 px-1"
-                  />
-                )}
-                {hg.headers.map((h) => {
-                  const sort = h.column.getIsSorted();
-                  const meta = h.column.columnDef.meta as
-                    { align?: string; info?: string } | undefined;
-                  const align = meta?.align;
-                  return (
+        <TableDnd
+          onColumn={(id, over) => lay.setCols(moveTo(orderedIds, id, over))}
+          onRow={(id, over) =>
+            lay.setRows(
+              dropRow(
+                rows.map((x) => x.id),
+                lay.rows,
+                id,
+                over,
+              ),
+            )
+          }
+        >
+          <table className="nural-table w-full border-separate border-spacing-0 font-body text-table">
+            <thead>
+              {table.getHeaderGroups().map((hg) => (
+                <tr key={hg.id}>
+                  {grip && (
                     <th
-                      key={h.id}
-                      draggable={lay.enabled}
-                      onDragStart={(e) => {
-                        setDragCol(h.column.id);
-                        e.dataTransfer.effectAllowed = 'move';
-                      }}
-                      onDragOver={(e) => {
-                        if (colRef.current) e.preventDefault();
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        if (colRef.current)
-                          lay.setCols(moveTo(orderedIds, colRef.current, h.column.id));
-                        setDragCol(null);
-                      }}
-                      onDragEnd={() => setDragCol(null)}
-                      title={lay.enabled ? 'Drag to move this column' : undefined}
-                      scope="col"
-                      aria-sort={
-                        sort === 'asc' ? 'ascending' : sort === 'desc' ? 'descending' : undefined
-                      }
-                      className={clsx(
-                        'sticky top-0 z-10 whitespace-nowrap font-heading text-label font-bold uppercase',
-                        cell,
-                        align === 'right' ? 'text-right' : 'text-left',
-                        lay.enabled && 'cursor-grab active:cursor-grabbing',
-                        dragCol === h.column.id && 'opacity-50',
-                      )}
-                    >
-                      {h.column.getCanSort() ? (
-                        <button
-                          type="button"
-                          onClick={h.column.getToggleSortingHandler()}
+                      aria-label="Drag to order rows"
+                      data-grip
+                      className="sticky top-0 z-10 w-6 px-1"
+                    />
+                  )}
+                  <SortableContext
+                    items={hg.headers.map((h) => `col:${h.column.id}`)}
+                    strategy={horizontalListSortingStrategy}
+                  >
+                    {hg.headers.map((h) => {
+                      const sort = h.column.getIsSorted();
+                      const meta = h.column.columnDef.meta as
+                        { align?: string; info?: string } | undefined;
+                      const align = meta?.align;
+                      return (
+                        <SortableTh
+                          key={h.id}
+                          id={h.column.id}
+                          enabled={lay.enabled}
+                          title={lay.enabled ? 'Drag to move this column' : undefined}
+                          scope="col"
+                          aria-sort={
+                            sort === 'asc'
+                              ? 'ascending'
+                              : sort === 'desc'
+                                ? 'descending'
+                                : undefined
+                          }
                           className={clsx(
-                            'inline-flex items-center gap-1 uppercase hover:text-primary',
-                            sort && 'text-primary-dark',
+                            'sticky top-0 z-10 whitespace-nowrap font-heading text-label font-bold uppercase',
+                            cell,
+                            align === 'right' ? 'text-right' : 'text-left',
+                            lay.enabled && 'cursor-grab active:cursor-grabbing',
                           )}
                         >
-                          {flexRender(h.column.columnDef.header, h.getContext())}
-                          <span aria-hidden className="w-2">
-                            {sort === 'asc' ? '▲' : sort === 'desc' ? '▼' : ''}
-                          </span>
-                        </button>
-                      ) : (
-                        flexRender(h.column.columnDef.header, h.getContext())
-                      )}
-                      {meta?.info && (
-                        <span className="ml-1 inline-block">
-                          <InfoTip
-                            text={meta.info}
-                            label={String(h.column.columnDef.header ?? '')}
-                          />
-                        </span>
-                      )}
-                    </th>
-                  );
-                })}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr
-                key={row.id}
-                onClick={onRowClick ? () => onRowClick(row.original) : undefined}
-                title={rowTitle?.(row.original)}
-                onDragOver={(e) => {
-                  if (rowRef.current) e.preventDefault();
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const from = rowRef.current;
-                  if (from)
-                    lay.setRows(
-                      dropRow(
-                        rows.map((x) => x.id),
-                        lay.rows,
-                        from,
-                        row.id,
-                      ),
-                    );
-                  setDragRow(null);
-                }}
-                className={clsx(
-                  onRowClick && 'cursor-pointer',
-                  dragRow === row.id && 'opacity-40',
-                  rowClassName?.(row.original),
-                )}
-              >
-                {grip && (
-                  <td
-                    data-grip
-                    draggable
-                    onClick={(e) => e.stopPropagation()}
-                    onDragStart={(e) => {
-                      setDragRow(row.id);
-                      e.dataTransfer.effectAllowed = 'move';
-                    }}
-                    onDragEnd={() => setDragRow(null)}
-                    aria-label="Drag to move this row"
-                    title="Drag to put rows in your own order"
-                    className="w-6 cursor-grab px-1 text-text-muted/60 hover:text-primary active:cursor-grabbing"
-                  >
-                    <IconGrip size={13} />
-                  </td>
-                )}
-                {row.getVisibleCells().map((c) => {
-                  const align = (c.column.columnDef.meta as { align?: string } | undefined)?.align;
-                  return (
-                    <td
-                      key={c.id}
-                      className={clsx(
-                        'align-middle',
-                        cell,
-                        align === 'right' && 'text-right tabular-nums',
-                      )}
-                    >
-                      {flexRender(c.column.columnDef.cell, c.getContext())}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-            {!data.length && (
-              <tr>
-                <td
-                  colSpan={columns.length + (grip ? 1 : 0)}
-                  className="py-6 text-center text-text-muted"
-                >
-                  {loading ? 'Loading…' : emptyText}
-                </td>
-              </tr>
-            )}
-          </tbody>
-          {showFooter && data.length > 0 && (
-            <tfoot>
-              {table.getFooterGroups().map((fg) => (
-                <tr key={fg.id}>
-                  {grip && <td data-grip className="sticky bottom-0" />}
-                  {fg.headers.map((h) => {
-                    const align = (h.column.columnDef.meta as { align?: string } | undefined)
-                      ?.align;
-                    return (
-                      <td
-                        key={h.id}
-                        className={clsx(
-                          'sticky bottom-0 font-bold',
-                          cell,
-                          align === 'right' && 'text-right tabular-nums',
-                        )}
-                      >
-                        {flexRender(h.column.columnDef.footer, h.getContext())}
-                      </td>
-                    );
-                  })}
+                          {h.column.getCanSort() ? (
+                            <button
+                              type="button"
+                              onClick={h.column.getToggleSortingHandler()}
+                              className={clsx(
+                                'inline-flex items-center gap-1 uppercase hover:text-primary',
+                                sort && 'text-primary-dark',
+                              )}
+                            >
+                              {flexRender(h.column.columnDef.header, h.getContext())}
+                              <span aria-hidden className="w-2">
+                                {sort === 'asc' ? '▲' : sort === 'desc' ? '▼' : ''}
+                              </span>
+                            </button>
+                          ) : (
+                            flexRender(h.column.columnDef.header, h.getContext())
+                          )}
+                          {meta?.info && (
+                            <span className="ml-1 inline-block">
+                              <InfoTip
+                                text={meta.info}
+                                label={String(h.column.columnDef.header ?? '')}
+                              />
+                            </span>
+                          )}
+                        </SortableTh>
+                      );
+                    })}
+                  </SortableContext>
                 </tr>
               ))}
-            </tfoot>
-          )}
-        </table>
+            </thead>
+            <tbody>
+              <SortableContext
+                items={rows.map((x) => `row:${x.id}`)}
+                strategy={verticalListSortingStrategy}
+              >
+                {rows.map((row) => (
+                  <SortableRow
+                    key={row.id}
+                    id={row.id}
+                    enabled={grip}
+                    onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+                    title={rowTitle?.(row.original)}
+                    className={clsx(onRowClick && 'cursor-pointer', rowClassName?.(row.original))}
+                    grip={(handle) => (
+                      <td
+                        data-grip
+                        {...handle}
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label="Drag to move this row"
+                        title="Drag to put rows in your own order"
+                        className="w-6 cursor-grab touch-none px-1 text-text-muted/60 hover:text-primary active:cursor-grabbing"
+                      >
+                        <IconGrip size={13} />
+                      </td>
+                    )}
+                  >
+                    {row.getVisibleCells().map((c) => {
+                      const align = (c.column.columnDef.meta as { align?: string } | undefined)
+                        ?.align;
+                      return (
+                        <td
+                          key={c.id}
+                          className={clsx(
+                            'align-middle',
+                            cell,
+                            align === 'right' && 'text-right tabular-nums',
+                          )}
+                        >
+                          {flexRender(c.column.columnDef.cell, c.getContext())}
+                        </td>
+                      );
+                    })}
+                  </SortableRow>
+                ))}
+              </SortableContext>
+              {!data.length && (
+                <tr>
+                  <td
+                    colSpan={columns.length + (grip ? 1 : 0)}
+                    className="py-6 text-center text-text-muted"
+                  >
+                    {loading ? 'Loading…' : emptyText}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+            {showFooter && data.length > 0 && (
+              <tfoot>
+                {table.getFooterGroups().map((fg) => (
+                  <tr key={fg.id}>
+                    {grip && <td data-grip className="sticky bottom-0" />}
+                    {fg.headers.map((h) => {
+                      const align = (h.column.columnDef.meta as { align?: string } | undefined)
+                        ?.align;
+                      return (
+                        <td
+                          key={h.id}
+                          className={clsx(
+                            'sticky bottom-0 font-bold',
+                            cell,
+                            align === 'right' && 'text-right tabular-nums',
+                          )}
+                        >
+                          {flexRender(h.column.columnDef.footer, h.getContext())}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tfoot>
+            )}
+          </table>
+        </TableDnd>
       </div>
       {pagination && pagination.total > 0 && <Pager {...pagination} pages={pages} />}
     </div>

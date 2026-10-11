@@ -200,8 +200,31 @@ describe('access permissions', () => {
     const row = (await get(1, '/api/access'))
       .json()
       .people.find((p: { id: number }) => p.id === 30);
-    expect(row.source.employees).toBe('person');
+    // An old "Employees" grant covers both Employee pages.
+    expect(row.source.people).toBe('person');
+    expect(row.source.org).toBe('person');
     expect(row.source.kpi).toBe('role');
+  });
+
+  it('each page has its own right, checked by the server (2026-10-12)', async () => {
+    await server();
+    // Everyone has Development, QA and Insights by default; a person can lose one.
+    expect((await get(30, '/api/dev/summary')).statusCode).toBe(200);
+    await put(1, '/api/access/user/30', { dev: false, insights: false });
+    expect((await get(30, '/api/dev/summary')).statusCode).toBe(403);
+    expect((await get(30, '/api/insights')).statusCode).toBe(403);
+    expect((await get(30, '/api/qa/summary')).statusCode).toBe(200);
+    // The Company tree and the People directory are separate.
+    await put(1, '/api/access/user/31', { org: true });
+    expect((await get(31, '/api/employees/tree')).statusCode).toBe(200);
+    expect((await get(31, '/api/employees')).statusCode).toBe(403);
+    // Mailing can be given without making someone an admin.
+    expect((await get(31, '/api/reports')).statusCode).toBe(403);
+    await put(1, '/api/access/user/31', { org: true, mailing: true });
+    expect((await get(31, '/api/reports')).statusCode).toBe(200);
+    expect((await get(31, '/api/access')).statusCode).toBe(403);
+    // Unknown rights are refused.
+    expect((await put(1, '/api/access/user/31', { finance: true })).statusCode).toBe(400);
   });
 
   it('config admins are locked; bad input and unknown subjects are refused', async () => {

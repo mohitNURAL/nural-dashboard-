@@ -2,6 +2,7 @@
 // the drawer.
 import { useEffect, useMemo, useState } from 'react';
 import type { TaskRow } from '../../api/types';
+import { useTableLayout } from '../../components/table/useTableLayout';
 import { DataTable, type Columns, type SortingState } from '../../components/DataTable';
 import { taskExportUrl, useOpenTask, useTaskList, type TaskListKind, type TaskSort } from './api';
 import { createColumnHelper } from '@tanstack/react-table';
@@ -55,6 +56,8 @@ export function TaskList({
   exportName,
 }: Props) {
   const [, openTask] = useOpenTask();
+  // The reader's columns and row order: the Excel file follows them.
+  const layout = useTableLayout('tasks');
   const [search, setSearch] = useState('');
   const [q, setQ] = useState('');
   const [sort, setSort] = useState<TaskSort>(defaultSort);
@@ -122,7 +125,11 @@ export function TaskList({
           />
         )}
         <a
-          href={taskExportUrl(filterParams, { kind, preset, q, sort }, exportName)}
+          href={taskExportUrl(filterParams, { kind, preset, q, sort }, exportName, {
+            cols: layout.cols,
+            hidden: layout.hidden,
+            order: layout.custom ? layout.rows : undefined,
+          })}
           download
           aria-label={`Export ${data?.total ?? ''} tasks to Excel`}
           title={`Export to Excel: ${data ? `all ${data.total.toLocaleString('en-IN')}` : 'these'} tasks with every detail`}

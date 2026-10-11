@@ -16,6 +16,7 @@ import {
   IconBook,
   IconCompass,
   IconDownload,
+  IconFeedback,
   IconExcel,
   IconPdf,
   IconReset,
@@ -78,7 +79,14 @@ function DockButton({
   );
 }
 
-export function ActionDock({ tourable }: { tourable: boolean }) {
+export function ActionDock({
+  tourable,
+  onFeedback,
+}: {
+  tourable: boolean;
+  /** Opens Help › Feedback. */
+  onFeedback?: () => void;
+}) {
   const { data: me } = useMe();
   const set = guideSet(me);
   const { ready, hiddenCount } = useCustomisable();
@@ -187,6 +195,16 @@ export function ActionDock({ tourable }: { tourable: boolean }) {
         </Popover.Portal>
       </Popover.Root>
       {ready && <ExportPage />}
+      {onFeedback && me?.helpFeedback !== false && (
+        <DockButton
+          label="Feedback"
+          hint="Tell us about an issue or idea"
+          onClick={onFeedback}
+          data-tour="dock-feedback"
+        >
+          <IconFeedback />
+        </DockButton>
+      )}
       {voiceAvailable() && (
         <DockButton
           label={voice ? 'Voice on' : 'Voice off'}

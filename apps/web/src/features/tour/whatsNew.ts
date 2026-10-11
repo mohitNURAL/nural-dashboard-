@@ -18,6 +18,32 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-12-help',
+    date: '2026-10-12',
+    tab: 'feedback',
+    title: 'Help: feedback, documents and FAQs',
+    steps: [
+      {
+        target: '[data-nav="feedback"]',
+        title: 'Help',
+        text: 'A new Help module: send feedback with screenshots and files about the dashboard, a page, a project or a person; download the PDF guides; and find answers in the FAQs. The feedback icon in the page tools opens it from anywhere.',
+      },
+    ],
+  },
+  {
+    id: '2026-10-12-access',
+    date: '2026-10-12',
+    tab: 'access',
+    title: 'Access permissions by module and page',
+    steps: [
+      {
+        target: '[data-tour="access-tree"]',
+        title: 'Module by module',
+        text: 'Every menu module opens into its pages, each with its own switch, and the permissions under them (data, editing, inboxes). Switch a whole module at once, then Save. A dot shows where each value comes from.',
+      },
+    ],
+  },
+  {
     id: '2026-10-12-tables',
     date: '2026-10-12',
     tab: 'dev',

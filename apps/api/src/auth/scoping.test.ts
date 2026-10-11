@@ -8,7 +8,7 @@ import type { Dataset } from '../data/dataset';
 import { createMemoryBus } from '../events/bus';
 import { mayReceive } from '../routes/stream';
 import { buildServer } from '../server';
-import { inScope, scopeDataset, viewerOf, type RolesConfig } from './roles';
+import { inScope, scopeDataset, viewerOf, type RolesConfig, LOCAL_VIEWER } from './roles';
 import { sign, SESSION_COOKIE } from './session';
 
 const NOW = new Date('2026-10-10T06:30:00Z');
@@ -347,6 +347,7 @@ describe('live stream', () => {
     people,
   });
   const member = (userId: number) => ({
+    ...LOCAL_VIEWER,
     userId,
     role: 'member' as const,
     full: false,
@@ -366,6 +367,7 @@ describe('live stream', () => {
     expect(
       mayReceive(
         {
+          ...LOCAL_VIEWER,
           userId: 12,
           role: 'teamLead',
           full: true,

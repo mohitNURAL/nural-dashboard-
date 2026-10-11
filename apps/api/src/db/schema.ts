@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm';
 import {
   bigint,
   boolean,
+  customType,
   index,
   integer,
   jsonb,
@@ -15,6 +16,8 @@ import {
 } from 'drizzle-orm/pg-core';
 
 const tz = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' });
+/** Raw bytes (attachments). */
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => 'bytea' });
 
 export const tasks = pgTable(
   'tasks',
@@ -228,6 +231,8 @@ export const userPrefs = pgTable('user_prefs', {
   tour: jsonb('tour').notNull().default({}),
   /** Activity for the People directory: last sign-in and last request (at most once a minute). */
   lastSignInAt: tz('last_sign_in_at'),
+  /** First sign-in (2026-10-12; set on the next sign-in for earlier users): the feedback prompt. */
+  firstSignInAt: tz('first_sign_in_at'),
   lastSeenAt: tz('last_seen_at'),
   updatedAt: tz('updated_at').notNull().defaultNow(),
 });
@@ -297,4 +302,46 @@ export const reportRuns = pgTable(
     index('report_runs_report_idx').on(t.reportId, t.at),
     uniqueIndex('report_runs_once').on(t.reportId, t.periodKey, t.recipient, t.channel),
   ],
+);
+
+/**
+ * Help > Feedback (2026-10-12, SRS 20): an issue or idea about the dashboard, a page, a project or
+ * a person (or Finance, admins only), with up to 5 attachments. The writer sees their own; the
+ * Feedback inbox (helpInbox right: admins, PM, team leads by default) sees all.
+ */
+export const helpFeedback = pgTable(
+  'help_feedback',
+  {
+    id: serial('id').primaryKey(),
+    at: tz('at').notNull().defaultNow(),
+    userId: integer('user_id').notNull(),
+    name: text('name').notNull(),
+    /** dashboard | page | project | person | finance */
+    aboutKind: text('about_kind').notNull(),
+    aboutId: integer('about_id'),
+    /** The page, project or person as named when sent. */
+    aboutLabel: text('about_label'),
+    title: text('title').notNull(),
+    details: text('details').notNull(),
+    /** low | medium | high */
+    impact: text('impact').notNull(),
+    /** new | reviewed */
+    status: text('status').notNull().default('new'),
+    adminNote: text('admin_note'),
+  },
+  (t) => [index('help_feedback_user_idx').on(t.userId, t.at)],
+);
+
+/** Attachments of Help feedback: images, PDF, Excel, Word; at most 8 MB each. */
+export const helpFiles = pgTable(
+  'help_files',
+  {
+    id: serial('id').primaryKey(),
+    feedbackId: integer('feedback_id').notNull(),
+    name: text('name').notNull(),
+    mime: text('mime').notNull(),
+    size: integer('size').notNull(),
+    data: bytea('data').notNull(),
+  },
+  (t) => [index('help_files_feedback_idx').on(t.feedbackId)],
 );

@@ -16,6 +16,8 @@ export interface TourPrefs {
 
 export interface Prefs {
   loginCount: number;
+  /** First sign-in (ISO); null for people from before it was kept, until they sign in again. */
+  firstSignInAt?: string | null;
   /** Order per group, e.g. { "dev.tiles": ["total", "pending"] }. */
   layout: Record<string, string[]>;
   tour: TourPrefs;

@@ -83,6 +83,10 @@ export const POINT_LABELS: Record<string, Record<string, string>> = {
   'connections.tiles': { connected: 'Connected', scheduling: 'Scheduled sending' },
   'connections.cards': { mail: 'Microsoft 365 mail', slack: 'Slack', infowan: 'Infowan' },
   'mailing.tiles': { reports: 'Reports', live: 'Live', preview: 'In preview', paused: 'Paused' },
+  'feedback.tiles': { sent: 'You sent', reviewed: 'Reviewed', inbox: 'Inbox: new' },
+  'feedback.cards': { form: 'Tell us', mine: 'My feedback', inbox: 'Feedback inbox' },
+  'docs.cards': { whole: 'The whole dashboard', modules: 'Module by module' },
+  'finance.cards': { quote: 'We need your insights', form: 'Share your needs' },
   'org.tiles': {
     departments: 'Departments',
     people: 'People',

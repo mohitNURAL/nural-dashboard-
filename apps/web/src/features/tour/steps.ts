@@ -34,6 +34,10 @@ export const TAB_LABEL: Record<Tab, string> = {
   access: 'Access permissions',
   connections: 'Connections',
   mailing: 'Mailing',
+  feedback: 'Feedback',
+  docs: 'Documents',
+  faq: 'FAQs',
+  finance: 'Cost to company',
 };
 
 /** Shown once per sign-in, before the first tab tour: the top bar, the same on every tab. */
@@ -278,6 +282,39 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
       text: 'New reports start in Preview: only admins get them, with the list of who would. Preview shows the mail as any person would get it; Send test sends it to you; Go live sends it to everyone on schedule. Last runs show what went out.',
     },
   ],
+  feedback: [
+    {
+      target: slot('feedback.cards', 'form'),
+      title: 'Tell us',
+      text: 'An issue, an idea or a wish: about the dashboard, a page, a project or a person (only the ones you can see). Add screenshots (paste them with Ctrl+V), PDF, Excel or Word files, up to 5.',
+    },
+    {
+      target: slot('feedback.cards', 'mine'),
+      title: 'My feedback',
+      text: 'What you sent, whether it has been reviewed, and the reply.',
+    },
+  ],
+  docs: [
+    {
+      target: slot('docs.cards', 'whole'),
+      title: 'Guides',
+      text: 'PDF guides for your level of access: the whole dashboard, and module by module. Only the pages you can open are in them.',
+    },
+  ],
+  faq: [
+    {
+      target: slot('faq.cards', 'the-numbers'),
+      title: 'FAQs',
+      text: 'Answers to the questions people ask most, by topic. Search at the top.',
+    },
+  ],
+  finance: [
+    {
+      target: slot('finance.cards', 'form'),
+      title: 'Cost to company',
+      text: 'Coming soon, for admins only. Tell us what it should show and which decisions it should help with.',
+    },
+  ],
   org: [
     {
       target: slot('org.tiles', 'departments'),
@@ -305,18 +342,18 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
   access: [
     {
       target: slot('access.tiles', 'people'),
-      title: 'Access at a glance',
-      text: 'How many rights are set per person and per department, how many admins, and who sees all data. Click the first two to switch the view.',
+      title: 'Access permissions',
+      text: 'Who may open which page and what they may do there. Pick a person or a department on the left.',
     },
     {
-      target: slot('access.cards', 'rights'),
-      title: 'Rights per person or department',
-      text: 'Each column is a right: data (all or own tasks), KPI, Support, Inbox, Employees, edit (all fields or limited) and Admin. Click a value to inherit it, allow it or deny it. The dot shows where it comes from: grey the role, blue the department, teal the person. Locked admins cannot be changed.',
+      target: tour('access-tree'),
+      title: 'Module by module',
+      text: 'Every menu module with a master switch; open it for its pages (each with its own switch) and the permissions under them: data scope, editing, inboxes. Grey dots come from the role, blue from a department, teal from the person, amber are not saved yet; ↺ goes back to inherited. Save at the bottom.',
     },
     {
       target: slot('access.cards', 'changes'),
       title: 'Recent changes',
-      text: 'Every change: who made it, for whom, and what changed. A change applies from the person’s next click.',
+      text: 'Every change: who made it, for whom, what it was before.',
     },
   ],
   support: [

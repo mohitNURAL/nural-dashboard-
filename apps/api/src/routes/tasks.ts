@@ -195,8 +195,16 @@ export function taskRoutes(
 
   // Export to Excel: every task of the list as it is on screen (all pages), same params.
   app.get('/api/tasks/export', async (req, reply) => {
-    const { name } = z
-      .object({ name: z.string().trim().max(120).optional() })
+    // The reader's columns and row order (2026-10-12): the file follows the list as they see it.
+    const ids = (v?: string) =>
+      v ? v.split(',').filter((x) => /^[A-Za-z]{1,30}$/.test(x)) : undefined;
+    const { name, cols, hidden, order } = z
+      .object({
+        name: z.string().trim().max(120).optional(),
+        cols: z.string().max(600).optional(),
+        hidden: z.string().max(600).optional(),
+        order: z.string().max(8000).optional(),
+      })
       .parse(req.query ?? {});
     const { ds, ctx, list } = await selectTasks(req);
     const title = name || 'Tasks';
@@ -204,6 +212,15 @@ export function taskRoutes(
       list.map((t) => taskRow(ds, ctx, t)),
       title,
       ctx.tz,
+      {
+        cols: ids(cols),
+        hidden: ids(hidden),
+        order: order
+          ?.split(',')
+          .map(Number)
+          .filter((n) => Number.isInteger(n) && n > 0)
+          .slice(0, 1000),
+      },
     );
     return reply
       .header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')

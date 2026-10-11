@@ -7,47 +7,98 @@
 // Pure functions; enforced through viewerOf (roles.ts) on every request.
 import { z } from 'zod';
 
+// One right per menu page (2026-10-12, packages/shared modules.ts) plus the permissions under
+// them: data scope, edit, the Support inbox and the Help feedback inbox. Grants saved before
+// 2026-10-12 may hold `employees` (company tree and people directory together): it still counts
+// for both pages unless one of them is set on its own.
 export const RIGHT_KEYS = [
   'scope',
+  'edit',
   'kpi',
+  'dev',
+  'qa',
   'support',
   'inbox',
-  'employees',
-  'edit',
+  'insights',
+  'org',
+  'people',
   'admin',
+  'connections',
+  'mailing',
+  'helpFeedback',
+  'helpInbox',
+  'helpDocs',
+  'helpFaq',
 ] as const;
 export type RightKey = (typeof RIGHT_KEYS)[number];
 
 export interface Rights {
   /** all = every project and person; own = tasks assigned to or created by them. */
   scope: 'all' | 'own';
+  /** all = every task field; limited = stage, status and tags. */
+  edit: 'all' | 'limited';
   kpi: boolean;
+  dev: boolean;
+  qa: boolean;
   /** Support tab (feedback form). */
   support: boolean;
   /** Support feedback inbox. */
   inbox: boolean;
-  /** Employee module: company tree and people directory. */
-  employees: boolean;
-  /** all = every task field; limited = stage, status and tags. */
-  edit: 'all' | 'limited';
+  insights: boolean;
+  /** Company tree. */
+  org: boolean;
+  /** People directory. */
+  people: boolean;
   /** Manage access (the Access permissions screen). */
   admin: boolean;
+  /** Integration: Connections. */
+  connections: boolean;
+  /** Integration: Mailing. */
+  mailing: boolean;
+  /** Help: send feedback. */
+  helpFeedback: boolean;
+  /** Help feedback inbox: read everyone's feedback. */
+  helpInbox: boolean;
+  /** Help: Documents. */
+  helpDocs: boolean;
+  /** Help: FAQs. */
+  helpFaq: boolean;
 }
 
+const bool = z.boolean();
 /** An override: only the rights it sets; the rest are inherited. */
 export const grantSchema = z
   .object({
     scope: z.enum(['all', 'own']),
-    kpi: z.boolean(),
-    support: z.boolean(),
-    inbox: z.boolean(),
-    employees: z.boolean(),
     edit: z.enum(['all', 'limited']),
-    admin: z.boolean(),
+    kpi: bool,
+    dev: bool,
+    qa: bool,
+    support: bool,
+    inbox: bool,
+    insights: bool,
+    org: bool,
+    people: bool,
+    admin: bool,
+    connections: bool,
+    mailing: bool,
+    helpFeedback: bool,
+    helpInbox: bool,
+    helpDocs: bool,
+    helpFaq: bool,
+    /** Before 2026-10-12: company tree and people directory together. */
+    employees: bool,
   })
   .partial()
   .strict();
 export type Grant = z.infer<typeof grantSchema>;
+
+/** A saved grant in today's terms: an old `employees` setting covers both Employee pages. */
+export function normalizeGrant(g: Grant): Grant {
+  if (g.employees === undefined) return g;
+  const { employees, ...rest } = g;
+  return { org: employees, people: employees, ...rest };
+}
 
 export interface Grants {
   users: Map<number, Grant>;
@@ -60,12 +111,22 @@ export type Source = 'role' | 'department' | 'person' | 'locked';
 
 export const ALL_RIGHTS: Rights = {
   scope: 'all',
+  edit: 'all',
   kpi: true,
+  dev: true,
+  qa: true,
   support: true,
   inbox: true,
-  employees: true,
-  edit: 'all',
+  insights: true,
+  org: true,
+  people: true,
   admin: true,
+  connections: true,
+  mailing: true,
+  helpFeedback: true,
+  helpInbox: true,
+  helpDocs: true,
+  helpFaq: true,
 };
 
 /** Rights from the role alone (unchanged behaviour before any override). */
@@ -78,12 +139,22 @@ export function defaultRights(
   const full = role !== 'member';
   return {
     scope: full ? 'all' : 'own',
+    edit: full ? 'all' : 'limited',
     kpi: full,
+    dev: true,
+    qa: true,
     support: manager || ctx.supportDept || ctx.supportLead,
     inbox: ctx.supportLead,
-    employees: manager,
-    edit: full ? 'all' : 'limited',
+    insights: true,
+    org: manager,
+    people: manager,
     admin: false,
+    connections: false,
+    mailing: false,
+    helpFeedback: true,
+    helpInbox: manager,
+    helpDocs: true,
+    helpFaq: true,
   };
 }
 
@@ -143,8 +214,9 @@ export function resolveRights(
       defaults,
     };
   }
-  const apply = (g: Grant | undefined, from: Source) => {
-    if (!g) return;
+  const apply = (saved: Grant | undefined, from: Source) => {
+    if (!saved) return;
+    const g = normalizeGrant(saved);
     for (const k of RIGHT_KEYS) {
       if (g[k] === undefined) continue;
       (rights as Record<RightKey, unknown>)[k] = g[k];

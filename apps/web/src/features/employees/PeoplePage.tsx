@@ -25,10 +25,21 @@ function AccessChips({ e }: { e: Employee }) {
       r.scope === 'all' ? 'bg-primary/15 text-primary' : 'bg-border/50 text-text-muted',
     ],
     ...(r.kpi ? [['KPI', 'bg-accent/15 text-accent'] as [string, string]] : []),
-    ['Dev · QA', 'bg-border/50 text-text-muted'],
+    ...(r.dev || r.qa
+      ? [
+          [
+            [r.dev && 'Dev', r.qa && 'QA'].filter(Boolean).join(' · '),
+            'bg-border/50 text-text-muted',
+          ] as [string, string],
+        ]
+      : []),
     ...(r.support ? [['Support', 'bg-accent/15 text-accent'] as [string, string]] : []),
     ...(r.inbox ? [['Inbox', 'bg-accent/15 text-accent'] as [string, string]] : []),
-    ...(r.employees ? [['Employees', 'bg-primary/15 text-primary'] as [string, string]] : []),
+    ...(r.org || r.people ? [['Employees', 'bg-primary/15 text-primary'] as [string, string]] : []),
+    ...(r.insights ? [['Insights', 'bg-accent/15 text-accent'] as [string, string]] : []),
+    ...(r.mailing || r.connections
+      ? [['Integration', 'bg-primary/15 text-primary'] as [string, string]]
+      : []),
     [
       r.edit === 'all' ? 'Edit all' : 'Edit limited',
       r.edit === 'all' ? 'bg-good/15 text-good' : 'bg-border/50 text-text-muted',

@@ -16,6 +16,7 @@ import { startReportScheduler, type ReportScheduler } from './reports/schedule';
 import { memoryReportStore, type ReportStore } from './reports/store';
 import { actionRoutes, type ActionDeps } from './routes/actions';
 import { feedbackRoutes, memoryFeedbackStore, type FeedbackStore } from './routes/feedback';
+import { helpRoutes, memoryHelpStore, type HelpStore } from './routes/help';
 import { memoryPrefsStore, prefsRoutes, type PrefsStore } from './routes/prefs';
 import type { Call } from './bitrix/limiter';
 import { config } from './config';
@@ -24,6 +25,7 @@ import { createMemoryBus, type EventBus } from './events/bus';
 import { healthStatus, workTime } from './health';
 import { hookRoutes, type ReceiverDeps } from './hooks/receiver';
 import { alertRoutes } from './routes/alerts';
+import type { Viewer } from './auth/roles';
 import { devRoutes } from './routes/dev';
 import { filterRoutes } from './routes/filters';
 import { kpiRoutes } from './routes/kpi';
@@ -53,6 +55,8 @@ export interface ServerOptions {
   roles?: RolesConfig;
   /** Support tab feedback; defaults to an in-memory store (Postgres in production). */
   feedback?: FeedbackStore;
+  /** Help feedback and its attachments (SRS 20); in-memory by default. */
+  help?: HelpStore;
   /** Per-person settings (sign-in count, layout, guided tour); in-memory by default. */
   prefs?: PrefsStore;
   /** Access overrides set by admins (SRS 7, Access permissions); in-memory by default. */
@@ -85,6 +89,7 @@ export async function buildServer({
   actions = {},
   roles,
   feedback,
+  help,
   prefs,
   access,
   reports,
@@ -191,11 +196,22 @@ export async function buildServer({
         role: v.role,
         full: v.full,
         kpi: v.kpi,
+        dev: v.dev,
+        qa: v.qa,
         support: v.support,
         inbox: v.inbox,
+        insights: v.insights,
+        org: v.org,
+        people: v.people,
         employees: v.employees,
         editAll: v.editAll,
         admin: v.admin,
+        connections: v.connections,
+        mailing: v.mailing,
+        helpFeedback: v.helpFeedback,
+        helpInbox: v.helpInbox,
+        helpDocs: v.helpDocs,
+        helpFaq: v.helpFaq,
         dept: d.kpiDept?.get(v.userId) ?? 'other',
         position: d.users.get(v.userId)?.workPosition ?? null,
       };
@@ -213,6 +229,24 @@ export async function buildServer({
     ...auth,
   });
   const opts = { tz: config.APP_TIMEZONE, now };
+  // Each page's data needs that page's right (2026-10-12, Access permissions); the first prefix
+  // that matches decides. KPI, Support, Access and the Help routes check their own.
+  const PAGE_GUARD: [string, (v: Viewer) => boolean, string][] = [
+    ['/api/dev/', (v) => v.dev, 'Development'],
+    ['/api/qa/', (v) => v.qa, 'QA'],
+    ['/api/insights', (v) => v.insights, 'Insights'],
+    ['/api/employees/tree', (v) => v.org, 'the Company tree'],
+    // The people list also fills the person pickers of Mailing and Access permissions.
+    ['/api/employees', (v) => v.people || v.mailing || v.admin, 'the People directory'],
+    ['/api/reports', (v) => v.mailing, 'Mailing'],
+    ['/api/integrations/test', (v) => v.connections, 'Connections'],
+    ['/api/integrations', (v) => v.connections || v.mailing, 'Integration'],
+  ];
+  app.addHook('preHandler', async (req, reply) => {
+    const guard = PAGE_GUARD.find(([prefix]) => req.url.startsWith(prefix));
+    if (guard && !guard[1](await scoping.viewer(req)))
+      return reply.code(403).send({ error: `You have no access to ${guard[2]}.` });
+  });
   devRoutes(app, scoping.dataset, opts);
   qaRoutes(app, scoping.dataset, opts);
   taskRoutes(app, scoping.dataset, opts, { describe, viewer: scoping.viewer });
@@ -228,6 +262,7 @@ export async function buildServer({
   });
   streamRoutes(app, bus, config.WEB_ORIGIN, scoping.viewer);
   feedbackRoutes(app, scoping.dataset, feedback ?? memoryFeedbackStore(), scoping.viewer);
+  helpRoutes(app, scoping.dataset, scoping.viewer, help ?? memoryHelpStore());
   prefsRoutes(app, prefStore, scoping.viewer);
   accessRoutes(app, scoping.dataset, scoping.viewer, {
     store: accessStore,
@@ -335,6 +370,7 @@ async function main() {
     bus,
     auth: { saveTokens: tokens?.save },
     feedback: await (await import('./routes/feedback')).dbFeedbackStore(),
+    help: await (await import('./routes/help')).dbHelpStore(),
     prefs: await (await import('./routes/prefs')).dbPrefsStore(),
     access: await (await import('./routes/access')).dbAccessStore(),
     reports: {

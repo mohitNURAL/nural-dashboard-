@@ -37,16 +37,29 @@ export interface Viewer {
   /** Data scope: every project and person (else only their own tasks). */
   full: boolean;
   kpi: boolean;
+  dev: boolean;
+  qa: boolean;
   /** Sees the Support tab. */
   support: boolean;
   /** Reads the feedback inbox. */
   inbox: boolean;
-  /** Employee module: company tree and people directory. */
+  insights: boolean;
+  /** Company tree. */
+  org: boolean;
+  /** People directory. */
+  people: boolean;
+  /** Either Employee page (company tree or people directory). */
   employees: boolean;
   /** Changes every task field (else stage, status and tags only). */
   editAll: boolean;
   /** Manages access. */
   admin: boolean;
+  connections: boolean;
+  mailing: boolean;
+  helpFeedback: boolean;
+  helpInbox: boolean;
+  helpDocs: boolean;
+  helpFaq: boolean;
 }
 
 const EMPTY: RolesConfig = { admins: [], pms: [], teamLeads: [], productOwners: [] };
@@ -109,11 +122,22 @@ export const LOCAL_VIEWER: Viewer = {
   role: 'local',
   full: true,
   kpi: true,
+  dev: true,
+  qa: true,
   support: true,
   inbox: true,
+  insights: true,
+  org: true,
+  people: true,
   employees: true,
   editAll: true,
   admin: true,
+  connections: true,
+  mailing: true,
+  helpFeedback: true,
+  helpInbox: true,
+  helpDocs: true,
+  helpFaq: true,
 };
 
 /** What a signed-in person may do; `authOn` false (local copy) means everything. */
@@ -132,11 +156,22 @@ export function viewerOf(
     role,
     full: rights.scope === 'all',
     kpi: rights.kpi,
+    dev: rights.dev,
+    qa: rights.qa,
     support: rights.support,
     inbox: rights.inbox,
-    employees: rights.employees,
+    insights: rights.insights,
+    org: rights.org,
+    people: rights.people,
+    employees: rights.org || rights.people,
     editAll: rights.edit === 'all',
     admin: rights.admin,
+    connections: rights.connections,
+    mailing: rights.mailing,
+    helpFeedback: rights.helpFeedback,
+    helpInbox: rights.helpInbox,
+    helpDocs: rights.helpDocs,
+    helpFaq: rights.helpFaq,
   };
 }
 

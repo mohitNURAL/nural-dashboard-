@@ -436,7 +436,8 @@ Rebuild after a change people can see:
 - **Columns:** a menu to tick the columns to show (at least one stays) and drag them into order; *Reset columns*.
 - **Column headers** can be dragged into another order.
 - **Rows** can be dragged by ⠿ into the reader's own order, shown as **Your order** (on/off); clicking a sort header switches back to that sort. The header and totals rows never move. On paged lists the order applies within the page shown; rows never placed keep their order after the placed ones.
-- Saved per person (`table.<id>.cols|hidden|rows|mode` in the layout, rows up to 2,000 keys); Reset layout clears it. A card's Excel and the page export follow the columns shown and their order; a task list's Excel holds every detail as before.
+- Saved per person (`table.<id>.cols|hidden|rows|mode` in the layout, rows up to 2,000 keys); Reset layout clears it. Dragging uses dnd-kit (pointer and keyboard), like tiles and the menu.
+- **Excel follows the layout:** a card's Excel and the page export take the table as shown. A task list's Excel puts the shown columns first in their order, then the details the list does not show (IDs, links), leaves out hidden columns, and lists rows in the reader's order when *Your order* is on (`/api/tasks/export?cols=&hidden=&order=`).
 
 **Scrollbars (2026-10-12).** Slim, rounded scrollbars in the brand blue (teal on hover) on a clear track everywhere; lighter in the dark menu.
 
@@ -1170,11 +1171,27 @@ For people with the **employees** right (by default admins, PM and team leads). 
   - open and overdue tasks (within the viewer's own data scope).
 - **Filters:** search, department, status, show inactive.
 
-**Access permissions** (admins; section 7, Rights):
-- **By person:** every person and every right. A right shows its value and a dot for where it comes from: grey the role, blue a department, teal the person, red a locked admin. Clicking it offers *Inherit (value)*, the allow value or the deny value.
-- **By department:** departments in tree order. A department's setting applies to its people and sub-departments.
-- **Saving:** changes save at once and apply from the person's next click.
-- **Recent changes:** lists the last 30 changes (who, for whom or which department, what, and what it was before).
+**Access permissions** (admins; section 7, Rights; redesigned 2026-10-12):
+- **One right per page.** The rights follow the menu (`packages/shared/src/modules.ts`, read by the menu, this screen and the tests), so a new page appears here by itself:
+
+| Module | Page (right) | Permissions under it | Default |
+|---|---|---|---|
+| Dashboard | KPI (`kpi`) | | not members |
+| | Development (`dev`) | Data: all / own tasks (`scope`); Edit: all fields / stage, status, tags (`edit`) | everyone |
+| | QA (`qa`) | | everyone |
+| | Support (`support`) | Support inbox (`inbox`) | Tech Support, PM, team leads; inbox: Support lead |
+| Insights | Insights (`insights`) | | everyone |
+| Employees | Company tree (`org`), People directory (`people`) | | PM, team leads |
+| | Access permissions (`admin`) | | admins |
+| Integration | Connections (`connections`), Mailing (`mailing`) | | admins |
+| Help | Feedback (`helpFeedback`) | Feedback inbox (`helpInbox`) | everyone; inbox: admins, PM, team leads |
+| | Documents (`helpDocs`), FAQs (`helpFaq`) | | everyone |
+
+  Finance is not grantable: admins only, always. Grants saved before 2026-10-12 with `employees` still count for both Employee pages.
+- **Server:** each page's API checks its right (`server.ts` PAGE_GUARD: `/api/dev` dev, `/api/qa` qa, `/api/insights` insights, `/api/employees/tree` org, `/api/employees` people or mailing or admin, `/api/reports` mailing, `/api/integrations` connections or mailing); a page you may not open sends you to your first allowed page.
+- **Screen:** on the left, *People* or *Departments* with search (a dot marks someone with their own settings, a lock a locked admin). On the right, every module as a compact card: icon, bold name, "3 of 4 pages open" and a master switch for the whole module; open it for its pages, each with an on/off switch, a dot for where the value comes from (grey role, blue department, teal person, red locked, amber not saved yet) and ↺ back to inherited; the permissions sit under their page as two-choice pills. *Allow all modules*, *Remove all* (Access permissions is never switched on in bulk) and ↺ for everything.
+- **Saving:** changes are a draft until **Save** (or *Discard*) in the bar at the bottom, which counts them; they apply from the person's next click.
+- **Recent changes:** the last 30 changes (who, for whom or which department, what, and what it was before), as a compact timeline.
 - **Locked:** admins in `config/roles.json` cannot be changed.
 
 ## 18. Insights (2026-10-12)
@@ -1242,3 +1259,25 @@ For people with the **employees** right (by default admins, PM and team leads). 
 - *Slack:* api.slack.com app → bot scopes `chat:write`, `users:read.email`, `im:write`, `channels:read` → install → invite it to report channels → `SLACK_BOT_TOKEN` in `.env.prod` and redeploy.
 
 **API (admins):** `GET /api/integrations/status`, `POST /api/integrations/test`, `GET /api/integrations/slack/channels`, `GET /api/reports/catalogue`, `GET|POST /api/reports`, `PUT|DELETE /api/reports/:id`, `POST /api/reports/:id/state|render|test`, `GET /api/reports/:id/runs`. Content builders are pure functions in `packages/shared/src/reports.ts` with tests.
+
+
+## 20. Help (2026-10-12)
+
+**Who:** everyone by default (rights `helpFeedback`, `helpDocs`, `helpFaq`); the Feedback inbox needs `helpInbox` (admins, PM, team leads by default). Menu module *Help*.
+
+**Feedback** (`routes/help.ts`, tables `help_feedback`, `help_files`):
+- **About:** the dashboard, a page (from the person's menu), a project or a person. Projects and people offered are only those in the sender's own data (`GET /api/help/options`, scoped dataset); the server refuses a project or person they cannot see.
+- **Fields:** title, details, impact (low, medium, high).
+- **Attachments:** up to 5 files of 8 MB each: images (also pasted with Ctrl+V or dropped), PDF, Excel (xlsx, xls, csv), Word (docx, doc). Sent as base64 in JSON; type by extension and size are checked on the server; stored in Postgres; downloaded with `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff` and a sandbox CSP (images may show inline). Only the sender and the inbox can open a file.
+- **My feedback:** what the person sent, its status and the reply.
+- **Feedback inbox:** everyone's feedback (Finance feedback to admins only), filters by status and impact, attachments, a reply that marks it reviewed, Excel export.
+
+**Documents:** the PDF guides for the person's guide set (section 6, Guides): the whole dashboard (User guide, Module guide) and one guide per page they can open (`/guides/<set>/modules/<Page> guide.pdf`; shown only once built).
+
+**FAQs:** questions and answers by topic (`features/help/faq.ts`), searchable; includes why one number can differ between two places.
+
+**Feedback prompt:** a day after a person's first sign-in (`user_prefs.first_sign_in_at`; earlier users from their second sign-in), on a later visit and not over a tour, a card asks how it is going (read aloud when Voice is on), with *Give feedback* (opens Help › Feedback; asks again in 30 days), *Later* (7 days) and *Don't ask again*. Pure rule `features/help/nudge.ts`, with tests. A Feedback icon is always in the page tools.
+
+## 21. Finance (2026-10-12)
+
+**Cost to company** (menu module *Finance*): admins only, always; not grantable on the Access screen. Coming soon: a quote card ("What gets measured gets managed." Peter Drucker) and a *Share your needs* form saved as Help feedback about Finance, which only admins read. The API refuses Finance feedback from anyone but admins.

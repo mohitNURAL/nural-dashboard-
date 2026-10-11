@@ -57,6 +57,13 @@
       "when": 1791733681084,
       "tag": "0007_gifted_shatterstar",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791747495519,
+      "tag": "0008_funny_la_nuit",
+      "breakpoints": true
     }
   ]
 }

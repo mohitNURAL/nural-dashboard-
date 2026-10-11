@@ -26,10 +26,18 @@ export function reportRoutes(
   viewer: (req: FastifyRequest) => Promise<Viewer>,
   deps: ReportRouteDeps,
 ) {
+  // Mailing needs the mailing right, Connections the connections right (server.ts PAGE_GUARD,
+  // repeated here so these routes are guarded wherever they are mounted).
   app.addHook('preHandler', async (req, reply) => {
-    if (!req.url.startsWith('/api/reports') && !req.url.startsWith('/api/integrations')) return;
-    if (!(await viewer(req)).admin)
-      return reply.code(403).send({ error: 'Integration is for admins only.' });
+    const v = await viewer(req);
+    const ok = req.url.startsWith('/api/reports')
+      ? v.mailing
+      : req.url.startsWith('/api/integrations/test')
+        ? v.connections
+        : req.url.startsWith('/api/integrations')
+          ? v.connections || v.mailing
+          : true;
+    if (!ok) return reply.code(403).send({ error: 'You have no access to Integration.' });
   });
 
   const view = (r: Report) => ({ ...r, schedule: scheduleText(r.definition) });
