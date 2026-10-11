@@ -3,7 +3,7 @@ import { TopBar } from './components/TopBar';
 import { DevTab } from './features/dev/DevTab';
 import { FilterBar } from './features/filters/FilterBar';
 import { SupportTab } from './features/support/SupportTab';
-import { useMe } from './api/me';
+import { useMe, useSessionEnd } from './api/me';
 import { useTheme } from './store/theme';
 import { useTab } from './features/filters/useFilters';
 import { KpiTab } from './features/kpi/KpiTab';
@@ -24,6 +24,7 @@ export default function App() {
     (urlTab === 'kpi' && !kpiAllowed) || (urlTab === 'support' && !supportAllowed) ? 'dev' : urlTab;
   useLiveUpdates();
   useNewVersion();
+  useSessionEnd();
 
   return (
     <div className="min-h-screen">

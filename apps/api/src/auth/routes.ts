@@ -4,11 +4,13 @@ import { randomBytes } from 'node:crypto';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { authorizeUrl, exchangeCode, portalUserId, type TokenResponse } from './bitrixOAuth';
 import {
+  COOKIE_DAYS,
   cookie,
   parseCookies,
   readSession,
   SESSION_COOKIE,
   SESSION_DAYS,
+  sessionExpired,
   sign,
   STATE_COOKIE,
   verify,
@@ -34,6 +36,8 @@ export interface AuthOptions {
   ) => Promise<{ role: string; full: boolean; support: boolean; admin: boolean; inbox: boolean }>;
   /** Keeps the person's tokens for task actions (tokens.ts); optional. */
   saveTokens?: (userId: number, token: TokenResponse) => Promise<void>;
+  /** Called after each successful sign-in (counts sign-ins for the guided tour). */
+  onSignIn?: (userId: number) => Promise<void>;
   /** Defaults to the real code exchange; tests pass a stub. */
   exchange?: (code: string) => Promise<TokenResponse>;
   now?: () => number;
@@ -61,12 +65,18 @@ export function authRoutes(app: FastifyInstance, opts: AuthOptions) {
     const s = session(req);
     (req as unknown as Record<symbol, Session | null>)[SESSION_USER] = s;
     if (isOpen(req.url)) return;
-    if (!s) return reply.code(401).send({ error: 'Sign in required' });
+    if (!s) return reply.code(401).send(signInRequired(req));
   });
+
+  // `expired` tells the web app to show "your session ended" rather than go straight to sign-in.
+  const signInRequired = (req: FastifyRequest) =>
+    sessionExpired(parseCookies(req.headers.cookie)[SESSION_COOKIE], secret, now())
+      ? { error: 'Your session ended. Sign in again.', expired: true }
+      : { error: 'Sign in required' };
 
   app.get('/api/auth/me', async (req, reply) => {
     const s = session(req);
-    if (!s) return reply.code(401).send({ error: 'Sign in required' });
+    if (!s) return reply.code(401).send(signInRequired(req));
     const access = (await opts.describeViewer?.(req)) ?? {
       role: 'local',
       full: true,
@@ -74,12 +84,15 @@ export function authRoutes(app: FastifyInstance, opts: AuthOptions) {
       admin: true,
       inbox: true,
     };
-    return { id: s.userId, name: s.name, auth: opts.mode, ...access };
+    // exp: when the session ends (null with sign-in off); the page signs out by itself then.
+    const exp = Number.isFinite(s.exp) ? s.exp : null;
+    return { id: s.userId, name: s.name, auth: opts.mode, exp, ...access };
   });
 
   // After Sign out: a plain page with a way back in (signing in again also picks up new
   // Bitrix24 permissions, e.g. Tasks).
-  app.get('/api/auth/signed-out', async (_req, reply) =>
+  // ?expired=1: the session ran out (SESSION_DAYS after sign-in).
+  app.get<{ Querystring: { expired?: string } }>('/api/auth/signed-out', async (req, reply) =>
     reply
       .type('text/html')
       .send(
@@ -87,8 +100,11 @@ export function authRoutes(app: FastifyInstance, opts: AuthOptions) {
           '<title>Signed out · Nural dashboard</title>' +
           '<body style="font-family:system-ui,sans-serif;background:#f8f9fd;color:#231f20;display:grid;place-items:center;min-height:100vh;margin:0">' +
           '<main style="background:#fff;border:1px solid #dfddde;border-radius:8px;padding:32px;text-align:center;max-width:360px">' +
-          '<h1 style="font-size:18px;color:#18244e;margin:0 0 8px">You are signed out</h1>' +
-          '<p style="margin:0 0 20px;color:#6b6567">Nural Dev and QA Dashboard</p>' +
+          (req.query.expired
+            ? `<h1 style="font-size:18px;color:#18244e;margin:0 0 8px">Your session ended</h1>` +
+              `<p style="margin:0 0 20px;color:#6b6567">For security you are signed out ${SESSION_DAYS} days after signing in. Sign in again to continue.</p>`
+            : '<h1 style="font-size:18px;color:#18244e;margin:0 0 8px">You are signed out</h1>' +
+              '<p style="margin:0 0 20px;color:#6b6567">Nural Dev and QA Dashboard</p>') +
           '<a href="/api/auth/login" style="display:inline-block;background:#32499f;color:#fff;text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:700">Sign in with Bitrix24</a>' +
           '</main></body>',
       ),
@@ -136,13 +152,16 @@ export function authRoutes(app: FastifyInstance, opts: AuthOptions) {
         .catch((err: Error) =>
           req.log.error({ err: err.message }, 'could not store Bitrix24 tokens'),
         );
+      await opts
+        .onSignIn?.(user.id)
+        .catch((err: Error) => req.log.error({ err: err.message }, 'could not count the sign-in'));
       const s: Session = {
         userId: user.id,
         name: user.name,
         exp: now() + SESSION_DAYS * 86_400_000,
       };
       reply.header('Set-Cookie', [
-        cookie(SESSION_COOKIE, sign(s, secret), SESSION_DAYS * 86_400, opts.secure),
+        cookie(SESSION_COOKIE, sign(s, secret), COOKIE_DAYS * 86_400, opts.secure),
         cookie(STATE_COOKIE, '', 0, opts.secure),
       ]);
       return reply.redirect('/');

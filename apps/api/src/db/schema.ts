@@ -210,3 +210,18 @@ export const feedback = pgTable(
   },
   (t) => [index('feedback_user_idx').on(t.userId, t.at)],
 );
+
+/**
+ * Per-person dashboard settings (2026-10-11): sign-in count (the guided tour plays on the first
+ * three), the order of tiles, cards and sections, and guided-tour state. Each person reads and
+ * writes only their own row.
+ */
+export const userPrefs = pgTable('user_prefs', {
+  userId: integer('user_id').primaryKey(),
+  loginCount: integer('login_count').notNull().default(0),
+  /** { "dev.tiles": ["total", "pending", ...], ... } */
+  layout: jsonb('layout').notNull().default({}),
+  /** { voice, shown: { tab: sign-in number }, seen: [what's-new IDs] } */
+  tour: jsonb('tour').notNull().default({}),
+  updatedAt: tz('updated_at').notNull().defaultNow(),
+});

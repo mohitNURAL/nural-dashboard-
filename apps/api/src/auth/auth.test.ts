@@ -84,6 +84,11 @@ describe('Sign in with Bitrix24', () => {
     const value = session.split(';')[0]!;
     const me = await a.inject({ url: '/api/auth/me', headers: { cookie: value } });
     expect(me.json()).toMatchObject({ id: 7, name: 'Neha Gautam' });
+    // Signed out 3 days after sign-in; the cookie lasts a day longer to say so.
+    const exp = me.json().exp as number;
+    expect(exp - Date.now()).toBeGreaterThan(3 * 86_400_000 - 60_000);
+    expect(exp - Date.now()).toBeLessThanOrEqual(3 * 86_400_000);
+    expect(session).toMatch(/Max-Age=345600/);
     expect(
       (await a.inject({ url: '/api/dev/summary', headers: { cookie: value } })).statusCode,
     ).toBe(200);
@@ -119,6 +124,8 @@ describe('Sign in with Bitrix24', () => {
         headers: { cookie: `${SESSION_COOKIE}=${v}` },
       });
       expect(res.statusCode).toBe(401);
+      // Only a genuine session that ran out says "expired"; forged ones look signed out.
+      expect(res.json().expired ?? false).toBe(v === expired);
     }
     expect(readSession(good, SECRET)?.userId).toBe(7);
   });
@@ -130,6 +137,8 @@ describe('Sign in with Bitrix24', () => {
     const page = await a.inject('/api/auth/signed-out');
     expect(page.statusCode).toBe(200);
     expect(page.body).toContain('href="/api/auth/login"');
+    const ended = await a.inject('/api/auth/signed-out?expired=1');
+    expect(ended.body).toContain('Your session ended');
   });
 
   it('lets everything through with AUTH=off', async () => {

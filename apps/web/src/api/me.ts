@@ -1,11 +1,15 @@
 // The signed-in person and their access (NFR-4): full access sees everything and the KPI tab;
 // a member sees only their own tasks (the server enforces it; the web app follows).
+import { useEffect } from 'react';
+import { apiPost, signInAgain } from './client';
 import { useApi } from './queries';
 
 export interface Me {
   id: number;
   name: string;
   auth: 'off' | 'bitrix';
+  /** When the session ends (ms since epoch), 3 days after sign-in; null with sign-in off. */
+  exp: number | null;
   role: 'admin' | 'pm' | 'teamLead' | 'productOwner' | 'member' | 'local';
   full: boolean;
   /** Sees the Support tab (Tech Support team, PM, team leads, admins). */
@@ -16,6 +20,22 @@ export interface Me {
 }
 
 export const useMe = () => useApi<Me>('/api/auth/me', {});
+
+/** An open page signs itself out when the session ends, even if nobody touches it. */
+export function useSessionEnd() {
+  const { data: me } = useMe();
+  const exp = me?.exp;
+  useEffect(() => {
+    if (!exp) return;
+    const end = () =>
+      void apiPost('/api/auth/logout', {})
+        .catch(() => undefined)
+        .finally(() => signInAgain(true));
+    // setTimeout holds at most ~24.8 days; sessions are 3, so one timer is enough.
+    const timer = window.setTimeout(end, Math.max(0, exp - Date.now()));
+    return () => window.clearTimeout(timer);
+  }, [exp]);
+}
 
 export const ROLE_LABEL: Record<Me['role'], string> = {
   admin: 'Admin',

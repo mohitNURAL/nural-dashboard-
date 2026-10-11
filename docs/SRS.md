@@ -399,7 +399,13 @@ SSE is chosen over WebSocket because the browser only receives; filters are sent
 - `AUTH=bitrix` turns sign-in on; `AUTH=off` (the default, for local development) lets every call through.
 - `GET /api/auth/login` sends the browser to the portal's `/oauth/authorize/` page with the local app's client ID and a random `state`, kept in a short-lived signed cookie.
 - Bitrix24 returns to the local app's handler path (the site root) with `?code=&state=`, even when `redirect_uri` is given. Caddy redirects that to `GET /api/auth/callback`. The API checks the `state` and exchanges the code at `https://oauth.bitrix.info/oauth/token/`. It accepts the result only when its `client_endpoint` is our portal and the `user_id` is an active user in our `users` table. The access token is not used or kept: sign-in makes no REST call and writes nothing to Bitrix24.
-- The session is a signed cookie (HMAC-SHA256 with `SESSION_SECRET`): HttpOnly, SameSite=Lax, Secure on HTTPS, valid 7 days, holding the user ID and name. There is no session table, and changing `SESSION_SECRET` signs everyone out.
+- The session is a signed cookie (HMAC-SHA256 with `SESSION_SECRET`): HttpOnly, SameSite=Lax, Secure on HTTPS, holding the user ID and name. There is no session table, and changing `SESSION_SECRET` signs everyone out.
+- **Sessions last 3 days (2026-10-11).** Everyone is signed out 3 days after signing in, even if active.
+  - The cookie is kept one day longer, so a request after expiry answers 401 with `expired: true`. The app then shows "Your session ended" (`/api/auth/signed-out?expired=1`) with Sign in with Bitrix24, instead of signing straight back in.
+  - `/api/auth/me` returns `exp`. An open page signs itself out at that moment, even when idle.
+- **Per-person settings (`user_prefs`, migration 0005).** Stores the sign-in count (raised on every sign-in, for the guided tour), the order of tiles, cards and sections, and guided-tour state.
+  - `GET /api/prefs` and `PUT /api/prefs` read and write only the signed-in person's own row.
+  - Input is checked: known shapes, ID characters and size limits.
 - With sign-in on, every `/api` call other than `/api/auth/*` needs the session, or it gets 401 and the web app goes to sign-in. `/health` and `/hooks/bitrix` (checked by its application token) stay open.
 - `GET /api/auth/me` returns the signed-in name, shown in the top bar with a **Sign out** button (`POST /api/auth/logout`). Sign out ends on a "You are signed out" page (`GET /api/auth/signed-out`) with **Sign in with Bitrix24**; it does not go straight back to Bitrix24, which would sign a person who is still logged in to Bitrix24 straight back in. On a local copy (sign-in off) the top bar says so.
 

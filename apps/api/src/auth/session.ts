@@ -4,7 +4,13 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 
 export const SESSION_COOKIE = 'nural_session';
 export const STATE_COOKIE = 'nural_oauth_state';
-export const SESSION_DAYS = 7;
+/** Everyone signs in again 3 days after signing in (2026-10-11). */
+export const SESSION_DAYS = 3;
+/**
+ * The cookie outlives the session by a day, so a request just after expiry still carries it and
+ * the server can say "your session ended" instead of treating the person as never signed in.
+ */
+export const COOKIE_DAYS = SESSION_DAYS + 1;
 
 export interface Session {
   userId: number;
@@ -41,6 +47,12 @@ export function verify<T>(token: string | undefined, secret: string): T | null {
 export function readSession(token: string | undefined, secret: string, now = Date.now()) {
   const s = verify<Session>(token, secret);
   return s && typeof s.userId === 'number' && s.exp > now ? s : null;
+}
+
+/** True when the token is a genuine session that has run out (not a forged or missing one). */
+export function sessionExpired(token: string | undefined, secret: string, now = Date.now()) {
+  const s = verify<Session>(token, secret);
+  return !!s && typeof s.userId === 'number' && s.exp <= now;
 }
 
 /** Cookie header → { name: value }. */

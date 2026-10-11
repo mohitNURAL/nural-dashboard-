@@ -6,6 +6,7 @@ import { authRoutes, sessionUserOf, type AuthOptions } from './auth/routes';
 import { loadRoles, requestDataset, type RolesConfig } from './auth/roles';
 import { actionRoutes, type ActionDeps } from './routes/actions';
 import { feedbackRoutes, memoryFeedbackStore, type FeedbackStore } from './routes/feedback';
+import { memoryPrefsStore, prefsRoutes, type PrefsStore } from './routes/prefs';
 import type { Call } from './bitrix/limiter';
 import { config } from './config';
 import { cachedDataset, loadDataset, type DatasetProvider } from './data/dataset';
@@ -42,6 +43,8 @@ export interface ServerOptions {
   roles?: RolesConfig;
   /** Support tab feedback; defaults to an in-memory store (Postgres in production). */
   feedback?: FeedbackStore;
+  /** Per-person settings (sign-in count, layout, guided tour); in-memory by default. */
+  prefs?: PrefsStore;
   /** Task actions (move stage, change status) as the signed-in person; off without them. */
   actions?: Omit<Partial<ActionDeps>, 'userOf'>;
   /** Task description for the drawer, read live from Bitrix24 (not stored by the sync). */
@@ -60,6 +63,7 @@ export async function buildServer({
   actions = {},
   roles,
   feedback,
+  prefs,
 }: ServerOptions = {}) {
   const app = Fastify({
     logger: logger && {
@@ -136,7 +140,9 @@ export async function buildServer({
   const ds = dataset;
   // NFR-4: every route reads data through this, per request; a member gets only their tasks.
   const scoping = requestDataset(ds, roles ?? loadRoles(), (auth.mode ?? config.AUTH) === 'bitrix');
+  const prefStore = prefs ?? memoryPrefsStore();
   authRoutes(app, {
+    onSignIn: (userId) => prefStore.signIn(userId),
     describeViewer: async (req) => {
       const v = await scoping.viewer(req);
       return { role: v.role, full: v.full, support: v.support, admin: v.admin, inbox: v.inbox };
@@ -168,6 +174,7 @@ export async function buildServer({
   });
   streamRoutes(app, bus, config.WEB_ORIGIN, scoping.viewer);
   feedbackRoutes(app, scoping.dataset, feedback ?? memoryFeedbackStore(), scoping.viewer);
+  prefsRoutes(app, prefStore, scoping.viewer);
   await hookRoutes(app, {
     token: config.BITRIX_OUTBOUND_TOKEN,
     ...hooks,
@@ -227,6 +234,7 @@ async function main() {
     bus,
     auth: { saveTokens: tokens?.save },
     feedback: await (await import('./routes/feedback')).dbFeedbackStore(),
+    prefs: await (await import('./routes/prefs')).dbPrefsStore(),
     actions: {
       userCall: bitrix.getBitrix().userCall,
       tokens,
