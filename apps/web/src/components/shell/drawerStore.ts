@@ -31,3 +31,29 @@ export const useDrawer = create<{
   },
   setMobileOpen: (mobileOpen) => set({ mobileOpen }),
 }));
+
+/** Menu groups folded shut (by label), remembered in this browser. */
+const FOLD_KEY = 'nural.drawer.folded';
+const readFolded = (): string[] => {
+  try {
+    return JSON.parse(localStorage.getItem(FOLD_KEY) ?? '[]') as string[];
+  } catch {
+    return [];
+  }
+};
+
+export const useFolded = create<{ folded: string[]; toggle: (group: string) => void }>((set) => ({
+  folded: readFolded(),
+  toggle: (group) =>
+    set((s) => {
+      const folded = s.folded.includes(group)
+        ? s.folded.filter((g) => g !== group)
+        : [...s.folded, group];
+      try {
+        localStorage.setItem(FOLD_KEY, JSON.stringify(folded));
+      } catch {
+        // Private window: for this visit only.
+      }
+      return { folded };
+    }),
+}));

@@ -366,17 +366,28 @@ The QA tab swaps the Tag filter for a Bug or Feedback filter and puts Rework in 
   - Access permissions: set per person, set per department, admins, see all data. Its rights table and Recent changes are two cards.
 - Their tour steps and Customise names are in `features/tour/steps.ts` and `labels.ts`.
 
-**Guides (2026-10-11).** Two PDF guides open from the **Guides** icon on the dock (`apps/web/public/guides`; sources in `docs/guides`):
-- **User guide:** the whole dashboard;
-- **Module guide:** page by page, every data point, with definitions.
+**Guides (2026-10-11): one set per level of access.** The **Guides** icon on the dock opens a **User guide** and a **Module guide**. Each person gets the set that matches their current rights (`components/shell/guideSet.ts`: admin → *admin*, employees → *manager*, KPI → *owner*, Support → *support*, else *member*):
 
-How they are made:
-- Their data-point texts are the guided tour's own steps and the "i" definitions.
-- Their screenshots come from real data with every person's and project's name, the avatar initials and the task titles replaced by stand-ins; a check before each capture stops if a real name is left.
-- Rebuild after a change people can see:
-  1. `python docs/guides/src/build_guides.py`;
-  2. `node docs/guides/src/print.mjs` (needs Chrome with remote debugging on port 9333);
-  3. copy the two PDFs to `apps/web/public/guides`.
+| Set | Pages covered | Wording |
+|---|---|---|
+| member | Development, QA | "your tasks" |
+| support | Development, QA, Support | "your tasks" |
+| owner | KPI, Development, QA | all data |
+| manager | KPI, Development, QA, Support, Company tree, People directory | all data |
+| admin | everything, including Access permissions | all data |
+
+What each set holds:
+- **Chapters:** only the pages that level can open, worded for that level (members' own wording where the tour has one).
+- **Screenshots:** taken as a real person of that level, so a member's show only their own tasks.
+- **Names:** every person's and project's name, avatar initials and task titles are replaced by stand-ins. The full list of names is read with admin access, so a member's capture is checked too; a capture stops if a real name is left.
+- **Texts:** the data-point texts are the tour's own steps and the "i" definitions.
+
+Files: sources in `docs/guides/src` (`build_guides.py` with `SETS`, `print.mjs`), images in `docs/guides/img/<set>`, PDFs in `docs/guides/<set>` and served from `apps/web/public/guides/<set>`.
+
+Rebuild after a change people can see:
+1. export `steps.json` from `features/tour`;
+2. run `build_guides.py`;
+3. run `print.mjs`.
 
 **Side drawer and page tools (2026-10-11).**
 
@@ -386,6 +397,7 @@ How they are made:
 - **Open:** hovering or keyboard focus slides it open over the page (264 px), with each page's name and a short hint, and leaving closes it.
 - **Pinned:** the ☰ button pins it open, pushing the page aside, until clicked again (remembered in the browser).
 - **Small screens:** it opens from a menu button in the top bar.
+- **Folding:** each group folds shut from its header (chevron), remembered in the browser; a folded group still shows the page you are on.
 - **Groups:**
   - *Dashboard*: KPI, Development, QA, Support;
   - *Employees*: Company tree, People directory, Access permissions.

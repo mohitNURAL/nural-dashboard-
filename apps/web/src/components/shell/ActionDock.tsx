@@ -5,7 +5,9 @@ import * as Popover from '@radix-ui/react-popover';
 import clsx from 'clsx';
 import type { ReactNode } from 'react';
 import { toast } from 'sonner';
+import { useMe } from '../../api/me';
 import { usePrefs, useSavePrefs } from '../../api/prefs';
+import { GUIDE_SET_LABEL, guideSet } from './guideSet';
 import { useTourRequest } from '../../features/tour/useGuidedTour';
 import { voiceAvailable } from '../../features/tour/voice';
 import { useCustomisable } from '../layout/customisable';
@@ -13,7 +15,10 @@ import { CustomisePanel } from '../layout/CustomiseView';
 import { IconBook, IconCompass, IconReset, IconSliders, IconSpeaker } from '../ui/icons';
 import { Tip } from '../ui/Tip';
 
-/** The PDF guides (docs/guides, built by docs/guides/src; names in screenshots replaced). */
+/**
+ * The PDF guides (docs/guides, built by docs/guides/src; names in screenshots replaced), one set
+ * per level of access: the person gets the set that matches their current rights.
+ */
 const GUIDES = [
   {
     file: 'Nural Dashboard - User guide.pdf',
@@ -65,6 +70,8 @@ function DockButton({
 }
 
 export function ActionDock({ tourable }: { tourable: boolean }) {
+  const { data: me } = useMe();
+  const set = guideSet(me);
   const { ready, hiddenCount } = useCustomisable();
   const { data: prefs } = usePrefs();
   const save = useSavePrefs();
@@ -144,11 +151,14 @@ export function ActionDock({ tourable }: { tourable: boolean }) {
             collisionPadding={12}
             className="z-50 w-80 rounded-card border border-border bg-surface p-2 text-text shadow-pop"
           >
-            <p className="px-2 pb-2 pt-1 font-heading text-h3 text-primary-dark">Guides</p>
+            <p className="px-2 pt-1 font-heading text-h3 text-primary-dark">Guides</p>
+            <p className="px-2 pb-2 text-table text-text-muted">
+              For {GUIDE_SET_LABEL[set]}: only the pages you can open.
+            </p>
             {GUIDES.map((g) => (
               <a
                 key={g.file}
-                href={`/guides/${encodeURIComponent(g.file)}`}
+                href={`/guides/${set}/${encodeURIComponent(g.file)}`}
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-start gap-3 rounded-control p-2 hover:bg-primary-soft-100"
