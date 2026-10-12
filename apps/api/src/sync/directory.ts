@@ -143,8 +143,13 @@ export async function syncGroupStages(call: Call, groupIds: number[]) {
   for (const id of groupIds) {
     commands[`g${id}`] = { method: 'task.stages.get', params: { entityId: id } };
   }
-  const res = await batch<Record<string, BitrixStage> | BitrixStage[]>(call, commands);
-  const stageRows = groupIds.flatMap((groupId) =>
+  // A board the webhook user may not open (ACCESS_DENIED, e.g. a private project) is skipped
+  // and keeps the stages stored for it, instead of failing the whole sync.
+  const res = await batch<Record<string, BitrixStage> | BitrixStage[]>(call, commands, {
+    allowErrors: true,
+  });
+  const readIds = groupIds.filter((id) => !res.errors[`g${id}`]);
+  const stageRows = readIds.flatMap((groupId) =>
     Object.values(res.result[`g${groupId}`] ?? {}).map((s) => ({
       id: Number(s.ID),
       groupId,
@@ -163,7 +168,7 @@ export async function syncGroupStages(call: Call, groupIds: number[]) {
     // just read, keeping every stage just seen.
     await db.delete(schema.stages).where(
       and(
-        inArray(schema.stages.groupId, groupIds),
+        inArray(schema.stages.groupId, readIds),
         notInArray(
           schema.stages.id,
           stageRows.map((s) => s.id),
