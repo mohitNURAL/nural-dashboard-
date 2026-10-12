@@ -135,6 +135,20 @@ const ALL: {
     ],
   },
   {
+    label: 'Finance',
+    icon: <IconCoin />,
+    items: [
+      {
+        id: 'finance',
+        label: 'Cost to company',
+        hint: 'Coming soon: tell us what you need',
+        icon: <IconCoin />,
+        // Admins only, always: not grantable on the Access screen.
+        allowed: (me) => me.admin,
+      },
+    ],
+  },
+  {
     label: 'Help',
     icon: <IconHelp />,
     items: [
@@ -161,23 +175,9 @@ const ALL: {
       },
     ],
   },
-  {
-    label: 'Finance',
-    icon: <IconCoin />,
-    items: [
-      {
-        id: 'finance',
-        label: 'Cost to company',
-        hint: 'Coming soon: tell us what you need',
-        icon: <IconCoin />,
-        // Admins only, always: not grantable on the Access screen.
-        allowed: (me) => me.admin,
-      },
-    ],
-  },
 ];
 
-/** The groups and pages this person may open. */
+/** The groups and pages this person may open. Help is last by default (2026-10-12). */
 export function navFor(me: Me | undefined): NavGroup[] {
   if (!me) return [];
   return ALL.map((g) => ({

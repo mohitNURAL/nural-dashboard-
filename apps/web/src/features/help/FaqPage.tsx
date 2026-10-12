@@ -3,9 +3,10 @@ import clsx from 'clsx';
 import { useMemo, useState } from 'react';
 import { Card } from '../../components/Card';
 import { SortableGroup } from '../../components/layout/SortableGroup';
-import { IconChevron, IconHelp, IconSearch } from '../../components/ui/icons';
+import { IconChevron, IconHelp } from '../../components/ui/icons';
 import { PageHead } from '../../components/ui/PageHead';
 import { FAQ } from './faq';
+import { SearchInput } from '../../components/ui/SearchInput';
 
 export function FaqPage() {
   const [q, setQ] = useState('');
@@ -25,17 +26,7 @@ export function FaqPage() {
         sub="Answers to the questions people ask most"
         icon={<IconHelp size={24} />}
       >
-        <label className="relative block w-72">
-          <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted">
-            <IconSearch size={15} />
-          </span>
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search the answers"
-            className="h-10 w-full rounded-control border border-border bg-surface pl-8 pr-3 text-body focus:border-primary focus:outline-none"
-          />
-        </label>
+        <SearchInput value={q} onChange={setQ} placeholder="Search the answers" className="w-72" />
       </PageHead>
       <SortableGroup
         group="faq.cards"

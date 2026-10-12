@@ -444,6 +444,10 @@ Rebuild after a change people can see:
 - Saved per person (`table.<id>.cols|hidden|rows|mode` in the layout, rows up to 2,000 keys); Reset layout clears it. Dragging uses dnd-kit (pointer and keyboard), like tiles and the menu.
 - **Excel follows the layout:** a card's Excel and the page export take the table as shown. A task list's Excel puts the shown columns first in their order, then the details the list does not show (IDs, links), leaves out hidden columns, and lists rows in the reader's order when *Your order* is on (`/api/tasks/export?cols=&hidden=&order=`).
 
+**Search and dropdowns (2026-10-12).** One search box everywhere (`components/ui/SearchInput.tsx`): a search icon, a clear × once there is text, Escape clears, the same size and focus ring; and one dropdown (`components/ui/Select.tsx`): the native select in one look with a chevron. The filter bar's search dropdowns use the same box with ×. **Task lists search any column:** the words typed must each match somewhere in ID, title, project, assignee, creator, stage (dashboard or Bitrix24 column name), status, tags, priority, bug / feedback / task or overdue, in any order and case (`context.ts` taskMatcher; "moto vapt to do" finds Moto India VAPT tasks in To Do).
+
+**Menu order (2026-10-12):** Dashboard, Insights, Employees, Integration, Finance, **Help last**; a person's own dragged order is kept.
+
 **Scrollbars (2026-10-12).** Slim, rounded scrollbars in the brand blue (teal on hover) on a clear track everywhere; lighter in the dark menu.
 
 **Confirmations (2026-10-12).** Confirmations use the dashboard's own popup (`components/ui/ConfirmDialog.tsx`), never the browser's: completing a task, applying a bulk change, deleting a report. The popup names what will change (task, from → to) and its tone (good, warn, bad) colours the button.

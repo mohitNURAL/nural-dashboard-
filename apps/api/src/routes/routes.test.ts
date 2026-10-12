@@ -322,6 +322,11 @@ describe('metrics API', () => {
     });
     const search = await get('/api/tasks?q=price');
     expect(search.body.total).toBe(1);
+    // Search any column (2026-10-12): project, stage, words in any order, any case.
+    expect((await get('/api/tasks?q=support%20tool')).body.total).toBeGreaterThan(0);
+    const byStageAndProject = await get('/api/tasks?q=SUPPORT%20' + encodeURIComponent('price'));
+    expect(byStageAndProject.body.total).toBeLessThanOrEqual(search.body.total);
+    expect((await get('/api/tasks?q=nothing-matches-this')).body.total).toBe(0);
     const sorted = await get('/api/tasks?sort=-deadline&pageSize=1&page=1');
     expect(sorted.body).toMatchObject({ total: 3, pageSize: 1 });
     expect(sorted.body.rows[0].id).toBe(3); // latest deadline first

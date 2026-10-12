@@ -10,6 +10,7 @@ import { BoardsContext } from './boards';
 import { bulkRowClass, useBulk } from './bulk';
 import { BulkBar, SelectAllCell, SelectCell } from './BulkEdit';
 import { SORTABLE } from './columns';
+import { SearchInput } from '../../components/ui/SearchInput';
 
 interface Props {
   filterParams: Record<string, string>;
@@ -115,13 +116,13 @@ export function TaskList({
     <div className="space-y-3">
       <div className="flex items-center gap-3">
         {searchable && (
-          <input
-            type="search"
+          <SearchInput
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by ID or title…"
-            aria-label="Search tasks"
-            className="h-9 w-full max-w-sm rounded-control border border-border px-3 outline-none focus:border-primary"
+            onChange={setSearch}
+            size="sm"
+            placeholder="Search any column: ID, title, project, person, stage, tag…"
+            label="Search tasks"
+            className="w-full max-w-md"
           />
         )}
         <a

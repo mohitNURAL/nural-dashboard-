@@ -14,6 +14,7 @@ import { PriorityBadge, StageChip, StatusChip, TagChips } from '../../components
 import { confirm } from '../../components/ui/ConfirmDialog';
 import { fmtDate } from '../dev/format';
 import { BoardsContext } from './boards';
+import { Select } from '../../components/ui/Select';
 
 export type EditField =
   'stage' | 'status' | 'project' | 'assignee' | 'tags' | 'priority' | 'deadline';
@@ -131,10 +132,11 @@ function SelectEditor<V extends string | number>({
   label: string;
 }) {
   return (
-    <select
+    <Select
+      size="sm"
       autoFocus
       aria-label={label}
-      className={clsx(fieldClass, 'max-w-48')}
+      className="max-w-48"
       value={value}
       disabled={busy}
       onBlur={close}
@@ -149,7 +151,7 @@ function SelectEditor<V extends string | number>({
           {o.label}
         </option>
       ))}
-    </select>
+    </Select>
   );
 }
 

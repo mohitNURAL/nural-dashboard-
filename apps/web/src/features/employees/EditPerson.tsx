@@ -3,17 +3,18 @@
 // confirmation lists every change and where it goes before anything is sent.
 import * as Dialog from '@radix-ui/react-dialog';
 import { useQueryClient } from '@tanstack/react-query';
-import clsx from 'clsx';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { apiPost } from '../../api/client';
 import { API_KEY } from '../../api/queries';
 import { confirm } from '../../components/ui/ConfirmDialog';
-import { IconClose, IconLock, IconSearch } from '../../components/ui/icons';
+import { IconClose, IconLock } from '../../components/ui/icons';
 import { useOrgTree, type Employee, type Role } from './api';
 import { Avatar } from './common';
 import { DepartmentForm } from './DepartmentsDialog';
 import { ROLE_NAME } from './labels';
+import { Select } from '../../components/ui/Select';
+import { SearchInput } from '../../components/ui/SearchInput';
 
 const ROLES: Exclude<Role, 'local'>[] = ['admin', 'pm', 'teamLead', 'productOwner', 'member'];
 const field =
@@ -148,17 +149,17 @@ export function EditPerson({ person, onClose }: { person: Employee; onClose: () 
                   <IconLock size={14} /> Admin, locked in config/roles.json
                 </p>
               ) : (
-                <select
+                <Select
+                  className="w-full"
                   value={role}
                   onChange={(e) => setRole(e.target.value as Role)}
-                  className={field}
                 >
                   {ROLES.map((r) => (
                     <option key={r} value={r}>
                       {ROLE_NAME[r]}
                     </option>
                   ))}
-                </select>
+                </Select>
               )}
             </label>
             <label className="block">
@@ -214,17 +215,13 @@ export function EditPerson({ person, onClose }: { person: Employee; onClose: () 
                   </span>
                 ))}
               </div>
-              <label className="relative mb-1.5 block">
-                <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted">
-                  <IconSearch size={14} />
-                </span>
-                <input
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  placeholder="Find a department"
-                  className={clsx(field, 'h-9 pl-8')}
-                />
-              </label>
+              <SearchInput
+                value={q}
+                onChange={setQ}
+                size="sm"
+                placeholder="Find a department"
+                className="mb-1.5"
+              />
               <ul className="max-h-64 overflow-y-auto rounded-control border border-border p-1">
                 {shown.map((d) => (
                   <li key={d.id}>

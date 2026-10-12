@@ -10,6 +10,7 @@ import { API_KEY } from '../../api/queries';
 import { confirm } from '../../components/ui/ConfirmDialog';
 import { IconClose, IconTree } from '../../components/ui/icons';
 import { useEmployees, useOrgTree, type DeptNode } from './api';
+import { Select } from '../../components/ui/Select';
 
 const field =
   'h-9 w-full rounded-control border border-border bg-surface px-2.5 text-table text-text focus:border-primary focus:outline-none';
@@ -93,10 +94,12 @@ export function DepartmentForm({ onDone }: { onDone: (id: number | null) => void
         placeholder="New department name"
         className={`${field} sm:col-span-2`}
       />
-      <select
+      <Select
+        className="w-full"
+        size="sm"
         value={parent}
         onChange={(e) => setParent(e.target.value)}
-        className={field}
+
         aria-label="Parent department"
       >
         <option value="">Under…</option>
@@ -105,11 +108,13 @@ export function DepartmentForm({ onDone }: { onDone: (id: number | null) => void
             {p.label}
           </option>
         ))}
-      </select>
-      <select
+      </Select>
+      <Select
+        className="w-full"
+        size="sm"
         value={head}
         onChange={(e) => setHead(e.target.value)}
-        className={field}
+
         aria-label="Head"
       >
         <option value="">Head (optional)</option>
@@ -120,7 +125,7 @@ export function DepartmentForm({ onDone }: { onDone: (id: number | null) => void
               {p.name}
             </option>
           ))}
-      </select>
+      </Select>
       <button
         type="button"
         disabled={busy}
@@ -215,10 +220,12 @@ function DeptRow({ d, depth }: { d: DeptNode; depth: number }) {
             className={field}
             aria-label="Name"
           />
-          <select
+          <Select
+            className="w-full"
+            size="sm"
             value={parent}
             onChange={(e) => setParent(e.target.value)}
-            className={field}
+
             aria-label="Parent"
           >
             <option value="">{d.parentId ? 'Under…' : 'Top level'}</option>
@@ -227,11 +234,13 @@ function DeptRow({ d, depth }: { d: DeptNode; depth: number }) {
                 {p.label}
               </option>
             ))}
-          </select>
-          <select
+          </Select>
+          <Select
+            className="w-full"
+            size="sm"
             value={head}
             onChange={(e) => setHead(e.target.value)}
-            className={field}
+
             aria-label="Head"
           >
             <option value="">No head</option>
@@ -242,7 +251,7 @@ function DeptRow({ d, depth }: { d: DeptNode; depth: number }) {
                   {p.name}
                 </option>
               ))}
-          </select>
+          </Select>
           <button
             type="button"
             disabled={busy}

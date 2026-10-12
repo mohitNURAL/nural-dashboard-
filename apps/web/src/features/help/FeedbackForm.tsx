@@ -24,6 +24,7 @@ import {
   type AboutKind,
   type Impact,
 } from './api';
+import { Select } from '../../components/ui/Select';
 
 const field =
   'w-full rounded-control border border-border bg-surface px-3 text-body text-text focus:border-primary focus:outline-none';
@@ -168,10 +169,10 @@ export function FeedbackForm({
             ))}
           </div>
           {choices && (
-            <select
+            <Select
               value={aboutId}
               onChange={(e) => setAboutId(e.target.value)}
-              className={clsx(field, 'mt-2 h-10')}
+              className="mt-2 w-full"
               aria-label={`Choose ${about}`}
             >
               <option value="">
@@ -183,7 +184,7 @@ export function FeedbackForm({
                   {c.name}
                 </option>
               ))}
-            </select>
+            </Select>
           )}
         </div>
       )}

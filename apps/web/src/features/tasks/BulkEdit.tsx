@@ -13,6 +13,7 @@ import { apiPost } from '../../api/client';
 import { useMe } from '../../api/me';
 import { API_KEY, useApi } from '../../api/queries';
 import type { BoardStage, TaskRow } from '../../api/types';
+import { Select } from '../../components/ui/Select';
 
 const RESULT_TEXT: Record<BulkState, string> = {
   ok: 'Ready',
@@ -190,9 +191,10 @@ export function BulkBar({ bulk, boards }: { bulk: Bulk; boards: Record<string, B
         </span>
         {canEdit ? (
           <>
-            <select
+            <Select
+              size="sm"
               aria-label="Item to change"
-              className={control}
+
               value={item}
               onChange={(e) => setItem(e.target.value as Item)}
             >
@@ -201,11 +203,12 @@ export function BulkBar({ bulk, boards }: { bulk: Bulk; boards: Record<string, B
                   {i.label}
                 </option>
               ))}
-            </select>
+            </Select>
             {item === 'stage' && (
-              <select
+              <Select
+                size="sm"
                 aria-label="New stage"
-                className={control}
+
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
               >
@@ -221,12 +224,13 @@ export function BulkBar({ bulk, boards }: { bulk: Bulk; boards: Record<string, B
                         {s}
                       </option>
                     ))}
-              </select>
+              </Select>
             )}
             {item === 'status' && (
-              <select
+              <Select
+                size="sm"
                 aria-label="New status"
-                className={control}
+
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
               >
@@ -236,19 +240,20 @@ export function BulkBar({ bulk, boards }: { bulk: Bulk; boards: Record<string, B
                     {s.label}
                   </option>
                 ))}
-              </select>
+              </Select>
             )}
             {item === 'tags' && (
               <>
-                <select
+                <Select
+                  size="sm"
                   aria-label="Tags mode"
-                  className={control}
+
                   value={tagsMode}
                   onChange={(e) => setTagsMode(e.target.value as 'add' | 'replace')}
                 >
                   <option value="add">Add tags</option>
                   <option value="replace">Replace tags with</option>
-                </select>
+                </Select>
                 <input
                   aria-label="Tags, comma-separated"
                   placeholder="bug, Backend App"
@@ -259,9 +264,10 @@ export function BulkBar({ bulk, boards }: { bulk: Bulk; boards: Record<string, B
               </>
             )}
             {item === 'project' && (
-              <select
+              <Select
+                size="sm"
                 aria-label="New project"
-                className={control}
+
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
               >
@@ -271,12 +277,13 @@ export function BulkBar({ bulk, boards }: { bulk: Bulk; boards: Record<string, B
                     {p.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             )}
             {item === 'assignee' && (
-              <select
+              <Select
+                size="sm"
                 aria-label="New assignee"
-                className={control}
+
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
               >
@@ -286,12 +293,13 @@ export function BulkBar({ bulk, boards }: { bulk: Bulk; boards: Record<string, B
                     {p.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             )}
             {item === 'priority' && (
-              <select
+              <Select
+                size="sm"
                 aria-label="New priority"
-                className={control}
+
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
               >
@@ -299,7 +307,7 @@ export function BulkBar({ bulk, boards }: { bulk: Bulk; boards: Record<string, B
                 <option value="low">Low</option>
                 <option value="normal">Normal</option>
                 <option value="high">High</option>
-              </select>
+              </Select>
             )}
             {item === 'deadline' && (
               <input

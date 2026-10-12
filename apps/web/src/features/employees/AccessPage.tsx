@@ -22,7 +22,6 @@ import {
   IconPeople,
   IconPlug,
   IconReset,
-  IconSearch,
   IconShield,
 } from '../../components/ui/icons';
 import { PageHead } from '../../components/ui/PageHead';
@@ -39,6 +38,7 @@ import {
 } from './api';
 import { Avatar } from './common';
 import { isOn, RIGHTS, ROLE_NAME, timeAgo, valueOf } from './labels';
+import { SearchInput } from '../../components/ui/SearchInput';
 
 const MODULE_ICON: Record<string, ReactNode> = {
   Dashboard: <IconGrid size={18} />,
@@ -204,17 +204,12 @@ export function AccessPage() {
                       </button>
                     ))}
                   </div>
-                  <label className="relative block">
-                    <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted">
-                      <IconSearch size={15} />
-                    </span>
-                    <input
-                      value={q}
-                      onChange={(e) => setQ(e.target.value)}
-                      placeholder={view === 'people' ? 'Search people' : 'Search departments'}
-                      className="h-9 w-full rounded-control border border-border bg-surface pl-8 pr-3 text-table focus:border-primary focus:outline-none"
-                    />
-                  </label>
+                  <SearchInput
+                    value={q}
+                    onChange={setQ}
+                    size="sm"
+                    placeholder={view === 'people' ? 'Search people' : 'Search departments'}
+                  />
                   <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto pr-1">
                     {isLoading && <li className="skeleton h-40" />}
                     {view === 'people'

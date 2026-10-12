@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-12-search',
+    date: '2026-10-12',
+    tab: 'dev',
+    title: 'Search any column, one look for search and lists',
+    steps: [
+      {
+        target: '[data-group="dev.sections"] [data-slot="all"]',
+        title: 'Search any column',
+        text: 'The search box of every task list now finds words in any column: project, assignee, stage, status, tags, priority… Type several words to narrow ("moto vapt to do"). The × clears it. Every search box and dropdown now looks and works the same.',
+      },
+    ],
+  },
+  {
     id: '2026-10-12-nural-pulse',
     date: '2026-10-12',
     tab: 'dev',

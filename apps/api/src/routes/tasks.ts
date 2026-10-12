@@ -27,7 +27,7 @@ import {
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import type { RequestDataset, Viewer } from '../auth/roles';
-import { contextOf, person, taskRow, type AppOptions } from './context';
+import { contextOf, person, taskMatcher, taskRow, type AppOptions } from './context';
 import { kpiContext } from './kpi';
 import { contentDisposition, tasksWorkbook } from './export';
 import { list as listParam, parseQuery, scopeParam } from './params';
@@ -166,10 +166,8 @@ export function taskRoutes(
         presetPredicate(query.preset, ctx, { lastFiledDate: last, lastResolvedDate: resolved }),
       );
     }
-    if (query.q) {
-      const q = query.q.toLowerCase();
-      list = list.filter((t) => String(t.id).includes(q) || t.title.toLowerCase().includes(q));
-    }
+    // Search any column the list shows (context.ts taskMatcher).
+    if (query.q) list = list.filter(taskMatcher(ds, ctx, query.q));
     // DEV lists: by deadline, latest first. Issue lists: by created, newest first.
     list.sort(sorter(query.sort ?? (query.kind === 'issues' ? '-created' : '-deadline')));
 

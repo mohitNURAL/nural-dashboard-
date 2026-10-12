@@ -32,6 +32,8 @@ import {
   type Report,
   type ReportState,
 } from './api';
+import { Select } from '../../components/ui/Select';
+import { SearchInput } from '../../components/ui/SearchInput';
 
 const STATE: Record<ReportState, { label: string; cls: string }> = {
   preview: { label: 'Preview: admins only', cls: 'bg-warn/15 text-warn' },
@@ -526,34 +528,34 @@ function Editor({ report, onClose }: { report: Report | null; onClose: () => voi
                   />
                 </label>
                 {d.schedule.kind === 'weekly' && (
-                  <select
+                  <Select
                     value={d.schedule.weekday}
                     onChange={(e) =>
                       set('schedule', { ...d.schedule, weekday: Number(e.target.value) })
                     }
-                    className={clsx(input, 'w-40')}
+                    className="w-40"
                   >
                     {WEEKDAYS.map((w, i) => (
                       <option key={w} value={i + 1}>
                         {w}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 )}
                 {d.schedule.kind === 'monthly' && (
-                  <select
+                  <Select
                     value={d.schedule.monthDay}
                     onChange={(e) =>
                       set('schedule', { ...d.schedule, monthDay: Number(e.target.value) })
                     }
-                    className={clsx(input, 'w-40')}
+                    className="w-40"
                   >
                     {Array.from({ length: 28 }, (_, i) => (
                       <option key={i} value={i + 1}>
                         Day {i + 1}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 )}
                 {(d.schedule.kind === 'daily' || d.schedule.kind === 'conditional') && (
                   <label className="flex items-center gap-2 text-table">
@@ -571,7 +573,8 @@ function Editor({ report, onClose }: { report: Report | null; onClose: () => voi
               </div>
               {d.schedule.kind === 'conditional' && d.condition && cat && (
                 <div className="grid grid-cols-1 gap-2 rounded-card border border-border p-3 sm:grid-cols-3">
-                  <select
+                  <Select
+                    className="w-full"
                     value={d.condition.metric}
                     onChange={(e) => {
                       const m = cat.metrics.find((x) => x.key === e.target.value)!;
@@ -581,15 +584,15 @@ function Editor({ report, onClose }: { report: Report | null; onClose: () => voi
                         threshold: d.condition!.when === 'poor' ? m.poor : m.good,
                       });
                     }}
-                    className={input}
                   >
                     {cat.metrics.map((m) => (
                       <option key={m.key} value={m.key}>
                         {m.label}
                       </option>
                     ))}
-                  </select>
-                  <select
+                  </Select>
+                  <Select
+                    className="w-full"
                     value={d.condition.when}
                     onChange={(e) => {
                       const when = e.target.value as 'poor' | 'good';
@@ -599,11 +602,10 @@ function Editor({ report, onClose }: { report: Report | null; onClose: () => voi
                         threshold: when === 'poor' ? metric!.poor : metric!.good,
                       });
                     }}
-                    className={input}
                   >
                     <option value="poor">is very poor</option>
                     <option value="good">is very good</option>
-                  </select>
+                  </Select>
                   <label className="flex items-center gap-2 text-table">
                     {metric?.higherIsBetter === (d.condition.when === 'good')
                       ? 'at least'
@@ -658,12 +660,7 @@ function Editor({ report, onClose }: { report: Report | null; onClose: () => voi
                   </label>
                 ))}
               </div>
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Add people by name"
-                className={input}
-              />
+              <SearchInput value={q} onChange={setQ} size="sm" placeholder="Add people by name" />
               <div className="max-h-40 overflow-y-auto rounded-control border border-border p-1">
                 {found.map((p) => (
                   <label
@@ -881,10 +878,10 @@ function PreviewDialog({ report, onClose }: { report: Report; onClose: () => voi
             <Dialog.Title className="font-heading text-h1 text-primary-dark">
               Preview: {report.name}
             </Dialog.Title>
-            <select
+            <Select
               value={userId}
               onChange={(e) => void load(Number(e.target.value))}
-              className={clsx(input, 'ml-auto w-64')}
+              className="ml-auto w-64"
               aria-label="As received by"
             >
               <option value={0} disabled>
@@ -897,7 +894,7 @@ function PreviewDialog({ report, onClose }: { report: Report; onClose: () => voi
                     {p.name}
                   </option>
                 ))}
-            </select>
+            </Select>
             <Dialog.Close
               className="grid h-8 w-8 place-items-center rounded-lg text-text-muted hover:bg-primary-soft-100"
               aria-label="Close"

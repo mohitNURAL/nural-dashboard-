@@ -136,3 +136,35 @@ export function taskRow(ds: Dataset, ctx: MetricContext, t: MetricTask) {
     }),
   };
 }
+
+/**
+ * Task-list search (2026-10-12): the words typed are matched against every column the list
+ * shows: ID, title, project, assignee, creator, stage (dashboard and Bitrix24 column name),
+ * status, tags and priority. Every word must match somewhere ("moto qa" = Moto projects in a QA
+ * stage), case does not matter.
+ */
+export function taskMatcher(ds: Dataset, ctx: MetricContext, q: string) {
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) return () => true;
+  return (t: MetricTask) => {
+    const r = taskRow(ds, ctx, t);
+    const text = [
+      r.id,
+      r.title,
+      r.project?.name,
+      r.assignee.name,
+      r.creator.name,
+      r.stage,
+      r.stageTitle,
+      r.status,
+      r.bitrixStatus.replace(/([A-Z])/g, ' $1'),
+      r.priority,
+      ...r.tags,
+      r.isIssue ? (t.issueType === 'bug' ? 'bug issue' : 'feedback issue') : 'task',
+      r.overdue ? 'overdue' : '',
+    ]
+      .join(' ')
+      .toLowerCase();
+    return words.every((w) => text.includes(w));
+  };
+}

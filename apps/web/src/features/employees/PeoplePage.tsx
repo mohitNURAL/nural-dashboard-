@@ -8,7 +8,7 @@ import { useMe } from '../../api/me';
 import { DataTable } from '../../components/DataTable';
 import { SortableGroup } from '../../components/layout/SortableGroup';
 import { StatTile } from '../../components/StatTile';
-import { IconDownload, IconPeople, IconSearch, IconTree } from '../../components/ui/icons';
+import { IconDownload, IconPeople, IconTree } from '../../components/ui/icons';
 import { Tip } from '../../components/ui/Tip';
 import { useEmployees, type Employee, type SignInStatus } from './api';
 import { PageHead } from '../../components/ui/PageHead';
@@ -16,6 +16,8 @@ import { Avatar, StatusPill } from './common';
 import { DepartmentsDialog } from './DepartmentsDialog';
 import { EditPerson } from './EditPerson';
 import { ROLE_NAME, STATUS, timeAgo } from './labels';
+import { Select } from '../../components/ui/Select';
+import { SearchInput } from '../../components/ui/SearchInput';
 
 const col = createColumnHelper<Employee>();
 
@@ -293,34 +295,29 @@ export function PeoplePage() {
             node: (
               <div className="rounded-card border border-border bg-surface p-4">
                 <div className="mb-3 flex flex-wrap items-center gap-2">
-                  <label className="relative">
-                    <IconSearch
-                      size={16}
-                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
-                    />
-                    <input
-                      value={q}
-                      onChange={(e) => setQ(e.target.value)}
-                      placeholder="Search name, designation, department"
-                      className="h-9 w-72 rounded-xl border border-border bg-surface pl-9 pr-3 text-body text-text focus:border-primary focus:outline-none"
-                    />
-                  </label>
-                  <select
+                  <SearchInput
+                    value={q}
+                    onChange={setQ}
+                    size="sm"
+                    placeholder="Search name, designation, department"
+                    className="w-72"
+                  />
+                  <Select
+                    size="sm"
                     value={dept}
                     onChange={(e) => setDept(e.target.value)}
                     aria-label="Department"
-                    className="h-9 rounded-xl border border-border bg-surface px-3 text-body text-text"
                   >
                     <option value="">All departments</option>
                     {departments.map((d) => (
                       <option key={d}>{d}</option>
                     ))}
-                  </select>
-                  <select
+                  </Select>
+                  <Select
+                    size="sm"
                     value={status}
                     onChange={(e) => setStatus(e.target.value as SignInStatus | 'session' | '')}
                     aria-label="Dashboard status"
-                    className="h-9 rounded-xl border border-border bg-surface px-3 text-body text-text"
                   >
                     <option value="">Any status</option>
                     <option value="session">Signed in (now or session open)</option>
@@ -329,7 +326,7 @@ export function PeoplePage() {
                         {STATUS[s].label}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                   <label className="flex cursor-pointer items-center gap-2 text-table text-text-muted">
                     <input
                       type="checkbox"

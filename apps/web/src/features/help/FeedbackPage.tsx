@@ -16,6 +16,7 @@ import { PageHead } from '../../components/ui/PageHead';
 import { timeAgo } from '../employees/labels';
 import { ABOUT_LABEL, IMPACT, kb, useFeedbackInbox, useMyFeedback, type HelpRow } from './api';
 import { FeedbackForm } from './FeedbackForm';
+import { Select } from '../../components/ui/Select';
 
 export function FeedbackPage() {
   const { data: me } = useMe();
@@ -216,7 +217,6 @@ function Inbox({ rows, loading }: { rows: HelpRow[]; loading: boolean }) {
       toast.error('Not saved', { description: e instanceof Error ? e.message : '' });
     }
   };
-  const sel = 'h-8 rounded-control border border-border bg-surface px-2 text-table';
   return (
     <Card
       title="Feedback inbox"
@@ -224,27 +224,29 @@ function Inbox({ rows, loading }: { rows: HelpRow[]; loading: boolean }) {
       loading={loading}
       action={
         <span className="flex flex-wrap items-center gap-2" data-no-export>
-          <select
+          <Select
+            size="sm"
             value={status}
             onChange={(e) => setStatus(e.target.value as typeof status)}
-            className={sel}
+
             aria-label="Status"
           >
             <option value="new">New</option>
             <option value="reviewed">Reviewed</option>
             <option value="all">All</option>
-          </select>
-          <select
+          </Select>
+          <Select
+            size="sm"
             value={impact}
             onChange={(e) => setImpact(e.target.value as typeof impact)}
-            className={sel}
+
             aria-label="Impact"
           >
             <option value="all">Any impact</option>
             <option value="high">High</option>
             <option value="medium">Medium</option>
             <option value="low">Low</option>
-          </select>
+          </Select>
           <a
             href="/api/help/feedback/export"
             className="inline-flex h-8 items-center gap-1.5 rounded-control border border-border px-2.5 font-heading text-button text-primary hover:border-primary"

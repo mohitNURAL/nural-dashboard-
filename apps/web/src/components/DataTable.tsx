@@ -24,6 +24,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { IconGrip } from './ui/icons';
+import { Select } from './ui/Select';
 
 export type { SortingState };
 
@@ -393,18 +394,18 @@ function Pager({
       {onPageSize ? (
         <label className="flex items-center gap-2 text-text-muted">
           Rows per page
-          <select
+          <Select
+            size="sm"
             aria-label="Rows per page"
             value={pageSize}
             onChange={(e) => onPageSize(Number(e.target.value))}
-            className="h-8 rounded-control border border-border bg-surface px-2 text-text focus:border-primary focus:outline-none"
           >
             {pageSizes.map((n) => (
               <option key={n} value={n}>
                 {n}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
       ) : (
         <span />

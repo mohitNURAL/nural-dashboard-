@@ -13,6 +13,7 @@ import { PageHead } from '../../components/ui/PageHead';
 import { IconSupport } from '../../components/ui/icons';
 import { SortableGroup } from '../../components/layout/SortableGroup';
 import { fmtDateTime } from '../dev/format';
+import { Select } from '../../components/ui/Select';
 
 const TOPICS = [
   { value: 'supportTab', label: 'What the Support tab should show' },
@@ -212,8 +213,8 @@ function FeedbackForm({ className }: { className?: string }) {
           }}
         >
           <Field label="What is it about?">
-            <select
-              className={input}
+            <Select
+              className="w-full"
               value={topic}
               onChange={(e) => setTopic(e.target.value as Topic)}
             >
@@ -222,7 +223,7 @@ function FeedbackForm({ className }: { className?: string }) {
                   {t.label}
                 </option>
               ))}
-            </select>
+            </Select>
           </Field>
 
           <fieldset className="space-y-2">

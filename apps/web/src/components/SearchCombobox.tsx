@@ -4,6 +4,7 @@ import * as Popover from '@radix-ui/react-popover';
 import clsx from 'clsx';
 import { Command } from 'cmdk';
 import { useMemo, useRef, useState } from 'react';
+import { IconClose, IconSearch } from './ui/icons';
 
 export interface ComboOption {
   value: string;
@@ -126,13 +127,30 @@ export function SearchCombobox({
           className="z-50 w-[var(--radix-popover-trigger-width)] min-w-[16rem] rounded-card border border-border bg-surface shadow-pop"
         >
           <Command shouldFilter={false} label={label}>
-            <Command.Input
-              value={search}
-              onValueChange={setSearch}
-              placeholder={`Search ${label.toLowerCase()}…`}
-              className="w-full border-b border-border bg-transparent px-3 py-2.5 outline-none placeholder:text-text-muted"
-              autoFocus
-            />
+            {/* The same search box look as everywhere (ui/SearchInput): icon, clear ×. */}
+            <div className="relative border-b border-border">
+              <IconSearch
+                size={15}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
+              />
+              <Command.Input
+                value={search}
+                onValueChange={setSearch}
+                placeholder={`Search ${label.toLowerCase()}…`}
+                className="w-full bg-transparent py-2.5 pl-9 pr-9 outline-none placeholder:text-text-muted"
+                autoFocus
+              />
+              {search && (
+                <button
+                  type="button"
+                  aria-label="Clear the search"
+                  onClick={() => setSearch('')}
+                  className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-text-muted hover:bg-primary-soft-100 hover:text-primary"
+                >
+                  <IconClose size={12} />
+                </button>
+              )}
+            </div>
             <Command.List className="max-h-72 overflow-y-auto p-1">
               <Command.Empty className="px-3 py-4 text-center text-text-muted">
                 {loading ? 'Loading…' : 'No matches'}

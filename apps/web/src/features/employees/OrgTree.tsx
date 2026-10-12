@@ -5,11 +5,12 @@ import clsx from 'clsx';
 import { useMemo, useState } from 'react';
 import { SortableGroup } from '../../components/layout/SortableGroup';
 import { StatTile } from '../../components/StatTile';
-import { IconChevron, IconSearch, IconTree } from '../../components/ui/icons';
+import { IconChevron, IconTree } from '../../components/ui/icons';
 import { Tip } from '../../components/ui/Tip';
 import { useOrgTree, type DeptNode, type PersonRef } from './api';
 import { PageHead } from '../../components/ui/PageHead';
 import { Avatar } from './common';
+import { SearchInput } from '../../components/ui/SearchInput';
 
 export function OrgTree() {
   const { data, isLoading } = useOrgTree();
@@ -86,18 +87,12 @@ export function OrgTree() {
         sub={`${depts.length} departments · ${people} people, from Bitrix24`}
         icon={<IconTree size={24} />}
       >
-        <label className="relative">
-          <IconSearch
-            size={16}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
-          />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Find a person or department"
-            className="h-10 w-72 rounded-xl border border-border bg-surface pl-9 pr-3 text-body text-text focus:border-primary focus:outline-none"
-          />
-        </label>
+        <SearchInput
+          value={q}
+          onChange={setQ}
+          placeholder="Find a person or department"
+          className="w-72"
+        />
         <Tip label="Expand all">
           <button
             type="button"
