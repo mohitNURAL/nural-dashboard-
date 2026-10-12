@@ -178,10 +178,7 @@ export async function tasksWorkbook(
     ['List', title],
     ['Tasks', rows.length],
     ['Exported', `${dayKey(new Date(), tz)} (Asia/Kolkata)`],
-    [
-      'Source',
-      'Nural Pulse: the list as shown, with its filters, search and order (all pages).',
-    ],
+    ['Source', 'Nural Pulse: the list as shown, with its filters, search and order (all pages).'],
     [
       'Not included',
       'Task descriptions (read live from Bitrix24 per task); open the task in Bitrix24 for them.',

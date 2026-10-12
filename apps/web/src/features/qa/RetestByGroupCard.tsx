@@ -1,5 +1,6 @@
 // Retesting awaited per assignee or project: tasks and issues waiting for QA, in QA Backlog and
 // In QA. Every number opens those tasks; a row's number also sets the Assignee or Project filter.
+import { stageWithRole } from '@nural/shared';
 import { createColumnHelper } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
 import type { GroupBy, QaRetest } from '../../api/types';
@@ -17,15 +18,22 @@ type Key = Exclude<keyof QaRetest['totals'], never>;
 const col = createColumnHelper<Row>();
 
 /** Each column: its count, header, stage(s) and whether issues, dev tasks or both. */
-const COLUMNS: { key: Key; header: string; stage?: string; issue?: boolean }[] = [
-  { key: 'qaBacklogDev', header: 'QA Backlog · Dev', stage: 'QA Backlog', issue: false },
-  { key: 'qaBacklogIssues', header: 'QA Backlog · Issues', stage: 'QA Backlog', issue: true },
-  { key: 'qaBacklog', header: 'QA Backlog', stage: 'QA Backlog' },
-  { key: 'inQaDev', header: 'In QA · Dev', stage: 'In QA', issue: false },
-  { key: 'inQaIssues', header: 'In QA · Issues', stage: 'In QA', issue: true },
-  { key: 'inQa', header: 'In QA', stage: 'In QA' },
-  { key: 'total', header: 'Total' },
-];
+type Column = { key: Key; header: string; stage?: string; issue?: boolean };
+/** Each column: its count, header, stage and whether issues, dev tasks or both; the stages are
+ *  the workflow's QA entry and testing stages (QA Backlog and In QA by default). */
+function columnsNow(): Column[] {
+  const qa = stageWithRole('qaEntry') ?? 'QA entry';
+  const test = stageWithRole('testing') ?? 'Testing';
+  return [
+    { key: 'qaBacklogDev', header: `${qa} · Dev`, stage: qa, issue: false },
+    { key: 'qaBacklogIssues', header: `${qa} · Issues`, stage: qa, issue: true },
+    { key: 'qaBacklog', header: qa, stage: qa },
+    { key: 'inQaDev', header: `${test} · Dev`, stage: test, issue: false },
+    { key: 'inQaIssues', header: `${test} · Issues`, stage: test, issue: true },
+    { key: 'inQa', header: test, stage: test },
+    { key: 'total', header: 'Total' },
+  ];
+}
 
 export function RetestByGroupCard({ className }: { className?: string }) {
   const [by, setBy] = useState<GroupBy>('assignee');
@@ -34,7 +42,7 @@ export function RetestByGroupCard({ className }: { className?: string }) {
   const focus = useFocusRow();
 
   const columns = useMemo(() => {
-    const open = (r: Row | null, c: (typeof COLUMNS)[number]) =>
+    const open = (r: Row | null, c: Column) =>
       openIssues(
         {
           kind: 'all',
@@ -63,7 +71,7 @@ export function RetestByGroupCard({ className }: { className?: string }) {
         ),
         footer: 'Total',
       }),
-      ...COLUMNS.map((c) =>
+      ...columnsNow().map((c) =>
         col.accessor(c.key, {
           header: c.header,
           meta: { align: 'right' },

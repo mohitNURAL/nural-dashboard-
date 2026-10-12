@@ -2,6 +2,7 @@
 // turns it into a dropdown, text box or date picker, and it turns back into a label after a
 // change or a click elsewhere. Changes run in Bitrix24 as the signed-in person and show here
 // when they sync back. Full access may change every field; members only stage, status and tags.
+import { hasRole } from '@nural/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
@@ -160,7 +161,7 @@ function SelectEditor<V extends string | number>({
 /** The task's board column; "never moved" (0) is the board's first To do column. */
 function currentColumn(t: TaskRow, board: BoardStage[]): number {
   if (t.stageId) return t.stageId;
-  return (board.find((s) => s.stage === 'To do') ?? board[0])?.id ?? 0;
+  return (board.find((s) => hasRole(s.stage, 'start')) ?? board[0])?.id ?? 0;
 }
 
 export function StageCell({ task, board }: { task: TaskRow; board?: BoardStage[] }) {

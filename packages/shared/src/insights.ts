@@ -5,6 +5,7 @@
 // member's insights cover their own tasks.
 import { addWorkingHours, dayHours, workingHours } from './calendar';
 import { KPI, periodBounds, type KpiContext, type KpiScope, type KpiTask } from './kpi';
+import { hasRole } from './stages';
 import type { StageTitle } from './types';
 
 /** The rules' thresholds, in one place (SRS 18). */
@@ -435,8 +436,9 @@ export interface Release {
 }
 
 /** Not started: nothing done on it yet. */
-const NOT_STARTED: readonly (StageTitle | null)[] = ['To do', 'Issue Raised', null];
-const UNDER_WAY: readonly (StageTitle | null)[] = ['In progress'];
+/** Not started: the start stage, an issue just raised, or no stage. */
+const notStarted = (s: StageTitle | null) => !s || hasRole(s, 'start') || hasRole(s, 'issue');
+const underWay = (s: StageTitle | null) => hasRole(s, 'working');
 
 /**
  * Open tasks due this week and next (their planned completion dates), with the risk of slipping:
@@ -464,10 +466,10 @@ export function releasePlan(scope: KpiScope, ctx: KpiContext): Release[] {
     if (k.overdue) {
       risk = 'high';
       reason = `already ${k.daysOverdue || 1} day${k.daysOverdue === 1 ? '' : 's'} overdue`;
-    } else if (NOT_STARTED.includes(stage)) {
+    } else if (notStarted(stage)) {
       risk = d <= close ? 'high' : 'medium';
       reason = d <= close ? 'not started, due within 2 working days' : 'not started yet';
-    } else if (UNDER_WAY.includes(stage)) {
+    } else if (underWay(stage)) {
       risk = 'medium';
       reason = 'still in progress';
     }

@@ -8,6 +8,9 @@ import {
   type StageTitle,
   type MetricTask,
   type StageEvent,
+  hasRole,
+  DEFAULT_STAGE_ID,
+  stageWithRole,
 } from '@nural/shared';
 import { and, asc, eq, gte } from 'drizzle-orm';
 import { config } from '../config';
@@ -114,7 +117,8 @@ export async function loadDataset(): Promise<Dataset> {
   // Several Bitrix24 columns can share one dashboard stage (e.g. Figma Review and To Do).
   const stageIds = new Map<number, Map<StageTitle, number[]>>();
   for (const st of stageRows) {
-    const title = canonicalStage(st.canonical);
+    // From the column's own name, so the workflow's current mapping applies (SRS 22).
+    const title = canonicalStage(st.title) ?? canonicalStage(st.canonical);
     if (!title) continue;
     const byTitle = stageIds.get(st.groupId) ?? new Map<StageTitle, number[]>();
     byTitle.set(title, [...(byTitle.get(title) ?? []), st.id]);
@@ -123,15 +127,17 @@ export async function loadDataset(): Promise<Dataset> {
 
   // Boards with a QA Backlog column follow the QA flow; others complete by closing (SRS 5).
   const qaFlowGroups = new Set(
-    stageRows.filter((s) => canonicalStage(s.canonical) === 'QA Backlog').map((s) => s.groupId),
+    stageRows
+      .filter((s) => hasRole(canonicalStage(s.title) ?? canonicalStage(s.canonical), 'qaEntry'))
+      .map((s) => s.groupId),
   );
 
   const events = new Map<number, StageEvent[]>();
   for (const e of eventRows) {
     const list = events.get(e.taskId) ?? [];
     list.push({
-      from: canonicalStage(e.fromCanonical ?? e.fromStage),
-      to: canonicalStage(e.toCanonical ?? e.toStage),
+      from: canonicalStage(e.fromStage) ?? canonicalStage(e.fromCanonical),
+      to: canonicalStage(e.toStage) ?? canonicalStage(e.toCanonical),
       at: e.movedAt,
       by: e.movedBy,
     });
@@ -154,7 +160,12 @@ export async function loadDataset(): Promise<Dataset> {
     id: t.id,
     title: t.title,
     groupId: t.groupId,
-    stage: canonicalStage(t.stage),
+    // Never moved on its board: the start stage; else its column under the current workflow;
+    // tasks outside any board keep the stage worked out from their status at sync.
+    stage:
+      t.groupId && t.stageId === DEFAULT_STAGE_ID
+        ? stageWithRole('start')
+        : (canonicalStage(t.stageTitle) ?? canonicalStage(t.stage)),
     stageTitle: t.stageTitle,
     status: t.status,
     priority: t.priority,
@@ -252,7 +263,9 @@ function boardsOf(
   >();
   for (const r of [...rows].sort((a, b) => a.sort - b.sort || a.id - b.id)) {
     const list = out.get(r.groupId) ?? [];
-    list.push({ id: r.id, title: r.title, stage: canonicalStage(r.canonical), color: r.color });
+    // The column's own name under the current workflow (SRS 22).
+    const stage = canonicalStage(r.title) ?? canonicalStage(r.canonical);
+    list.push({ id: r.id, title: r.title, stage, color: r.color });
     out.set(r.groupId, list);
   }
   return out;

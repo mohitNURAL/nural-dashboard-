@@ -29,6 +29,7 @@ import { useTheme } from './store/theme';
 import { useTab } from './features/filters/useFilters';
 import { KpiTab } from './features/kpi/KpiTab';
 import { QaTab } from './features/qa/QaTab';
+import { useApplyWorkflow } from './features/projects/api';
 import { useLiveUpdates } from './hooks/useLiveUpdates';
 import { useNewVersion } from './hooks/useNewVersion';
 import { useGuidedTour, useNewTabs } from './features/tour/useGuidedTour';
@@ -42,6 +43,8 @@ export default function App() {
   // Each page needs its right (the server enforces the same); anything else opens Development.
   const tab = !me || allowedPage(me, urlTab) ? urlTab : firstPage(me);
   useLiveUpdates();
+  // The workflow every stage rule follows (SRS 22): in place before the pages draw.
+  const workflowReady = useApplyWorkflow(!!me);
   useNewVersion();
   useSessionEnd();
   useGuidedTour(tab, setTab);
@@ -62,7 +65,7 @@ export default function App() {
       >
         {isDashboardTab(tab) && tab !== 'support' && <FilterBar tab={tab} />}
         <main key={theme} className="mx-auto max-w-page px-4 py-4 lg:px-6">
-          {!me ? null : tab === 'kpi' ? (
+          {!me || !workflowReady ? null : tab === 'kpi' ? (
             <KpiTab />
           ) : tab === 'dev' ? (
             <DevTab />

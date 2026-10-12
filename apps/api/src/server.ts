@@ -17,6 +17,12 @@ import { memoryReportStore, type ReportStore } from './reports/store';
 import { actionRoutes, type ActionDeps } from './routes/actions';
 import { feedbackRoutes, memoryFeedbackStore, type FeedbackStore } from './routes/feedback';
 import { helpRoutes, memoryHelpStore, type HelpStore } from './routes/help';
+import {
+  loadWorkflow,
+  memoryWorkflowStore,
+  workflowRoutes,
+  type WorkflowStore,
+} from './routes/workflow';
 import { peopleRoutes, type PeopleDeps } from './routes/people';
 import { memoryPrefsStore, prefsRoutes, type PrefsStore } from './routes/prefs';
 import type { Call } from './bitrix/limiter';
@@ -58,6 +64,8 @@ export interface ServerOptions {
   feedback?: FeedbackStore;
   /** Help feedback and its attachments (SRS 20); in-memory by default. */
   help?: HelpStore;
+  /** The development workflow (SRS 22); in-memory by default (the standard workflow). */
+  workflow?: WorkflowStore;
   /** Per-person settings (sign-in count, layout, guided tour); in-memory by default. */
   prefs?: PrefsStore;
   /** Access overrides set by admins (SRS 7, Access permissions); in-memory by default. */
@@ -93,6 +101,7 @@ export async function buildServer({
   roles,
   feedback,
   help,
+  workflow,
   people,
   prefs,
   access,
@@ -163,6 +172,9 @@ export async function buildServer({
     };
   });
 
+  // The workflow every rule reads: the saved one, else the standard (SRS 22).
+  const workflowStore = workflow ?? memoryWorkflowStore();
+  await loadWorkflow(workflowStore);
   let dataset = getDataset;
   let invalidateDataset = () => {};
   if (!dataset) {
@@ -269,6 +281,30 @@ export async function buildServer({
   streamRoutes(app, bus, config.WEB_ORIGIN, scoping.viewer);
   feedbackRoutes(app, scoping.dataset, feedback ?? memoryFeedbackStore(), scoping.viewer);
   helpRoutes(app, scoping.dataset, scoping.viewer, help ?? memoryHelpStore());
+  workflowRoutes(app, scoping.dataset, scoping.viewer, {
+    store: workflowStore,
+    // Reload the data under the new workflow and tell every open page to refresh.
+    changed: async () => {
+      invalidateDataset();
+      await bus
+        .publish({
+          type: 'task.changed',
+          taskId: 0,
+          title: 'Workflow updated',
+          projectId: 0,
+          stage: null,
+          fromStage: null,
+          stageGroup: null,
+          isIssue: false,
+          isNew: false,
+          reopened: false,
+          deleted: false,
+          source: 'workflow',
+          at: new Date().toISOString(),
+        })
+        .catch(() => undefined);
+    },
+  });
   prefsRoutes(app, prefStore, scoping.viewer);
   accessRoutes(app, scoping.dataset, scoping.viewer, {
     store: accessStore,
@@ -391,6 +427,7 @@ async function main() {
     auth: { saveTokens: tokens?.save },
     feedback: await (await import('./routes/feedback')).dbFeedbackStore(),
     help: await (await import('./routes/help')).dbHelpStore(),
+    workflow: await (await import('./routes/workflow')).dbWorkflowStore(),
     prefs: await (await import('./routes/prefs')).dbPrefsStore(),
     access: await (await import('./routes/access')).dbAccessStore(),
     reports: {

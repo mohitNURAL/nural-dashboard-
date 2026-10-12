@@ -702,7 +702,7 @@ describe('QA tab', () => {
       expect(Object.values(r.cells).reduce((a, b) => a + b, 0)).toBe(r.total);
       expect(r.bug + r.feedback).toBe(r.total);
     }
-    expect(t.stages.every((s) => t.totals.cells[s] > 0)).toBe(true);
+    expect(t.stages.every((s) => (t.totals.cells[s] ?? 0) > 0)).toBe(true);
     expect(issueStageTable(list, 'project').rows.map((r) => r.id)).toEqual([154]);
   });
 

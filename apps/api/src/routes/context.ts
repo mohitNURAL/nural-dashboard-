@@ -13,6 +13,7 @@ import {
   type MetricContext,
   type MetricTask,
   type StageTitle,
+  hasRole,
 } from '@nural/shared';
 import type { Dataset, DeptGroup } from '../data/dataset';
 import { statusOf } from './actions';
@@ -87,7 +88,8 @@ export function boardUrl(ds: Dataset, groupId: number, f: BoardFilter = {}): str
   if (f.overdue) q.append('STATUS[]', BITRIX_OVERDUE_STATUS);
   for (const stage of f.stages ?? []) {
     const ids = ds.stageIds?.get(groupId)?.get(stage) ?? [];
-    for (const id of stage === 'To do' ? [0, ...ids] : ids) q.append('STAGE_ID[]', String(id));
+    for (const id of hasRole(stage, 'start') ? [0, ...ids] : ids)
+      q.append('STAGE_ID[]', String(id));
   }
   return `${ds.portalOrigin}/workgroups/group/${groupId}/tasks/?${q.toString().replaceAll('%5B%5D', '[]')}`;
 }

@@ -90,20 +90,37 @@ export const MODULES: ModuleDef[] = [
   },
   {
     label: 'Insights',
-    pages: [{ id: 'insights', label: 'Insights', hint: 'What is holding us back', right: 'insights' }],
+    pages: [
+      { id: 'insights', label: 'Insights', hint: 'What is holding us back', right: 'insights' },
+    ],
   },
   {
     label: 'Employees',
     pages: [
       { id: 'org', label: 'Company tree', hint: 'Departments, heads and teams', right: 'org' },
-      { id: 'people', label: 'People directory', hint: 'Who has access, who is active', right: 'people' },
-      { id: 'access', label: 'Access permissions', hint: 'Rights per person or department', right: 'admin' },
+      {
+        id: 'people',
+        label: 'People directory',
+        hint: 'Who has access, who is active',
+        right: 'people',
+      },
+      {
+        id: 'access',
+        label: 'Access permissions',
+        hint: 'Rights per person or department',
+        right: 'admin',
+      },
     ],
   },
   {
     label: 'Integration',
     pages: [
-      { id: 'connections', label: 'Connections', hint: 'Microsoft 365, Slack, Infowan', right: 'connections' },
+      {
+        id: 'connections',
+        label: 'Connections',
+        hint: 'Microsoft 365, Slack, Infowan',
+        right: 'connections',
+      },
       { id: 'mailing', label: 'Mailing', hint: 'Reports by mail and Slack', right: 'mailing' },
     ],
   },

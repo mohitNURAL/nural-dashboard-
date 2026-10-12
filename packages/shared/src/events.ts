@@ -14,7 +14,8 @@ export interface TaskChanged {
   isNew: boolean;
   reopened: boolean;
   deleted: boolean;
-  source: 'webhook' | 'reconcile' | 'nightly';
+  /** workflow: an admin changed the workflow (SRS 22); every page reloads its numbers. */
+  source: 'webhook' | 'reconcile' | 'nightly' | 'workflow';
   at: string;
   /**
    * Who may receive it (NFR-4 scoping): assignee, creator and, after a reassignment, the

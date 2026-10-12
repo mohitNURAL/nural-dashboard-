@@ -368,3 +368,14 @@ export const peopleActions = pgTable(
   },
   (t) => [index('people_actions_at_idx').on(t.at)],
 );
+
+/**
+ * The development workflow (2026-10-12, SRS 22): every saved version, the newest in force.
+ * Edited by admins on Projects › Workflow; an empty table means the standard workflow.
+ */
+export const workflowVersions = pgTable('workflow_versions', {
+  version: integer('version').primaryKey(),
+  at: tz('at').notNull().defaultNow(),
+  byUser: integer('by_user').notNull(),
+  definition: jsonb('definition').notNull(),
+});

@@ -4,7 +4,7 @@
 // (not allowed or inconsistent). Edits run as the signed-in person, with their own OAuth token,
 // through the shared rate limiter, and each is recorded in task_actions. The webhook stays
 // read-only.
-import { STAGE_TITLES, type MetricTask, type StageTitle } from '@nural/shared';
+import { STAGE_TITLES, type MetricTask, type StageTitle, hasRole } from '@nural/shared';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import type { RequestDataset } from '../auth/roles';
@@ -92,7 +92,11 @@ export const editSchema = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('stage'),
     stageId: z.coerce.number().int().positive().optional(),
-    stage: z.enum(STAGE_TITLES).optional(),
+    // Any stage of the current workflow (it can change).
+    stage: z
+      .string()
+      .refine((s) => STAGE_TITLES.includes(s), 'Unknown stage')
+      .optional(),
   }),
   z.object({ kind: z.literal('status'), status: z.enum(TASK_STATUSES) }),
   z.object({
@@ -128,7 +132,7 @@ const skip = (reason: string): Prepared => ({ state: 'skip', reason });
 /** The task's board column; "never moved" (0) is the board's first To do column. */
 function currentColumnId(t: MetricTask, board: { id: number; stage: StageTitle | null }[]) {
   const id = Number(t.stageId ?? 0);
-  return id || ((board.find((s) => s.stage === 'To do') ?? board[0])?.id ?? 0);
+  return id || ((board.find((s) => hasRole(s.stage, 'start')) ?? board[0])?.id ?? 0);
 }
 
 /**

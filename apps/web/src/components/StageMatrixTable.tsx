@@ -26,7 +26,8 @@ interface Props {
 
 export function StageMatrixTable({ data, rowLabel, noun, onName, onOpen }: Props) {
   // Each stage's total over all rows, shown inside its colour bar.
-  const stageTotal = (stage: StageTitle) => data.rows.reduce((n, r) => n + r.cells[stage], 0);
+  const stageTotal = (stage: StageTitle) =>
+    data.rows.reduce((n, r) => n + (r.cells[stage] ?? 0), 0);
   return (
     <div className="max-h-[420px] overflow-auto">
       <table className="w-full border-separate border-spacing-0.5 text-table">
@@ -78,8 +79,8 @@ export function StageMatrixTable({ data, rowLabel, noun, onName, onOpen }: Props
                 <MatrixCell
                   key={s.stage}
                   stage={s.stage}
-                  n={r.cells[s.stage]}
-                  overdue={r.overdue[s.stage]}
+                  n={r.cells[s.stage] ?? 0}
+                  overdue={r.overdue[s.stage] ?? 0}
                   max={data.max}
                   rowName={r.name}
                   onOpen={(extra, what) => onOpen(r, extra, what)}

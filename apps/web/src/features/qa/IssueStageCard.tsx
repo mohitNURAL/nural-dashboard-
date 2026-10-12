@@ -107,7 +107,7 @@ export function IssueStageCard({ className }: { className?: string }) {
       ),
       count('total', 'Total', (r) => r.total, {}, 'Bug + feedback.'),
       ...table.stages.map(({ stage }) =>
-        count(`stage:${stage}`, stage, (r) => r.cells[stage as StageTitle], { stage }),
+        count(`stage:${stage}`, stage, (r) => r.cells[stage as StageTitle] ?? 0, { stage }),
       ),
     ] as Columns<Row>;
   }, [table, by, typeParam, typeLabel, openIssues, focus]);

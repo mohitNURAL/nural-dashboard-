@@ -1,6 +1,7 @@
 // Performance reports by mail and Slack (SRS 19, Mailing): what a report can contain, and the
 // content for one recipient over one period. Pure: the API gives it the recipient's own tasks
 // (their scope) and renders the result as an email and a Slack message.
+import { isReworkMove } from './stages';
 import { addWorkingHours, dayHours } from './calendar';
 import {
   keyPoints,
@@ -305,12 +306,8 @@ export function buildReport(input: ReportInput): ReportData {
       const late = closed.filter((k) => k.onTime === false);
       const rework = scope.all.filter((k) =>
         k.t.events.some(
-          (e) =>
-            within(e.at, range) &&
-            e.to &&
-            ['Issue Raised', 'To do', 'In progress'].includes(e.to) &&
-            e.from &&
-            ['QA Backlog', 'In QA', 'Done'].includes(e.from),
+          // Sent back by QA: the workflow's rework rule.
+          (e) => within(e.at, range) && isReworkMove(e.from, e.to),
         ),
       );
       sections.push({
@@ -354,20 +351,16 @@ export function buildReport(input: ReportInput): ReportData {
         topic: key,
         title: 'Lagging projects and people',
         items: [
-          ...projects
-            .slice(0, 5)
-            .map((p) => ({
-              text: name.project(p.id),
-              meta: p.reasons.join('; '),
-              tone: 'bad' as const,
-            })),
-          ...people
-            .slice(0, 5)
-            .map((p) => ({
-              text: name.person(p.id),
-              meta: p.reasons.join('; '),
-              tone: 'bad' as const,
-            })),
+          ...projects.slice(0, 5).map((p) => ({
+            text: name.project(p.id),
+            meta: p.reasons.join('; '),
+            tone: 'bad' as const,
+          })),
+          ...people.slice(0, 5).map((p) => ({
+            text: name.person(p.id),
+            meta: p.reasons.join('; '),
+            tone: 'bad' as const,
+          })),
         ],
         empty: 'Nothing lagging.',
       });

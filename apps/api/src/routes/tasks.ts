@@ -51,7 +51,7 @@ const listParams = {
   pageSize: z.coerce.number().int().min(1).max(200).default(50),
   // Drill-downs from a clicked count: Kanban stage, overdue or not, ageing bucket.
   // One or more stages (comma list), e.g. the alert details' stage filter.
-  stage: listParam(z.enum(STAGE_TITLES)),
+  stage: listParam(z.string().refine((s) => STAGE_TITLES.includes(s), 'Unknown stage')),
   overdue: z.enum(['true', 'false']).optional(),
   ageing: z.enum(AGEING_BUCKETS).optional(),
   // Header alert: more than STUCK_DAYS days in the current stage (LIVE aside).

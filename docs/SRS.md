@@ -1301,3 +1301,15 @@ For people with the **employees** right (by default admins, PM and team leads). 
 ## 21. Finance (2026-10-12)
 
 **Cost to company** (menu module *Finance*): admins only, always; not grantable on the Access screen. Coming soon: a quote card ("What gets measured gets managed." Peter Drucker) and a *Share your needs* form saved as Help feedback about Finance, which only admins read. The API refuses Finance feedback from anyone but admins.
+
+
+## 22. Projects and the workflow (2026-10-12)
+
+**The workflow is data.** The Kanban stages, what each counts as and the roles they play live in one definition (`packages/shared/src/workflow.ts`, `DEFAULT_WORKFLOW` = the standard 11-stage flow). Every rule reads the stage tables in `stages.ts`, which `applyWorkflow()` fills from the definition, on the server at start and after a change, and in the browser before the pages draw. Nothing names a stage in code any more: rules ask for the stage playing a role.
+- **Per stage:** title; the column names mapped to it; category (open, on hold, completed); roles (start, working, QA entry, testing, issue, ready, live; each at most once); owning department (PM / team lead, Development, QA Testing, Tech Support, Release, Other); colour; description; usual next stages (the diagram's arrows).
+- **Rework rule:** the stages a send-back goes from and to.
+- **Project types:** name, rule (board has these stages / lacks those), colour; a project can be set by hand.
+- **Stages from raw names:** each task's stage is worked out from its Bitrix24 column name under the current workflow when the data load (never-moved tasks: the start stage), so an edit applies to existing tasks at once.
+- **Saving (admins):** `PUT /api/workflow`, validated (one start, one QA entry that counts as completed, roles once, names unique, arrows and rules name real stages). Every version is kept (`workflow_versions`) and can be restored (`POST /api/workflow/restore/:version`, 0 = the standard). After a change the data reload and every open page refreshes (live event `source: workflow`, toast "The workflow was updated").
+- **Reading:** `GET /api/workflow` (everyone), `GET /api/workflow/projects` (each project's columns, the stage each maps to, unmapped columns, its type).
+- **Same numbers:** with the standard workflow every number is identical to before (checked on the full data set, 22 endpoints).

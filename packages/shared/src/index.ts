@@ -9,3 +9,4 @@ export * from './kpi';
 export * from './insights';
 export * from './reports';
 export * from './modules';
+export * from './workflow';

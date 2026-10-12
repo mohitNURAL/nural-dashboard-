@@ -69,6 +69,13 @@ export function useLiveUpdates() {
         changed(change.at);
         refetchSoon();
         // Reconciler catch-ups are silent; only live webhook events toast.
+        if (change.source === 'workflow') {
+          toast('The workflow was updated', {
+            description: 'Every page now counts with the new stage rules.',
+            id: 'workflow',
+          });
+          return;
+        }
         if (useLive.getState().toastsEnabled && change.source === 'webhook') {
           toast(liveMessage(change), { description: change.title, id: `task-${change.taskId}` });
         }

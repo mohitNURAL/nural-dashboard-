@@ -1,12 +1,12 @@
 // Every dashboard number (SRS sections 3, 4 and 5) as pure functions over MetricTask.
 // No I/O and no clock: `now` and the time zone come in through MetricContext.
 import {
-  DEPLOYED_STAGE,
-  HOLD_STAGE,
+  hasRole,
+  isHoldStage,
   isReworkMove,
-  READY_FOR_DEPLOYMENT_STAGE,
   STAGE_TITLES,
   stageGroupOf,
+  stageWithRole,
   type StageGroup,
   type StageTitle,
 } from './stages';
@@ -148,11 +148,11 @@ export const isSentToQa = (t: MetricTask) =>
   stageGroup(t) === 'sentToQa' || (t.qaFlow === false && !!t.closedAt);
 export const isCompleted = isSentToQa;
 /** On hold: in On Hold and not completed; neither pending nor completed (SRS 5). */
-export const isOnHold = (t: MetricTask) => t.stage === HOLD_STAGE && !isSentToQa(t);
+export const isOnHold = (t: MetricTask) => isHoldStage(t.stage) && !isSentToQa(t);
 /** Pending: neither completed nor on hold, so pending + completed + hold = total. */
 export const isPending = (t: MetricTask) => !isSentToQa(t) && !isOnHold(t);
-export const isReady = (t: MetricTask) => t.stage === READY_FOR_DEPLOYMENT_STAGE;
-export const isDeployed = (t: MetricTask) => t.stage === DEPLOYED_STAGE;
+export const isReady = (t: MetricTask) => hasRole(t.stage, 'ready');
+export const isDeployed = (t: MetricTask) => hasRole(t.stage, 'live');
 /** An open issue is a pending one (QA tab "Open"); resolved = completed. Same rule as tasks. */
 export const isOpenIssue = isPending;
 /** "completed" / "pending" / "hold", shown in every task list (SRS 5). */
@@ -166,14 +166,16 @@ export const taskStatus = (t: MetricTask): 'completed' | 'pending' | 'hold' =>
  * completion (changed 2026-10-10; it used to accept any sent-to-QA stage).
  */
 export function completedAt(t: MetricTask): Date | null {
-  const first = t.events.find((e) => e.to === 'QA Backlog');
+  // The workflow's QA entry stage (QA Backlog by default).
+  const qa = stageWithRole('qaEntry');
+  const first = t.events.find((e) => e.to === qa);
   if (first) return first.at;
   return t.events.length === 0 ? t.closedAt : null;
 }
 
 /** Pending (except On Hold, open question 6) with the deadline passed. */
 export const isOverdue = (t: MetricTask, ctx: MetricContext): boolean =>
-  isPending(t) && t.stage !== 'On Hold' && !!t.deadline && t.deadline < ctx.now;
+  isPending(t) && !isHoldStage(t.stage) && !!t.deadline && t.deadline < ctx.now;
 
 /** Deadline date is today in the app time zone, any stage group except Deployed. */
 export const isDueToday = (t: MetricTask, ctx: MetricContext): boolean =>
@@ -196,7 +198,7 @@ export function isCompletedYesterday(t: MetricTask, ctx: MetricContext): boolean
 
 /** Days (YYYY-MM-DD, app time zone) on which the task was pushed to QA Backlog. */
 const qaBacklogDays = (t: MetricTask, tz: string) =>
-  t.events.filter((e) => e.to === 'QA Backlog').map((e) => dayKey(e.at, tz));
+  t.events.filter((e) => e.to === stageWithRole('qaEntry')).map((e) => dayKey(e.at, tz));
 
 /** Today minus deadline in calendar days; negative = not yet due; null without deadline. */
 export const ageingDays = (t: MetricTask, ctx: MetricContext): number | null =>
@@ -552,8 +554,8 @@ export function stageMatrix(
       const overdue = zero();
       for (const t of list) {
         if (!t.stage) continue;
-        cells[t.stage]++;
-        if (ctx && isOverdue(t, ctx)) overdue[t.stage]++;
+        cells[t.stage] = (cells[t.stage] ?? 0) + 1;
+        if (ctx && isOverdue(t, ctx)) overdue[t.stage] = (overdue[t.stage] ?? 0) + 1;
       }
       return { id, total: list.length, cells, overdue };
     })
@@ -749,7 +751,7 @@ export interface IssueStageRow {
 export function issueStageTable(list: readonly MetricTask[], by: GroupBy = 'assignee') {
   const row = (id: number, l: readonly MetricTask[]): IssueStageRow => {
     const cells = Object.fromEntries(STAGE_TITLES.map((s) => [s, 0])) as Record<StageTitle, number>;
-    for (const t of l) if (t.stage) cells[t.stage]++;
+    for (const t of l) if (t.stage) cells[t.stage] = (cells[t.stage] ?? 0) + 1;
     return {
       id,
       total: l.length,
@@ -763,7 +765,7 @@ export function issueStageTable(list: readonly MetricTask[], by: GroupBy = 'assi
     .sort((a, b) => b.total - a.total || a.id - b.id);
   const totals = row(0, list);
   // Only stages that hold issues, in board order, so the table stays narrow.
-  const stages = STAGE_TITLES.filter((s) => totals.cells[s] > 0);
+  const stages = STAGE_TITLES.filter((s) => (totals.cells[s] ?? 0) > 0);
   return { stages, rows, totals };
 }
 
@@ -849,9 +851,9 @@ export function testingWorkload(list: readonly MetricTask[], ctx: MetricContext)
     .sort((a, b) => Number(b.isTester) - Number(a.isTester) || b.total - a.total || a.id - b.id);
 }
 
-const RETEST_STAGES: readonly StageTitle[] = ['QA Backlog', 'In QA'];
-
-export const isWaitingForRetest = (t: MetricTask) => !!t.stage && RETEST_STAGES.includes(t.stage);
+/** Waiting for QA: in the QA entry stage or in testing (QA Backlog, In QA by default). */
+export const isWaitingForRetest = (t: MetricTask) =>
+  hasRole(t.stage, 'qaEntry') || hasRole(t.stage, 'testing');
 
 /** Days an issue has waited in its current QA stage (since it last entered it). */
 export function waitingDays(t: MetricTask, ctx: MetricContext): number {
@@ -888,10 +890,12 @@ export interface RetestCounts {
 function retestCounts(list: readonly MetricTask[]): RetestCounts {
   const c = (stage: StageTitle, issue: boolean) =>
     list.filter((t) => t.stage === stage && t.isIssue === issue).length;
-  const qaBacklogDev = c('QA Backlog', false);
-  const qaBacklogIssues = c('QA Backlog', true);
-  const inQaDev = c('In QA', false);
-  const inQaIssues = c('In QA', true);
+  const qa = stageWithRole('qaEntry');
+  const testing = stageWithRole('testing');
+  const qaBacklogDev = qa ? c(qa, false) : 0;
+  const qaBacklogIssues = qa ? c(qa, true) : 0;
+  const inQaDev = testing ? c(testing, false) : 0;
+  const inQaIssues = testing ? c(testing, true) : 0;
   return {
     total: qaBacklogDev + qaBacklogIssues + inQaDev + inQaIssues,
     dev: qaBacklogDev + inQaDev,
@@ -931,7 +935,7 @@ export function stageEnteredAt(t: MetricTask): Date {
   for (let i = t.events.length - 1; i >= 0; i--) {
     if (t.events[i]!.to === t.stage) return t.events[i]!.at;
   }
-  return t.stage === 'To do' ? t.createdAt : t.changedAt;
+  return hasRole(t.stage, 'start') ? t.createdAt : t.changedAt;
 }
 
 /** Whole calendar days in the current stage (app time zone). */
@@ -940,7 +944,7 @@ export const daysInStage = (t: MetricTask, ctx: MetricContext): number =>
 
 /** In a stage other than LIVE for more than STUCK_DAYS days. */
 export const isStuck = (t: MetricTask, ctx: MetricContext): boolean =>
-  t.stage !== null && t.stage !== DEPLOYED_STAGE && daysInStage(t, ctx) > STUCK_DAYS;
+  t.stage !== null && !hasRole(t.stage, 'live') && daysInStage(t, ctx) > STUCK_DAYS;
 
 /** Who an alert names: the assignee, or for work waiting in QA the tester who must act. */
 export interface AlertOwner {
@@ -953,7 +957,7 @@ export interface AlertOwner {
  * Testing team, otherwise the QA lead. In every other stage it is the assignee.
  */
 export function alertOwner(t: MetricTask, ctx: MetricContext): AlertOwner {
-  if (t.stage === 'QA Backlog' || t.stage === 'In QA') {
+  if (isWaitingForRetest(t)) {
     if (ctx.testers.has(t.createdBy)) return { id: t.createdBy, role: 'tester' };
     if (ctx.qaLead) return { id: ctx.qaLead, role: 'qaLead' };
   }

@@ -3,7 +3,7 @@
 // Hours, efficiency and scores wait for real effort data (section 12 stage clocks).
 import { addWorkingHours, dayHours, workingHours, type WorkCalendar } from './calendar';
 import { groupBy, isOnHold, isPending, isSentToQa, pct } from './metrics';
-import { COMPLETED_STAGES, isReworkMove, type StageTitle } from './stages';
+import { COMPLETED_STAGES, hasRole, isReworkMove, type StageTitle } from './stages';
 import { dayKey, daysBetween } from './time';
 import type { MetricTask } from './types';
 
@@ -566,8 +566,8 @@ export interface Insight {
 
 /** In progress for more than 2 working days. */
 export function isLongInProgress(k: KpiTask, ctx: KpiContext): boolean {
-  if (!k.open || k.t.stage !== 'In progress') return false;
-  const entered = [...k.t.events].reverse().find((e) => e.to === 'In progress')?.at;
+  if (!k.open || !hasRole(k.t.stage, 'working')) return false;
+  const entered = [...k.t.events].reverse().find((e) => e.to === k.t.stage)?.at;
   return !!entered && idleDays(entered, ctx) > 2;
 }
 

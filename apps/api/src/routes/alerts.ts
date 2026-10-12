@@ -2,13 +2,21 @@
 // than STUCK_DAYS days in a stage (LIVE aside), for the Development department's tasks and
 // issues. Work stuck in QA Backlog or In QA names the tester who filed it, or the QA lead.
 // The filter bar does not apply: the bell shows the whole picture.
-import { alerts, boardStageCount, devTasks, PENDING_STAGES, STUCK_DAYS } from '@nural/shared';
+import {
+  alerts,
+  boardStageCount,
+  devTasks,
+  PENDING_STAGES,
+  STUCK_DAYS,
+  isHoldStage,
+} from '@nural/shared';
 import type { FastifyInstance } from 'fastify';
 import type { RequestDataset } from '../auth/roles';
 import { boardUrl, contextOf, person, project, type AppOptions } from './context';
 
 /** Overdue = pending and not On Hold (SRS 5), so the Bitrix24 link uses these stages. */
-const OVERDUE_STAGES = PENDING_STAGES.filter((s) => s !== 'On Hold');
+// Read per request: the workflow can change.
+const overdueStages = () => PENDING_STAGES.filter((s) => !isHoldStage(s));
 
 /** A tester's line: the issues they filed. A QA lead's line mixes creators: stage only. */
 const ownerFilter = (r: { role: 'assignee' | 'tester' | 'qaLead'; personId: number }) =>
@@ -38,7 +46,7 @@ export function alertRoutes(app: FastifyInstance, getDataset: RequestDataset, op
         boardUrl: boardUrl(ds, r.projectId, {
           responsibleId: r.personId,
           overdue: true,
-          stages: OVERDUE_STAGES,
+          stages: overdueStages(),
         }),
       })),
       stuck: a.stuck.map((r) => ({

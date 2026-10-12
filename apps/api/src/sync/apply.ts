@@ -13,7 +13,8 @@ import { stageEventsFrom, type HistoryEntry } from './historyBackfill';
 import { loadStageMap, testingTeamIds } from './initialLoad';
 import { mapTask, type BitrixTask, type TaskRow } from './mapTask';
 
-export type ChangeSource = TaskChanged['source'];
+/** Where a synced change came from (a workflow change is not a sync). */
+export type ChangeSource = Exclude<TaskChanged['source'], 'workflow'>;
 
 interface ApplyOptions {
   source: ChangeSource;

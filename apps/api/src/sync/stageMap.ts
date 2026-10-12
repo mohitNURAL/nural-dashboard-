@@ -1,5 +1,12 @@
 // Resolves a task's Kanban stage by title (never by ID: IDs differ per workgroup).
-import { DEFAULT_STAGE_ID, canonicalStage, type StageTitle } from '@nural/shared';
+import {
+  DEFAULT_STAGE_ID,
+  canonicalStage,
+  type StageTitle,
+  holdStage,
+  stageWithRole,
+  type StageRole,
+} from '@nural/shared';
 
 export interface StageInfo {
   id: number;
@@ -33,13 +40,14 @@ export function buildStageMap(stages: StageInfo[]): StageMap {
 }
 
 // Tasks outside any workgroup have no Kanban; derive the stage from the Bitrix24 status.
-const STATUS_STAGE: Record<number, StageTitle> = {
-  1: 'To do', // new
-  2: 'To do', // pending
-  3: 'In progress',
-  4: 'Done', // supposedly completed, awaiting control
-  5: 'Done', // completed
-  6: 'On Hold', // deferred
+const STATUS_ROLE: Record<number, StageRole | 'hold'> = {
+  // Roles of the workflow (stages.ts), resolved when used.
+  1: 'start', // new
+  2: 'start', // pending
+  3: 'working',
+  4: 'ready', // supposedly completed, awaiting control
+  5: 'ready', // completed
+  6: 'hold', // deferred
 };
 
 export function resolveTaskStage(
@@ -47,10 +55,15 @@ export function resolveTaskStage(
   map: StageMap,
 ): ResolvedStage {
   if (task.groupId === 0) {
-    return { title: null, stage: STATUS_STAGE[task.status] ?? null };
+    const role = STATUS_ROLE[task.status];
+    const stage = !role ? null : role === 'hold' ? holdStage() : stageWithRole(role);
+    return { title: null, stage };
   }
   if (task.stageId === DEFAULT_STAGE_ID) {
-    return { title: map.firstByGroup.get(task.groupId)?.title ?? null, stage: 'To do' };
+    return {
+      title: map.firstByGroup.get(task.groupId)?.title ?? null,
+      stage: stageWithRole('start'),
+    };
   }
   const info = map.byId.get(task.stageId);
   if (!info) return { title: null, stage: null };
