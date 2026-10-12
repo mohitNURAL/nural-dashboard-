@@ -1010,6 +1010,7 @@ The filter bar has Project, Assignee, **Department** (in place of Tag) and Date 
 | On-time | % of the period's closed tasks with a deadline that were on time | Previous period's % |
 | Active projects (first by default) | Every active project in Bitrix24 (still listed by sonet_group.get; archived or deleted ones drop out), narrowed by the Project filter; a person who sees only their tasks counts those tasks' projects | Recent action · Silent · Others, adding up to the total, each clickable (lists those projects in Project health) |
 | No deadline | Open tasks without a deadline | — |
+| Tasks in hand | Open tasks whose deadline is still ahead | Tomorrow · Rest of week · Rest of month · Next week · Next month, each clickable (they overlap, so they do not add up) |
 
 **KPI-09 Insights** (first card): up to six findings from the same numbers, each opening its tasks:
 - who holds the biggest share of open work;
@@ -1018,6 +1019,8 @@ The filter bar has Project, Assignee, **Department** (in place of Tag) and Date 
 - tasks In progress for over 2 working days;
 - the share of open tasks without a deadline;
 - silent projects.
+
+**Tasks in hand (2026-10-12).** The same tile on KPI, Development and QA: open tasks whose deadline is still ahead (now or later, IST), and when they are planned. Windows are calendar days in APP_TIMEZONE, weeks Monday to Sunday: **Tomorrow**; **Rest of week** (tomorrow to Sunday; empty on a Sunday); **Rest of month** (tomorrow to the month's last day); **Next week** (next Monday to Sunday); **Next month** (its first to last day). The windows overlap on purpose, so the parts do not add up to the total. Overdue and no-deadline tasks are not in hand (they have their own tiles). Open means each tab's own rule: KPI open (`kpi=open`), Development pending tasks in the All / Dev / Issues scope (`preset=pending`), QA the QA Testing team's pending testing tasks (`kind=testing&preset=pending`). `/api/tasks` takes `due=ahead|tomorrow|restWeek|restMonth|nextWeek|nextMonth`; the summaries return `inHand` (`metrics.ts` DUE_WINDOWS, dueWindowRange, isDueIn, tasksInHand; `components/InHandTile.tsx`).
 
 **Active projects split (2026-10-12).** Each active project is in exactly one part: **Silent** = open tasks and no action (task change or comment) for 10+ working days; **Recent action** = open tasks and an action in the last 30 days, not silent; **Others** = the rest (no open tasks, no tasks yet, or no action for 30 days). The sync marks a workgroup no longer listed in Bitrix24 as not active (`workgroups.active`); its tasks still count everywhere else. `kpi.ts` projectActivity, activeProjectSplit.
 

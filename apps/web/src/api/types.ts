@@ -1,5 +1,6 @@
 // Response shapes of apps/api (routes/*.ts). Dates arrive as ISO strings.
 import type {
+  DueWindow,
   GroupBy,
   IssueType,
   QaSummaryPart,
@@ -104,6 +105,8 @@ export interface TaskDetail {
 }
 
 export interface DevSummary {
+  /** Tasks in hand: open, deadline ahead, by window (tomorrow, rest of week, ...). */
+  inHand: Record<DueWindow, number>;
   total: number;
   completed: number;
   pending: number;
@@ -201,6 +204,8 @@ export interface DevMatrix {
 // ---------------------------------------------------------------- QA tab (routes/qa.ts)
 
 export interface QaSummary {
+  /** Tasks in hand: open, deadline ahead, by window (tomorrow, rest of week, ...). */
+  inHand: Record<DueWindow, number>;
   total: number;
   open: number;
   resolved: number;
@@ -349,6 +354,8 @@ export interface KpiRates {
 }
 
 export interface KpiSummary {
+  /** Tasks in hand: open, deadline ahead, by window (tomorrow, rest of week, ...). */
+  inHand: Record<DueWindow, number>;
   period: 'day' | 'week' | 'month';
   range: { start: string; end: string };
   open: number;

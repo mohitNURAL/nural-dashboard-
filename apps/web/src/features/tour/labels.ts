@@ -9,6 +9,7 @@ export const POINT_LABELS: Record<string, Record<string, string>> = {
     deployed: 'Deployed',
     overdue: 'Overdue',
     doneToday: 'Done today',
+    inHand: 'Tasks in hand',
   },
   'dev.cards': {
     assignees: 'Assignee-wise tasks',
@@ -24,6 +25,7 @@ export const POINT_LABELS: Record<string, Record<string, string>> = {
     alerts: 'Alert details',
   },
   'qa.tiles': {
+    inHand: 'Tasks in hand',
     qaTotal: 'Total issues filed',
     qaOpen: 'Open / pending',
     hold: 'On hold',
@@ -55,6 +57,7 @@ export const POINT_LABELS: Record<string, Record<string, string>> = {
     onTime: 'On-time',
     active: 'Active projects',
     noDeadline: 'No deadline',
+    inHand: 'Tasks in hand',
   },
   'kpi.cards': {
     insights: 'Insights',

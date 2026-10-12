@@ -8,6 +8,8 @@ export const KPI_INFO = {
     'Tasks closed in the period (first QA Backlog, else the Bitrix24 closed date). Clean-ups of 30+ tasks closed in one project on one day are left out.',
   onTime:
     'Of the tasks closed in the period that had a deadline, the share closed on or before it.',
+  inHand:
+    'Open tasks whose deadline is still ahead (IST), by when they are planned: tomorrow, the rest of this week, the rest of this month, next week, next month. The parts overlap (tomorrow is also in the rest of the week), so they do not add up. Overdue and no-deadline tasks are counted in their own tiles.',
   active:
     'Every active project in Bitrix24 (archived ones drop out), split three ways that add up to the total. Recent action: open tasks and a task change or comment in the last 30 days. Silent: open tasks and no action for 10+ working days. Others: no open tasks, no tasks yet, or no action for 30 days. Click a part to list those projects in Project health.',
   noDeadline: 'Open tasks without a deadline: they cannot be overdue or planned.',

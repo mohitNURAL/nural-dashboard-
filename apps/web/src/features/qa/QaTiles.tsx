@@ -2,7 +2,9 @@
 // Feedback, or for Retesting awaited Dev tasks and Issues) add up to it and open their own list.
 import type { IssuePreset, QaSummaryPart } from '@nural/shared';
 import { SortableGroup } from '../../components/layout/SortableGroup';
+import { InHandTile } from '../../components/InHandTile';
 import { StatTile } from '../../components/StatTile';
+import { useOpenIssues } from './issueList';
 import { useQaRetest, useQaSummary } from './api';
 import { lastFiledText } from './format';
 import { INFO } from '../info';
@@ -22,6 +24,7 @@ const TYPE_LABEL = { bug: 'Bug', feedback: 'Feedback' } as const;
 export function QaTiles({ active, onSelect, onPart, onRetest }: Props) {
   const { data } = useQaSummary();
   const { data: retest } = useQaRetest();
+  const openList = useOpenIssues();
   const last = data?.lastFiled;
   /** The Bug | Feedback parts of one tile. */
   const parts = (
@@ -46,6 +49,18 @@ export function QaTiles({ active, onSelect, onPart, onRetest }: Props) {
       noun="tile"
       className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-[repeat(var(--cols),minmax(0,1fr))]"
       items={[
+        {
+          id: 'inHand',
+          node: (
+            <InHandTile
+              counts={data?.inHand}
+              info={INFO.qaInHand}
+              onOpen={(w, label) =>
+                openList({ kind: 'testing', preset: 'pending', label, params: { due: w } })
+              }
+            />
+          ),
+        },
         {
           id: 'qaTotal',
           node: (

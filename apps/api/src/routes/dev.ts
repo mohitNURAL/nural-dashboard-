@@ -9,6 +9,7 @@ import {
   speedRanking,
   stageMatrix,
   STAGE_COLORS,
+  tasksInHand,
   type DevScope,
   type GroupBy,
 } from '@nural/shared';
@@ -40,6 +41,8 @@ export function devRoutes(app: FastifyInstance, getDataset: RequestDataset, opts
       ...s,
       // Tile sub-lines: Dev vs Issues (All) or Bug vs Feedback (Issues).
       parts: devSummaryParts(tasks, ctx, q.scope),
+      // Tasks in hand: pending, deadline ahead, by window.
+      inHand: tasksInHand(tasks, ctx),
       split: s.split && {
         by: s.split.by,
         items: s.split.items.map((i) => ({

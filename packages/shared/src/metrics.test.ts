@@ -16,6 +16,9 @@ import {
   devTasks,
   filterOptions,
   isDueToday,
+  dueWindowRange,
+  isDueIn,
+  tasksInHand,
   isOverdue,
   issueAgeByAssignee,
   issues,
@@ -797,5 +800,38 @@ describe('pending vs completed (SRS 5)', () => {
     expect(isSentToQa(task({ stage: 'To do', closedAt: closed, qaFlow: false }))).toBe(true);
     expect(isSentToQa(task({ stage: 'To do', closedAt: closed, qaFlow: true }))).toBe(false);
     expect(isSentToQa(task({ stage: 'To do', qaFlow: false }))).toBe(false);
+  });
+});
+
+describe('tasks in hand', () => {
+  // NOW = Saturday 10 Oct 2026, 12:00 IST.
+  const at = (d: string) => new Date(`${d}T12:00:00+05:30`);
+  it('windows follow the calendar in the app time zone', () => {
+    expect(dueWindowRange('tomorrow', ctx)).toEqual({ from: '2026-10-11', to: '2026-10-11' });
+    expect(dueWindowRange('restWeek', ctx)).toEqual({ from: '2026-10-11', to: '2026-10-11' });
+    expect(dueWindowRange('restMonth', ctx)).toEqual({ from: '2026-10-11', to: '2026-10-31' });
+    expect(dueWindowRange('nextWeek', ctx)).toEqual({ from: '2026-10-12', to: '2026-10-18' });
+    expect(dueWindowRange('nextMonth', ctx)).toEqual({ from: '2026-11-01', to: '2026-11-30' });
+    expect(dueWindowRange('ahead', ctx)).toBeNull();
+  });
+  it('counts open tasks with the deadline ahead, by window', () => {
+    const list = [
+      task({ deadline: at('2026-10-11') }), // tomorrow, rest of week and month
+      task({ deadline: at('2026-10-14') }), // next week, rest of month
+      task({ deadline: at('2026-11-20') }), // next month
+      task({ deadline: at('2026-12-20') }), // only ahead
+      task({ deadline: new Date('2026-10-10T08:00:00+05:30') }), // overdue: not in hand
+      task({ deadline: null }), // no deadline: not in hand
+      task({ deadline: at('2026-10-11'), stage: 'QA Backlog', stageTitle: 'QA Backlog' }), // sent to QA
+    ];
+    expect(tasksInHand(list, ctx)).toEqual({
+      ahead: 4,
+      tomorrow: 1,
+      restWeek: 1,
+      restMonth: 2,
+      nextWeek: 1,
+      nextMonth: 1,
+    });
+    expect(isDueIn(list[1]!, ctx, 'restWeek')).toBe(false);
   });
 });

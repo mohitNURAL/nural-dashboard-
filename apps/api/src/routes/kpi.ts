@@ -9,6 +9,7 @@ import {
   kpiScope,
   kpiSummary,
   projectActivity,
+  tasksInHand,
   overdueBreakdown,
   peoplePerformance,
   projectHealth,
@@ -21,7 +22,7 @@ import { z } from 'zod';
 import type { RequestDataset, Viewer } from '../auth/roles';
 import type { Dataset } from '../data/dataset';
 import { kpiConfig } from '../data/kpiConfig';
-import { person, project, withPeople, type AppOptions } from './context';
+import { contextOf, person, project, withPeople, type AppOptions } from './context';
 import { parseQuery } from './params';
 
 export const kpiParams = {
@@ -103,6 +104,15 @@ export function kpiRoutes(
     const { ds, q, ctx, scope, projects, activeIds } = await get(req);
     return {
       ...kpiSummary(scope, ctx, q.period, projects, activeIds),
+      // Tasks in hand: KPI open tasks with the deadline ahead, by window.
+      inHand: (() => {
+        const open = new Set(scope.all.filter((k) => k.open).map((k) => k.t.id));
+        return tasksInHand(
+          scope.all.map((k) => k.t),
+          contextOf(ds, opts),
+          (t) => open.has(t.id),
+        );
+      })(),
       asOf: ctx.now,
       dataLoadedAt: ds.loadedAt,
     };

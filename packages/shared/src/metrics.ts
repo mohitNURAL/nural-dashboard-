@@ -1123,3 +1123,76 @@ export function presetPredicate(
       return isWaitingForRetest;
   }
 }
+
+// ---------------------------------------------------------------- tasks in hand (2026-10-12)
+
+/**
+ * Tasks in hand: open tasks whose deadline is still ahead, by when they are planned (deadline in
+ * the app time zone). The windows overlap on purpose: tomorrow is also in the rest of this week,
+ * and next week can be in the rest of this month. "ahead" is all of them (deadline from now on).
+ */
+export const DUE_WINDOWS = [
+  'ahead',
+  'tomorrow',
+  'restWeek',
+  'restMonth',
+  'nextWeek',
+  'nextMonth',
+] as const;
+export type DueWindow = (typeof DUE_WINDOWS)[number];
+
+const keyPlus = (key: string, days: number) => {
+  const [y, m, d] = key.split('-').map(Number) as [number, number, number];
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+};
+
+/** The window's first and last day (YYYY-MM-DD, inclusive); null for "ahead". */
+export function dueWindowRange(
+  w: DueWindow,
+  ctx: MetricContext,
+): { from: string; to: string } | null {
+  const today = dayKey(ctx.now, ctx.tz);
+  const [y, m] = today.split('-').map(Number) as [number, number];
+  const isoDow = ((new Date(`${today}T00:00:00Z`).getUTCDay() + 6) % 7) + 1;
+  const sunday = keyPlus(today, 7 - isoDow);
+  const monthEnd = new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
+  const tomorrow = keyPlus(today, 1);
+  switch (w) {
+    case 'ahead':
+      return null;
+    case 'tomorrow':
+      return { from: tomorrow, to: tomorrow };
+    case 'restWeek':
+      return { from: tomorrow, to: sunday };
+    case 'restMonth':
+      return { from: tomorrow, to: monthEnd };
+    case 'nextWeek':
+      return { from: keyPlus(sunday, 1), to: keyPlus(sunday, 7) };
+    case 'nextMonth':
+      return {
+        from: new Date(Date.UTC(y, m, 1)).toISOString().slice(0, 10),
+        to: new Date(Date.UTC(y, m + 1, 0)).toISOString().slice(0, 10),
+      };
+  }
+}
+
+/** The deadline is still ahead and falls in the window (openness is the caller's rule). */
+export function isDueIn(t: MetricTask, ctx: MetricContext, w: DueWindow): boolean {
+  if (!t.deadline || t.deadline < ctx.now) return false;
+  const r = dueWindowRange(w, ctx);
+  if (!r) return true;
+  const k = dayKey(t.deadline, ctx.tz);
+  return k >= r.from && k <= r.to;
+}
+
+/** Counts per window of the open tasks (default: pending, as on the Development tab). */
+export function tasksInHand(
+  list: readonly MetricTask[],
+  ctx: MetricContext,
+  open: (t: MetricTask) => boolean = isPending,
+): Record<DueWindow, number> {
+  const mine = list.filter(open);
+  return Object.fromEntries(
+    DUE_WINDOWS.map((w) => [w, mine.filter((t) => isDueIn(t, ctx, w)).length]),
+  ) as Record<DueWindow, number>;
+}

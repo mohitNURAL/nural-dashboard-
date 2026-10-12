@@ -10,6 +10,10 @@ export const INFO = {
   ready: 'In the Done stage, ready to go live.',
   deployed: 'In the LIVE stage.',
   overdue: 'Pending, not On Hold, and the deadline has passed.',
+  inHand:
+    'Pending tasks (behind QA Backlog, not on hold) whose deadline is still ahead (IST). Under it, when they are planned: tomorrow, the rest of this week, the rest of this month, next week, next month. The parts overlap (tomorrow is also in the rest of the week), so they do not add up. Overdue and no-deadline tasks are not in hand.',
+  qaInHand:
+    "The QA Testing team's pending testing tasks whose deadline is still ahead (IST), by when they are planned: tomorrow, the rest of this week, the rest of this month, next week, next month. The parts overlap, so they do not add up.",
   doneToday: 'Reached QA Backlog for the first time today (IST).',
   dueToday: 'Deadline is today (IST), in any stage except LIVE.',
 

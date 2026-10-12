@@ -118,6 +118,7 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
       text: `${INFO.overdue} The first number to act on each day.`,
     },
     { target: slot('dev.tiles', 'doneToday'), title: 'Done today', text: INFO.doneToday },
+    { target: slot('dev.tiles', 'inHand'), title: 'Tasks in hand', text: INFO.inHand },
     {
       target: slot('dev.cards', 'assignees'),
       title: 'Per person or project',
@@ -154,6 +155,7 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
       text: `${INFO.qaTotal} Bug and Feedback under the number. ${CLICK_COUNT}`,
       member: `Bugs and feedback assigned to you or filed by you. ${CLICK_COUNT}`,
     },
+    { target: slot('qa.tiles', 'inHand'), title: 'Tasks in hand', text: INFO.qaInHand },
     { target: slot('qa.tiles', 'qaOpen'), title: 'Open / pending', text: INFO.qaOpen },
     { target: slot('qa.tiles', 'hold'), title: 'On hold', text: INFO.hold },
     {
@@ -214,6 +216,7 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
     { target: slot('kpi.tiles', 'closed'), title: 'Closed', text: KPI_INFO.closed },
     { target: slot('kpi.tiles', 'onTime'), title: 'On-time', text: KPI_INFO.onTime },
     { target: slot('kpi.tiles', 'active'), title: 'Active projects', text: KPI_INFO.active },
+    { target: slot('kpi.tiles', 'inHand'), title: 'Tasks in hand', text: KPI_INFO.inHand },
     { target: slot('kpi.tiles', 'noDeadline'), title: 'No deadline', text: KPI_INFO.noDeadline },
     {
       target: slot('kpi.cards', 'insights'),

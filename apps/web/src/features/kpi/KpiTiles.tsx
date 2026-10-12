@@ -1,6 +1,7 @@
 // KPI-01 headline tiles: active projects (first), open, overdue, closed, on-time %, no deadline.
 // Every number opens the tasks behind it.
 import { SortableGroup } from '../../components/layout/SortableGroup';
+import { InHandTile } from '../../components/InHandTile';
 import { StatTile } from '../../components/StatTile';
 import { useKpiControls } from '../filters/useFilters';
 import { useKpiSummary } from './api';
@@ -144,6 +145,16 @@ export function KpiTiles({ onProjects }: { onProjects: (show: ProjectShow) => vo
               onClick={() =>
                 list(`Closed ${words.now.toLowerCase()}`, { kpi: 'closed' }, KPI_INFO.onTime)
               }
+            />
+          ),
+        },
+        {
+          id: 'inHand',
+          node: (
+            <InHandTile
+              counts={s?.inHand}
+              info={KPI_INFO.inHand}
+              onOpen={(w, label) => list(label, { kpi: 'open', due: w }, KPI_INFO.inHand)}
             />
           ),
         },

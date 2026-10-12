@@ -23,6 +23,8 @@ import {
   STAGE_TITLES,
   testingTasks,
   type MetricTask,
+  DUE_WINDOWS,
+  isDueIn,
 } from '@nural/shared';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
@@ -72,6 +74,8 @@ const listParams = {
   stage: listParam(z.string().refine((s) => STAGE_TITLES.includes(s), 'Unknown stage')),
   overdue: z.enum(['true', 'false']).optional(),
   ageing: z.enum(AGEING_BUCKETS).optional(),
+  // Tasks in hand (2026-10-12): deadline ahead, in this window (tomorrow, rest of week, ...).
+  due: z.enum(DUE_WINDOWS).optional(),
   // Header alert: more than STUCK_DAYS days in the current stage (LIVE aside).
   stuck: z.enum(['true']).optional(),
   // Header alert person: the assignee, or the tester / QA lead for work waiting in QA.
@@ -184,6 +188,8 @@ export function taskRoutes(
         presetPredicate(query.preset, ctx, { lastFiledDate: last, lastResolvedDate: resolved }),
       );
     }
+    const due = query.due;
+    if (due) list = list.filter((t) => isDueIn(t, ctx, due));
     // The search box: ID and title (the other columns have their own filters).
     if (query.q) {
       const q = query.q.toLowerCase();
