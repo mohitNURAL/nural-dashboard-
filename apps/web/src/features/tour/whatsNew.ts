@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-12-projects',
+    date: '2026-10-12',
+    tab: 'workflow',
+    title: 'Projects: the workflow and project types',
+    steps: [
+      {
+        target: '[data-nav="workflow"]',
+        title: 'Projects',
+        text: 'A new module: the Workflow (how tasks move through the stages to LIVE and what each department does) and Project types (projects whose boards differ, like support and individual projects). Admins can edit both; every number follows.',
+      },
+    ],
+  },
+  {
     id: '2026-10-12-search',
     date: '2026-10-12',
     tab: 'dev',

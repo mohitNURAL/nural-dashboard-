@@ -20,6 +20,8 @@ export const RIGHT_KEYS = [
   'support',
   'inbox',
   'insights',
+  'workflow',
+  'projectTypes',
   'org',
   'people',
   'admin',
@@ -45,6 +47,10 @@ export interface Rights {
   /** Support feedback inbox. */
   inbox: boolean;
   insights: boolean;
+  /** Projects: Workflow (view; changing it needs admin). */
+  workflow: boolean;
+  /** Projects: Project types (view; changing them needs admin). */
+  projectTypes: boolean;
   /** Company tree. */
   org: boolean;
   /** People directory. */
@@ -77,6 +83,8 @@ export const grantSchema = z
     support: bool,
     inbox: bool,
     insights: bool,
+    workflow: bool,
+    projectTypes: bool,
     org: bool,
     people: bool,
     admin: bool,
@@ -123,6 +131,8 @@ export const ALL_RIGHTS: Rights = {
   support: true,
   inbox: true,
   insights: true,
+  workflow: true,
+  projectTypes: true,
   org: true,
   people: true,
   admin: true,
@@ -151,6 +161,8 @@ export function defaultRights(
     support: manager || ctx.supportDept || ctx.supportLead,
     inbox: ctx.supportLead,
     insights: true,
+    workflow: true,
+    projectTypes: true,
     org: manager,
     people: manager,
     admin: false,

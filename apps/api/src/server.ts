@@ -219,6 +219,8 @@ export async function buildServer({
         support: v.support,
         inbox: v.inbox,
         insights: v.insights,
+        workflow: v.workflow,
+        projectTypes: v.projectTypes,
         org: v.org,
         people: v.people,
         employees: v.employees,
@@ -253,6 +255,7 @@ export async function buildServer({
     ['/api/dev/', (v) => v.dev, 'Development'],
     ['/api/qa/', (v) => v.qa, 'QA'],
     ['/api/insights', (v) => v.insights, 'Insights'],
+    ['/api/workflow/projects', (v) => v.projectTypes || v.workflow, 'Project types'],
     ['/api/employees/tree', (v) => v.org, 'the Company tree'],
     // The people list also fills the person pickers of Mailing and Access permissions.
     ['/api/employees', (v) => v.people || v.mailing || v.admin, 'the People directory'],

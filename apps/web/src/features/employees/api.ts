@@ -11,6 +11,8 @@ export interface Rights {
   support: boolean;
   inbox: boolean;
   insights: boolean;
+  workflow: boolean;
+  projectTypes: boolean;
   org: boolean;
   people: boolean;
   admin: boolean;

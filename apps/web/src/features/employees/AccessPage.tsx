@@ -15,6 +15,7 @@ import { SortableGroup } from '../../components/layout/SortableGroup';
 import { StatTile } from '../../components/StatTile';
 import {
   IconChevron,
+  IconFlow,
   IconGrid,
   IconHelp,
   IconInsights,
@@ -43,6 +44,7 @@ import { SearchInput } from '../../components/ui/SearchInput';
 const MODULE_ICON: Record<string, ReactNode> = {
   Dashboard: <IconGrid size={18} />,
   Insights: <IconInsights size={18} />,
+  Projects: <IconFlow size={18} />,
   Employees: <IconPeople size={18} />,
   Integration: <IconPlug size={18} />,
   Help: <IconHelp size={18} />,

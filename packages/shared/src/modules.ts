@@ -13,6 +13,8 @@ export type PageRight =
   | 'qa'
   | 'support'
   | 'insights'
+  | 'workflow'
+  | 'projectTypes'
   | 'org'
   | 'people'
   | 'admin'
@@ -92,6 +94,23 @@ export const MODULES: ModuleDef[] = [
     label: 'Insights',
     pages: [
       { id: 'insights', label: 'Insights', hint: 'What is holding us back', right: 'insights' },
+    ],
+  },
+  {
+    label: 'Projects',
+    pages: [
+      {
+        id: 'workflow',
+        label: 'Workflow',
+        hint: 'How tasks move to LIVE, who does what',
+        right: 'workflow',
+      },
+      {
+        id: 'projecttypes',
+        label: 'Project types',
+        hint: 'Projects by their Kanban stages',
+        right: 'projectTypes',
+      },
     ],
   },
   {

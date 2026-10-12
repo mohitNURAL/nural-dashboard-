@@ -28,6 +28,8 @@ export interface Me {
   dev?: boolean;
   qa?: boolean;
   insights?: boolean;
+  workflow?: boolean;
+  projectTypes?: boolean;
   org?: boolean;
   people?: boolean;
   connections?: boolean;

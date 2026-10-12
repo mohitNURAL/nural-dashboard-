@@ -218,13 +218,22 @@ export const DEFAULT_WORKFLOW: Workflow = {
       forbids: ['Pushed to Master', 'Merged to Development', 'QA Backlog'],
     },
     {
+      key: 'design',
+      name: 'Design-first development',
+      description:
+        'Starts with design and documentation (Figma review, documentation), tested by QA and taken LIVE, without the code-merge stages.',
+      color: '#7B8FE0',
+      requires: ['QA Backlog', 'LIVE'],
+      forbids: ['Pushed to Master'],
+    },
+    {
       key: 'qaOnly',
       name: 'QA only',
       description:
         'Work tested by QA without the code-merge stages (e.g. asset or content projects).',
       color: '#FDB051',
       requires: ['QA Backlog'],
-      forbids: ['Pushed to Master', 'Merged to Development'],
+      forbids: ['Pushed to Master', 'Merged to Development', 'LIVE'],
     },
     {
       key: 'release',

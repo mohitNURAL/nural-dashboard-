@@ -44,6 +44,8 @@ export interface Viewer {
   /** Reads the feedback inbox. */
   inbox: boolean;
   insights: boolean;
+  workflow: boolean;
+  projectTypes: boolean;
   /** Company tree. */
   org: boolean;
   /** People directory. */
@@ -128,6 +130,8 @@ export const LOCAL_VIEWER: Viewer = {
   support: true,
   inbox: true,
   insights: true,
+  workflow: true,
+  projectTypes: true,
   org: true,
   people: true,
   employees: true,
@@ -162,6 +166,8 @@ export function viewerOf(
     support: rights.support,
     inbox: rights.inbox,
     insights: rights.insights,
+    workflow: rights.workflow,
+    projectTypes: rights.projectTypes,
     org: rights.org,
     people: rights.people,
     employees: rights.org || rights.people,

@@ -43,6 +43,8 @@ export const TAB_LABEL: Record<Tab, string> = {
   docs: 'Documents',
   faq: 'FAQs',
   finance: 'Cost to company',
+  workflow: 'Workflow',
+  projecttypes: 'Project types',
 };
 
 /** Shown once per sign-in, before the first tab tour: the top bar, the same on every tab. */
@@ -305,6 +307,40 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
       target: tour('mailing-list'),
       title: 'Your reports',
       text: 'New reports start in Preview: only admins get them, with the list of who would. Preview shows the mail as any person would get it; Send test sends it to you; Go live sends it to everyone on schedule. Last runs show what went out.',
+    },
+  ],
+  workflow: [
+    {
+      target: slot('workflow.cards', 'diagram'),
+      title: 'How work flows',
+      text: 'A task moves left to right through the Kanban stages to LIVE. Each lane is a department: the PM or team lead plans it (To do), Development builds it (In progress, Pushed to Master, Merged to Development, Pending for QA), QA tests it (QA Backlog, In QA, Done, or Issue Raised to send it back) and Release puts it live. Solid arrows are the usual moves, red dashed ones QA sending work back. The band underneath shows what each stage counts as. Click a stage for details.',
+    },
+    {
+      target: slot('workflow.cards', 'stage'),
+      title: 'One stage',
+      text: 'What the stage means, who acts there, where it moves on to, the board column names that mean it, and which numbers on the dashboard it feeds.',
+    },
+    {
+      target: slot('workflow.cards', 'departments'),
+      title: 'Who does what',
+      text: 'Each department and the stages where the next step is theirs.',
+    },
+    {
+      target: tour('workflow-edit'),
+      title: 'Edit the workflow (admins)',
+      text: 'Admins change the stages: order, names, departments, what each counts as, its roles, column names and arrows, and the rework rule. Once saved, every number on every page counts with it. Every version is kept and can be restored.',
+    },
+  ],
+  projecttypes: [
+    {
+      target: slot('projecttypes.tiles', 'differ'),
+      title: 'Projects that differ',
+      text: 'Most projects follow the full development flow to LIVE. Support desks, DevOps and personal projects use short boards (New › In progress › Finished), others skip the code or release stages. Their numbers follow the same rules, with fewer stages.',
+    },
+    {
+      target: slot('projecttypes.cards', 'type-support'),
+      title: 'Projects by type',
+      text: 'Each type with its rule and its projects. Every project shows its own columns and the stage each counts as; a column the workflow does not know is outlined in red. Admins set a project’s type by hand, map an unknown column to a stage, and edit the types.',
     },
   ],
   feedback: [

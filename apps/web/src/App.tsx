@@ -30,6 +30,8 @@ import { useTab } from './features/filters/useFilters';
 import { KpiTab } from './features/kpi/KpiTab';
 import { QaTab } from './features/qa/QaTab';
 import { useApplyWorkflow } from './features/projects/api';
+import { ProjectTypesPage } from './features/projects/ProjectTypesPage';
+import { WorkflowPage } from './features/projects/WorkflowPage';
 import { useLiveUpdates } from './hooks/useLiveUpdates';
 import { useNewVersion } from './hooks/useNewVersion';
 import { useGuidedTour, useNewTabs } from './features/tour/useGuidedTour';
@@ -81,6 +83,10 @@ export default function App() {
             <ConnectionsPage />
           ) : tab === 'mailing' ? (
             <MailingPage />
+          ) : tab === 'workflow' ? (
+            <WorkflowPage />
+          ) : tab === 'projecttypes' ? (
+            <ProjectTypesPage />
           ) : tab === 'feedback' ? (
             <FeedbackPage />
           ) : tab === 'docs' ? (

@@ -56,6 +56,20 @@ export const IconFeedback = (p: P) => (
     <path d="M6.5 8.5h7M6.5 11h4.5" />
   </Svg>
 );
+export const IconFlow = (p: P) => (
+  <Svg {...p}>
+    <rect x="2.5" y="3" width="5" height="4" rx="1" />
+    <rect x="12.5" y="3" width="5" height="4" rx="1" />
+    <rect x="7.5" y="13" width="5" height="4" rx="1" />
+    <path d="M7.5 5h5M15 7v3H10v3M5 7v3h5" />
+  </Svg>
+);
+export const IconLayers = (p: P) => (
+  <Svg {...p}>
+    <path d="m10 3 7.5 4L10 11 2.5 7 10 3Z" />
+    <path d="m2.5 10.5 7.5 4 7.5-4M2.5 14l7.5 4 7.5-4" />
+  </Svg>
+);
 export const IconMenu = (p: P) => (
   <Svg {...p}>
     <path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13" />
