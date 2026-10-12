@@ -1196,3 +1196,18 @@ export function tasksInHand(
     DUE_WINDOWS.map((w) => [w, mine.filter((t) => isDueIn(t, ctx, w)).length]),
   ) as Record<DueWindow, number>;
 }
+
+/** Tasks in hand per assignee or project (rows with any in hand, most first) and the totals. */
+export function inHandByGroup(
+  list: readonly MetricTask[],
+  ctx: MetricContext,
+  by: GroupBy,
+  open: (t: MetricTask) => boolean = isPending,
+) {
+  const mine = list.filter(open);
+  const rows = [...groupBy(mine, groupKey(by))]
+    .map(([id, l]) => ({ id, ...tasksInHand(l, ctx, () => true) }))
+    .filter((r) => r.ahead > 0)
+    .sort((a, b) => b.ahead - a.ahead || a.id - b.id);
+  return { rows, totals: tasksInHand(mine, ctx, () => true) };
+}

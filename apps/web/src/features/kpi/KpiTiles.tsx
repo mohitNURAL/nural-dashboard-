@@ -6,7 +6,7 @@ import { StatTile } from '../../components/StatTile';
 import { useKpiControls } from '../filters/useFilters';
 import { useKpiSummary } from './api';
 import { KPI_INFO } from './info';
-import { useOpenKpiList } from './kpiList';
+import { useKpiList, useOpenKpiList } from './kpiList';
 import { PERIOD_WORDS } from './format';
 import type { ProjectShow } from './projectShow';
 
@@ -14,6 +14,7 @@ export function KpiTiles({ onProjects }: { onProjects: (show: ProjectShow) => vo
   const { data: s } = useKpiSummary();
   const { period } = useKpiControls();
   const open = useOpenKpiList();
+  const shown = useKpiList((st) => st.list.label);
   const words = PERIOD_WORDS[period];
   const list = (label: string, params: Record<string, string>, info: string) =>
     open({ label, params, info });
@@ -154,6 +155,7 @@ export function KpiTiles({ onProjects }: { onProjects: (show: ProjectShow) => vo
             <InHandTile
               counts={s?.inHand}
               info={KPI_INFO.inHand}
+              active={!!shown?.startsWith('Tasks in hand')}
               onOpen={(w, label) => list(label, { kpi: 'open', due: w }, KPI_INFO.inHand)}
             />
           ),

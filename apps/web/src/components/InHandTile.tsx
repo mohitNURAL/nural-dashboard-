@@ -1,16 +1,8 @@
 // Tasks in hand (2026-10-12): open tasks with the deadline ahead, split by when they are planned.
 // The same tile on KPI, Development and QA; each tab passes its own counts and opens its own list.
 import type { DueWindow } from '@nural/shared';
+import { DUE_TEXT as DUE_LABEL } from './dueText';
 import { StatTile } from './StatTile';
-
-const DUE_LABEL: Record<DueWindow, string> = {
-  ahead: 'Deadline ahead',
-  tomorrow: 'Tomorrow',
-  restWeek: 'Rest of week',
-  restMonth: 'Rest of month',
-  nextWeek: 'Next week',
-  nextMonth: 'Next month',
-};
 
 const PARTS = ['tomorrow', 'restWeek', 'restMonth', 'nextWeek', 'nextMonth'] as const;
 
@@ -18,7 +10,10 @@ export function InHandTile({
   counts,
   info,
   onOpen,
+  active,
 }: {
+  /** Its list is the one open below (the tile stays highlighted, like the others). */
+  active?: boolean;
   counts: Record<DueWindow, number> | undefined;
   info: string;
   /** Opens the tab's list of these tasks, narrowed to one window. */
@@ -29,6 +24,7 @@ export function InHandTile({
       label="Tasks in hand"
       info={info}
       value={counts?.ahead}
+      active={active}
       onClick={() => onOpen('ahead', 'Tasks in hand')}
       parts={
         counts &&

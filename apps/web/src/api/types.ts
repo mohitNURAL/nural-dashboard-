@@ -104,6 +104,18 @@ export interface TaskDetail {
   related: TaskRow[];
 }
 
+/** Tasks in hand per assignee or project (/api/{dev,qa,kpi}/inhand). */
+export type InHandRow = Record<DueWindow, number> & {
+  id: number;
+  name: string;
+  person: Person | null;
+};
+export interface InHand {
+  groupBy: GroupBy;
+  rows: InHandRow[];
+  totals: Record<DueWindow, number>;
+}
+
 export interface DevSummary {
   /** Tasks in hand: open, deadline ahead, by window (tomorrow, rest of week, ...). */
   inHand: Record<DueWindow, number>;

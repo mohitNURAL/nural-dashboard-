@@ -10,6 +10,8 @@ import {
   kpiSummary,
   projectActivity,
   tasksInHand,
+  inHandByGroup,
+  GROUP_BY,
   overdueBreakdown,
   peoplePerformance,
   projectHealth,
@@ -22,7 +24,7 @@ import { z } from 'zod';
 import type { RequestDataset, Viewer } from '../auth/roles';
 import type { Dataset } from '../data/dataset';
 import { kpiConfig } from '../data/kpiConfig';
-import { contextOf, person, project, withPeople, type AppOptions } from './context';
+import { contextOf, person, project, withGroupNames, withPeople, type AppOptions } from './context';
 import { parseQuery } from './params';
 
 export const kpiParams = {
@@ -116,6 +118,23 @@ export function kpiRoutes(
       asOf: ctx.now,
       dataLoadedAt: ds.loadedAt,
     };
+  });
+
+  // Tasks in hand per assignee or project: KPI open tasks with the deadline ahead, by window.
+  app.get('/api/kpi/inhand', async (req) => {
+    const by = z
+      .enum(GROUP_BY)
+      .catch('assignee')
+      .parse((req.query as { groupBy?: unknown }).groupBy);
+    const { ds, scope } = await get(req);
+    const open = new Set(scope.all.filter((k) => k.open).map((k) => k.t.id));
+    const r = inHandByGroup(
+      scope.all.map((k) => k.t),
+      contextOf(ds, opts),
+      by,
+      (t) => open.has(t.id),
+    );
+    return { groupBy: by, rows: withGroupNames(ds, r.rows, by), totals: r.totals };
   });
 
   app.get('/api/kpi/projects', async (req) => {

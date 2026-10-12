@@ -4,7 +4,7 @@ import type { IssuePreset, QaSummaryPart } from '@nural/shared';
 import { SortableGroup } from '../../components/layout/SortableGroup';
 import { InHandTile } from '../../components/InHandTile';
 import { StatTile } from '../../components/StatTile';
-import { useOpenIssues } from './issueList';
+import { useIssueList, useOpenIssues } from './issueList';
 import { useQaRetest, useQaSummary } from './api';
 import { lastFiledText } from './format';
 import { INFO } from '../info';
@@ -25,6 +25,7 @@ export function QaTiles({ active, onSelect, onPart, onRetest }: Props) {
   const { data } = useQaSummary();
   const { data: retest } = useQaRetest();
   const openList = useOpenIssues();
+  const shown = useIssueList((st) => st.list.label);
   const last = data?.lastFiled;
   /** The Bug | Feedback parts of one tile. */
   const parts = (
@@ -55,6 +56,7 @@ export function QaTiles({ active, onSelect, onPart, onRetest }: Props) {
             <InHandTile
               counts={data?.inHand}
               info={INFO.qaInHand}
+              active={!!shown?.startsWith('Tasks in hand')}
               onOpen={(w, label) =>
                 openList({ kind: 'testing', preset: 'pending', label, params: { due: w } })
               }

@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-12-in-hand-by',
+    date: '2026-10-12',
+    tab: 'kpi',
+    title: 'Tasks in hand by assignee and project',
+    steps: [
+      {
+        target: slot('kpi.cards', 'inHand'),
+        title: 'Tasks in hand by assignee or project',
+        text: 'A chart and a table of the tasks in hand per assignee or project. Pick the window above the chart (Tomorrow, Rest of week, ...); the table shows every window. Click a bar or a count for those tasks. The same card is on Development and QA.',
+      },
+    ],
+  },
+  {
     id: '2026-10-12-in-hand',
     date: '2026-10-12',
     tab: 'kpi',

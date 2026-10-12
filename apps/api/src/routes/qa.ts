@@ -17,6 +17,7 @@ import {
   retestBreakdown,
   STAGE_COLORS,
   tasksInHand,
+  inHandByGroup,
   testingTasks,
   testingWorkload,
   waitingForRetest,
@@ -46,6 +47,16 @@ export function qaRoutes(app: FastifyInstance, getDataset: RequestDataset, opts:
       asOf: ctx.now,
       dataLoadedAt: ds.loadedAt,
     };
+  });
+
+  // Tasks in hand per assignee or project: the QA team's pending testing tasks, deadline ahead.
+  app.get('/api/qa/inhand', async (req) => {
+    const { query, filters } = parseQuery(req.query, groupByParam);
+    const by = query.groupBy;
+    const ds = await getDataset(req);
+    const ctx = contextOf(ds, opts);
+    const r = inHandByGroup(applyFilters(testingTasks(ds.tasks, ctx), filters, ctx.tz), ctx, by);
+    return { groupBy: by, rows: withGroupNames(ds, r.rows, by), totals: r.totals };
   });
 
   app.get('/api/qa/issues', async (req) => {

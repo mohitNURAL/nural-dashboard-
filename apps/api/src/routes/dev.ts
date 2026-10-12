@@ -10,6 +10,7 @@ import {
   stageMatrix,
   STAGE_COLORS,
   tasksInHand,
+  inHandByGroup,
   type DevScope,
   type GroupBy,
 } from '@nural/shared';
@@ -53,6 +54,14 @@ export function devRoutes(app: FastifyInstance, getDataset: RequestDataset, opts
       asOf: ctx.now,
       dataLoadedAt: ds.loadedAt,
     };
+  });
+
+  // Tasks in hand per assignee or project (pending, deadline ahead, by window).
+  app.get('/api/dev/inhand', async (req) => {
+    const { ds, ctx, tasks, q } = await scope(req, groupByParam);
+    const by = q.groupBy ?? 'assignee';
+    const r = inHandByGroup(tasks, ctx, by);
+    return { groupBy: by, rows: withGroupNames(ds, r.rows, by), totals: r.totals };
   });
 
   app.get('/api/dev/assignees', async (req) => {

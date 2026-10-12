@@ -17,6 +17,7 @@ import { IssueAgeingCard, IssuesByAssigneeCard, ReworkCard } from './IssueCharts
 import { IssueStageCard } from './IssueStageCard';
 import { IssueTrendCard } from './IssueTrendCard';
 import { QaTiles } from './QaTiles';
+import { QaInHandCard } from './InHandByCard';
 import { RetestByGroupCard } from './RetestByGroupCard';
 import { RetestCard, TestingCard } from './TeamCards';
 import { INFO } from '../info';
@@ -148,6 +149,7 @@ export function QaTab() {
             { id: 'issuesByAssignee', className: 'lg:col-span-6', node: <IssuesByAssigneeCard /> },
             { id: 'rework', className: 'lg:col-span-6', node: <ReworkCard /> },
             { id: 'testing', className: 'lg:col-span-6', node: <TestingCard /> },
+            { id: 'inHand', className: 'lg:col-span-12', node: <QaInHandCard /> },
             {
               id: 'retest',
               className: 'lg:col-span-6',

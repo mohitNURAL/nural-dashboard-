@@ -6,7 +6,7 @@ import { InHandTile } from '../../components/InHandTile';
 import { StatTile } from '../../components/StatTile';
 import { useDevScope } from '../filters/useFilters';
 import { useDevSummary } from './api';
-import { useDrillTo } from './drill';
+import { useDrillStore, useDrillTo } from './drill';
 import { splitLine, TILE_LABELS } from './format';
 import { INFO } from '../info';
 
@@ -39,6 +39,7 @@ export function SummaryTiles({ active, onSelect }: Props) {
   const { data } = useDevSummary();
   const [scope] = useDevScope();
   const drill = useDrillTo();
+  const shown = useDrillStore((st) => st.drill?.label);
   const split = data?.split;
   return (
     <SortableGroup
@@ -78,6 +79,7 @@ export function SummaryTiles({ active, onSelect }: Props) {
             <InHandTile
               counts={data?.inHand}
               info={INFO.inHand}
+              active={!!shown?.startsWith('Tasks in hand')}
               onOpen={(w, label) => drill({ label, preset: 'pending', params: { due: w } })}
             />
           ),

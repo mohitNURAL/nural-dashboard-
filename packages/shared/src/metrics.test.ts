@@ -19,6 +19,7 @@ import {
   dueWindowRange,
   isDueIn,
   tasksInHand,
+  inHandByGroup,
   isOverdue,
   issueAgeByAssignee,
   issues,
@@ -833,5 +834,23 @@ describe('tasks in hand', () => {
       nextMonth: 1,
     });
     expect(isDueIn(list[1]!, ctx, 'restWeek')).toBe(false);
+  });
+});
+
+describe('tasks in hand by assignee or project', () => {
+  const at = (d: string) => new Date(`${d}T12:00:00+05:30`);
+  it('rows add up to the totals and drop people with nothing in hand', () => {
+    const list = [
+      task({ responsibleId: 1, deadline: at('2026-10-11') }),
+      task({ responsibleId: 1, deadline: at('2026-11-05') }),
+      task({ responsibleId: 2, deadline: at('2026-10-14') }),
+      task({ responsibleId: 3, deadline: at('2026-10-01') }), // overdue only
+    ];
+    const r = inHandByGroup(list, ctx, 'assignee');
+    expect(r.rows.map((x) => [x.id, x.ahead, x.tomorrow, x.nextWeek, x.nextMonth])).toEqual([
+      [1, 2, 1, 0, 1],
+      [2, 1, 0, 1, 0],
+    ]);
+    expect(r.totals).toMatchObject({ ahead: 3, tomorrow: 1, nextWeek: 1, nextMonth: 1 });
   });
 });

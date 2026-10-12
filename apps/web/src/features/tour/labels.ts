@@ -14,6 +14,7 @@ export const POINT_LABELS: Record<string, Record<string, string>> = {
   'dev.cards': {
     assignees: 'Assignee-wise tasks',
     pendingDone: 'Pending vs Done',
+    inHand: 'Tasks in hand by assignee',
     ageing: 'Task ageing',
     ranking: 'Fastest to QA Backlog',
     matrix: 'Tasks by stage',
@@ -38,6 +39,7 @@ export const POINT_LABELS: Record<string, Record<string, string>> = {
     issuesByAssignee: 'Issues by assignee',
     rework: 'Rework by developer',
     testing: 'Testing team workload',
+    inHand: 'Tasks in hand by assignee',
     retest: 'Waiting for retest',
     retestByGroup: 'Retesting awaited by assignee',
     issueTrend: 'Issue trend',
@@ -62,6 +64,7 @@ export const POINT_LABELS: Record<string, Record<string, string>> = {
   'kpi.cards': {
     insights: 'Insights',
     projectHealth: 'Project health',
+    inHand: 'Tasks in hand by assignee',
     overdue: 'Overdue breakdown',
     workload: 'Workload',
     people: 'People',
