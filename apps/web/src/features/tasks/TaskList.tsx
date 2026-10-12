@@ -4,7 +4,16 @@ import { useEffect, useMemo, useState } from 'react';
 import type { TaskRow } from '../../api/types';
 import { useTableLayout } from '../../components/table/useTableLayout';
 import { DataTable, type Columns, type SortingState } from '../../components/DataTable';
-import { taskExportUrl, useOpenTask, useTaskList, type TaskListKind, type TaskSort } from './api';
+import {
+  COLUMN_FILTERS,
+  taskExportUrl,
+  useOpenTask,
+  useTaskList,
+  type ColumnFilters,
+  type TaskListKind,
+  type TaskSort,
+} from './api';
+import { SearchCombobox } from '../../components/SearchCombobox';
 import { createColumnHelper } from '@tanstack/react-table';
 import { BoardsContext } from './boards';
 import { bulkRowClass, useBulk } from './bulk';
@@ -62,6 +71,10 @@ export function TaskList({
   const [search, setSearch] = useState('');
   const [q, setQ] = useState('');
   const [sort, setSort] = useState<TaskSort>(defaultSort);
+  // Column filters: values picked from each column's list (type to narrow the list).
+  const [colFilters, setColFilters] = useState<ColumnFilters>({});
+  const colKey = JSON.stringify(colFilters);
+  const anyColumn = Object.values(colFilters).some((v) => v?.length);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(storedPageSize);
 
@@ -72,7 +85,9 @@ export function TaskList({
 
   // A new filter, preset, search or order starts again at page 1.
   const filterKey = JSON.stringify(filterParams);
-  useEffect(() => setPage(1), [filterKey, preset, q, sort, pageSize]);
+  useEffect(() => setPage(1), [filterKey, preset, q, sort, pageSize, colKey]);
+  // A new drill-down or filter bar starts with no column filters.
+  useEffect(() => setColFilters({}), [filterKey, preset]);
   const changePageSize = (n: number) => {
     setPageSize(n);
     try {
@@ -89,6 +104,7 @@ export function TaskList({
     sort,
     page,
     pageSize,
+    columns: colFilters,
   });
 
   useEffect(() => {
@@ -96,7 +112,7 @@ export function TaskList({
   }, [data, onTotal]);
 
   // Bulk edit: ticks are kept across pages of this list and reset when the list changes.
-  const bulk = useBulk(JSON.stringify([filterParams, kind, preset, q]), page, data?.rows);
+  const bulk = useBulk(JSON.stringify([filterParams, kind, preset, q, colKey]), page, data?.rows);
   const rows = useMemo(() => data?.rows ?? [], [data]);
   const withSelect = useMemo(
     () =>
@@ -120,17 +136,22 @@ export function TaskList({
             value={search}
             onChange={setSearch}
             size="sm"
-            placeholder="Search any column: ID, title, project, person, stage, tag…"
+            placeholder="Search by ID or title…"
             label="Search tasks"
             className="w-full max-w-md"
           />
         )}
         <a
-          href={taskExportUrl(filterParams, { kind, preset, q, sort }, exportName, {
-            cols: layout.cols,
-            hidden: layout.hidden,
-            order: layout.custom ? layout.rows : undefined,
-          })}
+          href={taskExportUrl(
+            filterParams,
+            { kind, preset, q, sort, columns: colFilters },
+            exportName,
+            {
+              cols: layout.cols,
+              hidden: layout.hidden,
+              order: layout.custom ? layout.rows : undefined,
+            },
+          )}
           download
           aria-label={`Export ${data?.total ?? ''} tasks to Excel`}
           title={`Export to Excel: ${data ? `all ${data.total.toLocaleString('en-IN')}` : 'these'} tasks with every detail`}
@@ -158,6 +179,38 @@ export function TaskList({
           Excel
         </a>
       </div>
+      {searchable && (
+        <div className="flex flex-wrap items-center gap-2" data-no-export>
+          {COLUMN_FILTERS.map(([key, label]) => {
+            const options = (data?.facets?.[key] ?? []).map((o) => ({
+              value: o.value,
+              label: o.label || '—',
+              count: o.count,
+            }));
+            // A column with one value and nothing picked has nothing to filter.
+            if (options.length < 2 && !colFilters[key]?.length) return null;
+            return (
+              <SearchCombobox
+                key={key}
+                label={label}
+                options={options}
+                selected={colFilters[key] ?? []}
+                onChange={(values) => setColFilters((c) => ({ ...c, [key]: values }))}
+                className="w-auto min-w-[9.5rem] max-w-[15rem]"
+              />
+            );
+          })}
+          {anyColumn && (
+            <button
+              type="button"
+              onClick={() => setColFilters({})}
+              className="h-8 rounded-control px-2.5 font-heading text-button text-primary hover:bg-primary-soft-100"
+            >
+              Clear column filters
+            </button>
+          )}
+        </div>
+      )}
       {isError ? (
         <p className="py-6 text-center text-bad">
           Could not load tasks. They will retry on the next change.

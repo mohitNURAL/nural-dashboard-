@@ -1,4 +1,4 @@
-// KPI-01 headline tiles: open, overdue, closed, on-time %, active projects, no deadline.
+// KPI-01 headline tiles: active projects (first), open, overdue, closed, on-time %, no deadline.
 // Every number opens the tasks behind it.
 import { SortableGroup } from '../../components/layout/SortableGroup';
 import { StatTile } from '../../components/StatTile';
@@ -7,8 +7,9 @@ import { useKpiSummary } from './api';
 import { KPI_INFO } from './info';
 import { useOpenKpiList } from './kpiList';
 import { PERIOD_WORDS } from './format';
+import type { ProjectShow } from './projectShow';
 
-export function KpiTiles({ onProjects }: { onProjects: () => void }) {
+export function KpiTiles({ onProjects }: { onProjects: (show: ProjectShow) => void }) {
   const { data: s } = useKpiSummary();
   const { period } = useKpiControls();
   const open = useOpenKpiList();
@@ -22,6 +23,28 @@ export function KpiTiles({ onProjects }: { onProjects: () => void }) {
       noun="tile"
       className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-[repeat(var(--cols),minmax(0,1fr))]"
       items={[
+        {
+          id: 'active',
+          node: (
+            <StatTile
+              label="Active projects"
+              value={s?.activeProjects}
+              info={KPI_INFO.active}
+              onClick={() => onProjects('active')}
+              parts={
+                s && [
+                  {
+                    label: 'Recent action',
+                    value: s.recentProjects,
+                    onClick: () => onProjects('recent'),
+                  },
+                  { label: 'Silent', value: s.silentProjects, onClick: () => onProjects('silent') },
+                  { label: 'Others', value: s.otherProjects, onClick: () => onProjects('other') },
+                ]
+              }
+            />
+          ),
+        },
         {
           id: 'open',
           node: (
@@ -120,27 +143,6 @@ export function KpiTiles({ onProjects }: { onProjects: () => void }) {
               sub={s && `${words.prev}: ${s.onTimePrevPct === null ? '—' : `${s.onTimePrevPct} %`}`}
               onClick={() =>
                 list(`Closed ${words.now.toLowerCase()}`, { kpi: 'closed' }, KPI_INFO.onTime)
-              }
-            />
-          ),
-        },
-        {
-          id: 'active',
-          node: (
-            <StatTile
-              label="Active projects"
-              value={s?.activeProjects}
-              info={KPI_INFO.active}
-              onClick={onProjects}
-              parts={
-                s && [
-                  {
-                    label: 'Silent',
-                    value: s.silentProjects,
-                    onClick: () =>
-                      list('Open tasks in silent projects', { kpi: 'silent' }, KPI_INFO.active),
-                  },
-                ]
               }
             />
           ),

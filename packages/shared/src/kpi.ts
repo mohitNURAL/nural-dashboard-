@@ -261,6 +261,34 @@ export interface ProjectRow {
   status: Health;
 }
 
+/** A project with no tasks in view (an active project nobody has tasks in yet). */
+export function emptyProjectRow(id: number, ownerId: number | null): ProjectRow {
+  return {
+    id,
+    ownerId,
+    total: 0,
+    open: 0,
+    overdue: 0,
+    oldestOverdueDays: 0,
+    noDeadline: 0,
+    completionPct: 0,
+    rates: {
+      closed: 0,
+      withDeadline: 0,
+      onTime: 0,
+      onTimePct: null,
+      open: 0,
+      overdue: 0,
+      overduePct: 0,
+      reworkCycles: 0,
+    },
+    lastAction: null,
+    idleWorkingDays: null,
+    silent: false,
+    status: 'green',
+  };
+}
+
 const healthRank = (h: Health) => (h === 'red' ? 0 : h === 'amber' ? 1 : 2);
 
 export function projectHealth(
@@ -519,17 +547,45 @@ export function hotProjects(scope: KpiScope, ctx: KpiContext, limit = 5): HotPro
 
 // ---------------------------------------------------------------- summary (KPI-01)
 
+/**
+ * Where an active project stands (KPI-01 Active projects, 2026-10-12): silent (open tasks, no
+ * action for 10+ working days), recent action (open tasks and an action in the last 30 days, not
+ * silent), or other (no open tasks, no tasks, or no action for 30 days). Each project is in one.
+ */
+export type ProjectActivity = 'recent' | 'silent' | 'other';
+
+export function projectActivity(p: ProjectRow | undefined, ctx: KpiContext): ProjectActivity {
+  if (!p) return 'other';
+  if (p.silent) return 'silent';
+  const cut = ctx.now.getTime() - KPI.activeDays * DAY_MS;
+  return p.open > 0 && p.lastAction && new Date(p.lastAction).getTime() >= cut ? 'recent' : 'other';
+}
+
+/** The active Bitrix24 projects split by activity; the three parts add up to the total. */
+export function activeProjectSplit(
+  projects: readonly ProjectRow[],
+  activeIds: readonly number[],
+  ctx: KpiContext,
+) {
+  const byId = new Map(projects.map((p) => [p.id, p]));
+  const out = { total: activeIds.length, recent: 0, silent: 0, other: 0 };
+  for (const id of activeIds) out[projectActivity(byId.get(id), ctx)] += 1;
+  return out;
+}
+
 export function kpiSummary(
   scope: KpiScope,
   ctx: KpiContext,
   period: Period,
   projects: readonly ProjectRow[],
+  /** The active Bitrix24 projects in view (default: the projects with tasks). */
+  activeIds: readonly number[] = projects.map((p) => p.id),
 ) {
   const cur = periodBounds(ctx.now, period, ctx.cal);
   const prev = periodBounds(ctx.now, period, ctx.cal, 1);
   const now = rates(scope.all, cur, scope.bulk);
   const before = rates(scope.all, prev, scope.bulk);
-  const activeCut = new Date(ctx.now.getTime() - KPI.activeDays * DAY_MS);
+  const split = activeProjectSplit(projects, activeIds, ctx);
   const openByDept = Object.fromEntries(DEPTS.map((d) => [d, 0])) as Record<Dept, number>;
   for (const k of scope.all) if (k.open) openByDept[k.dept] += 1;
   return {
@@ -544,10 +600,10 @@ export function kpiSummary(
     closedPrev: before.closed,
     onTimePct: now.onTimePct,
     onTimePrevPct: before.onTimePct,
-    activeProjects: projects.filter(
-      (p) => p.open > 0 && p.lastAction && new Date(p.lastAction) >= activeCut,
-    ).length,
-    silentProjects: projects.filter((p) => p.silent).length,
+    activeProjects: split.total,
+    recentProjects: split.recent,
+    silentProjects: split.silent,
+    otherProjects: split.other,
     noDeadline: scope.all.filter((k) => k.open && !k.t.deadline).length,
     hold: scope.all.filter((k) => k.hold).length,
     noProject: { open: scope.noProject.filter((k) => k.open).length },

@@ -13,6 +13,7 @@ import {
   overdueBucket,
   peoplePerformance,
   periodBounds,
+  projectActivity,
   projectHealth,
   projectStatus,
   rates,
@@ -324,10 +325,35 @@ describe('summary, insights, drill-down lists', () => {
       closed: 1,
       onTimePct: 100,
       activeProjects: 1,
+      recentProjects: 1,
       silentProjects: 0,
+      otherProjects: 0,
       noDeadline: 2,
       noProject: { open: 1 },
     });
+  });
+
+  it('active projects: every active Bitrix24 project in exactly one part', () => {
+    const scope = kpiScope(list, ctx);
+    const rows = projectHealth(scope, ctx, 'week', () => null);
+    const silentRow = { ...rows[0]!, id: 7, silent: true };
+    const quiet = { ...rows[0]!, id: 8, open: 0 };
+    // 10 has recent action, 7 is silent, 8 has no open tasks, 9 has no tasks; 5 is archived.
+    const s = kpiSummary(
+      scope,
+      ctx,
+      'week',
+      [...rows, silentRow, quiet, { ...rows[0]!, id: 5 }],
+      [10, 7, 8, 9],
+    );
+    expect(s).toMatchObject({
+      activeProjects: 4,
+      recentProjects: 1,
+      silentProjects: 1,
+      otherProjects: 2,
+    });
+    expect(s.recentProjects + s.silentProjects + s.otherProjects).toBe(s.activeProjects);
+    expect(projectActivity(undefined, ctx)).toBe('other');
   });
 
   it('department filter keeps that department only', () => {

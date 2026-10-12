@@ -202,6 +202,7 @@ export function scopeDataset(ds: Dataset, userId: number): Dataset {
   const ids = new Set(tasks.map((t) => t.id));
   const scoped: Dataset = {
     ...ds,
+    scoped: true,
     tasks,
     byId: new Map(tasks.map((t) => [t.id, t])),
     comments: ds.comments?.filter((c) => ids.has(c.taskId)),

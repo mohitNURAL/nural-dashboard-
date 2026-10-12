@@ -27,7 +27,14 @@ import {
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import type { RequestDataset, Viewer } from '../auth/roles';
-import { contextOf, person, taskMatcher, taskRow, type AppOptions } from './context';
+import {
+  applyColumnFilters,
+  columnOptions,
+  contextOf,
+  person,
+  taskRow,
+  type AppOptions,
+} from './context';
 import { kpiContext } from './kpi';
 import { contentDisposition, tasksWorkbook } from './export';
 import { list as listParam, parseQuery, scopeParam } from './params';
@@ -46,6 +53,17 @@ const listParams = {
   noProject: z.enum(['true']).optional(),
   preset: z.enum([...DEV_PRESETS, ...ISSUE_PRESETS]).optional(),
   q: z.string().trim().max(200).optional(),
+  // Column filters (2026-10-12): values picked from each column's list, comma-separated.
+  fProject: listParam(z.string().max(80)),
+  fAssignee: listParam(z.string().max(80)),
+  fCreator: listParam(z.string().max(80)),
+  fStage: listParam(z.string().max(80)),
+  fStatus: listParam(z.string().max(80)),
+  fPriority: listParam(z.string().max(80)),
+  fTag: listParam(z.string().max(80)),
+  fType: listParam(z.string().max(80)),
+  // Also send the options of every column filter.
+  facets: z.enum(['true']).optional(),
   sort: z.enum(SORTS).optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(200).default(50),
@@ -166,18 +184,35 @@ export function taskRoutes(
         presetPredicate(query.preset, ctx, { lastFiledDate: last, lastResolvedDate: resolved }),
       );
     }
-    // Search any column the list shows (context.ts taskMatcher).
-    if (query.q) list = list.filter(taskMatcher(ds, ctx, query.q));
+    // The search box: ID and title (the other columns have their own filters).
+    if (query.q) {
+      const q = query.q.toLowerCase();
+      list = list.filter((t) => String(t.id).includes(q) || t.title.toLowerCase().includes(q));
+    }
+    const chosen = {
+      project: query.fProject,
+      assignee: query.fAssignee,
+      creator: query.fCreator,
+      stage: query.fStage,
+      status: query.fStatus,
+      priority: query.fPriority,
+      tag: query.fTag,
+      type: query.fType,
+    };
+    const beforeColumns = list;
+    list = applyColumnFilters(ds, ctx, list, chosen);
     // DEV lists: by deadline, latest first. Issue lists: by created, newest first.
     list.sort(sorter(query.sort ?? (query.kind === 'issues' ? '-created' : '-deadline')));
 
-    return { query, ds, ctx, list };
+    return { query, ds, ctx, list, beforeColumns, chosen };
   }
 
   app.get('/api/tasks', async (req) => {
-    const { query, ds, ctx, list } = await selectTasks(req);
+    const { query, ds, ctx, list, beforeColumns, chosen } = await selectTasks(req);
     const start = (query.page - 1) * query.pageSize;
     return {
+      // Each column filter's options, with counts (type-to-search lists above the table).
+      ...(query.facets ? { facets: columnOptions(ds, ctx, beforeColumns, chosen) } : {}),
       total: list.length,
       page: query.page,
       pageSize: query.pageSize,

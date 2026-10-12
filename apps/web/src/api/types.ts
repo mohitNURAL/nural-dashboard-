@@ -80,6 +80,8 @@ export interface TaskPage {
   rows: TaskRow[];
   /** Columns of every board on this page, by workgroup ID. */
   boards: Record<string, BoardStage[]>;
+  /** Each column filter's options with counts (asked with facets=true). */
+  facets?: Record<string, { value: string; label: string; count: number }[]>;
 }
 
 export interface StageMove {
@@ -358,8 +360,11 @@ export interface KpiSummary {
   closedPrev: number;
   onTimePct: number | null;
   onTimePrevPct: number | null;
+  /** Active Bitrix24 projects in view = recent + silent + other. */
   activeProjects: number;
+  recentProjects: number;
   silentProjects: number;
+  otherProjects: number;
   noDeadline: number;
   hold: number;
   noProject: { open: number };
@@ -382,7 +387,13 @@ export interface KpiProject {
   idleWorkingDays: number | null;
   silent: boolean;
   status: Health;
+  /** Still a project in Bitrix24 (archived ones keep their tasks here). */
+  active: boolean;
+  /** Its part of the Active projects tile; null when not active. */
+  activity: ProjectActivity | null;
 }
+
+export type ProjectActivity = 'recent' | 'silent' | 'other';
 
 export interface KpiWorkload {
   id: number;

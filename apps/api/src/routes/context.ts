@@ -140,33 +140,107 @@ export function taskRow(ds: Dataset, ctx: MetricContext, t: MetricTask) {
 }
 
 /**
- * Task-list search (2026-10-12): the words typed are matched against every column the list
- * shows: ID, title, project, assignee, creator, stage (dashboard and Bitrix24 column name),
- * status, tags and priority. Every word must match somewhere ("moto qa" = Moto projects in a QA
- * stage), case does not matter.
+ * Task-list column filters (2026-10-12): the search box finds ID and title; each column has its
+ * own filter, picked from a list of the values in the list (type to narrow it), several at once.
  */
-export function taskMatcher(ds: Dataset, ctx: MetricContext, q: string) {
-  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
-  if (!words.length) return () => true;
-  return (t: MetricTask) => {
-    const r = taskRow(ds, ctx, t);
-    const text = [
-      r.id,
-      r.title,
-      r.project?.name,
-      r.assignee.name,
-      r.creator.name,
-      r.stage,
-      r.stageTitle,
-      r.status,
-      r.bitrixStatus.replace(/([A-Z])/g, ' $1'),
-      r.priority,
-      ...r.tags,
-      r.isIssue ? (t.issueType === 'bug' ? 'bug issue' : 'feedback issue') : 'task',
-      r.overdue ? 'overdue' : '',
-    ]
-      .join(' ')
-      .toLowerCase();
-    return words.every((w) => text.includes(w));
-  };
+export const COLUMN_FILTERS = [
+  'project',
+  'assignee',
+  'creator',
+  'stage',
+  'status',
+  'priority',
+  'tag',
+  'type',
+] as const;
+export type ColumnFilter = (typeof COLUMN_FILTERS)[number];
+
+/** A task's value(s) for one column filter. */
+export function columnValues(
+  ds: Dataset,
+  ctx: MetricContext,
+  t: MetricTask,
+  f: ColumnFilter,
+): { value: string; label: string }[] {
+  const r = taskRow(ds, ctx, t);
+  switch (f) {
+    case 'project':
+      return [{ value: String(t.groupId), label: r.project?.name ?? 'No project' }];
+    case 'assignee':
+      return [{ value: String(t.responsibleId), label: r.assignee.name }];
+    case 'creator':
+      return [{ value: String(t.createdBy), label: r.creator.name }];
+    case 'stage':
+      return [{ value: t.stage ?? '', label: t.stage ?? 'No stage' }];
+    case 'status':
+      return [
+        {
+          value: r.status,
+          label: r.status === 'hold' ? 'On hold' : r.status[0]!.toUpperCase() + r.status.slice(1),
+        },
+      ];
+    case 'priority':
+      return [{ value: r.priority, label: r.priority[0]!.toUpperCase() + r.priority.slice(1) }];
+    case 'tag':
+      return t.tags.length
+        ? t.tags.map((g) => ({ value: g.toLowerCase(), label: g }))
+        : [{ value: '', label: 'No tag' }];
+    case 'type':
+      return [
+        {
+          value: t.isIssue ? (t.issueType ?? 'issue') : 'task',
+          label: t.isIssue
+            ? t.issueType === 'bug'
+              ? 'Bug'
+              : t.issueType === 'feedback'
+                ? 'Feedback'
+                : 'Issue'
+            : 'Task',
+        },
+      ];
+  }
+}
+
+/** Keeps the tasks matching every chosen column filter (any of its values). */
+export function applyColumnFilters(
+  ds: Dataset,
+  ctx: MetricContext,
+  list: MetricTask[],
+  chosen: Partial<Record<ColumnFilter, string[]>>,
+): MetricTask[] {
+  const active = COLUMN_FILTERS.filter((f) => chosen[f]?.length);
+  if (!active.length) return list;
+  return list.filter((t) =>
+    active.every((f) => {
+      const want = new Set(chosen[f]);
+      return columnValues(ds, ctx, t, f).some((v) => want.has(v.value));
+    }),
+  );
+}
+
+/**
+ * The options of each column filter, with counts: worked out from the list with the other
+ * column filters applied, so each list offers what can still be picked.
+ */
+export function columnOptions(
+  ds: Dataset,
+  ctx: MetricContext,
+  list: MetricTask[],
+  chosen: Partial<Record<ColumnFilter, string[]>>,
+) {
+  const out = {} as Record<ColumnFilter, { value: string; label: string; count: number }[]>;
+  for (const f of COLUMN_FILTERS) {
+    const others = { ...chosen, [f]: [] };
+    const counts = new Map<string, { value: string; label: string; count: number }>();
+    for (const t of applyColumnFilters(ds, ctx, list, others))
+      for (const v of columnValues(ds, ctx, t, f)) {
+        const c = counts.get(v.value) ?? { ...v, count: 0 };
+        c.count++;
+        counts.set(v.value, c);
+      }
+    out[f] = [...counts.values()].sort(
+      (a, b) => b.count - a.count || a.label.localeCompare(b.label),
+    );
+  }
+  return out;
 }

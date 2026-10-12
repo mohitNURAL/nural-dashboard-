@@ -18,6 +18,37 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-12-active-projects',
+    date: '2026-10-12',
+    tab: 'kpi',
+    title: 'KPI: Active projects = every project in Bitrix24',
+    steps: [
+      {
+        target: slot('kpi.tiles', 'active'),
+        title: 'Active projects, first',
+        text: 'Now the total of active projects in Bitrix24, split into Recent action (an action in the last 30 days), Silent (no action for 10+ working days) and Others; the three add up to the total. Click a part to list those projects.',
+      },
+      {
+        target: slot('kpi.cards', 'projectHealth'),
+        title: 'Project health by activity',
+        text: 'A switch lists All, Active, Recent action, Silent or Others, and the Activity column shows where each project stands.',
+      },
+    ],
+  },
+  {
+    id: '2026-10-12-column-filters',
+    date: '2026-10-12',
+    tab: 'dev',
+    title: 'Task lists: a filter on every column',
+    steps: [
+      {
+        target: '[data-group="dev.sections"] [data-slot="all"]',
+        title: 'Column filters',
+        text: 'The search box finds ID and title. Under it, pick values from each column: Project, Assignee, Creator, Stage, Status, Priority, Tags, Type (type to narrow the list, pick several). "Clear column filters" removes them; the Excel export keeps them.',
+      },
+    ],
+  },
+  {
     id: '2026-10-12-projects',
     date: '2026-10-12',
     tab: 'workflow',

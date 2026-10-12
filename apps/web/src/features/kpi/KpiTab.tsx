@@ -28,6 +28,7 @@ import { OverdueCard } from './OverdueCard';
 import { PERIOD_WORDS } from './format';
 import { PeopleCard } from './PeopleCard';
 import { ProjectHealthCard } from './ProjectHealthCard';
+import { useProjectShow } from './projectShow';
 import { WorkloadCard } from './WorkloadCard';
 
 const COLUMNS = taskColumns();
@@ -76,7 +77,12 @@ export function KpiTab() {
         >
           <PeriodSwitch range={summary?.range} />
         </PageHead>
-        <KpiTiles onProjects={() => spotlightSoon(projectsRef)} />
+        <KpiTiles
+          onProjects={(show) => {
+            useProjectShow.getState().set(show);
+            spotlightSoon(projectsRef);
+          }}
+        />
         {summary && summary.noProject.open > 0 && <NoProjectNote n={summary.noProject.open} />}
 
         <SortableGroup

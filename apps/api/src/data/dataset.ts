@@ -42,7 +42,9 @@ export interface Dataset {
   /** Bitrix24 stage IDs per workgroup and dashboard stage (for filtered Bitrix24 links). */
   stageIds?: Map<number, Map<StageTitle, number[]>>;
   users: Map<number, UserInfo>;
-  projects: Map<number, { id: number; name: string }>;
+  projects: Map<number, { id: number; name: string; active?: boolean }>;
+  /** Set on a person's scoped copy (only their tasks), see auth/roles.ts scopeDataset. */
+  scoped?: boolean;
   /** Each board's columns in order (task actions: the stage dropdown). */
   boards?: Map<
     number,
@@ -224,7 +226,9 @@ export async function loadDataset(): Promise<Dataset> {
     qaLead,
     stageIds,
     users,
-    projects: new Map(groupRows.map((g) => [g.id, { id: g.id, name: g.name }])),
+    projects: new Map(
+      groupRows.map((g) => [g.id, { id: g.id, name: g.name, active: g.active && g.isDevProject }]),
+    ),
     boards: boardsOf(stageRows),
     kpiDept: kpiDepartments(userRows, deptRows),
     supportLead: supportLead(deptRows),

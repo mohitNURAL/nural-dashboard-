@@ -36,15 +36,16 @@ export function useNewVersion() {
   useEffect(() => {
     // Only built copies have a version file; the dev server reloads by itself.
     if (!import.meta.env.PROD) return;
-    let shown = false;
+    // The build last announced: a later deploy asks again, even if that toast was closed.
+    let announced = '';
     const check = async () => {
-      if (shown || !navigator.onLine || document.visibilityState === 'hidden') return;
+      if (!navigator.onLine || document.visibilityState === 'hidden') return;
       try {
         const res = await fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' });
         if (!res.ok) return;
         const { build, news } = (await res.json()) as { build?: unknown; news?: unknown };
-        if (!isNewVersion(__BUILD_ID__, build)) return;
-        shown = true;
+        if (!isNewVersion(__BUILD_ID__, build) || build === announced) return;
+        announced = build as string;
         toast('A new version of the dashboard is ready', {
           id: 'new-version',
           description: whatsNewText(

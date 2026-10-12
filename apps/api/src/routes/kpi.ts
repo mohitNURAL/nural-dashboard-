@@ -3,10 +3,12 @@
 // one computation (cached per query for the dataset's lifetime).
 import {
   applyFilters,
+  emptyProjectRow,
   hotProjects,
   insights,
   kpiScope,
   kpiSummary,
+  projectActivity,
   overdueBreakdown,
   peoplePerformance,
   projectHealth,
@@ -42,7 +44,20 @@ function compute(ds: Dataset, query: unknown, opts: AppOptions) {
   const ctx = kpiContext(ds, opts.now?.() ?? new Date(), opts.tz);
   const scope = kpiScope(applyFilters(ds.tasks, filters, opts.tz), ctx, q.dept as Dept | 'all');
   const projects = projectHealth(scope, ctx, q.period, (g) => ds.owners?.get(g) ?? null);
-  return { q, ctx, scope, projects };
+  return { q, ctx, scope, projects, activeIds: activeProjectIds(ds, filters.projectIds) };
+}
+
+/**
+ * The active Bitrix24 projects in view (KPI Active projects): every project still listed in
+ * Bitrix24, narrowed by the Project filter; a person who sees only their own tasks counts the
+ * projects of those tasks.
+ */
+function activeProjectIds(ds: Dataset, picked?: number[]) {
+  const mine = ds.scoped ? new Set(ds.tasks.map((t) => t.groupId)) : null;
+  const want = picked?.length ? new Set(picked) : null;
+  return [...ds.projects.values()]
+    .filter((p) => p.active !== false && (!mine || mine.has(p.id)) && (!want || want.has(p.id)))
+    .map((p) => p.id);
 }
 
 /** One computation per (dataset, query) for a minute; the endpoints read from it. */
@@ -85,18 +100,30 @@ export function kpiRoutes(
   });
 
   app.get('/api/kpi/summary', async (req) => {
-    const { ds, q, ctx, scope, projects } = await get(req);
+    const { ds, q, ctx, scope, projects, activeIds } = await get(req);
     return {
-      ...kpiSummary(scope, ctx, q.period, projects),
+      ...kpiSummary(scope, ctx, q.period, projects, activeIds),
       asOf: ctx.now,
       dataLoadedAt: ds.loadedAt,
     };
   });
 
   app.get('/api/kpi/projects', async (req) => {
-    const { ds, projects } = await get(req);
+    const { ds, ctx, projects, activeIds } = await get(req);
+    const active = new Set(activeIds);
+    const withTasks = new Set(projects.map((p) => p.id));
+    // Active projects without tasks in view are listed too, so the tile's parts each have rows.
+    const empty = activeIds
+      .filter((id) => !withTasks.has(id))
+      .map((id) => emptyProjectRow(id, ds.owners?.get(id) ?? null));
     return {
-      rows: projects.map((p) => ({ ...p, name: projectName(ds, p.id), owner: ownerOf(ds, p.id) })),
+      rows: [...projects, ...empty].map((p) => ({
+        ...p,
+        name: projectName(ds, p.id),
+        owner: ownerOf(ds, p.id),
+        active: active.has(p.id),
+        activity: active.has(p.id) ? projectActivity(p, ctx) : null,
+      })),
     };
   });
 

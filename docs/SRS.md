@@ -444,7 +444,7 @@ Rebuild after a change people can see:
 - Saved per person (`table.<id>.cols|hidden|rows|mode` in the layout, rows up to 2,000 keys); Reset layout clears it. Dragging uses dnd-kit (pointer and keyboard), like tiles and the menu.
 - **Excel follows the layout:** a card's Excel and the page export take the table as shown. A task list's Excel puts the shown columns first in their order, then the details the list does not show (IDs, links), leaves out hidden columns, and lists rows in the reader's order when *Your order* is on (`/api/tasks/export?cols=&hidden=&order=`).
 
-**Search and dropdowns (2026-10-12).** One search box everywhere (`components/ui/SearchInput.tsx`): a search icon, a clear × once there is text, Escape clears, the same size and focus ring; and one dropdown (`components/ui/Select.tsx`): the native select in one look with a chevron. The filter bar's search dropdowns use the same box with ×. **Task lists search any column:** the words typed must each match somewhere in ID, title, project, assignee, creator, stage (dashboard or Bitrix24 column name), status, tags, priority, bug / feedback / task or overdue, in any order and case (`context.ts` taskMatcher; "moto vapt to do" finds Moto India VAPT tasks in To Do).
+**Search and dropdowns (2026-10-12).** One search box everywhere (`components/ui/SearchInput.tsx`): a search icon, a clear × once there is text, Escape clears, the same size and focus ring; and one dropdown (`components/ui/Select.tsx`): the native select in one look with a chevron. The filter bar's search dropdowns use the same box with ×. **Task-list column filters (2026-10-12, replaces search-any-column).** The search box of a task list finds ID and title only ("Search by ID or title…"). Under it, each column has its own filter: Project, Assignee, Creator, Stage, Status, Priority, Tags and Type, each a dropdown of the values in the list with counts (type to narrow it, pick several). Filters combine (all must match; any of a filter's values); each list's options are counted with the other column filters applied, so it offers only what can still be picked. A column with a single value and nothing picked shows no filter. "Clear column filters" removes them; a new drill-down or filter bar change starts without them. The Excel export keeps them (`/api/tasks` `fProject`, `fAssignee`, `fCreator`, `fStage`, `fStatus`, `fPriority`, `fTag`, `fType`, comma lists; `facets=true` returns the options; `context.ts` COLUMN_FILTERS, applyColumnFilters, columnOptions).
 
 **Menu order (2026-10-12):** Dashboard, Insights, Employees, Integration, Finance, **Help last**; a person's own dragged order is kept.
 
@@ -1008,7 +1008,7 @@ The filter bar has Project, Assignee, **Department** (in place of Tag) and Date 
 | Overdue (red) | Open tasks past deadline | % of open; "Over 30 days" count, clickable |
 | Closed this week (day / month) | Closed in the period | Previous period and the change (▲ / ▼) |
 | On-time | % of the period's closed tasks with a deadline that were on time | Previous period's % |
-| Active projects | Active projects | Silent projects, clickable |
+| Active projects (first by default) | Every active project in Bitrix24 (still listed by sonet_group.get; archived or deleted ones drop out), narrowed by the Project filter; a person who sees only their tasks counts those tasks' projects | Recent action · Silent · Others, adding up to the total, each clickable (lists those projects in Project health) |
 | No deadline | Open tasks without a deadline | — |
 
 **KPI-09 Insights** (first card): up to six findings from the same numbers, each opening its tasks:
@@ -1019,7 +1019,9 @@ The filter bar has Project, Assignee, **Department** (in place of Tag) and Date 
 - the share of open tasks without a deadline;
 - silent projects.
 
-**KPI-02 Project health (table)**: one row per project, worst first.
+**Active projects split (2026-10-12).** Each active project is in exactly one part: **Silent** = open tasks and no action (task change or comment) for 10+ working days; **Recent action** = open tasks and an action in the last 30 days, not silent; **Others** = the rest (no open tasks, no tasks yet, or no action for 30 days). The sync marks a workgroup no longer listed in Bitrix24 as not active (`workgroups.active`); its tasks still count everywhere else. `kpi.ts` projectActivity, activeProjectSplit.
+
+**KPI-02 Project health (table)**: one row per project, worst first. An Activity column shows its part of Active projects ("Not in Bitrix24" for an archived one), and a switch lists All, Active, Recent action, Silent or Others (with counts); active projects with no tasks in view are listed too. The Active projects tile and its parts set the switch.
 - Columns: Project, Owner, Status, Open, Overdue, Most late (days), No deadline, Closed this period, On-time %, Done % (closed / all), Last action ("5 h ago", or in red "No action for N working days" after 3 working days).
 - Owner = the Bitrix24 group owner, or `config/project-owners.json` when a project is listed there.
 - Status:

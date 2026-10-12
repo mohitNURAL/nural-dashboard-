@@ -322,10 +322,17 @@ describe('metrics API', () => {
     });
     const search = await get('/api/tasks?q=price');
     expect(search.body.total).toBe(1);
-    // Search any column (2026-10-12): project, stage, words in any order, any case.
-    expect((await get('/api/tasks?q=support%20tool')).body.total).toBeGreaterThan(0);
-    const byStageAndProject = await get('/api/tasks?q=SUPPORT%20' + encodeURIComponent('price'));
-    expect(byStageAndProject.body.total).toBeLessThanOrEqual(search.body.total);
+    // Column filters (2026-10-12): picked values, with the options and counts of each column.
+    const withFacets = await get('/api/tasks?facets=true&pageSize=1');
+    const projects = withFacets.body.facets.project as {
+      value: string;
+      label: string;
+      count: number;
+    }[];
+    expect(projects.find((p) => p.label === 'Support Tool')?.count).toBeGreaterThan(0);
+    const one = projects.find((p) => p.label === 'Support Tool')!;
+    const narrowed = await get(`/api/tasks?fProject=${one.value}&pageSize=1`);
+    expect(narrowed.body.total).toBe(one.count);
     expect((await get('/api/tasks?q=nothing-matches-this')).body.total).toBe(0);
     const sorted = await get('/api/tasks?sort=-deadline&pageSize=1&page=1');
     expect(sorted.body).toMatchObject({ total: 3, pageSize: 1 });

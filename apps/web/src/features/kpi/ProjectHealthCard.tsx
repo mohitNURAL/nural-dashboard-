@@ -4,7 +4,7 @@ import { createColumnHelper } from '@tanstack/react-table';
 import clsx from 'clsx';
 import { forwardRef, useMemo } from 'react';
 import type { Health, KpiProject } from '../../api/types';
-import { Card } from '../../components/Card';
+import { Card, ViewToggle } from '../../components/Card';
 import { CountButton } from '../../components/CountButton';
 import { DataTable, type Columns } from '../../components/DataTable';
 import { useFocusRow, useKpiControls } from '../filters/useFilters';
@@ -13,9 +13,13 @@ import { KPI_INFO } from './info';
 import { useOpenKpiList } from './kpiList';
 import { ago, PERIOD_WORDS } from './format';
 import { HealthChip } from './parts';
+import { ACTIVITY_LABEL, useProjectShow, type ProjectShow } from './projectShow';
 
 const col = createColumnHelper<KpiProject>();
 const RANK: Record<Health, number> = { red: 0, amber: 1, green: 2 };
+
+const showsRow = (show: ProjectShow, p: KpiProject) =>
+  show === 'all' ? p.total > 0 || p.active : show === 'active' ? p.active : p.activity === show;
 
 export const ProjectHealthCard = forwardRef<HTMLDivElement, { className?: string }>(
   function ProjectHealthCard({ className }, ref) {
@@ -24,6 +28,9 @@ export const ProjectHealthCard = forwardRef<HTMLDivElement, { className?: string
     const openList = useOpenKpiList();
     const { period } = useKpiControls();
     const words = PERIOD_WORDS[period];
+    const { show, set: setShow } = useProjectShow();
+    const rows = useMemo(() => (data?.rows ?? []).filter((p) => showsRow(show, p)), [data, show]);
+    const count = (s: ProjectShow) => (data?.rows ?? []).filter((p) => showsRow(s, p)).length;
 
     const columns = useMemo(() => {
       const open = (p: KpiProject, what: string, params: Record<string, string>, info: string) =>
@@ -46,6 +53,25 @@ export const ProjectHealthCard = forwardRef<HTMLDivElement, { className?: string
           ),
         }),
         col.accessor((p) => p.owner?.name ?? '', { id: 'owner', header: 'Owner' }),
+        col.accessor((p) => (p.activity ? ACTIVITY_LABEL[p.activity] : 'Not in Bitrix24'), {
+          id: 'activity',
+          header: 'Activity',
+          meta: { info: KPI_INFO.active },
+          cell: (c) => (
+            <span
+              className={clsx(
+                'font-bold',
+                c.row.original.activity === 'silent'
+                  ? 'text-bad'
+                  : c.row.original.activity === 'recent'
+                    ? 'text-good'
+                    : 'text-text-muted',
+              )}
+            >
+              {c.getValue()}
+            </span>
+          ),
+        }),
         col.accessor((p) => RANK[p.status], {
           id: 'status',
           header: 'Status',
@@ -164,13 +190,25 @@ export const ProjectHealthCard = forwardRef<HTMLDivElement, { className?: string
           title="Project health"
           info={KPI_INFO.projects}
           loading={isLoading}
-          empty={!!data && data.rows.length === 0}
+          empty={!!data && rows.length === 0 && show === 'all'}
+          action={
+            data && (
+              <ViewToggle<ProjectShow>
+                value={show}
+                onChange={setShow}
+                options={(['all', 'active', 'recent', 'silent', 'other'] as const).map((s) => ({
+                  value: s,
+                  label: `${s === 'all' ? 'All' : s === 'active' ? 'Active' : ACTIVITY_LABEL[s]} ${count(s)}`,
+                }))}
+              />
+            )
+          }
         >
           {data && (
             <DataTable
               tableId="kpi-projects"
               columns={columns}
-              data={data.rows}
+              data={rows}
               rowKey={(r) => r.id}
               maxHeight={440}
               dense

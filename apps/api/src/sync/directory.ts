@@ -100,12 +100,24 @@ export async function syncDirectory(call: Call): Promise<DirectorySummary> {
           // Empty DEV_GROUP_IDS = every workgroup is a development project.
           isDevProject: scope.size === 0 || scope.has(Number(g.ID)),
           ownerId: Number(g.OWNER_ID) || null,
+          active: true,
         })),
       )
       .onConflictDoUpdate({
         target: schema.workgroups.id,
         set: excludedSet(schema.workgroups, ['id']),
       });
+    // A project no longer listed (archived or deleted in Bitrix24) is kept for its tasks but
+    // stops counting as active.
+    await db
+      .update(schema.workgroups)
+      .set({ active: false })
+      .where(
+        notInArray(
+          schema.workgroups.id,
+          groups.map((g) => Number(g.ID)),
+        ),
+      );
   }
 
   const stageRows = await syncGroupStages(

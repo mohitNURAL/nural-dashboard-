@@ -120,6 +120,8 @@ export const workgroups = pgTable('workgroups', {
   isDevProject: boolean('is_dev_project').notNull(),
   /** Bitrix24 group owner, the KPI tab's project owner fallback (SRS 13.3, KPI-02). */
   ownerId: integer('owner_id'),
+  /** Still listed in Bitrix24 (archived or deleted projects drop out; KPI Active projects). */
+  active: boolean('active').notNull().default(true),
 });
 
 export const stages = pgTable(

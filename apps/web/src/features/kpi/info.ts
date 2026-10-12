@@ -9,7 +9,7 @@ export const KPI_INFO = {
   onTime:
     'Of the tasks closed in the period that had a deadline, the share closed on or before it.',
   active:
-    'Projects with open tasks and any action (task change or comment) in the last 30 days. Silent = open tasks and no action for 10+ working days.',
+    'Every active project in Bitrix24 (archived ones drop out), split three ways that add up to the total. Recent action: open tasks and a task change or comment in the last 30 days. Silent: open tasks and no action for 10+ working days. Others: no open tasks, no tasks yet, or no action for 30 days. Click a part to list those projects in Project health.',
   noDeadline: 'Open tasks without a deadline: they cannot be overdue or planned.',
   projects:
     'One row per project, worst first. Red: over 25 % of open tasks overdue (at least 3), or a task over 30 days late. Amber: any overdue task, or silent. Green: neither.',
