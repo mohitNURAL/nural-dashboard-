@@ -1,0 +1,88 @@
+# CI/CD: every push and pull request is checked (typecheck, lint, tests); a push to main that
+# passes is deployed to the live server with scripts/deploy.sh, keeping the server's own .env.
+#
+# Repository secrets (Settings > Secrets and variables > Actions), on the official repo only:
+#   DEPLOY_HOST     root@<server ip>
+#   DEPLOY_SSH_KEY  the private SSH key that logs in to the server (whole file, with BEGIN/END lines)
+# Optional repository variable SITE_URL (default https://pulse.nuralsales.com): checked after the deploy.
+# The code is pushed to two repos (official and personal); only the official one deploys.
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+
+  deploy:
+    needs: check
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.repository_owner == 'mohitNURAL'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check secrets
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_SSH_KEY" ]; then
+            echo "::error::Set the DEPLOY_HOST and DEPLOY_SSH_KEY secrets to deploy."
+            exit 1
+          fi
+      - name: SSH key
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+      - name: Deploy
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_KEY: /home/runner/.ssh/deploy_key
+          KEEP_ENV: '1'
+        run: |
+          echo "STARTED=$(date -u +%Y-%m-%dT%H:%M:%S)" >> "$GITHUB_ENV"
+          bash scripts/deploy.sh
+      # The new build is live once the site's version.json carries a build time after this deploy
+      # began. (/health may say "degraded" for Bitrix24 reasons that have nothing to do with it.)
+      - name: Check the live site
+        env:
+          SITE_URL: ${{ vars.SITE_URL || 'https://pulse.nuralsales.com' }}
+        run: |
+          for i in $(seq 1 30); do
+            build=$(curl -fsS "$SITE_URL/version.json?t=$(date +%s)" | jq -r .build || true)
+            if [[ -n "$build" && "$build" > "$STARTED" ]]; then
+              echo "Live on $SITE_URL: build $build"
+              curl -sS "$SITE_URL/health" || true
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::$SITE_URL still serves build ${build:-?}, from before this deploy."
+          exit 1
