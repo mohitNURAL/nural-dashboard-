@@ -22,6 +22,7 @@ import {
   isSpillYesterday,
   projectWork,
   projectWorkSummary,
+  bulkTouchedIds,
   inHandByGroup,
   isOverdue,
   issueAgeByAssignee,
@@ -881,7 +882,7 @@ describe('projects at work', () => {
     expect(isSpillYesterday(doneInTime, ctx)).toBe(false);
     expect(isSpillYesterday(task({ deadline: at('2026-10-08') }), ctx)).toBe(false);
   });
-  it('recent projects with their people, deadlines and counts', () => {
+  it('active and silent projects, their people, deadlines and counts, most active first', () => {
     const list = [
       task({ groupId: 1, responsibleId: 5, deadline: at('2026-10-09') }), // overdue + spill
       task({ groupId: 1, responsibleId: 5, deadline: at('2026-10-20') }),
@@ -893,29 +894,40 @@ describe('projects at work', () => {
         stageTitle: 'QA Backlog',
         events: qa(at('2026-10-09', '10:00')),
         changedAt: at('2026-10-09', '10:00'),
-      }), // done yesterday
+      }), // done yesterday, touched this week
+      task({ groupId: 2, responsibleId: 7, changedAt: at('2026-10-08') }), // touched this week
+      task({ groupId: 4, changedAt: at('2026-09-01') }), // open, no activity for 20+ days: silent
       task({
         groupId: 3,
         stage: 'QA Backlog',
         stageTitle: 'QA Backlog',
         changedAt: at('2026-07-01'),
-      }), // nothing open, no change in 30 days: not recent
+      }), // nothing open, no activity: left out
       task({ groupId: 0 }), // no project
     ];
     const rows = projectWork(list, ctx);
-    expect(rows.map((r) => r.id)).toEqual([1, 2]);
-    expect(rows[0]).toMatchObject({ open: 3, total: 3, overdue: 1, spill: 1, doneYesterday: 0 });
-    expect(rows[0]!.lastDeadline).toEqual(at('2026-11-02'));
-    expect(rows[0]!.people.map((p) => [p.id, p.open, p.overdue, p.spill])).toEqual([
+    // Fixture tasks change on 5 Oct, inside the week: project 1 has 3 tasks touched, project 2 has 2.
+    expect(rows.map((r) => [r.id, r.activityWeek, r.active])).toEqual([
+      [1, 3, true],
+      [2, 2, true],
+      [4, 0, false],
+    ]);
+    const p1 = rows.find((r) => r.id === 1)!;
+    expect(p1).toMatchObject({ open: 3, total: 3, overdue: 1, spill: 1, doneYesterday: 0 });
+    expect(p1.lastDeadline).toEqual(at('2026-11-02'));
+    expect(p1.people.map((p) => [p.id, p.open, p.overdue, p.spill])).toEqual([
       [5, 2, 1, 1],
       [6, 1, 0, 0],
     ]);
-    expect(rows[0]!.people[0]!.lastDeadline).toEqual(at('2026-10-20'));
-    expect(projectWorkSummary(rows)).toEqual({
-      projects: 2,
-      withOverdue: 1,
-      withSpill: 1,
-      withDoneYesterday: 1,
-    });
+    expect(rows.find((r) => r.id === 2)!.doneYesterday).toBe(1);
+    expect(projectWorkSummary(rows)).toEqual({ projects: 3, active: 2, silent: 1 });
+  });
+  it('a bulk change is not activity: a project only bulk-edited stays silent', () => {
+    const when = at('2026-10-09', '10:00');
+    const bulk = Array.from({ length: 12 }, () => task({ groupId: 9, changedAt: when }));
+    const real = task({ groupId: 9, changedAt: at('2026-08-01') });
+    expect(bulkTouchedIds([...bulk, real]).size).toBe(12);
+    const [row] = projectWork([...bulk, real], ctx);
+    expect(row).toMatchObject({ id: 9, active: false, activityWeek: 0, open: 13 });
   });
 });

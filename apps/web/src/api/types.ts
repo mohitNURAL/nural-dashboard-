@@ -124,14 +124,19 @@ export interface WorkCounts {
   overdue: number;
   spill: number;
   lastDeadline: string | null;
+  /** Tasks touched (changed or moved) in the last 7 days. */
+  activityWeek: number;
+  lastActivity: string | null;
 }
 export interface ProjectWorkRow extends WorkCounts {
   id: number;
   name: string;
+  /** Activity in the last 20 days; silent = open tasks but none. */
+  active: boolean;
   people: (WorkCounts & { id: number; person: Person })[];
 }
 export interface DevProjects {
-  summary: { projects: number; withOverdue: number; withSpill: number; withDoneYesterday: number };
+  summary: { projects: number; active: number; silent: number };
   rows: ProjectWorkRow[];
 }
 

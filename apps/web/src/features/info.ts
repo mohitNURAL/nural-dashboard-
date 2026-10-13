@@ -15,7 +15,7 @@ export const INFO = {
   spill:
     'Spill of yesterday: the deadline was yesterday (IST) and the task was not pushed to QA Backlog by the end of yesterday (still pending or on hold, or completed today).',
   devProjects:
-    'Recent projects: a pending task, or any task changed in the last 30 days (Development tab scope and filters). Under it, how many have overdue tasks, spill from yesterday (due yesterday, not pushed to QA Backlog by the end of it) or work done yesterday. Click for the table: each project with its deadline (its last task deadline) and who works on it, with their counts.',
+    'Projects with open tasks or recent activity (Development tab scope and filters) = Active + Silent. Active: a task changed or moved in the last 20 days. Silent: open tasks but no activity for 20 days. Click for Projects at work, most active this week first: open a project for who works on it, with open and all tasks, done yesterday, overdue, spill of yesterday and deadlines.',
   inHandBy:
     'Pending tasks with the deadline ahead, per assignee or project. The chart shows the window picked above it (All, Tomorrow, Rest of week, Rest of month, Next week, Next month); the table shows every window. A bar or count opens those tasks; a name sets the filter.',
   qaInHandBy:

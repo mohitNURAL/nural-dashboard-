@@ -18,6 +18,7 @@ import { useAlerts } from './alerts';
 import { useDevAssignees, useDevParams, useDevSummary } from './api';
 import { AssigneeTableCard, PendingDoneCard } from './AssigneeCards';
 import { filterKey, useDrillStore } from './drill';
+import { useProjectsPopup } from './projectsPopup';
 import { drillInfo } from './drillInfo';
 import { TILE_LABELS } from './format';
 import { RankingCard } from './RankingCard';
@@ -201,13 +202,27 @@ export function DevTab() {
                   onOpenChange={toggle('all')}
                 >
                   {drill && (
-                    <button
-                      type="button"
-                      onClick={clear}
-                      className="mb-3 font-heading text-button text-primary hover:underline"
-                    >
-                      Show all tasks
-                    </button>
+                    <div className="mb-3 flex flex-wrap items-center gap-4">
+                      {drill.back === 'projects' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            closeSpotlight();
+                            useProjectsPopup.getState().reopen();
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-control border border-primary/30 px-3 py-1.5 font-heading text-button text-primary hover:bg-primary-soft-100"
+                        >
+                          <span aria-hidden>‹</span> Back to Projects at work
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={clear}
+                        className="font-heading text-button text-primary hover:underline"
+                      >
+                        Show all tasks
+                      </button>
+                    </div>
                   )}
                   <TaskList
                     filterParams={listParams}

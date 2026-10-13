@@ -5,9 +5,9 @@ import { SortableGroup } from '../../components/layout/SortableGroup';
 import { InHandTile } from '../../components/InHandTile';
 import { StatTile } from '../../components/StatTile';
 import { useDevScope } from '../filters/useFilters';
-import { useState } from 'react';
 import { useDevProjects, useDevSummary } from './api';
-import { ProjectsDialog, type ProjectShow } from './ProjectsDialog';
+import { ProjectsDialog } from './ProjectsDialog';
+import { useProjectsPopup } from './projectsPopup';
 import { useDrillStore, useDrillTo } from './drill';
 import { splitLine, TILE_LABELS } from './format';
 import { INFO } from '../info';
@@ -45,8 +45,7 @@ export function SummaryTiles({ active, onSelect }: Props) {
   const split = data?.split;
   const { data: projects } = useDevProjects();
   const pj = projects?.summary;
-  // The Projects popup and which projects it starts on (a tile part picks one).
-  const [projectsOpen, setProjectsOpen] = useState<ProjectShow | null>(null);
+  const openProjects = useProjectsPopup((st) => st.openPopup);
   return (
     <>
       <SortableGroup
@@ -61,25 +60,12 @@ export function SummaryTiles({ active, onSelect }: Props) {
                 label="Projects"
                 info={INFO.devProjects}
                 value={pj?.projects}
-                sub="Recent, with their people"
-                onClick={() => setProjectsOpen('all')}
+                sub="Active + silent"
+                onClick={() => openProjects('all')}
                 parts={
                   pj && [
-                    {
-                      label: 'With overdue',
-                      value: pj.withOverdue,
-                      onClick: () => setProjectsOpen('overdue'),
-                    },
-                    {
-                      label: 'With spill',
-                      value: pj.withSpill,
-                      onClick: () => setProjectsOpen('spill'),
-                    },
-                    {
-                      label: 'Done yesterday',
-                      value: pj.withDoneYesterday,
-                      onClick: () => setProjectsOpen('doneYesterday'),
-                    },
+                    { label: 'Active', value: pj.active, onClick: () => openProjects('active') },
+                    { label: 'Silent', value: pj.silent, onClick: () => openProjects('silent') },
                   ]
                 }
               />
@@ -124,9 +110,7 @@ export function SummaryTiles({ active, onSelect }: Props) {
           },
         ]}
       />
-      {projectsOpen && (
-        <ProjectsDialog initial={projectsOpen} onClose={() => setProjectsOpen(null)} />
-      )}
+      <ProjectsDialog />
     </>
   );
 }

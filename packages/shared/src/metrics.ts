@@ -1229,8 +1229,36 @@ export function inHandByGroup(
 
 // ---------------------------------------------------------------- projects at work (2026-10-13)
 
-/** A project counts as recent with a pending task or any task change in this many days. */
-export const RECENT_PROJECT_DAYS = 30;
+/** A project is active with any task activity in this many days, else silent (2026-10-13). */
+export const SILENT_PROJECT_DAYS = 20;
+/** "Activity this week": tasks touched in this many days (sorts the projects). */
+export const ACTIVITY_DAYS = 7;
+/**
+ * A minute in which this many tasks of one project were touched is a bulk change (a clean-up or a
+ * bulk edit), not work: those touches count as no activity.
+ */
+export const BULK_TOUCH_MIN = 10;
+
+/** Tasks whose last activity was part of a bulk change (BULK_TOUCH_MIN in one minute). */
+export function bulkTouchedIds(list: readonly MetricTask[]): Set<number> {
+  const byMinute = new Map<number, number[]>();
+  for (const t of list) {
+    const m = Math.floor(lastActivity(t).getTime() / 60_000);
+    const ids = byMinute.get(m) ?? [];
+    ids.push(t.id);
+    byMinute.set(m, ids);
+  }
+  const out = new Set<number>();
+  for (const ids of byMinute.values())
+    if (ids.length >= BULK_TOUCH_MIN) ids.forEach((id) => out.add(id));
+  return out;
+}
+
+/** The task's last activity: its last change in Bitrix24 or its last stage move. */
+export function lastActivity(t: MetricTask): Date {
+  const moved = t.events.length ? t.events[t.events.length - 1]!.at : null;
+  return moved && moved > t.changedAt ? moved : t.changedAt;
+}
 
 export interface WorkCounts {
   /** Pending (behind QA Backlog, not on hold). */
@@ -1243,12 +1271,27 @@ export interface WorkCounts {
   spill: number;
   /** The latest task deadline (the project's deadline on a project row). */
   lastDeadline: Date | null;
+  /** Tasks touched (changed or moved) in the last ACTIVITY_DAYS days, bulk changes left out. */
+  activityWeek: number;
+  lastActivity: Date | null;
 }
 
-function workCounts(list: readonly MetricTask[], ctx: MetricContext): WorkCounts {
+function workCounts(
+  list: readonly MetricTask[],
+  ctx: MetricContext,
+  bulk: ReadonlySet<number>,
+): WorkCounts {
+  const weekCut = ctx.now.getTime() - ACTIVITY_DAYS * 86_400_000;
   let lastDeadline: Date | null = null;
-  for (const t of list)
+  let last: Date | null = null;
+  let activityWeek = 0;
+  for (const t of list) {
     if (t.deadline && (!lastDeadline || t.deadline > lastDeadline)) lastDeadline = t.deadline;
+    if (bulk.has(t.id)) continue;
+    const a = lastActivity(t);
+    if (!last || a > last) last = a;
+    if (a.getTime() >= weekCut) activityWeek += 1;
+  }
   return {
     open: list.filter(isPending).length,
     total: list.length,
@@ -1256,45 +1299,53 @@ function workCounts(list: readonly MetricTask[], ctx: MetricContext): WorkCounts
     overdue: list.filter((t) => isOverdue(t, ctx)).length,
     spill: list.filter((t) => isSpillYesterday(t, ctx)).length,
     lastDeadline,
+    activityWeek,
+    lastActivity: last,
   };
 }
 
 export interface ProjectWork extends WorkCounts {
   id: number;
-  /** Who works on it: one row per assignee, most open first. */
+  /** Activity in the last SILENT_PROJECT_DAYS days; silent = open tasks but none. */
+  active: boolean;
+  /** Who works on it: one row per assignee, most active this week first. */
   people: (WorkCounts & { id: number })[];
 }
 
 /**
- * The recent projects of a task list (Development tab "Projects"): those with a pending task or a
- * task changed in the last RECENT_PROJECT_DAYS days; tasks outside any project are left out.
- * Most overdue first.
+ * The projects of a task list (Development tab "Projects"): those with a pending task or any
+ * activity in the last SILENT_PROJECT_DAYS days; tasks outside any project are left out. Active =
+ * activity in that time, silent = pending tasks but none. Most active this week first. Bulk
+ * changes (bulkTouchedIds) are not activity.
  */
 export function projectWork(list: readonly MetricTask[], ctx: MetricContext): ProjectWork[] {
-  const cut = ctx.now.getTime() - RECENT_PROJECT_DAYS * 86_400_000;
+  const cut = ctx.now.getTime() - SILENT_PROJECT_DAYS * 86_400_000;
   return [
     ...groupBy(
       list.filter((t) => t.groupId > 0),
       (t) => t.groupId,
     ),
   ]
-    .filter(([, l]) => l.some((t) => isPending(t) || t.changedAt.getTime() >= cut))
-    .map(([id, l]) => ({
+    .map(([id, l]) => {
+      const bulk = bulkTouchedIds(l);
+      const counts = workCounts(l, ctx, bulk);
+      const active = !!counts.lastActivity && counts.lastActivity.getTime() >= cut;
+      return { id, l, bulk, counts, active };
+    })
+    .filter(({ counts, active }) => active || counts.open > 0)
+    .map(({ id, l, bulk, counts, active }) => ({
       id,
-      ...workCounts(l, ctx),
+      ...counts,
+      active,
       people: [...groupBy(l, (t) => t.responsibleId)]
-        .map(([pid, pl]) => ({ id: pid, ...workCounts(pl, ctx) }))
-        .sort((a, b) => b.open - a.open || b.total - a.total || a.id - b.id),
+        .map(([pid, pl]) => ({ id: pid, ...workCounts(pl, ctx, bulk) }))
+        .sort((a, b) => b.activityWeek - a.activityWeek || b.open - a.open || a.id - b.id),
     }))
-    .sort((a, b) => b.overdue - a.overdue || b.open - a.open || a.id - b.id);
+    .sort((a, b) => b.activityWeek - a.activityWeek || b.open - a.open || a.id - b.id);
 }
 
-/** The Projects tile: recent projects, and how many have overdue, spill or work done yesterday. */
+/** The Projects tile: all of them = active + silent. */
 export function projectWorkSummary(rows: readonly ProjectWork[]) {
-  return {
-    projects: rows.length,
-    withOverdue: rows.filter((r) => r.overdue > 0).length,
-    withSpill: rows.filter((r) => r.spill > 0).length,
-    withDoneYesterday: rows.filter((r) => r.doneYesterday > 0).length,
-  };
+  const active = rows.filter((r) => r.active).length;
+  return { projects: rows.length, active, silent: rows.length - active };
 }

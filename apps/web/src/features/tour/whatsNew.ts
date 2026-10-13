@@ -26,7 +26,7 @@ export const WHATS_NEW: WhatsNew[] = [
       {
         target: slot('dev.tiles', 'projects'),
         title: 'Projects',
-        text: 'The recent projects, and how many have overdue tasks, spill from yesterday or work done yesterday. Click a number for the table: each project with its deadline and who works on it (open and all tasks, done yesterday, overdue, spill, last deadline). Click any count for those tasks.',
+        text: 'Projects = Active (activity in the last 20 days) + Silent (open tasks, no activity for 20 days). Click a number for Projects at work, most active this week first. Open a project to see who works on it: open and all tasks, done yesterday, overdue, spill of yesterday and deadlines. A count opens its tasks, and "Back to Projects at work" brings you back.',
       },
     ],
   },
