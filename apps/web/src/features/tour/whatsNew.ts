@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-13-tile-opens-list',
+    date: '2026-10-13',
+    tab: 'dev',
+    title: 'A tile just opens its list',
+    steps: [
+      {
+        target: '[data-group="dev.tiles"]',
+        title: 'A tile just opens its list',
+        text: 'Click a tile and its tasks open in the middle of the screen, without lighting up the tile. Counts, chart bars and table cells still stay lit so you can see what you clicked.',
+      },
+    ],
+  },
+  {
     id: '2026-10-13-focus-70',
     date: '2026-10-13',
     tab: 'dev',

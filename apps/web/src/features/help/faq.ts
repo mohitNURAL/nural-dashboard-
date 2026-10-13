@@ -32,7 +32,7 @@ export const FAQ: { topic: string; items: Faq[] }[] = [
     items: [
       {
         q: 'What happens when I click a number?',
-        a: 'The page dims, the number stays lit, and its list opens in the middle of the screen. Escape, a click outside or ✕ puts it back. On Insights a tile first lists the projects or people it counts.',
+        a: 'Its list opens in the middle of the screen with the page dimmed behind it. A count, bar or cell stays lit so you see what you clicked; a tile just opens its list. Escape, a click outside or ✕ puts it back. On Insights a tile first lists the projects or people it counts.',
       },
       {
         q: 'How do I clear the filters?',

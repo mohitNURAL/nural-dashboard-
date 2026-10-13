@@ -7,6 +7,9 @@
 
 import { focusBox } from '../layout/useFocusBox';
 
+/** A tile on any page (the slots of a "<page>.tiles" group). */
+const TILE = '[data-group$=".tiles"] > [data-slot]';
+
 /** The last click on the page, so a drill-down knows which data point started it. */
 let last: { el: Element; at: number } | null = null;
 
@@ -18,8 +21,8 @@ export function trackClicks() {
     // The data point: a count button, a tile, a table cell or a chart mark.
     const el =
       t.closest('button, [role=button], td, th, li') ?? t.closest('svg')?.parentElement ?? t;
-    // A tile is lit whole; elsewhere the count, cell or chart mark itself.
-    const tile = t.closest('[data-group$=".tiles"] > [data-slot]');
+    // A tile is recorded whole (spotlight leaves it unlit); elsewhere the count, cell or chart mark.
+    const tile = t.closest(TILE);
     last = { el: tile ?? (t.closest('svg') && !t.closest('button') ? t : el), at: Date.now() };
   };
   document.addEventListener('click', on, true);
@@ -42,7 +45,11 @@ export const spotlightOpen = () => !!close;
 export function spotlight(panel: HTMLElement | null, opts: { onClose?: () => void } = {}) {
   if (!panel) return;
   close?.();
-  const anchor = last && Date.now() - last.at < 2500 && !panel.contains(last.el) ? last.el : null;
+  // A tile only opens its list (2026-10-13): it is not lit or ringed, and the page stays put.
+  const anchor =
+    last && Date.now() - last.at < 2500 && !panel.contains(last.el) && !last.el.matches(TILE)
+      ? last.el
+      : null;
 
   // Bring the clicked point near the top, so the list fits under it.
   if (anchor) {
