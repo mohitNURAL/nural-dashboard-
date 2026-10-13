@@ -1,10 +1,12 @@
 # CI/CD: every push and pull request is checked (typecheck, lint, tests); a push to main that
-# passes is deployed to the live server with scripts/deploy.sh, keeping the server's own .env.
+# passes is deployed to the live server (the droplet behind pulse.nuralsales.com): the server
+# pulls main and runs scripts/server-update.sh. Its own .env stays on the server.
 #
 # Repository secrets (Settings > Secrets and variables > Actions), on the official repo only:
-#   DEPLOY_HOST     root@<server ip>
+#   DEPLOY_HOST     bitrixdeploy@168.144.152.130
 #   DEPLOY_SSH_KEY  the private SSH key that logs in to the server (whole file, with BEGIN/END lines)
-# Optional repository variable SITE_URL (default https://pulse.nuralsales.com): checked after the deploy.
+# Optional repository variables: SITE_URL (default https://pulse.nuralsales.com), checked after the
+# deploy; DEPLOY_DIR (default ~/mohit/nural), the clone on the server.
 # The code is pushed to two repos (official and personal); only the official one deploys.
 name: CI/CD
 
@@ -61,14 +63,15 @@ jobs:
           install -m 700 -d ~/.ssh
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
+      # The server is a git clone run by PM2 (scripts/server-update.sh): pull, build, migrate, restart.
       - name: Deploy
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_KEY: /home/runner/.ssh/deploy_key
-          KEEP_ENV: '1'
+          DEPLOY_DIR: ${{ vars.DEPLOY_DIR || '~/mohit/nural' }}
         run: |
           echo "STARTED=$(date -u +%Y-%m-%dT%H:%M:%S)" >> "$GITHUB_ENV"
-          bash scripts/deploy.sh
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new "$DEPLOY_HOST" \
+            "set -e; cd $DEPLOY_DIR && git fetch -q origin main && git checkout -q main && git merge --ff-only origin/main && bash scripts/server-update.sh"
       # The new build is live once the site's version.json carries a build time after this deploy
       # began. (/health may say "degraded" for Bitrix24 reasons that have nothing to do with it.)
       - name: Check the live site
