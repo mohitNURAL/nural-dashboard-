@@ -324,7 +324,7 @@ Three stages share #FDB051 on the board, so charts add a pattern or a shade step
 - Card: title, optional toggle (table or chart), body, empty state and loading skeleton.
 - Data table: sticky header, sort arrows, pagination, row hover, stage chip, tag chips, priority badge (High red, Normal grey, Low blue), overdue text in `--bad`.
 - Accordion: header with count badge, closed by default.
-- Task drawer: right side panel, 480 px, with stage timeline and "Open in Bitrix24" button.
+- Task drawer: a centred panel 70% of the screen wide (94% on a phone; was a 480 px right panel until 2026-10-13), under the top bar, scrolling inside, with stage timeline and "Open in Bitrix24" button.
 - Toast: "Task 41580 moved to In QA" when a live update lands (can be turned off).
 
 **Layout**
@@ -435,7 +435,7 @@ Rebuild after a change people can see:
 - **Nothing leaves a gap:** on wide screens the tiles spread over the row (as many columns as tiles shown); cards fill their rows as described above.
 - **Saved per person:** `user_prefs.layout["<tab>.<group>.hidden"]`. If a save fails, a toast says so.
 
-**Spotlight (2026-10-12).** Clicking a number, tile, bar or cell no longer scrolls the page to the list at the bottom. The page dims, the clicked data point stays lit with a glowing ring (a whole tile, or the count, cell or chart mark), and the list it opens comes to the centre: under the data point when more than half the screen is left there, else at full height from the top. It is placed once (and on resize), so it never jitters. The list works as usual there (search, sort, pages, edit, Excel, row click opens the task). Escape, a click on the dimmed page or ✕ puts it back. Applies to Development, QA, KPI (and its Active projects tile), Insights and the alerts bell (`components/spotlight/spotlight.ts`).
+**Spotlight (2026-10-12).** Clicking a number, tile, bar or cell no longer scrolls the page to the list at the bottom. The page dims, the clicked count, cell or chart mark stays lit with a glowing ring, and the list it opens comes to the centre, 70% of the screen wide (94% on a phone): under the data point when more than half the screen is left there, else just under the top bar. **A tile (2026-10-13) just opens its list:** it is not lit or ringed and the page does not scroll to it. It is placed once (and on resize), so it never jitters. The list works as usual there (search, sort, pages, edit, Excel, row click opens the task). Escape, a click on the dimmed page or ✕ puts it back. Applies to Development, QA, KPI (and its Active projects tile), Insights and the alerts bell (`components/spotlight/spotlight.ts`).
 
 **Tables you shape (2026-10-12).** Every table with a `tableId` (task lists, Assignee-wise tasks, People, Project health, issue tables, testing and retest tables, ageing tables, People directory) has:
 - **Columns:** a menu to tick the columns to show (at least one stays) and drag them into order; *Reset columns*.
@@ -459,7 +459,7 @@ Rebuild after a change people can see:
 **Export page (2026-10-12).** The page tools have *Export page*: every data point the person sees on the page, in their order, without hidden ones and closed lists. *Excel*: a Summary sheet (each tile, its value and detail) and one sheet per card or open list. *PDF*: a title band with the page, filters and time, then the tile rows and each card and list, over A4 landscape pages with page numbers.
 
 **Focus view (2026-10-11).**
-- **Opening:** clicking a card's title or empty area brings the card to the centre of the screen, up to 1100 px wide, with the page behind dimmed and blurred. Charts grow with it.
+- **Opening:** clicking a card's title or empty area brings the card to the centre of the screen, 70% of its width (94% on a phone; 2026-10-13, was up to 1100 px), starting under the top bar and scrolling inside when taller than the screen, with the page behind dimmed and blurred. Charts grow with it. Focus view and spotlight share one size (`focusBox()` in `components/layout/useFocusBox.tsx`).
 - **Clicks that don't open it:** counts, bars, tables, buttons and fields keep their usual action (drill-downs, editing).
 - **Closing:** a click outside, Escape or the ✕ returns the card to its place.
 - **Nothing is reloaded:** sorting, paging and chart choices stay as they were.
@@ -495,7 +495,7 @@ Bitrix24 pushes task events to the receiver; the sync worker fetches the full ta
 | Queue and cache | Redis 7 + BullMQ | Webhook event queue, rate-limited Bitrix24 calls, SSE fan-out |
 | Live push | Server-Sent Events | One-way server to browser, auto-reconnect, works through the reverse proxy |
 | Auth | Sign in with Bitrix24 (OAuth local app) | Users log in with their portal account. For now every signed-in user sees everything; NFR-4 roles come later |
-| Hosting | Docker Compose on one Hetzner Cloud CX22 server (Ubuntu 24.04, 2 vCPU, 4 GB, billed hourly, about €4.50 a month; chosen 2026-10-10 because Oracle sign-up failed), Caddy with automatic Let's Encrypt TLS, address `<ip>.sslip.io` | Bitrix24 outbound webhooks need a public HTTPS URL; Caddy renews certificates itself (replaces Nginx + certbot) |
+| Hosting | **Live (2026-10-13):** https://pulse.nuralsales.com, behind Cloudflare, on the DigitalOcean droplet `nural-edge-staging-droplet` (Bengaluru), user `bitrixdeploy`: a git clone at `~/mohit/nural`, the API run by PM2 (`pulse-api`, port 4000), nginx serving `apps/web/dist` and proxying `/api`, `/hooks`, `/health`; also answers on `168-144-152-130.sslip.io`. **Planned alternative:** Docker Compose on one Hetzner Cloud CX22 server with Caddy and Let's Encrypt (`docker-compose.prod.yml`, `scripts/deploy.sh`) | Bitrix24 outbound webhooks need a public HTTPS URL |
 | Monitoring | Pino logs; UptimeRobot (free) checks /health every 5 minutes and emails on HTTP 503 | Alerts when sync stops (NFR-9) |
 
 SSE is chosen over WebSocket because the browser only receives; filters are sent as normal HTTP requests. Socket.IO can replace it later if two-way features are added.
@@ -535,7 +535,7 @@ SSE is chosen over WebSocket because the browser only receives; filters are sent
   - `GET /api/prefs` and `PUT /api/prefs` read and write only the signed-in person's own row.
   - Input is checked: known shapes, ID characters and size limits.
 - With sign-in on, every `/api` call other than `/api/auth/*` needs the session, or it gets 401 and the web app goes to sign-in. `/health` and `/hooks/bitrix` (checked by its application token) stay open.
-- `GET /api/auth/me` returns the signed-in name, shown in the top bar with a **Sign out** button (`POST /api/auth/logout`). Sign out ends on a "You are signed out" page (`GET /api/auth/signed-out`) with **Sign in with Bitrix24**; it does not go straight back to Bitrix24, which would sign a person who is still logged in to Bitrix24 straight back in. On a local copy (sign-in off) the top bar says so.
+- `GET /api/auth/me` returns the signed-in name, shown in the top bar with a **Sign out** button (`POST /api/auth/logout`). Sign out ends on a "You are signed out" page (`GET /api/auth/signed-out`) with **Sign in with Bitrix24**; it does not go straight back to Bitrix24, which would sign a person who is still logged in to Bitrix24 straight back in (tried and reverted on 2026-10-13: Bitrix24 ignores outside logout links such as `/auth/?logout=yes`, so the dashboard cannot show the Bitrix24 login form; a person who wants it logs out of Bitrix24 itself). On a local copy (sign-in off) the top bar says so.
 
 **Access and scoping (NFR-4, 2026-10-11)**
 
@@ -628,6 +628,14 @@ Every task grid and the task view edit a task where it is shown. Each cell is a 
 - `scripts/vm-setup.sh` prepares a fresh Ubuntu server: Docker, ports 80 and 443 (Oracle iptables or ufw, where present), and swap.
 - `scripts/deploy.sh` ships the committed code (`git archive`) and `.env.prod` (as the server's `.env`) over SSH, then rebuilds and restarts.
 - `scripts/db-copy.sh` copies the local database to the server once.
+
+**Live server and CI/CD (2026-10-13)**
+
+- **Update in place** (`scripts/server-update.sh`, run on the droplet from the clone): `pnpm install --frozen-lockfile`, build the web app, `pnpm db:migrate`, `pm2 restart pulse-api`. By hand: `cd ~/mohit/nural && git pull --ff-only && bash scripts/server-update.sh`. The API restarts in about 10 seconds; the root `.env` stays on the server.
+- **CI/CD** (`.github/workflows/ci.yml`, GitHub Actions): every push and pull request runs `pnpm typecheck`, `pnpm lint` and `pnpm test` (with placeholder BITRIX_INBOUND_URL, DATABASE_URL, REDIS_URL; the tests never connect). A push to `main` that passes is deployed: SSH to the droplet, fast-forward `main`, run `server-update.sh`, then wait until `/version.json` carries a build newer than the deploy (`/health` is not used, since it can say "degraded" for Bitrix24 reasons). A failed check deploys nothing. A push that changes only documents (`docs/**`, `*.md`) runs nothing.
+- **Two repos:** every push goes to github.com/mohitNURAL/nural-dashboard- (official) and github.com/mohitcs1012/nural-dashboard- (personal); only the official one deploys (`github.repository_owner == 'mohitNURAL'`).
+- **Secrets** (official repo, Actions): `DEPLOY_HOST` (`bitrixdeploy@168.144.152.130`) and `DEPLOY_SSH_KEY` (a dedicated ed25519 key, `github-actions-nural-pulse`, in the server user's `authorized_keys`). Optional variables `SITE_URL` (default `https://pulse.nuralsales.com`) and `DEPLOY_DIR` (default `~/mohit/nural`).
+- **History:** each deploy is a GitHub *production* deployment; the repo page lists them.
 
 ## 8. Bitrix24 integration
 
@@ -820,8 +828,9 @@ Each question has the default this SRS already assumes; a one-word answer is eno
 | 7 | What can developers see? | Everyone sees all numbers (read-only); restrict later if needed |
 | 8 | Figma access: the file could not be opened from here | Resolved: section 6 now uses the Figma variables |
 | 9 | Sign-in: Bitrix24 account, or company Google or Microsoft login? | Sign in with Bitrix24 |
-| 10 | Where will it be hosted? | One company Linux VM with a public HTTPS domain |
+| 10 | Where will it be hosted? | Resolved (2026-10-13): pulse.nuralsales.com on the DigitalOcean droplet (section 7, Live server and CI/CD) |
 | 11 | Ranking: minimum tasks to be ranked, and should late completions lower the rank more than early ones raise it? | At least 3 completed tasks; plain average days early or late |
+| 12 | Live updates (2026-10-13): no Bitrix24 outbound webhook has reached pulse.nuralsales.com (`lastWebhookAt` empty; a test call with a wrong token is refused with 401, so the route is reachable). Token mismatch, or Cloudflare challenging Bitrix24's calls? | Open: check `pm2 logs pulse-api` for "application token mismatch"; if nothing arrives, add a Cloudflare WAF skip rule for `/hooks/bitrix`. The 10-minute reconcile keeps the data current meanwhile |
 
 **What was checked for this SRS:** the Bitrix24 portal through its API (11 stages on group 148, 10 on Support Tool group 154 with no On Hold, 30 active users, task 41580 with tag "new development"), the three screenshots, and Mohit's QA Pulse artifact. The Figma file blocked automated access, and the company structure page itself is browser-only, so department membership comes from the screenshot and will be read through `department.get` at build time.
 
@@ -1296,6 +1305,7 @@ For people with the **employees** right (by default admins, PM and team leads). 
 - **Attachments:** up to 5 files of 8 MB each: images (also pasted with Ctrl+V or dropped), PDF, Excel (xlsx, xls, csv), Word (docx, doc). Sent as base64 in JSON; type by extension and size are checked on the server; stored in Postgres; downloaded with `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff` and a sandbox CSP (images may show inline). Only the sender and the inbox can open a file.
 - **My feedback:** what the person sent, its status and the reply.
 - **Feedback inbox:** everyone's feedback (Finance feedback to admins only), filters by status and impact, attachments, a reply that marks it reviewed, Excel export.
+- **Refresh (2026-10-13):** feedback sends no live event, so My feedback and the inbox check every 30 s while the page is open and again when its tab regains focus (`FEEDBACK_POLL_MS`, `features/help/api.ts`); a reply saved by another reader replaces the one in the box. Long words and links wrap inside their own card instead of running over the next one.
 
 **Documents:** the PDF guides for the person's guide set (section 6, Guides): the whole dashboard (User guide, Module guide) and one guide per page they can open (`/guides/<set>/modules/<Page> guide.pdf`; shown only once built).
 

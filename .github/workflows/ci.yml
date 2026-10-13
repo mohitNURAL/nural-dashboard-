@@ -13,6 +13,8 @@ name: CI/CD
 on:
   push:
     branches: [main]
+    # Documents only (the SRS, guides, notes): nothing to check or deploy.
+    paths-ignore: ['docs/**', '**/*.md']
   pull_request:
   workflow_dispatch:
 
