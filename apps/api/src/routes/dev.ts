@@ -12,6 +12,7 @@ import {
   tasksInHand,
   inHandByGroup,
   projectWork,
+  WORK_PERIODS,
   projectWorkSummary,
   type DevScope,
   type GroupBy,
@@ -61,8 +62,10 @@ export function devRoutes(app: FastifyInstance, getDataset: RequestDataset, opts
   // Projects at work (2026-10-13): recent projects, who works on them, deadlines, done yesterday,
   // overdue and yesterday's spill, per project and assignee.
   app.get('/api/dev/projects', async (req) => {
-    const { ds, ctx, tasks } = await scope(req);
-    const rows = projectWork(tasks, ctx);
+    const { ds, ctx, tasks, q } = await scope(req, {
+      period: z.enum(WORK_PERIODS).default('day'),
+    });
+    const rows = projectWork(tasks, ctx, (q as { period?: (typeof WORK_PERIODS)[number] }).period);
     return {
       summary: projectWorkSummary(rows),
       rows: rows.map((r) => ({

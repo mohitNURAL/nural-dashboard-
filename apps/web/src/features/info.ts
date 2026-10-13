@@ -13,9 +13,13 @@ export const INFO = {
   inHand:
     'Pending tasks (behind QA Backlog, not on hold) whose deadline is still ahead (IST). Under it, when they are planned: tomorrow, the rest of this week, the rest of this month, next week, next month. The parts overlap (tomorrow is also in the rest of the week), so they do not add up. Overdue and no-deadline tasks are not in hand.',
   spill:
-    'Spill of yesterday: the deadline was yesterday (IST) and the task was not pushed to QA Backlog by the end of yesterday (still pending or on hold, or completed today).',
+    'Spill: the deadline was in the previous day, week or month (IST, weeks Monday to Sunday) and the task was not pushed to QA Backlog by its end (still pending or on hold, or completed later).',
+  donePrev:
+    'Pushed to QA Backlog in the previous day, week or month (IST, weeks Monday to Sunday).',
+  overduePeriod:
+    'Pending, not on hold, the deadline has passed and it fell in the current day, week or month (IST).',
   devProjects:
-    'Projects with open tasks or recent activity (Development tab scope and filters) = Active + Silent. Active: a task changed or moved in the last 20 days. Silent: open tasks but no activity for 20 days. Click for Projects at work, most active this week first: open a project for who works on it, with open and all tasks, done yesterday, overdue, spill of yesterday and deadlines.',
+    'Projects with open tasks or recent activity (Development tab scope and filters) = Active + Silent. Active: a task changed or moved in the last 20 days. Silent: open tasks but no activity for 20 days. Click for Projects at work, most active this week first, then the earliest deadline: open a project for who works on it. Its Day / Week / Month switch sets Done (previous period), Overdue (this period) and Spill (previous period).',
   inHandBy:
     'Pending tasks with the deadline ahead, per assignee or project. The chart shows the window picked above it (All, Tomorrow, Rest of week, Rest of month, Next week, Next month); the table shows every window. A bar or count opens those tasks; a name sets the filter.',
   qaInHandBy:

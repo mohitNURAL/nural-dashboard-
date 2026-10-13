@@ -120,8 +120,11 @@ export interface InHand {
 export interface WorkCounts {
   open: number;
   total: number;
-  doneYesterday: number;
+  /** Done in the previous day / week / month (the popup's switch). */
+  done: number;
+  /** Overdue, deadline in the current day / week / month. */
   overdue: number;
+  /** Due in the previous day / week / month, not done by its end. */
   spill: number;
   lastDeadline: string | null;
   /** Tasks touched (changed or moved) in the last 7 days. */

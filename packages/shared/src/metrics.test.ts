@@ -23,6 +23,10 @@ import {
   projectWork,
   projectWorkSummary,
   bulkTouchedIds,
+  periodDays,
+  isDonePrev,
+  isOverdueInPeriod,
+  isSpill,
   inHandByGroup,
   isOverdue,
   issueAgeByAssignee,
@@ -913,13 +917,16 @@ describe('projects at work', () => {
       [4, 0, false],
     ]);
     const p1 = rows.find((r) => r.id === 1)!;
-    expect(p1).toMatchObject({ open: 3, total: 3, overdue: 1, spill: 1, doneYesterday: 0 });
+    expect(p1).toMatchObject({ open: 3, total: 3, overdue: 0, spill: 1, done: 0 });
     expect(p1.lastDeadline).toEqual(at('2026-11-02'));
     expect(p1.people.map((p) => [p.id, p.open, p.overdue, p.spill])).toEqual([
-      [5, 2, 1, 1],
+      [5, 2, 0, 1],
       [6, 1, 0, 0],
     ]);
-    expect(rows.find((r) => r.id === 2)!.doneYesterday).toBe(1);
+    // Week: the 9 Oct deadline is in this week (5-11 Oct), so it is overdue this week, not spill.
+    const week = projectWork(list, ctx, 'week').find((r) => r.id === 1)!;
+    expect(week).toMatchObject({ overdue: 1, spill: 0 });
+    expect(rows.find((r) => r.id === 2)!.done).toBe(1);
     expect(projectWorkSummary(rows)).toEqual({ projects: 3, active: 2, silent: 1 });
   });
   it('a bulk change is not activity: a project only bulk-edited stays silent', () => {
@@ -929,5 +936,35 @@ describe('projects at work', () => {
     expect(bulkTouchedIds([...bulk, real]).size).toBe(12);
     const [row] = projectWork([...bulk, real], ctx);
     expect(row).toMatchObject({ id: 9, active: false, activityWeek: 0, open: 13 });
+  });
+});
+
+describe('day, week and month periods', () => {
+  // NOW = Saturday 10 Oct 2026, 12:00 IST.
+  const at = (d: string, h = '12:00') => new Date(`${d}T${h}:00+05:30`);
+  const qa = (d: Date) =>
+    [{ from: 'In progress', to: 'QA Backlog', at: d, by: 30 }] as MetricTask['events'];
+  it('period days in IST, weeks Monday to Sunday', () => {
+    expect(periodDays(ctx, 'day', 1)).toEqual({ from: '2026-10-09', to: '2026-10-09' });
+    expect(periodDays(ctx, 'week')).toEqual({ from: '2026-10-05', to: '2026-10-11' });
+    expect(periodDays(ctx, 'week', 1)).toEqual({ from: '2026-09-28', to: '2026-10-04' });
+    expect(periodDays(ctx, 'month', 1)).toEqual({ from: '2026-09-01', to: '2026-09-30' });
+  });
+  it('done prev, overdue in the period and spill follow the switch', () => {
+    const doneLastWeek = task({
+      stage: 'QA Backlog',
+      stageTitle: 'QA Backlog',
+      events: qa(at('2026-10-02')),
+    });
+    expect(isDonePrev(doneLastWeek, ctx, 'week')).toBe(true);
+    expect(isDonePrev(doneLastWeek, ctx, 'day')).toBe(false);
+    const lateToday = task({ deadline: at('2026-10-10', '09:00') });
+    expect(isOverdueInPeriod(lateToday, ctx, 'day')).toBe(true);
+    const lateMonday = task({ deadline: at('2026-10-05') });
+    expect(isOverdueInPeriod(lateMonday, ctx, 'day')).toBe(false);
+    expect(isOverdueInPeriod(lateMonday, ctx, 'week')).toBe(true);
+    const missedLastMonth = task({ deadline: at('2026-09-20') });
+    expect(isSpill(missedLastMonth, ctx, 'month')).toBe(true);
+    expect(isSpill(missedLastMonth, ctx, 'week')).toBe(false);
   });
 });

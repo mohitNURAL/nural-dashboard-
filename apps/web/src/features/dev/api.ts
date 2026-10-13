@@ -25,7 +25,13 @@ export function useDevAssignees(by: GroupBy = 'assignee') {
   const params = useDevParams();
   return useApi<DevAssignees>('/api/dev/assignees', withGroupBy(params, by));
 }
-export const useDevProjects = () => useApi<DevProjects>('/api/dev/projects', useDevParams());
+export function useDevProjects(period: 'day' | 'week' | 'month' = 'day') {
+  const params = useDevParams();
+  return useApi<DevProjects>(
+    '/api/dev/projects',
+    period === 'day' ? params : { ...params, period },
+  );
+}
 export const useDevRanking = () => useApi<DevRanking>('/api/dev/ranking', useDevParams());
 
 export function useDevMatrix(splitTag: string | null, by: GroupBy = 'assignee') {

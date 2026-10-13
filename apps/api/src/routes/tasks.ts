@@ -185,7 +185,12 @@ export function taskRoutes(
       const resolved =
         query.preset === 'lastResolved' ? (query.day ?? lastResolved(list, ctx)?.date) : undefined;
       list = list.filter(
-        presetPredicate(query.preset, ctx, { lastFiledDate: last, lastResolvedDate: resolved }),
+        presetPredicate(query.preset, ctx, {
+          lastFiledDate: last,
+          lastResolvedDate: resolved,
+          // Projects at work: done, overdue and spill of a day, week or month.
+          period: query.period,
+        }),
       );
     }
     const due = query.due;

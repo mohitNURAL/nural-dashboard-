@@ -200,12 +200,64 @@ export function isCompletedYesterday(t: MetricTask, ctx: MetricContext): boolean
  * Spill of yesterday (2026-10-13): the deadline was yesterday (IST) and the task was not completed
  * (pushed to QA Backlog) by the end of yesterday: still pending or on hold, or completed today.
  */
-export function isSpillYesterday(t: MetricTask, ctx: MetricContext): boolean {
-  if (!t.deadline) return false;
-  const yesterday = yesterdayKey(ctx);
-  if (dayKey(t.deadline, ctx.tz) !== yesterday) return false;
+export const isSpillYesterday = (t: MetricTask, ctx: MetricContext): boolean =>
+  isSpill(t, ctx, 'day');
+
+/** Day, week (Monday to Sunday) or month, in the app time zone (Projects at work switch). */
+export type WorkPeriod = 'day' | 'week' | 'month';
+export const WORK_PERIODS = ['day', 'week', 'month'] as const;
+
+const keyPlusDays = (key: string, days: number) => {
+  const [y, m, d] = key.split('-').map(Number) as [number, number, number];
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+};
+
+/** First and last day (YYYY-MM-DD, inclusive) of the current period, or `back` periods before. */
+export function periodDays(
+  ctx: MetricContext,
+  period: WorkPeriod,
+  back = 0,
+): { from: string; to: string } {
+  const today = dayKey(ctx.now, ctx.tz);
+  if (period === 'day') {
+    const d = keyPlusDays(today, -back);
+    return { from: d, to: d };
+  }
+  if (period === 'week') {
+    const isoDow = ((new Date(`${today}T00:00:00Z`).getUTCDay() + 6) % 7) + 1;
+    const monday = keyPlusDays(today, 1 - isoDow - 7 * back);
+    return { from: monday, to: keyPlusDays(monday, 6) };
+  }
+  const [y, m] = today.split('-').map(Number) as [number, number];
+  return {
+    from: new Date(Date.UTC(y, m - 1 - back, 1)).toISOString().slice(0, 10),
+    to: new Date(Date.UTC(y, m - back, 0)).toISOString().slice(0, 10),
+  };
+}
+
+const inDays = (d: Date | null, r: { from: string; to: string }, tz: string) => {
+  if (!d) return false;
+  const k = dayKey(d, tz);
+  return k >= r.from && k <= r.to;
+};
+
+/** Pushed to QA Backlog in the previous day, week or month (day = "done yesterday"). */
+export const isDonePrev = (t: MetricTask, ctx: MetricContext, period: WorkPeriod): boolean =>
+  inDays(completedAt(t), periodDays(ctx, period, 1), ctx.tz);
+
+/** Overdue now, with the deadline in the current day, week or month ("overdue today"). */
+export const isOverdueInPeriod = (t: MetricTask, ctx: MetricContext, period: WorkPeriod): boolean =>
+  isOverdue(t, ctx) && inDays(t.deadline, periodDays(ctx, period), ctx.tz);
+
+/**
+ * Spill of the previous day, week or month: the deadline was in it and the task was not pushed to
+ * QA Backlog by its end (still pending or on hold, or completed later).
+ */
+export function isSpill(t: MetricTask, ctx: MetricContext, period: WorkPeriod): boolean {
+  const prev = periodDays(ctx, period, 1);
+  if (!inDays(t.deadline, prev, ctx.tz)) return false;
   const at = completedAt(t);
-  return at ? dayKey(at, ctx.tz) > yesterday : !isSentToQa(t);
+  return at ? dayKey(at, ctx.tz) > prev.to : !isSentToQa(t);
 }
 
 /** Days (YYYY-MM-DD, app time zone) on which the task was pushed to QA Backlog. */
@@ -1077,6 +1129,8 @@ export const DEV_PRESETS = [
   'dueToday',
   'hold',
   'spill',
+  'donePrev',
+  'overduePeriod',
 ] as const;
 export const ISSUE_PRESETS = [
   'all',
@@ -1098,7 +1152,13 @@ export function presetPredicate(
   {
     lastFiledDate,
     lastResolvedDate,
-  }: { lastFiledDate?: string | null; lastResolvedDate?: string | null } = {},
+    period = 'day',
+  }: {
+    lastFiledDate?: string | null;
+    lastResolvedDate?: string | null;
+    /** For spill, donePrev and overduePeriod (Projects at work Day / Week / Month). */
+    period?: WorkPeriod;
+  } = {},
 ): (t: MetricTask) => boolean {
   switch (preset) {
     case 'total':
@@ -1119,7 +1179,11 @@ export function presetPredicate(
     case 'doneYesterday':
       return (t) => isCompletedYesterday(t, ctx);
     case 'spill':
-      return (t) => isSpillYesterday(t, ctx);
+      return (t) => isSpill(t, ctx, period);
+    case 'donePrev':
+      return (t) => isDonePrev(t, ctx, period);
+    case 'overduePeriod':
+      return (t) => isOverdueInPeriod(t, ctx, period);
     case 'dueToday':
       return (t) => isDueToday(t, ctx);
     case 'open':
@@ -1264,10 +1328,11 @@ export interface WorkCounts {
   /** Pending (behind QA Backlog, not on hold). */
   open: number;
   total: number;
-  doneYesterday: number;
-  /** Pending with the deadline passed (today). */
+  /** Pushed to QA Backlog in the previous day / week / month. */
+  done: number;
+  /** Overdue, with the deadline in the current day / week / month. */
   overdue: number;
-  /** Due yesterday, not completed by the end of yesterday. */
+  /** Due in the previous day / week / month, not completed by its end. */
   spill: number;
   /** The latest task deadline (the project's deadline on a project row). */
   lastDeadline: Date | null;
@@ -1280,6 +1345,7 @@ function workCounts(
   list: readonly MetricTask[],
   ctx: MetricContext,
   bulk: ReadonlySet<number>,
+  period: WorkPeriod,
 ): WorkCounts {
   const weekCut = ctx.now.getTime() - ACTIVITY_DAYS * 86_400_000;
   let lastDeadline: Date | null = null;
@@ -1295,9 +1361,9 @@ function workCounts(
   return {
     open: list.filter(isPending).length,
     total: list.length,
-    doneYesterday: list.filter((t) => isCompletedYesterday(t, ctx)).length,
-    overdue: list.filter((t) => isOverdue(t, ctx)).length,
-    spill: list.filter((t) => isSpillYesterday(t, ctx)).length,
+    done: list.filter((t) => isDonePrev(t, ctx, period)).length,
+    overdue: list.filter((t) => isOverdueInPeriod(t, ctx, period)).length,
+    spill: list.filter((t) => isSpill(t, ctx, period)).length,
     lastDeadline,
     activityWeek,
     lastActivity: last,
@@ -1315,10 +1381,15 @@ export interface ProjectWork extends WorkCounts {
 /**
  * The projects of a task list (Development tab "Projects"): those with a pending task or any
  * activity in the last SILENT_PROJECT_DAYS days; tasks outside any project are left out. Active =
- * activity in that time, silent = pending tasks but none. Most active this week first. Bulk
+ * activity in that time, silent = pending tasks but none. Most active this week first, then the
+ * earliest deadline. Done, overdue and spill follow the period (day, week or month). Bulk
  * changes (bulkTouchedIds) are not activity.
  */
-export function projectWork(list: readonly MetricTask[], ctx: MetricContext): ProjectWork[] {
+export function projectWork(
+  list: readonly MetricTask[],
+  ctx: MetricContext,
+  period: WorkPeriod = 'day',
+): ProjectWork[] {
   const cut = ctx.now.getTime() - SILENT_PROJECT_DAYS * 86_400_000;
   return [
     ...groupBy(
@@ -1328,7 +1399,7 @@ export function projectWork(list: readonly MetricTask[], ctx: MetricContext): Pr
   ]
     .map(([id, l]) => {
       const bulk = bulkTouchedIds(l);
-      const counts = workCounts(l, ctx, bulk);
+      const counts = workCounts(l, ctx, bulk, period);
       const active = !!counts.lastActivity && counts.lastActivity.getTime() >= cut;
       return { id, l, bulk, counts, active };
     })
@@ -1338,11 +1409,20 @@ export function projectWork(list: readonly MetricTask[], ctx: MetricContext): Pr
       ...counts,
       active,
       people: [...groupBy(l, (t) => t.responsibleId)]
-        .map(([pid, pl]) => ({ id: pid, ...workCounts(pl, ctx, bulk) }))
+        .map(([pid, pl]) => ({ id: pid, ...workCounts(pl, ctx, bulk, period) }))
         .sort((a, b) => b.activityWeek - a.activityWeek || b.open - a.open || a.id - b.id),
     }))
-    .sort((a, b) => b.activityWeek - a.activityWeek || b.open - a.open || a.id - b.id);
+    .sort(
+      (a, b) =>
+        b.activityWeek - a.activityWeek ||
+        byDeadline(a.lastDeadline, b.lastDeadline) ||
+        a.id - b.id,
+    );
 }
+
+/** Earliest deadline first; none last. */
+const byDeadline = (a: Date | null, b: Date | null) =>
+  a && b ? a.getTime() - b.getTime() : a ? -1 : b ? 1 : 0;
 
 /** The Projects tile: all of them = active + silent. */
 export function projectWorkSummary(rows: readonly ProjectWork[]) {

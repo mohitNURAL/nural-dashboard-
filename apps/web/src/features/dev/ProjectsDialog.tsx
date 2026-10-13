@@ -7,12 +7,13 @@ import type { DevPreset } from '@nural/shared';
 import clsx from 'clsx';
 import { Fragment, useMemo, useState } from 'react';
 import type { WorkCounts } from '../../api/types';
+import { ViewToggle } from '../../components/Card';
 import { IconClose, IconLayers } from '../../components/ui/icons';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { useDevProjects } from './api';
 import { useDrillTo } from './drill';
 import { fmtDate } from './format';
-import { useProjectsPopup, type ProjectShow } from './projectsPopup';
+import { useProjectsPopup, type ProjectPeriod, type ProjectShow } from './projectsPopup';
 
 const SHOW_TITLE: Record<ProjectShow, string> = {
   all: 'All projects',
@@ -20,19 +21,33 @@ const SHOW_TITLE: Record<ProjectShow, string> = {
   silent: 'Silent projects',
 };
 
-type Count = 'open' | 'total' | 'doneYesterday' | 'overdue' | 'spill';
-const COLS: { key: Count; label: string; preset: DevPreset; tone?: 'bad' }[] = [
-  { key: 'open', label: 'Open', preset: 'pending' },
-  { key: 'total', label: 'All tasks', preset: 'total' },
-  { key: 'doneYesterday', label: 'Done yesterday', preset: 'doneYesterday' },
-  { key: 'overdue', label: 'Overdue', preset: 'overdue', tone: 'bad' },
-  { key: 'spill', label: 'Spill of yesterday', preset: 'spill', tone: 'bad' },
-];
-const WIDTH = COLS.length + 3;
+const PERIOD_LABEL: Record<ProjectPeriod, string> = { day: 'Day', week: 'Week', month: 'Month' };
+
+type Count = 'open' | 'done' | 'overdue' | 'spill';
+/** Columns; Done, Overdue and Spill follow the Day / Week / Month switch. */
+const columns = (
+  p: ProjectPeriod,
+): { key: Count; label: string; preset: DevPreset; tone?: 'bad'; period?: boolean }[] => {
+  const w = p === 'day' ? 'day' : p;
+  return [
+    { key: 'open', label: 'Open', preset: 'pending' },
+    { key: 'done', label: `Done prev ${w}`, preset: 'donePrev', period: true },
+    {
+      key: 'overdue',
+      label: p === 'day' ? 'Overdue today' : `Overdue this ${w}`,
+      preset: 'overduePeriod',
+      tone: 'bad',
+      period: true,
+    },
+    { key: 'spill', label: `Spill of prev ${w}`, preset: 'spill', tone: 'bad', period: true },
+  ];
+};
 
 export function ProjectsDialog() {
-  const { open, show, expanded, close, toggle, openPopup } = useProjectsPopup();
-  const { data, isLoading } = useDevProjects();
+  const { open, show, expanded, close, toggle, openPopup, period, setPeriod } = useProjectsPopup();
+  const { data, isLoading } = useDevProjects(period);
+  const COLS = columns(period);
+  const WIDTH = COLS.length + 3;
   const drill = useDrillTo();
   const [q, setQ] = useState('');
   const rows = useMemo(() => {
@@ -53,7 +68,7 @@ export function ProjectsDialog() {
     drill({ label, preset, params, back: 'projects' });
   };
   const cell = (
-    c: (typeof COLS)[number],
+    c: ReturnType<typeof columns>[number],
     n: number,
     label: string,
     params: Record<string, string>,
@@ -63,7 +78,7 @@ export function ProjectsDialog() {
         type="button"
         onClick={(e) => {
           e.stopPropagation();
-          openTasks(`${label} · ${c.label}`, c.preset, params);
+          openTasks(`${label} · ${c.label}`, c.preset, c.period ? { ...params, period } : params);
         }}
         className={clsx(
           'font-heading font-bold tabular-nums hover:underline',
@@ -100,8 +115,8 @@ export function ProjectsDialog() {
                 Projects at work: {SHOW_TITLE[show]} ({rows.length})
               </Dialog.Title>
               <Dialog.Description className="text-table text-text-muted">
-                Most active this week first. Open a project to see who works on it; click a count
-                for its tasks.
+                Most active this week first, then the earliest deadline. Open a project to see who
+                works on it; click a count for its tasks.
                 {show !== 'all' && (
                   <>
                     {' '}
@@ -116,6 +131,14 @@ export function ProjectsDialog() {
                 )}
               </Dialog.Description>
             </div>
+            <ViewToggle<ProjectPeriod>
+              value={period}
+              onChange={setPeriod}
+              options={(['day', 'week', 'month'] as const).map((p) => ({
+                value: p,
+                label: PERIOD_LABEL[p],
+              }))}
+            />
             <SearchInput
               value={q}
               onChange={setQ}
