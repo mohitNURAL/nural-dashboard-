@@ -1294,7 +1294,7 @@ export function inHandByGroup(
 // ---------------------------------------------------------------- projects at work (2026-10-13)
 
 /** A project is active with any task activity in this many days, else silent (2026-10-13). */
-export const SILENT_PROJECT_DAYS = 20;
+export const SILENT_PROJECT_DAYS = 30;
 /** "Activity this week": tasks touched in this many days (sorts the projects). */
 export const ACTIVITY_DAYS = 7;
 /**
@@ -1374,44 +1374,68 @@ export interface ProjectWork extends WorkCounts {
   id: number;
   /** Activity in the last SILENT_PROJECT_DAYS days; silent = open tasks but none. */
   active: boolean;
-  /** Who works on it: one row per assignee, most active this week first. */
+  /** Who works on it: one row per assignee with open tasks in it, most active this week first. */
   people: (WorkCounts & { id: number })[];
 }
 
 /**
- * The projects of a task list (Development tab "Projects"): those with a pending task or any
- * activity in the last SILENT_PROJECT_DAYS days; tasks outside any project are left out. Active =
- * activity in that time, silent = pending tasks but none. Most active this week first, then the
- * earliest deadline. Done, overdue and spill follow the period (day, week or month). Bulk
- * changes (bulkTouchedIds) are not activity.
+ * Development tab "Projects" (2026-10-13): a fixed set of projects (the caller picks them: active in
+ * Bitrix24, owned by the Development or QA department or a PM), each Active (task activity in the
+ * last SILENT_PROJECT_DAYS days, from all its tasks, bulk changes left out) or Silent. Open, done,
+ * overdue, spill and the people come from `list` (the tab's scope and filters), so a project with
+ * none of them there still counts. Most active this week first, then the earliest deadline.
  */
 export function projectWork(
   list: readonly MetricTask[],
   ctx: MetricContext,
   period: WorkPeriod = 'day',
+  {
+    projectIds,
+    allTasks = list,
+  }: {
+    /** The projects to show (default: every project in `list`). */
+    projectIds?: readonly number[];
+    /** Every task of those projects, for Active / Silent and activity (default: `list`). */
+    allTasks?: readonly MetricTask[];
+  } = {},
 ): ProjectWork[] {
   const cut = ctx.now.getTime() - SILENT_PROJECT_DAYS * 86_400_000;
-  return [
-    ...groupBy(
-      list.filter((t) => t.groupId > 0),
-      (t) => t.groupId,
-    ),
-  ]
-    .map(([id, l]) => {
-      const bulk = bulkTouchedIds(l);
+  const inScope = groupBy(
+    list.filter((t) => t.groupId > 0),
+    (t) => t.groupId,
+  );
+  const everything = groupBy(
+    allTasks.filter((t) => t.groupId > 0),
+    (t) => t.groupId,
+  );
+  const ids = projectIds ?? [...inScope.keys()];
+  return ids
+    .map((id) => {
+      const l = inScope.get(id) ?? [];
+      const all = everything.get(id) ?? l;
+      const bulk = bulkTouchedIds(all);
+      // Activity and deadline from all the project's tasks; counts from the tab's scope.
+      const overall = workCounts(all, ctx, bulk, period);
       const counts = workCounts(l, ctx, bulk, period);
-      const active = !!counts.lastActivity && counts.lastActivity.getTime() >= cut;
-      return { id, l, bulk, counts, active };
+      return {
+        id,
+        ...counts,
+        activityWeek: overall.activityWeek,
+        lastActivity: overall.lastActivity,
+        lastDeadline: overall.lastDeadline,
+        active: !!overall.lastActivity && overall.lastActivity.getTime() >= cut,
+        people: [...groupBy(l, (t) => t.responsibleId)]
+          .map(([pid, pl]) => ({ id: pid, ...workCounts(pl, ctx, bulk, period) }))
+          // Only people with open tasks in it (2026-10-13); the project line keeps every total.
+          .filter((p) => p.open > 0)
+          .sort(
+            (a, b) =>
+              b.activityWeek - a.activityWeek ||
+              byDeadline(a.lastDeadline, b.lastDeadline) ||
+              a.id - b.id,
+          ),
+      };
     })
-    .filter(({ counts, active }) => active || counts.open > 0)
-    .map(({ id, l, bulk, counts, active }) => ({
-      id,
-      ...counts,
-      active,
-      people: [...groupBy(l, (t) => t.responsibleId)]
-        .map(([pid, pl]) => ({ id: pid, ...workCounts(pl, ctx, bulk, period) }))
-        .sort((a, b) => b.activityWeek - a.activityWeek || b.open - a.open || a.id - b.id),
-    }))
     .sort(
       (a, b) =>
         b.activityWeek - a.activityWeek ||

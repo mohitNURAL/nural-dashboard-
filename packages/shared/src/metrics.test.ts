@@ -886,9 +886,9 @@ describe('projects at work', () => {
     expect(isSpillYesterday(doneInTime, ctx)).toBe(false);
     expect(isSpillYesterday(task({ deadline: at('2026-10-08') }), ctx)).toBe(false);
   });
-  it('active and silent projects, their people, deadlines and counts, most active first', () => {
+  it('a fixed set of projects, each active or silent; counts from the scope', () => {
     const list = [
-      task({ groupId: 1, responsibleId: 5, deadline: at('2026-10-09') }), // overdue + spill
+      task({ groupId: 1, responsibleId: 5, deadline: at('2026-10-09') }), // spill of prev day
       task({ groupId: 1, responsibleId: 5, deadline: at('2026-10-20') }),
       task({ groupId: 1, responsibleId: 6, deadline: at('2026-11-02') }),
       task({
@@ -898,44 +898,52 @@ describe('projects at work', () => {
         stageTitle: 'QA Backlog',
         events: qa(at('2026-10-09', '10:00')),
         changedAt: at('2026-10-09', '10:00'),
-      }), // done yesterday, touched this week
-      task({ groupId: 2, responsibleId: 7, changedAt: at('2026-10-08') }), // touched this week
-      task({ groupId: 4, changedAt: at('2026-09-01') }), // open, no activity for 20+ days: silent
-      task({
-        groupId: 3,
-        stage: 'QA Backlog',
-        stageTitle: 'QA Backlog',
-        changedAt: at('2026-07-01'),
-      }), // nothing open, no activity: left out
+      }), // done prev day
+      task({ groupId: 2, responsibleId: 7, changedAt: at('2026-10-08') }),
+      task({ groupId: 4, changedAt: at('2026-08-01') }), // no activity for 30+ days: silent
       task({ groupId: 0 }), // no project
     ];
-    const rows = projectWork(list, ctx);
-    // Fixture tasks change on 5 Oct, inside the week: project 1 has 3 tasks touched, project 2 has 2.
+    // Project 5 is in the set but has no task in scope: it still counts, silent.
+    const rows = projectWork(list, ctx, 'day', { projectIds: [1, 2, 4, 5] });
     expect(rows.map((r) => [r.id, r.activityWeek, r.active])).toEqual([
       [1, 3, true],
       [2, 2, true],
       [4, 0, false],
+      [5, 0, false],
     ]);
     const p1 = rows.find((r) => r.id === 1)!;
     expect(p1).toMatchObject({ open: 3, total: 3, overdue: 0, spill: 1, done: 0 });
     expect(p1.lastDeadline).toEqual(at('2026-11-02'));
-    expect(p1.people.map((p) => [p.id, p.open, p.overdue, p.spill])).toEqual([
-      [5, 2, 0, 1],
-      [6, 1, 0, 0],
+    expect(p1.people.map((p) => [p.id, p.open, p.spill])).toEqual([
+      [5, 2, 1],
+      [6, 1, 0],
     ]);
-    // Week: the 9 Oct deadline is in this week (5-11 Oct), so it is overdue this week, not spill.
-    const week = projectWork(list, ctx, 'week').find((r) => r.id === 1)!;
-    expect(week).toMatchObject({ overdue: 1, spill: 0 });
     expect(rows.find((r) => r.id === 2)!.done).toBe(1);
-    expect(projectWorkSummary(rows)).toEqual({ projects: 3, active: 2, silent: 1 });
+    // Someone with nothing open in a project is not listed under it.
+    const withDoneOnly = projectWork(
+      [
+        ...list,
+        task({ groupId: 1, responsibleId: 8, stage: 'QA Backlog', stageTitle: 'QA Backlog' }),
+      ],
+      ctx,
+      'day',
+      { projectIds: [1] },
+    );
+    expect(withDoneOnly[0]!.people.map((p) => p.id)).toEqual([5, 6]);
+    expect(withDoneOnly[0]!.total).toBe(4);
+    expect(projectWorkSummary(rows)).toEqual({ projects: 4, active: 2, silent: 2 });
+    // Activity comes from all the project's tasks, even ones outside the tab's scope.
+    const scoped = projectWork([], ctx, 'day', { projectIds: [2], allTasks: list });
+    expect(scoped[0]).toMatchObject({ id: 2, active: true, open: 0, activityWeek: 2 });
   });
   it('a bulk change is not activity: a project only bulk-edited stays silent', () => {
     const when = at('2026-10-09', '10:00');
     const bulk = Array.from({ length: 12 }, () => task({ groupId: 9, changedAt: when }));
-    const real = task({ groupId: 9, changedAt: at('2026-08-01') });
+    const real = task({ groupId: 9, changedAt: at('2026-08-31') });
     expect(bulkTouchedIds([...bulk, real]).size).toBe(12);
     const [row] = projectWork([...bulk, real], ctx);
     expect(row).toMatchObject({ id: 9, active: false, activityWeek: 0, open: 13 });
+    // Real activity 40 days ago is outside the 30-day window too.
   });
 });
 

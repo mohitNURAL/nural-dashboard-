@@ -20,10 +20,42 @@ import {
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import type { RequestDataset } from '../auth/roles';
+import type { Dataset } from '../data/dataset';
 import { contextOf, person, project, withGroupNames, withPeople, type AppOptions } from './context';
 import { groupByParam, parseQuery, scopeParam } from './params';
 
-export function devRoutes(app: FastifyInstance, getDataset: RequestDataset, opts: AppOptions) {
+export interface DevRouteDeps {
+  /** PMs (config/roles.json and People directory roles): their projects count on Projects. */
+  pms?: () => ReadonlySet<number>;
+}
+
+/**
+ * The projects the Development tab's Projects tile counts (2026-10-13): active in Bitrix24 and
+ * owned by someone in the Development or QA Testing department, or a PM. Fixed, whatever the
+ * switch or the other filters; the Project filter narrows it, and a person who sees only their own
+ * tasks counts the projects of those tasks.
+ */
+export function ownedProjects(ds: Dataset, pms: ReadonlySet<number>, picked?: number[]): number[] {
+  const mine = ds.scoped ? new Set(ds.tasks.map((t) => t.groupId)) : null;
+  const want = picked?.length ? new Set(picked) : null;
+  return [...ds.projects.values()]
+    .filter((p) => {
+      if (p.active === false || (mine && !mine.has(p.id)) || (want && !want.has(p.id)))
+        return false;
+      const owner = ds.owners?.get(p.id);
+      if (!owner) return false;
+      const dept = ds.users.get(owner)?.deptGroup;
+      return dept === 'Development' || dept === 'Testing' || pms.has(owner);
+    })
+    .map((p) => p.id);
+}
+
+export function devRoutes(
+  app: FastifyInstance,
+  getDataset: RequestDataset,
+  opts: AppOptions,
+  { pms = () => new Set<number>() }: DevRouteDeps = {},
+) {
   async function scope(req: FastifyRequest, extra?: z.ZodRawShape) {
     const { query: q, filters } = parseQuery(req.query, { ...scopeParam, ...extra });
     const ds = await getDataset(req);
@@ -62,10 +94,14 @@ export function devRoutes(app: FastifyInstance, getDataset: RequestDataset, opts
   // Projects at work (2026-10-13): recent projects, who works on them, deadlines, done yesterday,
   // overdue and yesterday's spill, per project and assignee.
   app.get('/api/dev/projects', async (req) => {
-    const { ds, ctx, tasks, q } = await scope(req, {
+    const { ds, ctx, tasks, q, filters } = await scope(req, {
       period: z.enum(WORK_PERIODS).default('day'),
     });
-    const rows = projectWork(tasks, ctx, (q as { period?: (typeof WORK_PERIODS)[number] }).period);
+    const rows = projectWork(tasks, ctx, (q as { period?: (typeof WORK_PERIODS)[number] }).period, {
+      projectIds: ownedProjects(ds, pms(), filters.projectIds),
+      // Active / Silent from every task of the project, not only the tab's scope.
+      allTasks: ds.tasks,
+    });
     return {
       summary: projectWorkSummary(rows),
       rows: rows.map((r) => ({

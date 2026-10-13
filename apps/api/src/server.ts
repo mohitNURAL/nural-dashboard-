@@ -268,7 +268,13 @@ export async function buildServer({
     if (guard && !guard[1](await scoping.viewer(req)))
       return reply.code(403).send({ error: `You have no access to ${guard[2]}.` });
   });
-  devRoutes(app, scoping.dataset, opts);
+  devRoutes(app, scoping.dataset, opts, {
+    pms: () =>
+      new Set([
+        ...rolesCfg.pms,
+        ...[...grants.users].filter(([, g]) => g.role === 'pm').map(([id]) => id),
+      ]),
+  });
   qaRoutes(app, scoping.dataset, opts);
   taskRoutes(app, scoping.dataset, opts, { describe, viewer: scoping.viewer });
   filterRoutes(app, scoping.dataset, opts);

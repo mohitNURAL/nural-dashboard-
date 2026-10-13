@@ -241,7 +241,7 @@ export function ProjectsDialog() {
                           ) : (
                             <tr>
                               <td colSpan={WIDTH} className="pl-10 text-text-muted">
-                                Nobody assigned.
+                                No one has open tasks here.
                               </td>
                             </tr>
                           ))}
