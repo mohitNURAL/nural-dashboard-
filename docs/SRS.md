@@ -495,7 +495,7 @@ Bitrix24 pushes task events to the receiver; the sync worker fetches the full ta
 | Queue and cache | Redis 7 + BullMQ | Webhook event queue, rate-limited Bitrix24 calls, SSE fan-out |
 | Live push | Server-Sent Events | One-way server to browser, auto-reconnect, works through the reverse proxy |
 | Auth | Sign in with Bitrix24 (OAuth local app) | Users log in with their portal account. For now every signed-in user sees everything; NFR-4 roles come later |
-| Hosting | **Live (2026-10-13):** https://pulse.nuralsales.com, behind Cloudflare, on the DigitalOcean droplet `nural-edge-staging-droplet` (Bengaluru), user `bitrixdeploy`: a git clone at `~/mohit/nural`, the API run by PM2 (`pulse-api`, port 4000), nginx serving `apps/web/dist` and proxying `/api`, `/hooks`, `/health`; also answers on `168-144-152-130.sslip.io`. **Planned alternative:** Docker Compose on one Hetzner Cloud CX22 server with Caddy and Let's Encrypt (`docker-compose.prod.yml`, `scripts/deploy.sh`) | Bitrix24 outbound webhooks need a public HTTPS URL |
+| Hosting | **Live (2026-10-13):** https://pulse.nuralsales.com, behind Cloudflare, on the DigitalOcean droplet `nural-edge-staging-droplet` (Bengaluru), user `bitrixdeploy`: a git clone at `~/mohit/nural`, the API run by PM2 (`pulse-api`, port 4000), nginx serving `apps/web/dist` and proxying `/api`, `/hooks`, `/health`; also answers on `168-144-152-130.sslip.io`. **Docker alternative** for a new server (e.g. Nural's own): Docker Compose with Caddy and Let's Encrypt (`docker-compose.prod.yml`, `scripts/deploy.sh`). The first server, a Hetzner Cloud CX22 (`46-224-99-136.sslip.io`, 2026-10-10 to 2026-10-13), was deleted after the move; its final database is kept as an offline backup | Bitrix24 outbound webhooks need a public HTTPS URL |
 | Monitoring | Pino logs; UptimeRobot (free) checks /health every 5 minutes and emails on HTTP 503 | Alerts when sync stops (NFR-9) |
 
 SSE is chosen over WebSocket because the browser only receives; filters are sent as normal HTTP requests. Socket.IO can replace it later if two-way features are added.
@@ -619,7 +619,7 @@ Every task grid and the task view edit a task where it is shown. Each cell is a 
 - **Apply** (after Check, with a confirmation) sends only the valid tasks to Bitrix24, one after another through the rate limiter; a task Bitrix24 refuses is highlighted red with Bitrix24's reason, the others go green. Each change is recorded in `task_actions`; the dashboard refreshes when the changes sync back.
 - API: `POST /api/tasks/bulk/check` and `POST /api/tasks/bulk/apply` with `{ ids (≤ 100), edit: { kind: stage (stageId or stage) | status | field (field, value, tagsMode) } }`, answering one `{ id, state: ok|skip|error|done|failed, reason }` per task.
 
-**Deployment (milestone 9)**
+**Deployment with Docker (milestone 9; for a new server, the live server uses PM2 below)**
 
 - `docker-compose.prod.yml` (project `nural-prod`) runs `postgres`, `redis`, `api` and `web` with no database or Redis port exposed.
 - `api` is `apps/api/Dockerfile`: it applies migrations at start, then serves through tsx.
@@ -791,7 +791,7 @@ Run each in order. Start each session in plan mode, approve the plan, then let i
 7. **Development tab.** Prompt: "Build the Development tab from SRS section 3 (DEV-01 to DEV-08) and the wireframe in section 6, using ECharts and TanStack Table, with the TaskDrawer." Done when every tile and table matches Bitrix24 for one project and one assignee.
 8. **QA tab.** Prompt: "Build the QA tab from SRS section 4 (QA-01 to QA-09) and its wireframe, reusing the components from milestone 7." Done when issue counts, rework and retest-by-creator match Bitrix24.
 9. **Sign-in, deploy and launch.** Prompt: "Add Sign in with Bitrix24 (OAuth local app), Dockerfiles for api and web, Caddy with Let's Encrypt, and a health alert per NFR-9." Roles (NFR-4) are deferred; every signed-in user sees everything. Steps:
-   1. In Hetzner Cloud, create a CX22 server with Ubuntu 24.04, public IPv4 and the deploy SSH key. Oracle Cloud Always Free also works: open TCP 80 and 443 in its security list, and `vm-setup.sh` opens them in its iptables.
+   1. Create an Ubuntu 24.04 server with a public IPv4 and the deploy SSH key (first done on a Hetzner Cloud CX22, since deleted; the live site now runs on a DigitalOcean droplet, see section 7, Live server and CI/CD). On Oracle Cloud, open TCP 80 and 443 in its security list; `vm-setup.sh` opens them in its iptables.
    2. Run `scripts/vm-setup.sh` on the VM. Fill in `.env.prod` locally (SITE_ADDRESS `<ip>.sslip.io`, PUBLIC_BASE_URL, WEB_ORIGIN, POSTGRES_PASSWORD, SESSION_SECRET, Bitrix24 keys). Run `scripts/deploy.sh`, then `scripts/db-copy.sh` once.
    3. Until the local app exists, use `AUTH=off` behind a Caddy `basic_auth` shared password in `caddy-extra/`.
    4. A Bitrix24 admin creates a server-side local app (Developer resources > Other > Local application). Settings:

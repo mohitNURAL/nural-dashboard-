@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# One-time setup of a fresh Ubuntu 24.04 server (SRS 10.5, milestone 9), e.g. Hetzner CX22 (log in
-# as root) or Oracle Cloud (log in as ubuntu). Run from Git Bash:
-#   ssh -i ~/.ssh/nural_oracle root@<ip> 'bash -s' < scripts/vm-setup.sh
+# One-time setup of a fresh Ubuntu 24.04 server for the Docker setup (SRS 10.5, milestone 9).
+# Log in as root (or ubuntu on Oracle Cloud). Run from Git Bash:
+#   ssh -i <ssh key> root@<ip> 'bash -s' < scripts/vm-setup.sh
 set -euo pipefail
 
 # Docker Engine and the compose plugin (official convenience script).
@@ -11,7 +11,7 @@ if ! command -v docker >/dev/null; then
 fi
 
 # Oracle's Ubuntu image rejects everything but SSH in iptables (saved by netfilter-persistent);
-# other providers (Hetzner) leave the ports open, so this only runs where that tool exists.
+# most other providers leave the ports open, so this only runs where that tool exists.
 if command -v netfilter-persistent >/dev/null &&
   ! sudo iptables -C INPUT -p tcp -m multiport --dports 80,443 -j ACCEPT 2>/dev/null; then
   sudo iptables -I INPUT -p tcp -m multiport --dports 80,443 -j ACCEPT

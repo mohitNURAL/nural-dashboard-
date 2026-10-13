@@ -7,7 +7,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-HOST=${DEPLOY_HOST:?set DEPLOY_HOST, e.g. DEPLOY_HOST=root@203.0.113.10 (Hetzner) or ubuntu@<ip> (Oracle)}
+HOST=${DEPLOY_HOST:?set DEPLOY_HOST, e.g. DEPLOY_HOST=root@203.0.113.10}
 KEY=${DEPLOY_KEY:-$HOME/.ssh/nural_oracle}
 SSH=(ssh -i "$KEY" -o StrictHostKeyChecking=accept-new "$HOST")
 

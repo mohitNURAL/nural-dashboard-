@@ -29,7 +29,5 @@ pnpm tunnel   # public HTTPS URL for the outbound webhook (changes on every star
 pnpm hooks:simulate <taskId> [event]   # signed fake webhook call to the local API
 Docker Postgres is on port 5433 (a local PostgreSQL service holds 5432).
 node --env-file=.env scripts/test-webhook.mjs # checks the inbound webhook
-DEPLOY_HOST=root@<ip> scripts/deploy.sh   # ship committed code + .env.prod to the server (Hetzner CX22), rebuild, restart
-DEPLOY_HOST=root@<ip> scripts/db-copy.sh  # one-time copy of the local database to the server
-ssh -i ~/.ssh/nural_oracle root@<ip> 'bash -s' < scripts/vm-setup.sh   # one-time server setup
-Production: docker-compose.prod.yml (project nural-prod, Caddy TLS). AUTH=bitrix needs BITRIX_CLIENT_ID/SECRET and SESSION_SECRET.
+Live: https://pulse.nuralsales.com (DigitalOcean droplet, PM2 `pulse-api` + nginx; SRS 7, Live server and CI/CD). A push to `main` that passes CI deploys it (.github/workflows/ci.yml runs scripts/server-update.sh on the droplet); only the official repo (mohitNURAL) deploys. By hand on the droplet: cd ~/mohit/nural && git pull --ff-only && bash scripts/server-update.sh
+New server with Docker instead (e.g. Nural's own): docker-compose.prod.yml (Caddy TLS) with scripts/vm-setup.sh (one-time setup), scripts/deploy.sh and scripts/db-copy.sh (DEPLOY_HOST=user@<ip>, DEPLOY_KEY=<ssh key>). AUTH=bitrix needs BITRIX_CLIENT_ID/SECRET and SESSION_SECRET.
