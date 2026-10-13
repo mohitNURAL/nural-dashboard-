@@ -34,7 +34,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm lint
+      # The API's config needs these to load; the tests never connect to them (placeholders only).
       - run: pnpm test
+        env:
+          BITRIX_INBOUND_URL: https://example.invalid/rest/1/ci-placeholder/
+          DATABASE_URL: postgres://ci:ci@127.0.0.1:5999/ci
+          REDIS_URL: redis://127.0.0.1:6999
 
   deploy:
     needs: check
