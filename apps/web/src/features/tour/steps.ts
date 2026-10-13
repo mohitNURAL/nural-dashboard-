@@ -95,6 +95,7 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
       text: 'Development department only. Dev = development tasks, Issues = bugs and feedback, All = both. It changes every tile, card and list on this page (they glow now).',
       affects: ['[data-group="dev.tiles"]', '[data-group="dev.cards"]'],
     },
+    { target: slot('dev.tiles', 'projects'), title: 'Projects', text: INFO.devProjects },
     {
       target: slot('dev.tiles', 'total'),
       title: 'Total',

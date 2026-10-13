@@ -107,7 +107,7 @@ The Development tab answers three questions for the PM and team leads: how much 
 
 **Drill-down from any count.** Every count on the Development tab opens the "All tasks" accordion (DEV-08) narrowed to exactly that count, and the accordion title takes the count's label, for example "All tasks: Neha Gautam · Pending" or "All tasks: Umang Singh · To do, overdue". This covers the tiles, every number and the totals row of the DEV-02 and DEV-03 tables, the bars of the DEV-02 and DEV-03 charts, and each part of a DEV-05 cell. A count that belongs to one assignee or project (a table row, a chart bar, a matrix cell, an ageing segment, a speed-ranking row) **also sets that Assignee or Project filter**, so the whole tab follows the click. Clearing, resetting or changing the filters afterwards returns "All tasks" to its default (title and list); "Show all tasks" does the same. Clicking a name (not a number) sets the filter only.
 
-**DEV-01 Summary tiles (one row of 6)**
+**DEV-01 Summary tiles (one row: Projects, then the tiles below)**
 
 | # | Tile | Counts |
 | --- | --- | --- |
@@ -120,6 +120,12 @@ The Development tab answers three questions for the PM and team leads: how much 
 | 6 | Done today | Tasks completed today (Complete pressed, moved to QA Backlog) |
 
 Clicking a tile opens the "All tasks" accordion pre-filtered to that tile.
+
+**Projects tile and popup (2026-10-13).** The first Development tile, like Active projects on KPI. It counts the **recent projects** in the tab's scope (All / Dev / Issues) and filters: those with a pending task, or a task changed in the last 30 days (`RECENT_PROJECT_DAYS`); tasks outside any project are left out. Parts: projects **with overdue** tasks, **with spill** of yesterday and with work **done yesterday**. The number and each part open the **Projects at work** popup (on that part), which lists every recent project, most overdue first, with:
+- its **deadline**: the latest deadline of its tasks;
+- who works on it: one line per assignee with **Open** (pending), **All tasks**, **Done yesterday** (pushed to QA Backlog yesterday, IST), **Overdue** (pending, deadline passed), **Spill of yesterday** and their **last deadline**; the project line carries the totals.
+
+**Spill of yesterday** = the deadline was yesterday (IST) and the task was not pushed to QA Backlog by the end of yesterday: still pending or on hold, or completed today (`isSpillYesterday`; task-list preset `spill`). The popup has All / With overdue / With spill / Done yesterday and a search for a project or person. Any count closes the popup and opens those tasks in "All tasks" (project, and assignee on a person line). `GET /api/dev/projects` returns `summary` and `rows` (`projectWork`, `projectWorkSummary` in `metrics.ts`; `features/dev/ProjectsDialog.tsx`).
 
 Under each tile's number, a breakdown follows the All / Dev / Issues switch (DEV-00a): **All** splits it into Dev and Issues, **Issues** into Bug and Feedback, and **Dev** shows the number alone. The parts add up to the tile, and each part opens its own list, e.g. "All tasks: Pending · Bug". The former "Completed (sent to QA)" tile was removed (2026-10-10) as not relevant to the Development tab; the completed stage group still feeds the Done column of DEV-02 and the speed ranking.
 

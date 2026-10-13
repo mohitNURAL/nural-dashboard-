@@ -13,6 +13,7 @@ const PRESET_RULE: Record<Drill['preset'], string> = {
   doneToday: INFO.doneToday,
   doneYesterday: INFO.colCompYesterday,
   dueToday: INFO.dueToday,
+  spill: INFO.spill,
 };
 
 const AGEING: Record<string, string> = {

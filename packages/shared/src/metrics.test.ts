@@ -19,6 +19,9 @@ import {
   dueWindowRange,
   isDueIn,
   tasksInHand,
+  isSpillYesterday,
+  projectWork,
+  projectWorkSummary,
   inHandByGroup,
   isOverdue,
   issueAgeByAssignee,
@@ -852,5 +855,67 @@ describe('tasks in hand by assignee or project', () => {
       [2, 1, 0, 1, 0],
     ]);
     expect(r.totals).toMatchObject({ ahead: 3, tomorrow: 1, nextWeek: 1, nextMonth: 1 });
+  });
+});
+
+describe('projects at work', () => {
+  // NOW = Saturday 10 Oct 2026, 12:00 IST; yesterday = 9 Oct.
+  const at = (d: string, h = '12:00') => new Date(`${d}T${h}:00+05:30`);
+  const qa = (d: Date) =>
+    [{ from: 'In progress', to: 'QA Backlog', at: d, by: 30 }] as MetricTask['events'];
+  it('spill: due yesterday and not completed by the end of it', () => {
+    expect(isSpillYesterday(task({ deadline: at('2026-10-09') }), ctx)).toBe(true);
+    const doneToday = task({
+      deadline: at('2026-10-09'),
+      stage: 'QA Backlog',
+      stageTitle: 'QA Backlog',
+      events: qa(at('2026-10-10', '09:00')),
+    });
+    expect(isSpillYesterday(doneToday, ctx)).toBe(true);
+    const doneInTime = task({
+      deadline: at('2026-10-09'),
+      stage: 'QA Backlog',
+      stageTitle: 'QA Backlog',
+      events: qa(at('2026-10-09', '15:00')),
+    });
+    expect(isSpillYesterday(doneInTime, ctx)).toBe(false);
+    expect(isSpillYesterday(task({ deadline: at('2026-10-08') }), ctx)).toBe(false);
+  });
+  it('recent projects with their people, deadlines and counts', () => {
+    const list = [
+      task({ groupId: 1, responsibleId: 5, deadline: at('2026-10-09') }), // overdue + spill
+      task({ groupId: 1, responsibleId: 5, deadline: at('2026-10-20') }),
+      task({ groupId: 1, responsibleId: 6, deadline: at('2026-11-02') }),
+      task({
+        groupId: 2,
+        responsibleId: 7,
+        stage: 'QA Backlog',
+        stageTitle: 'QA Backlog',
+        events: qa(at('2026-10-09', '10:00')),
+        changedAt: at('2026-10-09', '10:00'),
+      }), // done yesterday
+      task({
+        groupId: 3,
+        stage: 'QA Backlog',
+        stageTitle: 'QA Backlog',
+        changedAt: at('2026-07-01'),
+      }), // nothing open, no change in 30 days: not recent
+      task({ groupId: 0 }), // no project
+    ];
+    const rows = projectWork(list, ctx);
+    expect(rows.map((r) => r.id)).toEqual([1, 2]);
+    expect(rows[0]).toMatchObject({ open: 3, total: 3, overdue: 1, spill: 1, doneYesterday: 0 });
+    expect(rows[0]!.lastDeadline).toEqual(at('2026-11-02'));
+    expect(rows[0]!.people.map((p) => [p.id, p.open, p.overdue, p.spill])).toEqual([
+      [5, 2, 1, 1],
+      [6, 1, 0, 0],
+    ]);
+    expect(rows[0]!.people[0]!.lastDeadline).toEqual(at('2026-10-20'));
+    expect(projectWorkSummary(rows)).toEqual({
+      projects: 2,
+      withOverdue: 1,
+      withSpill: 1,
+      withDoneYesterday: 1,
+    });
   });
 });

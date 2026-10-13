@@ -91,6 +91,7 @@ export const TILE_LABELS: Record<DevPreset, string> = {
   doneToday: 'Done today',
   doneYesterday: 'Done yesterday',
   dueToday: 'Due today',
+  spill: 'Spill of yesterday',
 };
 
 /** Column and title word for the Assignee / Project switch. */

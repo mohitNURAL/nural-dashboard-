@@ -12,6 +12,10 @@ export const INFO = {
   overdue: 'Pending, not On Hold, and the deadline has passed.',
   inHand:
     'Pending tasks (behind QA Backlog, not on hold) whose deadline is still ahead (IST). Under it, when they are planned: tomorrow, the rest of this week, the rest of this month, next week, next month. The parts overlap (tomorrow is also in the rest of the week), so they do not add up. Overdue and no-deadline tasks are not in hand.',
+  spill:
+    'Spill of yesterday: the deadline was yesterday (IST) and the task was not pushed to QA Backlog by the end of yesterday (still pending or on hold, or completed today).',
+  devProjects:
+    'Recent projects: a pending task, or any task changed in the last 30 days (Development tab scope and filters). Under it, how many have overdue tasks, spill from yesterday (due yesterday, not pushed to QA Backlog by the end of it) or work done yesterday. Click for the table: each project with its deadline (its last task deadline) and who works on it, with their counts.',
   inHandBy:
     'Pending tasks with the deadline ahead, per assignee or project. The chart shows the window picked above it (All, Tomorrow, Rest of week, Rest of month, Next week, Next month); the table shows every window. A bar or count opens those tasks; a name sets the filter.',
   qaInHandBy:

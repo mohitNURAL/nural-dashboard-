@@ -1,11 +1,13 @@
-// DEV-01: one row of 7 summary tiles. Clicking a tile opens the matching task list. Under the
+// DEV-01: one row of summary tiles (Projects first, 2026-10-13, opens its popup). Clicking a tile opens the matching task list. Under the
 // number, All splits into Dev and Issues and Issues into Bug and Feedback; each part opens too.
 import type { DevPreset, SummaryPart } from '@nural/shared';
 import { SortableGroup } from '../../components/layout/SortableGroup';
 import { InHandTile } from '../../components/InHandTile';
 import { StatTile } from '../../components/StatTile';
 import { useDevScope } from '../filters/useFilters';
-import { useDevSummary } from './api';
+import { useState } from 'react';
+import { useDevProjects, useDevSummary } from './api';
+import { ProjectsDialog, type ProjectShow } from './ProjectsDialog';
 import { useDrillStore, useDrillTo } from './drill';
 import { splitLine, TILE_LABELS } from './format';
 import { INFO } from '../info';
@@ -41,50 +43,90 @@ export function SummaryTiles({ active, onSelect }: Props) {
   const drill = useDrillTo();
   const shown = useDrillStore((st) => st.drill?.label);
   const split = data?.split;
+  const { data: projects } = useDevProjects();
+  const pj = projects?.summary;
+  // The Projects popup and which projects it starts on (a tile part picks one).
+  const [projectsOpen, setProjectsOpen] = useState<ProjectShow | null>(null);
   return (
-    <SortableGroup
-      group="dev.tiles"
-      noun="tile"
-      className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-[repeat(var(--cols),minmax(0,1fr))]"
-      items={[
-        ...TILES.map(({ preset, sub }) => ({
-          id: preset,
-          node: (
-            <StatTile
-              label={
-                preset === 'total' && scope === 'issues' ? 'Total issues' : TILE_LABELS[preset]
-              }
-              info={INFO[preset as keyof typeof INFO]}
-              value={data?.[preset as keyof typeof data] as number | undefined}
-              sub={preset === 'total' && split?.items.length ? splitLine(split.items) : sub}
-              tone={preset === 'overdue' ? 'bad' : undefined}
-              active={active === preset}
-              onClick={() => onSelect(preset)}
-              parts={data?.parts.map((p) => ({
-                label: PART[p.key].label,
-                value: p[preset as Count],
-                onClick: () =>
-                  drill({
-                    label: `${TILE_LABELS[preset]} · ${PART[p.key].label}`,
-                    preset,
-                    params: PART[p.key].params,
-                  }),
-              }))}
-            />
-          ),
-        })),
-        {
-          id: 'inHand',
-          node: (
-            <InHandTile
-              counts={data?.inHand}
-              info={INFO.inHand}
-              active={!!shown?.startsWith('Tasks in hand')}
-              onOpen={(w, label) => drill({ label, preset: 'pending', params: { due: w } })}
-            />
-          ),
-        },
-      ]}
-    />
+    <>
+      <SortableGroup
+        group="dev.tiles"
+        noun="tile"
+        className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-[repeat(var(--cols),minmax(0,1fr))]"
+        items={[
+          {
+            id: 'projects',
+            node: (
+              <StatTile
+                label="Projects"
+                info={INFO.devProjects}
+                value={pj?.projects}
+                sub="Recent, with their people"
+                onClick={() => setProjectsOpen('all')}
+                parts={
+                  pj && [
+                    {
+                      label: 'With overdue',
+                      value: pj.withOverdue,
+                      onClick: () => setProjectsOpen('overdue'),
+                    },
+                    {
+                      label: 'With spill',
+                      value: pj.withSpill,
+                      onClick: () => setProjectsOpen('spill'),
+                    },
+                    {
+                      label: 'Done yesterday',
+                      value: pj.withDoneYesterday,
+                      onClick: () => setProjectsOpen('doneYesterday'),
+                    },
+                  ]
+                }
+              />
+            ),
+          },
+          ...TILES.map(({ preset, sub }) => ({
+            id: preset,
+            node: (
+              <StatTile
+                label={
+                  preset === 'total' && scope === 'issues' ? 'Total issues' : TILE_LABELS[preset]
+                }
+                info={INFO[preset as keyof typeof INFO]}
+                value={data?.[preset as keyof typeof data] as number | undefined}
+                sub={preset === 'total' && split?.items.length ? splitLine(split.items) : sub}
+                tone={preset === 'overdue' ? 'bad' : undefined}
+                active={active === preset}
+                onClick={() => onSelect(preset)}
+                parts={data?.parts.map((p) => ({
+                  label: PART[p.key].label,
+                  value: p[preset as Count],
+                  onClick: () =>
+                    drill({
+                      label: `${TILE_LABELS[preset]} · ${PART[p.key].label}`,
+                      preset,
+                      params: PART[p.key].params,
+                    }),
+                }))}
+              />
+            ),
+          })),
+          {
+            id: 'inHand',
+            node: (
+              <InHandTile
+                counts={data?.inHand}
+                info={INFO.inHand}
+                active={!!shown?.startsWith('Tasks in hand')}
+                onOpen={(w, label) => drill({ label, preset: 'pending', params: { due: w } })}
+              />
+            ),
+          },
+        ]}
+      />
+      {projectsOpen && (
+        <ProjectsDialog initial={projectsOpen} onClose={() => setProjectsOpen(null)} />
+      )}
+    </>
   );
 }

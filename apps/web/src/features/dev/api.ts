@@ -1,7 +1,14 @@
 // Development tab queries (SRS 7 module 5). All take the filter bar's params.
 import { useMemo } from 'react';
 import { useApi, withGroupBy } from '../../api/queries';
-import type { DevAssignees, DevMatrix, DevRanking, DevSummary, GroupBy } from '../../api/types';
+import type {
+  DevAssignees,
+  DevMatrix,
+  DevProjects,
+  DevRanking,
+  DevSummary,
+  GroupBy,
+} from '../../api/types';
 import { toParams } from '../filters/toParams';
 import { useDevScope, useFilters } from '../filters/useFilters';
 
@@ -18,6 +25,7 @@ export function useDevAssignees(by: GroupBy = 'assignee') {
   const params = useDevParams();
   return useApi<DevAssignees>('/api/dev/assignees', withGroupBy(params, by));
 }
+export const useDevProjects = () => useApi<DevProjects>('/api/dev/projects', useDevParams());
 export const useDevRanking = () => useApi<DevRanking>('/api/dev/ranking', useDevParams());
 
 export function useDevMatrix(splitTag: string | null, by: GroupBy = 'assignee') {

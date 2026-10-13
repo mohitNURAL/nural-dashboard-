@@ -116,6 +116,25 @@ export interface InHand {
   totals: Record<DueWindow, number>;
 }
 
+/** Development tab Projects (/api/dev/projects): counts of one project or one assignee in it. */
+export interface WorkCounts {
+  open: number;
+  total: number;
+  doneYesterday: number;
+  overdue: number;
+  spill: number;
+  lastDeadline: string | null;
+}
+export interface ProjectWorkRow extends WorkCounts {
+  id: number;
+  name: string;
+  people: (WorkCounts & { id: number; person: Person })[];
+}
+export interface DevProjects {
+  summary: { projects: number; withOverdue: number; withSpill: number; withDoneYesterday: number };
+  rows: ProjectWorkRow[];
+}
+
 export interface DevSummary {
   /** Tasks in hand: open, deadline ahead, by window (tomorrow, rest of week, ...). */
   inHand: Record<DueWindow, number>;

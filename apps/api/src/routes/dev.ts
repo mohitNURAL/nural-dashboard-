@@ -11,6 +11,8 @@ import {
   STAGE_COLORS,
   tasksInHand,
   inHandByGroup,
+  projectWork,
+  projectWorkSummary,
   type DevScope,
   type GroupBy,
 } from '@nural/shared';
@@ -53,6 +55,21 @@ export function devRoutes(app: FastifyInstance, getDataset: RequestDataset, opts
       },
       asOf: ctx.now,
       dataLoadedAt: ds.loadedAt,
+    };
+  });
+
+  // Projects at work (2026-10-13): recent projects, who works on them, deadlines, done yesterday,
+  // overdue and yesterday's spill, per project and assignee.
+  app.get('/api/dev/projects', async (req) => {
+    const { ds, ctx, tasks } = await scope(req);
+    const rows = projectWork(tasks, ctx);
+    return {
+      summary: projectWorkSummary(rows),
+      rows: rows.map((r) => ({
+        ...r,
+        name: project(ds, r.id)?.name ?? 'No project',
+        people: r.people.map((p) => ({ ...p, person: person(ds, p.id) })),
+      })),
     };
   });
 

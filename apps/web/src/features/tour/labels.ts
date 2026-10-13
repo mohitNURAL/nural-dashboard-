@@ -2,6 +2,7 @@
 // Add one here with every new tile, card or section (with its step in steps.ts).
 export const POINT_LABELS: Record<string, Record<string, string>> = {
   'dev.tiles': {
+    projects: 'Projects',
     total: 'Total tasks',
     pending: 'Pending',
     hold: 'On hold',

@@ -196,6 +196,18 @@ export function isCompletedYesterday(t: MetricTask, ctx: MetricContext): boolean
   return !!at && dayKey(at, ctx.tz) === yesterdayKey(ctx);
 }
 
+/**
+ * Spill of yesterday (2026-10-13): the deadline was yesterday (IST) and the task was not completed
+ * (pushed to QA Backlog) by the end of yesterday: still pending or on hold, or completed today.
+ */
+export function isSpillYesterday(t: MetricTask, ctx: MetricContext): boolean {
+  if (!t.deadline) return false;
+  const yesterday = yesterdayKey(ctx);
+  if (dayKey(t.deadline, ctx.tz) !== yesterday) return false;
+  const at = completedAt(t);
+  return at ? dayKey(at, ctx.tz) > yesterday : !isSentToQa(t);
+}
+
 /** Days (YYYY-MM-DD, app time zone) on which the task was pushed to QA Backlog. */
 const qaBacklogDays = (t: MetricTask, tz: string) =>
   t.events.filter((e) => e.to === stageWithRole('qaEntry')).map((e) => dayKey(e.at, tz));
@@ -1064,6 +1076,7 @@ export const DEV_PRESETS = [
   'doneYesterday',
   'dueToday',
   'hold',
+  'spill',
 ] as const;
 export const ISSUE_PRESETS = [
   'all',
@@ -1105,6 +1118,8 @@ export function presetPredicate(
       return (t) => isCompletedToday(t, ctx);
     case 'doneYesterday':
       return (t) => isCompletedYesterday(t, ctx);
+    case 'spill':
+      return (t) => isSpillYesterday(t, ctx);
     case 'dueToday':
       return (t) => isDueToday(t, ctx);
     case 'open':
@@ -1210,4 +1225,76 @@ export function inHandByGroup(
     .filter((r) => r.ahead > 0)
     .sort((a, b) => b.ahead - a.ahead || a.id - b.id);
   return { rows, totals: tasksInHand(mine, ctx, () => true) };
+}
+
+// ---------------------------------------------------------------- projects at work (2026-10-13)
+
+/** A project counts as recent with a pending task or any task change in this many days. */
+export const RECENT_PROJECT_DAYS = 30;
+
+export interface WorkCounts {
+  /** Pending (behind QA Backlog, not on hold). */
+  open: number;
+  total: number;
+  doneYesterday: number;
+  /** Pending with the deadline passed (today). */
+  overdue: number;
+  /** Due yesterday, not completed by the end of yesterday. */
+  spill: number;
+  /** The latest task deadline (the project's deadline on a project row). */
+  lastDeadline: Date | null;
+}
+
+function workCounts(list: readonly MetricTask[], ctx: MetricContext): WorkCounts {
+  let lastDeadline: Date | null = null;
+  for (const t of list)
+    if (t.deadline && (!lastDeadline || t.deadline > lastDeadline)) lastDeadline = t.deadline;
+  return {
+    open: list.filter(isPending).length,
+    total: list.length,
+    doneYesterday: list.filter((t) => isCompletedYesterday(t, ctx)).length,
+    overdue: list.filter((t) => isOverdue(t, ctx)).length,
+    spill: list.filter((t) => isSpillYesterday(t, ctx)).length,
+    lastDeadline,
+  };
+}
+
+export interface ProjectWork extends WorkCounts {
+  id: number;
+  /** Who works on it: one row per assignee, most open first. */
+  people: (WorkCounts & { id: number })[];
+}
+
+/**
+ * The recent projects of a task list (Development tab "Projects"): those with a pending task or a
+ * task changed in the last RECENT_PROJECT_DAYS days; tasks outside any project are left out.
+ * Most overdue first.
+ */
+export function projectWork(list: readonly MetricTask[], ctx: MetricContext): ProjectWork[] {
+  const cut = ctx.now.getTime() - RECENT_PROJECT_DAYS * 86_400_000;
+  return [
+    ...groupBy(
+      list.filter((t) => t.groupId > 0),
+      (t) => t.groupId,
+    ),
+  ]
+    .filter(([, l]) => l.some((t) => isPending(t) || t.changedAt.getTime() >= cut))
+    .map(([id, l]) => ({
+      id,
+      ...workCounts(l, ctx),
+      people: [...groupBy(l, (t) => t.responsibleId)]
+        .map(([pid, pl]) => ({ id: pid, ...workCounts(pl, ctx) }))
+        .sort((a, b) => b.open - a.open || b.total - a.total || a.id - b.id),
+    }))
+    .sort((a, b) => b.overdue - a.overdue || b.open - a.open || a.id - b.id);
+}
+
+/** The Projects tile: recent projects, and how many have overdue, spill or work done yesterday. */
+export function projectWorkSummary(rows: readonly ProjectWork[]) {
+  return {
+    projects: rows.length,
+    withOverdue: rows.filter((r) => r.overdue > 0).length,
+    withSpill: rows.filter((r) => r.spill > 0).length,
+    withDoneYesterday: rows.filter((r) => r.doneYesterday > 0).length,
+  };
 }
