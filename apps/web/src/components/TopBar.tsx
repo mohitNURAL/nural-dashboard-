@@ -120,10 +120,13 @@ const THEMES: { value: ThemeChoice; label: string; icon: JSX.Element }[] = [
   },
 ];
 
-/** Sign out clears the session cookie and shows the signed-out page (sign in again from it). */
+/**
+ * Sign out clears the session cookie and goes straight to Sign in with Bitrix24, as on the first
+ * visit. A browser still signed in to Bitrix24 comes straight back to the dashboard.
+ */
 async function signOut() {
   await fetch('/api/auth/logout', { method: 'POST' }).catch(() => undefined);
-  window.location.href = '/api/auth/signed-out';
+  window.location.href = '/api/auth/login';
 }
 
 /**

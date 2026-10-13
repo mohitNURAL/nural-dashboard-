@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-13-sign-out-bitrix',
+    date: '2026-10-13',
+    tab: 'dev',
+    title: 'Sign out goes to Bitrix24 sign-in',
+    steps: [
+      {
+        target: '[data-tour="profile"]',
+        title: 'Sign out goes to Bitrix24 sign-in',
+        text: 'Sign out in your profile now takes you straight to Sign in with Bitrix24, the same as your first visit. If your browser is still signed in to Bitrix24, you come straight back to the dashboard.',
+      },
+    ],
+  },
+  {
     id: '2026-10-13-feedback-refresh',
     date: '2026-10-13',
     tab: 'feedback',
