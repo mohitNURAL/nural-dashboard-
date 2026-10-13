@@ -119,6 +119,8 @@ export interface InHand {
 /** Development tab Projects (/api/dev/projects): counts of one project or one assignee in it. */
 export interface WorkCounts {
   open: number;
+  /** In On Hold. */
+  hold: number;
   total: number;
   /** Done in the previous day / week / month (the popup's switch). */
   done: number;
@@ -134,12 +136,13 @@ export interface WorkCounts {
 export interface ProjectWorkRow extends WorkCounts {
   id: number;
   name: string;
-  /** Activity in the last 20 days; silent = open tasks but none. */
+  /** On hold (every unfinished task in On Hold), active (activity in 30 days) or silent. */
+  status: 'active' | 'silent' | 'hold';
   active: boolean;
   people: (WorkCounts & { id: number; person: Person })[];
 }
 export interface DevProjects {
-  summary: { projects: number; active: number; silent: number };
+  summary: { projects: number; active: number; silent: number; hold: number };
   rows: ProjectWorkRow[];
 }
 

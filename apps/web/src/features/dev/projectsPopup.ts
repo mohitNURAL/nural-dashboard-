@@ -3,7 +3,7 @@
 // work" on a task list reopens it as it was.
 import { create } from 'zustand';
 
-export type ProjectShow = 'all' | 'active' | 'silent';
+export type ProjectShow = 'all' | 'active' | 'silent' | 'hold';
 export type ProjectPeriod = 'day' | 'week' | 'month';
 
 interface State {

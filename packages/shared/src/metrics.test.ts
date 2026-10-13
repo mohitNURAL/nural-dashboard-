@@ -931,10 +931,27 @@ describe('projects at work', () => {
     );
     expect(withDoneOnly[0]!.people.map((p) => p.id)).toEqual([5, 6]);
     expect(withDoneOnly[0]!.total).toBe(4);
-    expect(projectWorkSummary(rows)).toEqual({ projects: 4, active: 2, silent: 2 });
+    expect(projectWorkSummary(rows)).toEqual({ projects: 4, active: 2, silent: 2, hold: 0 });
     // Activity comes from all the project's tasks, even ones outside the tab's scope.
     const scoped = projectWork([], ctx, 'day', { projectIds: [2], allTasks: list });
     expect(scoped[0]).toMatchObject({ id: 2, active: true, open: 0, activityWeek: 2 });
+  });
+  it('on hold when every unfinished task is on hold; finished projects drop out', () => {
+    const list = [
+      // 6: only On Hold left -> on hold.
+      task({ groupId: 6, stage: 'On Hold', stageTitle: 'On Hold', changedAt: at('2026-10-09') }),
+      task({ groupId: 6, stage: 'QA Backlog', stageTitle: 'QA Backlog' }),
+      // 7: all done, deadline passed -> finished, left out.
+      task({ groupId: 7, stage: 'LIVE', stageTitle: 'LIVE', deadline: at('2026-09-01') }),
+      // 8: all done but the deadline is ahead -> still listed (silent or active).
+      task({ groupId: 8, stage: 'LIVE', stageTitle: 'LIVE', deadline: at('2026-11-01') }),
+      // 9: open work, deadline passed -> still listed.
+      task({ groupId: 9, deadline: at('2026-09-01') }),
+    ];
+    const rows = projectWork(list, ctx, 'day', { projectIds: [6, 7, 8, 9] });
+    expect(rows.map((r) => r.id).sort()).toEqual([6, 8, 9]);
+    expect(rows.find((r) => r.id === 6)).toMatchObject({ status: 'hold', active: false, hold: 1 });
+    expect(projectWorkSummary(rows)).toMatchObject({ projects: 3, hold: 1 });
   });
   it('a bulk change is not activity: a project only bulk-edited stays silent', () => {
     const when = at('2026-10-09', '10:00');

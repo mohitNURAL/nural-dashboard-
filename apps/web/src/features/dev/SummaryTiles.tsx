@@ -60,12 +60,13 @@ export function SummaryTiles({ active, onSelect }: Props) {
                 label="Projects"
                 info={INFO.devProjects}
                 value={pj?.projects}
-                sub="Active + silent"
+                sub="Active + silent + hold"
                 onClick={() => openProjects('all')}
                 parts={
                   pj && [
                     { label: 'Active', value: pj.active, onClick: () => openProjects('active') },
                     { label: 'Silent', value: pj.silent, onClick: () => openProjects('silent') },
+                    { label: 'Hold', value: pj.hold, onClick: () => openProjects('hold') },
                   ]
                 }
               />

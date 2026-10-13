@@ -19,7 +19,10 @@ const SHOW_TITLE: Record<ProjectShow, string> = {
   all: 'All projects',
   active: 'Active projects',
   silent: 'Silent projects',
+  hold: 'Projects on hold',
 };
+
+const STATUS_LABEL = { active: 'Active', silent: 'Silent', hold: 'On hold' } as const;
 
 const PERIOD_LABEL: Record<ProjectPeriod, string> = { day: 'Day', week: 'Week', month: 'Month' };
 
@@ -54,7 +57,7 @@ export function ProjectsDialog() {
     const words = q.trim().toLowerCase();
     return (data?.rows ?? []).filter(
       (r) =>
-        (show === 'all' || r.active === (show === 'active')) &&
+        (show === 'all' || r.status === show) &&
         (!words ||
           r.name.toLowerCase().includes(words) ||
           r.people.some((p) => p.person.name.toLowerCase().includes(words))),
@@ -199,10 +202,14 @@ export function ProjectsDialog() {
                               <span
                                 className={clsx(
                                   'rounded-full px-2 py-0.5 font-heading text-[11px] font-bold',
-                                  r.active ? 'bg-good/15 text-good' : 'bg-warn/15 text-warn',
+                                  r.status === 'active'
+                                    ? 'bg-good/15 text-good'
+                                    : r.status === 'hold'
+                                      ? 'bg-primary/10 text-primary'
+                                      : 'bg-warn/15 text-warn',
                                 )}
                               >
-                                {r.active ? 'Active' : 'Silent'}
+                                {STATUS_LABEL[r.status]}
                               </span>
                               <span className="font-body text-[12px] font-normal text-text-muted">
                                 {r.people.length} {r.people.length === 1 ? 'person' : 'people'}

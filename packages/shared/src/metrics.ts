@@ -1327,6 +1327,8 @@ export function lastActivity(t: MetricTask): Date {
 export interface WorkCounts {
   /** Pending (behind QA Backlog, not on hold). */
   open: number;
+  /** In On Hold (not completed). */
+  hold: number;
   total: number;
   /** Pushed to QA Backlog in the previous day / week / month. */
   done: number;
@@ -1360,6 +1362,7 @@ function workCounts(
   }
   return {
     open: list.filter(isPending).length,
+    hold: list.filter(isOnHold).length,
     total: list.length,
     done: list.filter((t) => isDonePrev(t, ctx, period)).length,
     overdue: list.filter((t) => isOverdueInPeriod(t, ctx, period)).length,
@@ -1370,18 +1373,27 @@ function workCounts(
   };
 }
 
+/**
+ * Where a project stands on the Projects tile: on hold (every unfinished task is in On Hold),
+ * active (activity in the last SILENT_PROJECT_DAYS days) or silent (none).
+ */
+export type ProjectStatus = 'active' | 'silent' | 'hold';
+
 export interface ProjectWork extends WorkCounts {
   id: number;
-  /** Activity in the last SILENT_PROJECT_DAYS days; silent = open tasks but none. */
+  status: ProjectStatus;
+  /** status === 'active' (kept for older callers). */
   active: boolean;
   /** Who works on it: one row per assignee with open tasks in it, most active this week first. */
   people: (WorkCounts & { id: number })[];
 }
 
 /**
- * Development tab "Projects" (2026-10-13): a fixed set of projects (the caller picks them: active in
- * Bitrix24, owned by the Development or QA department or a PM), each Active (task activity in the
- * last SILENT_PROJECT_DAYS days, from all its tasks, bulk changes left out) or Silent. Open, done,
+ * Development tab "Projects" (2026-10-13): a set of projects (the caller picks them: active in
+ * Bitrix24, owned by the Development or QA department or a PM), each On hold (every unfinished
+ * task in On Hold), Active (task activity in the last SILENT_PROJECT_DAYS days, from all its tasks,
+ * bulk changes left out) or Silent. A finished project (deadline passed, nothing open or on hold)
+ * is left out. Open, done,
  * overdue, spill and the people come from `list` (the tab's scope and filters), so a project with
  * none of them there still counts. Most active this week first, then the earliest deadline.
  */
@@ -1417,13 +1429,28 @@ export function projectWork(
       // Activity and deadline from all the project's tasks; counts from the tab's scope.
       const overall = workCounts(all, ctx, bulk, period);
       const counts = workCounts(l, ctx, bulk, period);
+      // On hold: nothing open and something in On Hold. Otherwise active or silent by activity.
+      const status: ProjectStatus =
+        overall.open === 0 && overall.hold > 0
+          ? 'hold'
+          : !!overall.lastActivity && overall.lastActivity.getTime() >= cut
+            ? 'active'
+            : 'silent';
+      // Finished: the deadline (its last task deadline) has passed and nothing is open or on hold.
+      const finished =
+        overall.open === 0 &&
+        overall.hold === 0 &&
+        !!overall.lastDeadline &&
+        overall.lastDeadline < ctx.now;
+      if (finished) return null;
       return {
         id,
         ...counts,
         activityWeek: overall.activityWeek,
         lastActivity: overall.lastActivity,
         lastDeadline: overall.lastDeadline,
-        active: !!overall.lastActivity && overall.lastActivity.getTime() >= cut,
+        status,
+        active: status === 'active',
         people: [...groupBy(l, (t) => t.responsibleId)]
           .map(([pid, pl]) => ({ id: pid, ...workCounts(pl, ctx, bulk, period) }))
           // Only people with open tasks in it (2026-10-13); the project line keeps every total.
@@ -1436,6 +1463,7 @@ export function projectWork(
           ),
       };
     })
+    .filter((r): r is ProjectWork => r !== null)
     .sort(
       (a, b) =>
         b.activityWeek - a.activityWeek ||
@@ -1449,7 +1477,13 @@ const byDeadline = (a: Date | null, b: Date | null) =>
   a && b ? a.getTime() - b.getTime() : a ? -1 : b ? 1 : 0;
 
 /** The Projects tile: all of them = active + silent. */
+/** The Projects tile: all of them = active + silent + on hold. */
 export function projectWorkSummary(rows: readonly ProjectWork[]) {
-  const active = rows.filter((r) => r.active).length;
-  return { projects: rows.length, active, silent: rows.length - active };
+  const count = (s: ProjectStatus) => rows.filter((r) => r.status === s).length;
+  return {
+    projects: rows.length,
+    active: count('active'),
+    silent: count('silent'),
+    hold: count('hold'),
+  };
 }
