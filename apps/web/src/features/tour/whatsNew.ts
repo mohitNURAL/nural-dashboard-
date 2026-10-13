@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-13-feedback-refresh',
+    date: '2026-10-13',
+    tab: 'feedback',
+    title: 'Feedback updates by itself',
+    steps: [
+      {
+        target: slot('feedback.cards', 'mine'),
+        title: 'Feedback updates by itself',
+        text: 'New feedback and replies now show within 30 seconds, with no need to sign out and in again. Long words and links wrap inside their own card instead of running over the next one.',
+      },
+    ],
+  },
+  {
     id: '2026-10-12-in-hand-by',
     date: '2026-10-12',
     tab: 'kpi',

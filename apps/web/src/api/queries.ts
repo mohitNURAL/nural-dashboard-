@@ -17,13 +17,22 @@ export const API_KEY = 'api';
 export function useApi<T>(
   path: string,
   params: Record<string, string>,
-  { enabled = true }: { enabled?: boolean } = {},
+  {
+    enabled = true,
+    refetchInterval,
+  }: {
+    enabled?: boolean;
+    /** Polls while the page is open, for data no live event announces (e.g. Help feedback). */
+    refetchInterval?: number;
+  } = {},
 ) {
   return useQuery({
     queryKey: [API_KEY, path, params],
     queryFn: ({ signal }) => apiGet<T>(path, params, signal),
     placeholderData: keepPreviousData,
     enabled,
+    refetchInterval,
+    refetchOnWindowFocus: refetchInterval ? true : undefined,
   });
 }
 

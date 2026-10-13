@@ -136,7 +136,7 @@ function Files({ row }: { row: HelpRow }) {
           href={`/api/help/files/${f.id}${f.mime.startsWith('image/') ? '' : '?download'}`}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-[12px] text-primary hover:bg-primary/20"
+          className="inline-flex max-w-full items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-[12px] text-primary hover:bg-primary/20"
         >
           {f.name} <span className="text-text-muted">{kb(f.size)}</span>
         </a>
@@ -178,7 +178,10 @@ function List({ rows }: { rows: HelpRow[] }) {
   return (
     <ul className="max-h-[520px] space-y-2 overflow-y-auto pr-1">
       {rows.map((r) => (
-        <li key={r.id} className="rounded-xl border border-border bg-bg/50 px-3 py-2">
+        <li
+          key={r.id}
+          className="min-w-0 break-words rounded-xl border border-border bg-bg/50 px-3 py-2 [overflow-wrap:anywhere]"
+        >
           <Head r={r} />
           <p className="mt-1 whitespace-pre-wrap text-table text-text">{r.details}</p>
           <Files row={r} />
@@ -258,9 +261,10 @@ function Inbox({ rows, loading }: { rows: HelpRow[]; loading: boolean }) {
       empty={!loading && !shown.length}
       emptyText="Nothing here."
     >
-      <ul className="grid gap-2 lg:grid-cols-2">
+      <ul className="grid grid-cols-1 gap-2 lg:grid-cols-2">
         {shown.map((r) => (
-          <InboxItem key={r.id} r={r} onReview={review} />
+          // Keyed by the reply too, so a reply saved elsewhere replaces the one in the box.
+          <InboxItem key={`${r.id}:${r.adminNote ?? ''}`} r={r} onReview={review} />
         ))}
       </ul>
     </Card>
@@ -270,7 +274,7 @@ function Inbox({ rows, loading }: { rows: HelpRow[]; loading: boolean }) {
 function InboxItem({ r, onReview }: { r: HelpRow; onReview: (r: HelpRow, note: string) => void }) {
   const [note, setNote] = useState(r.adminNote ?? '');
   return (
-    <li className="rounded-xl border border-border bg-bg/50 px-3 py-2">
+    <li className="min-w-0 break-words rounded-xl border border-border bg-bg/50 px-3 py-2 [overflow-wrap:anywhere]">
       <Head r={r} who />
       <p className="mt-1 whitespace-pre-wrap text-table text-text">{r.details}</p>
       <Files row={r} />

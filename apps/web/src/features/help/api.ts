@@ -33,9 +33,19 @@ export const useHelpOptions = () =>
     '/api/help/options',
     {},
   );
-export const useMyFeedback = () => useApi<{ rows: HelpRow[] }>('/api/help/feedback/mine', {});
+/**
+ * New feedback and replies send no live event (the stream carries task changes only), so the
+ * page checks every 30 s while open, and again when its tab comes back into focus.
+ */
+export const FEEDBACK_POLL_MS = 30_000;
+export const useMyFeedback = () =>
+  useApi<{ rows: HelpRow[] }>('/api/help/feedback/mine', {}, { refetchInterval: FEEDBACK_POLL_MS });
 export const useFeedbackInbox = (on: boolean) =>
-  useApi<{ rows: HelpRow[] }>('/api/help/feedback', {}, { enabled: on });
+  useApi<{ rows: HelpRow[] }>(
+    '/api/help/feedback',
+    {},
+    { enabled: on, refetchInterval: FEEDBACK_POLL_MS },
+  );
 
 export const MAX_FILES = 5;
 export const MAX_BYTES = 8 * 1024 * 1024;
