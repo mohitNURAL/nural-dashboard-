@@ -1,6 +1,6 @@
-// Task drawer (DEV-08, SRS 6): the full task, its stage timeline, linked bugs and feedback, and
-// "Open in Bitrix24", in a panel 70% of the screen wide (2026-10-13), centred under the top bar and
-// scrolling inside. The open task id lives in the URL.
+// Task drawer (DEV-08, SRS 6): 480 px right panel with the full task, its stage timeline,
+// linked bugs and feedback, and "Open in Bitrix24". The open task id lives in the URL. (Back on the
+// right on 2026-10-14, at the user's request; it was centred at 70% on 2026-10-13.)
 import { STAGE_COLORS } from '@nural/shared';
 import * as Dialog from '@radix-ui/react-dialog';
 import clsx from 'clsx';
@@ -29,7 +29,7 @@ export function TaskDrawer() {
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-[rgb(12_18_38/0.35)]" />
         <Dialog.Content
-          className="fixed left-1/2 top-[72px] z-50 flex max-h-[calc(100vh-96px)] w-[94vw] -translate-x-1/2 flex-col overflow-hidden rounded-card bg-surface shadow-pop outline-none md:w-[70vw]"
+          className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[480px] flex-col bg-surface shadow-pop outline-none"
           aria-describedby={undefined}
         >
           <header className="flex items-start gap-3 border-b border-border p-4">

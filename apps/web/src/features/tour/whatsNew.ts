@@ -26,7 +26,7 @@ export const WHATS_NEW: WhatsNew[] = [
       {
         target: slot('dev.tiles', 'projects'),
         title: 'Projects',
-        text: 'Projects = every project owned by Development, QA or a PM, as Active (activity in the last 30 days) + Silent (none for 30 days) + Hold (every unfinished task on hold). Finished projects (deadline passed, nothing open) are left out. Click a number for Projects at work, most active this week first, then the earliest deadline. Open a project to see who works on it. The Day / Week / Month switch sets Done (previous period), Overdue (this period) and Spill (previous period). A count opens its tasks, and "Back to Projects at work" brings you back.',
+        text: 'Projects = every project owned by Development, QA or a PM, as Active (open tasks and activity in the last 30 days) + Silent (nothing open, or no activity for 30 days) + Hold (every unfinished task on hold). Click a number for Projects at work, most active this week first, then the earliest deadline. Open a project to see who works on it. The Day / Week / Month switch sets Done (previous period), Overdue (this period) and Spill (previous period). A count opens its tasks, and "Back to Projects at work" brings you back.',
       },
     ],
   },
@@ -47,12 +47,12 @@ export const WHATS_NEW: WhatsNew[] = [
     id: '2026-10-13-focus-70',
     date: '2026-10-13',
     tab: 'dev',
-    title: 'Task view, focus view and lists fit the screen',
+    title: 'Focus view and lists fit the screen',
     steps: [
       {
         target: '[data-group="dev.tiles"]',
-        title: 'Task view, focus view and lists fit the screen',
-        text: 'A task you open, a card you focus and a list that comes to the centre now take 70% of the screen, under the top bar, and scroll inside when they are long. Nothing is cut off at the edges.',
+        title: 'Focus view and lists fit the screen',
+        text: 'A card you focus and a list that comes to the centre now take 70% of the screen, under the top bar, and scroll inside when they are long. A task you open still opens on the right.',
       },
     ],
   },

@@ -1375,7 +1375,8 @@ function workCounts(
 
 /**
  * Where a project stands on the Projects tile: on hold (every unfinished task is in On Hold),
- * active (activity in the last SILENT_PROJECT_DAYS days) or silent (none).
+ * active (open tasks and activity in the last SILENT_PROJECT_DAYS days) or silent (the rest:
+ * nothing open, or no activity).
  */
 export type ProjectStatus = 'active' | 'silent' | 'hold';
 
@@ -1391,9 +1392,8 @@ export interface ProjectWork extends WorkCounts {
 /**
  * Development tab "Projects" (2026-10-13): a set of projects (the caller picks them: active in
  * Bitrix24, owned by the Development or QA department or a PM), each On hold (every unfinished
- * task in On Hold), Active (task activity in the last SILENT_PROJECT_DAYS days, from all its tasks,
- * bulk changes left out) or Silent. A finished project (deadline passed, nothing open or on hold)
- * is left out. Open, done,
+ * task in On Hold), Active (open tasks and activity in the last SILENT_PROJECT_DAYS days, from all
+ * its tasks, bulk changes left out) or Silent (the rest). Every project given is listed. Open, done,
  * overdue, spill and the people come from `list` (the tab's scope and filters), so a project with
  * none of them there still counts. Most active this week first, then the earliest deadline.
  */
@@ -1429,20 +1429,14 @@ export function projectWork(
       // Activity and deadline from all the project's tasks; counts from the tab's scope.
       const overall = workCounts(all, ctx, bulk, period);
       const counts = workCounts(l, ctx, bulk, period);
-      // On hold: nothing open and something in On Hold. Otherwise active or silent by activity.
+      // On hold: nothing open and something in On Hold. Active: open tasks and activity in the
+      // window. Silent: the rest (nothing open, or no activity).
       const status: ProjectStatus =
         overall.open === 0 && overall.hold > 0
           ? 'hold'
-          : !!overall.lastActivity && overall.lastActivity.getTime() >= cut
+          : overall.open > 0 && !!overall.lastActivity && overall.lastActivity.getTime() >= cut
             ? 'active'
             : 'silent';
-      // Finished: the deadline (its last task deadline) has passed and nothing is open or on hold.
-      const finished =
-        overall.open === 0 &&
-        overall.hold === 0 &&
-        !!overall.lastDeadline &&
-        overall.lastDeadline < ctx.now;
-      if (finished) return null;
       return {
         id,
         ...counts,
@@ -1463,7 +1457,6 @@ export function projectWork(
           ),
       };
     })
-    .filter((r): r is ProjectWork => r !== null)
     .sort(
       (a, b) =>
         b.activityWeek - a.activityWeek ||
