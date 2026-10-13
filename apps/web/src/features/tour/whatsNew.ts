@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-13-focus-70',
+    date: '2026-10-13',
+    tab: 'dev',
+    title: 'Task view, focus view and lists fit the screen',
+    steps: [
+      {
+        target: '[data-group="dev.tiles"]',
+        title: 'Task view, focus view and lists fit the screen',
+        text: 'A task you open, a card you focus and a list that comes to the centre now take 70% of the screen, under the top bar, and scroll inside when they are long. Nothing is cut off at the edges.',
+      },
+    ],
+  },
+  {
     id: '2026-10-13-feedback-refresh',
     date: '2026-10-13',
     tab: 'feedback',

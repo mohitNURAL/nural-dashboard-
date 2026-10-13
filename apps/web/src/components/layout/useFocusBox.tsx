@@ -19,6 +19,20 @@ const INTERACTIVE =
 
 const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/** Below the sticky top bar (56 px) with a margin. */
+const TOP = 72;
+const BOTTOM = 24;
+
+/**
+ * Where a centred panel goes (focus view and spotlight): 70% of the screen wide (nearly full
+ * width on a phone), under the top bar, never taller than what is left of the screen.
+ */
+export function focusBox() {
+  const W = window.innerWidth;
+  const width = Math.round(W * (W < 768 ? 0.94 : 0.7));
+  return { width, top: TOP, maxHeight: window.innerHeight - TOP - BOTTOM };
+}
+
 export function useFocusBox<T extends HTMLElement>() {
   const ref = useRef<T>(null);
   const [focused, setFocused] = useState(false);
@@ -82,15 +96,16 @@ export function useFocusBox<T extends HTMLElement>() {
     open();
   };
 
-  const width = Math.min(1100, Math.round(window.innerWidth * 0.92));
+  // 70% of the screen, centred under the top bar, scrolling inside when taller than the screen.
+  const { width, top, maxHeight } = focusBox();
   const style: CSSProperties | undefined = focused
     ? {
         position: 'fixed',
         zIndex: 50,
-        top: '5vh',
+        top,
         left: Math.round((window.innerWidth - width) / 2),
         width,
-        maxHeight: '90vh',
+        maxHeight,
         overflow: 'auto',
         boxShadow: '0 24px 64px rgba(0, 0, 0, 0.35)',
       }

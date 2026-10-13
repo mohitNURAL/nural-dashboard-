@@ -5,6 +5,8 @@
 // The list keeps living where it is (sorting, paging, editing work as usual); only its position
 // changes while it is in the spotlight, like the focus view (layout/useFocusBox.tsx).
 
+import { focusBox } from '../layout/useFocusBox';
+
 /** The last click on the page, so a drill-down knows which data point started it. */
 let last: { el: Element; at: number } | null = null;
 
@@ -106,9 +108,9 @@ export function spotlight(panel: HTMLElement | null, opts: { onClose?: () => voi
     const W = window.innerWidth;
     const H = window.innerHeight;
     const a = anchor?.isConnected ? anchor.getBoundingClientRect() : null;
-    const width = Math.min(1100, Math.round(W * 0.94));
+    const { width, top: underBar } = focusBox();
     const below = a && a.bottom > 0 && a.top < H ? a.bottom + PAD + GAP : 0;
-    const top = below && H - below >= H * 0.55 ? below : TOP_BAR + 12;
+    const top = below && H - below >= H * 0.55 ? below : underBar;
     Object.assign(panel.style, {
       position: 'fixed',
       zIndex: '46',
