@@ -1342,12 +1342,21 @@ export interface WorkCounts {
   done: number;
   /** Overdue, with the deadline in the current day / week / month. */
   overdue: number;
+  /** Overdue now, whenever the deadline was (2026-10-14; does not follow the period). */
+  overdueAll: number;
   /** Due in the previous day / week / month, not completed by its end. */
   spill: number;
   /** The latest task deadline (the project's deadline on a project row). */
   lastDeadline: Date | null;
   /** Of open, done, overdue and spill: how many are issues (bug or feedback); the rest are dev tasks. */
-  issues: { open: number; done: number; overdue: number; spill: number; noDeadline: number };
+  issues: {
+    open: number;
+    done: number;
+    overdue: number;
+    overdueAll: number;
+    spill: number;
+    noDeadline: number;
+  };
   /** Tasks touched (changed or moved) in the last ACTIVITY_DAYS days, bulk changes left out. */
   activityWeek: number;
   lastActivity: Date | null;
@@ -1380,11 +1389,13 @@ function workCounts(
       open: issueList.filter(isPending).length,
       done: issueList.filter((t) => isDonePrev(t, ctx, period)).length,
       overdue: issueList.filter((t) => isOverdueInPeriod(t, ctx, period)).length,
+      overdueAll: issueList.filter((t) => isOverdue(t, ctx)).length,
       spill: issueList.filter((t) => isSpill(t, ctx, period)).length,
     },
     total: list.length,
     done: list.filter((t) => isDonePrev(t, ctx, period)).length,
     overdue: list.filter((t) => isOverdueInPeriod(t, ctx, period)).length,
+    overdueAll: list.filter((t) => isOverdue(t, ctx)).length,
     spill: list.filter((t) => isSpill(t, ctx, period)).length,
     lastDeadline,
     activityWeek,

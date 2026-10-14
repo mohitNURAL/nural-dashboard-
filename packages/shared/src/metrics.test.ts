@@ -913,6 +913,12 @@ describe('projects at work', () => {
     ]);
     const p1 = rows.find((r) => r.id === 1)!;
     expect(p1).toMatchObject({ open: 3, total: 3, overdue: 0, spill: 1, done: 0 });
+    // Total overdue: past its deadline whenever that was (yesterday's task is not "overdue today").
+    expect(p1.overdueAll).toBe(1);
+    expect(p1.people.map((p) => [p.id, p.overdueAll])).toEqual([
+      [5, 1],
+      [6, 0],
+    ]);
     expect(p1.lastDeadline).toEqual(at('2026-11-02'));
     expect(p1.people.map((p) => [p.id, p.open, p.spill])).toEqual([
       [5, 2, 1],
@@ -950,6 +956,20 @@ describe('projects at work', () => {
     // Activity comes from all the project's tasks, even ones outside the tab's scope.
     const scoped = projectWork([], ctx, 'day', { projectIds: [2], allTasks: list });
     expect(scoped[0]).toMatchObject({ id: 2, active: true, open: 0, activityWeek: 2 });
+  });
+  it('total overdue ignores the period and leaves out on hold and completed tasks', () => {
+    const list = [
+      task({ groupId: 3, deadline: at('2026-08-15') }), // overdue for weeks
+      task({ groupId: 3, deadline: at('2026-10-10', '09:00'), tags: ['bug'] }), // overdue today
+      task({ groupId: 3, deadline: at('2026-09-01'), stage: 'On Hold', stageTitle: 'On Hold' }),
+      task({ groupId: 3, deadline: at('2026-09-01'), stage: 'LIVE', stageTitle: 'LIVE' }),
+      task({ groupId: 3, deadline: at('2026-10-20') }), // not due yet
+    ];
+    for (const period of ['day', 'week', 'month'] as const) {
+      const [row] = projectWork(list, ctx, period, { projectIds: [3] });
+      expect(row).toMatchObject({ overdueAll: 2, issues: { overdueAll: 1 } });
+    }
+    expect(projectWork(list, ctx, 'day', { projectIds: [3] })[0]!.overdue).toBe(1);
   });
   it('on hold when every unfinished task is on hold; nothing open is silent; all are listed', () => {
     const list = [

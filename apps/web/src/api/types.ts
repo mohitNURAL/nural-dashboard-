@@ -124,12 +124,21 @@ export interface WorkCounts {
   /** Open with no deadline set. */
   noDeadline: number;
   /** Of open, done, overdue and spill: the issues (bug or feedback); the rest are dev tasks. */
-  issues: { open: number; done: number; overdue: number; spill: number; noDeadline: number };
+  issues: {
+    open: number;
+    done: number;
+    overdue: number;
+    overdueAll: number;
+    spill: number;
+    noDeadline: number;
+  };
   total: number;
   /** Done in the previous day / week / month (the popup's switch). */
   done: number;
   /** Overdue, deadline in the current day / week / month. */
   overdue: number;
+  /** Overdue now, whenever the deadline was (does not follow the switch). */
+  overdueAll: number;
   /** Due in the previous day / week / month, not done by its end. */
   spill: number;
   lastDeadline: string | null;

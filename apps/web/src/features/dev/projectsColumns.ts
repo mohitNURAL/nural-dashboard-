@@ -7,7 +7,7 @@ import type { ProjectPeriod } from './projectsPopup';
 
 export const PROJECTS_TABLE_ID = 'dev-projects-at-work';
 
-export type CountKey = 'open' | 'noDeadline' | 'done' | 'overdue' | 'spill';
+export type CountKey = 'open' | 'noDeadline' | 'done' | 'overdue' | 'overdueAll' | 'spill';
 export type ProjectColumnId = 'activity' | 'deadline' | CountKey;
 
 export interface ProjectColumn {
@@ -27,6 +27,7 @@ export const PROJECT_COLUMN_IDS: ProjectColumnId[] = [
   'noDeadline',
   'done',
   'overdue',
+  'overdueAll',
   'spill',
 ];
 
@@ -70,6 +71,13 @@ export function projectColumns(p: ProjectPeriod): Record<ProjectColumnId, Projec
       info: `Pending, not on hold, the deadline has passed and it fell ${now} (IST).`,
       preset: 'overduePeriod',
       period: true,
+      tone: 'bad',
+    },
+    overdueAll: {
+      id: 'overdueAll',
+      label: 'Total overdue',
+      info: 'Every pending task (not on hold) whose deadline has passed, whenever it was. It does not follow the Day / Week / Month switch. Hover a count for dev tasks and issues; click it for the tasks.',
+      preset: 'overdue',
       tone: 'bad',
     },
     spill: {
