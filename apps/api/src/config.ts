@@ -48,7 +48,7 @@ const schema = z
     MS_CLIENT_ID: optionalString,
     MS_CLIENT_SECRET: optionalString,
     MAIL_FROM: optionalString,
-    // Slack bot (chat:write, users:read.email, im:write, channels:read).
+    // Slack bot (chat:write, users:read, users:read.email, im:write, channels:read).
     SLACK_BOT_TOKEN: optionalString,
     // NFR-9 working hours for the "no webhook for 2 working hours" alert, in APP_TIMEZONE.
     WORK_DAYS: z.string().default('1,2,3,4,5,6'),

@@ -9,7 +9,10 @@ import { SortableGroup } from '../../components/layout/SortableGroup';
 import { StatTile } from '../../components/StatTile';
 import { IconPlug } from '../../components/ui/icons';
 import { PageHead } from '../../components/ui/PageHead';
-import { useStatus } from './api';
+import { useQueryClient } from '@tanstack/react-query';
+import { API_KEY } from '../../api/queries';
+import { useDailyChannel } from '../daily/api';
+import { useSlackChannels, useStatus } from './api';
 
 function Pill({ on, children }: { on: boolean; children: ReactNode }) {
   return (
@@ -63,6 +66,77 @@ function TestButton({ channel, disabled }: { channel: 'mail' | 'slack'; disabled
     >
       {busy ? 'Sending…' : 'Send a test to me'}
     </button>
+  );
+}
+
+/**
+ * The daily work update group (SRS 23): where everyone's Daily update plan and wrap-up are posted.
+ * A channel from the list (public ones the bot can see) or a pasted channel ID (private ones).
+ */
+function DailyChannel({ connected }: { connected: boolean }) {
+  const { data } = useDailyChannel();
+  const { data: list } = useSlackChannels(connected);
+  const qc = useQueryClient();
+  const [value, setValue] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const channels = list?.channels ?? [];
+  const saved = data?.channel ?? '';
+  const shown = (id: string) => {
+    const c = channels.find((x) => x.id === id);
+    return c ? `#${c.name}` : id;
+  };
+  const text = value ?? shown(saved);
+  const save = async () => {
+    const raw = text.trim();
+    // A #name from the list is saved as its ID, so a renamed channel keeps working.
+    const id = channels.find((c) => `#${c.name}` === raw || c.name === raw)?.id ?? raw;
+    setBusy(true);
+    try {
+      await apiPost('/api/integrations/daily-channel', { channel: id || null }, 'PUT');
+      await qc.invalidateQueries({ queryKey: [API_KEY] });
+      setValue(null);
+      toast.success(id ? 'Daily update channel saved' : 'Daily update channel cleared', {
+        description: id ? 'Invite the Nural Pulse app there: /invite @Nural Pulse' : undefined,
+      });
+    } catch (e) {
+      toast.error('Not saved', { description: e instanceof Error ? e.message : '' });
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="mt-3 rounded-card border border-border p-3" data-tour="daily-channel">
+      <p className="font-heading text-button text-primary-dark">Daily update channel</p>
+      <p className="pb-2 text-table text-text-muted">
+        Everyone's morning plan and evening wrap-up are posted here (My work › Daily update).
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <input
+          value={text}
+          onChange={(e) => setValue(e.target.value)}
+          list="daily-channels"
+          placeholder="#daily-work-update or channel ID"
+          aria-label="Daily update channel"
+          className="h-8 min-w-[14rem] flex-1 rounded-control border border-border bg-surface px-3 text-table text-text outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+        />
+        <datalist id="daily-channels">
+          {channels.map((c) => (
+            <option key={c.id} value={`#${c.name}`} />
+          ))}
+        </datalist>
+        <button
+          type="button"
+          disabled={busy || text.trim() === shown(saved)}
+          onClick={() => void save()}
+          className="rounded-control bg-primary px-3 py-1.5 font-heading text-button text-white hover:brightness-110 disabled:opacity-40"
+        >
+          {busy ? 'Saving…' : 'Save'}
+        </button>
+      </div>
+      <p className="pt-1.5 text-[12px] text-text-muted">
+        A private channel: paste its ID (in Slack: channel name › About, at the bottom).
+      </p>
+    </div>
   );
 }
 
@@ -192,17 +266,19 @@ export function ConnectionsPage() {
                 <div className="mt-3">
                   <TestButton channel="slack" disabled={!data?.slack.connected} />
                 </div>
+                <DailyChannel connected={!!data?.slack.connected} />
                 <Steps
                   items={[
                     <>At api.slack.com create an app for your workspace.</>,
                     <>
-                      Add the bot scopes {code('chat:write')}, {code('users:read.email')},{' '}
-                      {code('im:write')} and {code('channels:read')}, and install it.
+                      Add the bot scopes {code('chat:write')}, {code('users:read')},{' '}
+                      {code('users:read.email')}, {code('im:write')} and {code('channels:read')}, and
+                      install it.
                     </>,
                     <>Invite the app to every channel that should get reports.</>,
                     <>
-                      Put the Bot User OAuth Token in the server's {code('.env.prod')} as{' '}
-                      {code('SLACK_BOT_TOKEN')} and redeploy.
+                      Put the Bot User OAuth Token in the server's {code('.env')} ({code('.env.prod')}{' '}
+                      with Docker) as {code('SLACK_BOT_TOKEN')} and restart the API.
                     </>,
                   ]}
                 />

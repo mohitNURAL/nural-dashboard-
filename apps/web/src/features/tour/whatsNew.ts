@@ -18,6 +18,29 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-14-daily-update',
+    date: '2026-10-14',
+    tab: 'daily',
+    title: 'Daily update: plan your day, wrap it up, post to Slack',
+    steps: [
+      {
+        target: '[data-tour="daily-plan"]',
+        title: 'Plan your day',
+        text: 'New under My work. Each working morning a window shows your overdue and due-today tasks: keep, remove or add, write a note, and post it to the daily work update group on Slack.',
+      },
+      {
+        target: '[data-tour="daily-wrap"]',
+        title: 'Wrap up your day',
+        text: 'In the evening, or when you sign out, mark each planned task Done or WIP and add anything else you did. Done completes the task in Bitrix24; other work becomes a Bitrix24 task assigned to you. The wrap-up goes to the same Slack thread.',
+      },
+      {
+        target: '[data-tour="dock-daily"]',
+        title: 'Any time from the dock',
+        text: 'Open the Daily update from this icon whenever you like.',
+      },
+    ],
+  },
+  {
     id: '2026-10-14-one-table-look',
     date: '2026-10-14',
     tab: 'dev',

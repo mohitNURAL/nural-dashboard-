@@ -381,3 +381,35 @@ export const workflowVersions = pgTable('workflow_versions', {
   byUser: integer('by_user').notNull(),
   definition: jsonb('definition').notNull(),
 });
+
+/**
+ * Daily update (2026-10-14, SRS 23): each person's morning plan and evening wrap-up, one row per
+ * person and day (YYYY-MM-DD in APP_TIMEZONE), with where it was posted in Slack (the plan's
+ * message; the wrap-up replies in its thread). Each person reads and writes only their own rows.
+ */
+export const dailyUpdates = pgTable(
+  'daily_updates',
+  {
+    id: serial('id').primaryKey(),
+    userId: integer('user_id').notNull(),
+    day: text('day').notNull(),
+    /** { items: [{ taskId, title, project, why, daysOverdue? }], note } */
+    plan: jsonb('plan'),
+    plannedAt: tz('planned_at'),
+    /** { items: [{ taskId, title, project, state, extra? }], note } */
+    wrap: jsonb('wrap'),
+    wrappedAt: tz('wrapped_at'),
+    slackChannel: text('slack_channel'),
+    slackTs: text('slack_ts'),
+    updatedAt: tz('updated_at').notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('daily_updates_user_day').on(t.userId, t.day)],
+);
+
+/** Settings admins change in the dashboard, by key (e.g. dailyUpdate = { channel }). */
+export const appSettings = pgTable('app_settings', {
+  key: text('key').primaryKey(),
+  value: jsonb('value').notNull(),
+  updatedBy: integer('updated_by').notNull(),
+  updatedAt: tz('updated_at').notNull().defaultNow(),
+});

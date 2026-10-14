@@ -45,6 +45,7 @@ export const TAB_LABEL: Record<Tab, string> = {
   finance: 'Cost to company',
   workflow: 'Workflow',
   projecttypes: 'Project types',
+  daily: 'Daily update',
 };
 
 /** Shown once per sign-in, before the first tab tour: the top bar, the same on every tab. */
@@ -360,6 +361,23 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
       target: slot('projecttypes.cards', 'type-support'),
       title: 'Projects by type',
       text: 'Each type with its rule and its projects. Every project shows its own columns and the stage each counts as; a column the workflow does not know is outlined in red. Admins set a project’s type by hand, map an unknown column to a stage, and edit the types.',
+    },
+  ],
+  daily: [
+    {
+      target: tour('daily-plan'),
+      title: 'Plan your day',
+      text: 'Each working morning a window lists your overdue and due-today tasks. Keep, remove or add your own tasks, write a note and post it: it goes to the daily work update group on Slack with your name.',
+    },
+    {
+      target: tour('daily-wrap'),
+      title: 'Wrap up your day',
+      text: 'From the end of the working day, or when you sign out, your plan comes back with each task Done or WIP. Marking one Done completes it in Bitrix24; work outside the plan becomes a Bitrix24 task assigned to you. Then it goes to the same Slack thread.',
+    },
+    {
+      target: slot('daily.cards', 'history'),
+      title: 'My last 30 days',
+      text: 'Each day you posted: tasks planned, done, WIP and outside the plan. Open the Daily update any time from its icon in the dock on the right.',
     },
   ],
   feedback: [

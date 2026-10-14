@@ -309,7 +309,11 @@ function explain(e: unknown): { status: number; message: string } {
   return { status: 502, message: 'Bitrix24 could not be reached. Try again.' };
 }
 
-export function actionRoutes(app: FastifyInstance, getDataset: RequestDataset, deps: ActionDeps) {
+/**
+ * Task writes as the signed-in person, shared by the task actions and the Daily update (SRS 23):
+ * their token, the Bitrix24 calls through limiter.userCall, the task_actions row and the re-sync.
+ */
+export function taskWriter(deps: ActionDeps) {
   /** May change every field (the edit right), else stage, status and tags only. */
   const isFull = async (req: FastifyRequest) =>
     ((await deps.viewer?.(req)) ?? { editAll: true }).editAll;
@@ -346,6 +350,52 @@ export function actionRoutes(app: FastifyInstance, getDataset: RequestDataset, d
     await deps.enqueue?.({ taskId, event: 'ONTASKUPDATE' }).catch(() => undefined);
     return { ok: true };
   }
+
+  /**
+   * A new task for the person themselves (Daily update wrap-up, SRS 23): only a title, the person
+   * as assignee and a project (bitrix/methods.ts CREATE_FIELDS). Recorded as 'create'.
+   */
+  async function create(
+    who: { user: { userId: number }; token: string },
+    task: { title: string; groupId: number },
+  ): Promise<{ ok: true; taskId: number } | { ok: false; status: number; message: string }> {
+    const fields = {
+      TITLE: task.title,
+      RESPONSIBLE_ID: who.user.userId,
+      ...(task.groupId > 0 ? { GROUP_ID: task.groupId } : {}),
+    };
+    const a = {
+      userId: who.user.userId,
+      action: 'create',
+      fromValue: null,
+      toValue: `${task.title} (project ${task.groupId || 'none'})`,
+    };
+    try {
+      const res = await deps.userCall!<{ task?: { id?: string | number } }>(
+        'tasks.task.add',
+        { fields },
+        who.token,
+      );
+      const taskId = Number(res.result.task?.id);
+      if (!taskId) throw new Error('Bitrix24 did not return the new task.');
+      await deps.record?.({ ...a, taskId, ok: true, error: null }).catch(() => undefined);
+      await deps.enqueue?.({ taskId, event: 'ONTASKADD' }).catch(() => undefined);
+      return { ok: true, taskId };
+    } catch (e) {
+      const { status, message } =
+        e instanceof Error && !(e instanceof BitrixError)
+          ? { status: 502, message: e.message }
+          : explain(e);
+      await deps.record?.({ ...a, taskId: 0, ok: false, error: message }).catch(() => undefined);
+      return { ok: false, status, message };
+    }
+  }
+
+  return { isFull, actor, run, create };
+}
+
+export function actionRoutes(app: FastifyInstance, getDataset: RequestDataset, deps: ActionDeps) {
+  const { isFull, actor, run } = taskWriter(deps);
 
   /** One edit on one task (the cells of the grids and the task view). */
   async function single(req: FastifyRequest, reply: FastifyReply, edit: Edit) {

@@ -20,6 +20,8 @@ import { FinancePage } from './features/finance/FinancePage';
 import { DocsPage } from './features/help/DocsPage';
 import { FaqPage } from './features/help/FaqPage';
 import { FeedbackNudge } from './features/help/FeedbackNudge';
+import { DailyPrompt } from './features/daily/DailyPrompt';
+import { DailyUpdatePage } from './features/daily/DailyUpdatePage';
 import { FeedbackPage } from './features/help/FeedbackPage';
 import { InsightsPage } from './features/insights/InsightsPage';
 import { isDashboardTab } from './features/filters/toParams';
@@ -97,6 +99,8 @@ export default function App() {
             <FinancePage />
           ) : tab === 'access' ? (
             <AccessPage />
+          ) : tab === 'daily' ? (
+            <DailyUpdatePage />
           ) : (
             <QaTab />
           )}
@@ -106,6 +110,7 @@ export default function App() {
       <TaskDrawer />
       {me && <ActionDock tourable onFeedback={() => setTab('feedback')} />}
       {me && <FeedbackNudge onGo={setTab} />}
+      {me && <DailyPrompt />}
     </div>
   );
 }

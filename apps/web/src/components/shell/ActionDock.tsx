@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { useMe } from '../../api/me';
 import { usePrefs, useSavePrefs } from '../../api/prefs';
 import { GUIDE_SET_LABEL, guideSet } from './guideSet';
+import { openDailyNow } from '../../features/daily/store';
 import { useTourRequest } from '../../features/tour/useGuidedTour';
 import { voiceAvailable } from '../../features/tour/voice';
 import { useCustomisable } from '../layout/customisable';
@@ -15,6 +16,7 @@ import { CustomisePanel } from '../layout/CustomiseView';
 import {
   IconBook,
   IconCompass,
+  IconDaily,
   IconDownload,
   IconFeedback,
   IconExcel,
@@ -195,6 +197,16 @@ export function ActionDock({
         </Popover.Portal>
       </Popover.Root>
       {ready && <ExportPage />}
+      {me && me.dailyUpdate !== false && me.auth !== 'off' && (
+        <DockButton
+          label="Daily update"
+          hint="Plan your day or wrap it up, posted to the team on Slack"
+          onClick={() => void openDailyNow()}
+          data-tour="dock-daily"
+        >
+          <IconDaily />
+        </DockButton>
+      )}
       {onFeedback && me?.helpFeedback !== false && (
         <DockButton
           label="Feedback"

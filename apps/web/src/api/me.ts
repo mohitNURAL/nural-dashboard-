@@ -38,6 +38,8 @@ export interface Me {
   helpInbox?: boolean;
   helpDocs?: boolean;
   helpFaq?: boolean;
+  /** Daily update: morning plan and evening wrap-up to Slack (SRS 23). */
+  dailyUpdate?: boolean;
   /** Department (dev, qa, support, other) and Bitrix24 designation, for the guided tour. */
   dept?: 'dev' | 'qa' | 'support' | 'other';
   position?: string | null;

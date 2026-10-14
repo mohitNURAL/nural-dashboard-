@@ -22,7 +22,8 @@ export type PageRight =
   | 'mailing'
   | 'helpFeedback'
   | 'helpDocs'
-  | 'helpFaq';
+  | 'helpFaq'
+  | 'dailyUpdate';
 
 export type ExtraRight = 'scope' | 'edit' | 'inbox' | 'helpInbox';
 
@@ -87,6 +88,17 @@ export const MODULES: ModuleDef[] = [
             values: ['Allowed', 'Not allowed'],
           },
         ],
+      },
+    ],
+  },
+  {
+    label: 'My work',
+    pages: [
+      {
+        id: 'daily',
+        label: 'Daily update',
+        hint: 'Plan the day, wrap it up, post to Slack',
+        right: 'dailyUpdate',
       },
     ],
   },

@@ -62,6 +62,8 @@ export interface Viewer {
   helpInbox: boolean;
   helpDocs: boolean;
   helpFaq: boolean;
+  /** Daily update: morning plan and evening wrap-up to Slack (SRS 23). */
+  dailyUpdate: boolean;
 }
 
 const EMPTY: RolesConfig = { admins: [], pms: [], teamLeads: [], productOwners: [] };
@@ -143,6 +145,7 @@ export const LOCAL_VIEWER: Viewer = {
   helpInbox: true,
   helpDocs: true,
   helpFaq: true,
+  dailyUpdate: true,
 };
 
 /** What a signed-in person may do; `authOn` false (local copy) means everything. */
@@ -179,6 +182,7 @@ export function viewerOf(
     helpInbox: rights.helpInbox,
     helpDocs: rights.helpDocs,
     helpFaq: rights.helpFaq,
+    dailyUpdate: rights.dailyUpdate,
   };
 }
 

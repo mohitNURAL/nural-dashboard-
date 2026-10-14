@@ -51,6 +51,24 @@ describe('createRawCaller', () => {
     const fetch = reply(200, { result: true });
     const call = createRawCaller({ baseUrl: BASE, fetch });
     await expect(call('tasks.task.update', { taskId: 1 })).rejects.toThrow(/read-only/);
+    await expect(call('tasks.task.add', { fields: { TITLE: 'x' } })).rejects.toThrow(/read-only/);
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('creates a task as the person only with a title, themselves and a project', async () => {
+    const fetch = reply(200, { result: { task: { id: '9' } } });
+    const call = createRawCaller({ baseUrl: BASE, mode: 'userAction', fetch });
+    const ok = { TITLE: 'Fixed the login page', RESPONSIBLE_ID: 7, GROUP_ID: 12 };
+    await expect(call('tasks.task.add', { fields: ok, auth: 't' })).resolves.toBeTruthy();
+    await expect(
+      call('tasks.task.add', { fields: { ...ok, DESCRIPTION: 'x' }, auth: 't' }),
+    ).rejects.toThrow(/allowed set/);
+    await expect(
+      call('tasks.task.add', { fields: { TITLE: 'No one' }, auth: 't' }),
+    ).rejects.toThrow(/allowed set/);
+    await expect(call('tasks.task.delete', { taskId: 1, auth: 't' })).rejects.toThrow(
+      /not an allowed/,
+    );
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 });

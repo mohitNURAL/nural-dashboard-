@@ -217,7 +217,9 @@ export async function runReport(
       };
       if (!deps.slack.connected) await skip(claim, 'Slack is not connected.');
       else {
-        await send(claim, () => deps.slack.toChannel(channel, renderSlack(data, meta)));
+        await send(claim, async () => {
+          await deps.slack.toChannel(channel, renderSlack(data, meta));
+        });
         if (deps.slackPauseMs) await sleep(deps.slackPauseMs);
       }
     }

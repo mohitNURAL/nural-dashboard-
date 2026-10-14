@@ -10,3 +10,4 @@ export * from './insights';
 export * from './reports';
 export * from './modules';
 export * from './workflow';
+export * from './daily';

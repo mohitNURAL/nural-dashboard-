@@ -1,6 +1,7 @@
 // Slack bot (SRS 19): direct messages to people (found by their work email) and posts to channels.
-// Needs a bot token (SLACK_BOT_TOKEN) with chat:write, users:read.email, im:write and
-// channels:read. The token stays in the server's environment and is never logged.
+// Needs a bot token (SLACK_BOT_TOKEN) with chat:write, users:read, users:read.email,
+// im:write and channels:read (Slack requires users:read with users:read.email). The token stays
+// in the server's environment and is never logged.
 
 export interface SlackMessage {
   text: string;
@@ -12,8 +13,25 @@ export interface Slack {
   /** The workspace's name, once checked. */
   team: () => Promise<string | null>;
   toPerson: (email: string, m: SlackMessage) => Promise<void>;
-  toChannel: (channel: string, m: SlackMessage) => Promise<void>;
+  /**
+   * Posts in a channel; with `threadTs`, as a reply in that thread, also shown in the channel.
+   * Returns where it landed (the channel ID and the message's ts), for a later update or reply.
+   */
+  toChannel: (
+    channel: string,
+    m: SlackMessage,
+    opts?: { threadTs?: string },
+  ) => Promise<SlackPosted | void>;
+  /** Changes a message posted earlier (a Daily update plan posted again the same day). */
+  update: (channel: string, ts: string, m: SlackMessage) => Promise<void>;
+  /** "<@U123>" for the person with this work email, so Slack notifies them; null if unknown. */
+  mention: (email: string) => Promise<string | null>;
   channels: () => Promise<{ id: string; name: string }[]>;
+}
+
+export interface SlackPosted {
+  channel: string;
+  ts: string;
 }
 
 export class SlackError extends Error {}
@@ -72,12 +90,23 @@ export function slackBot(token: string | undefined, fetchImpl: typeof fetch = fe
         blocks: m.blocks,
       });
     },
-    async toChannel(channel, m) {
-      await api('chat.postMessage', {
+    async toChannel(channel, m, opts) {
+      const r = await api<{ channel: string; ts: string }>('chat.postMessage', {
         channel: channel.replace(/^#/, ''),
         text: m.text,
         blocks: m.blocks,
+        ...(opts?.threadTs ? { thread_ts: opts.threadTs, reply_broadcast: true } : {}),
       });
+      return { channel: r.channel, ts: r.ts };
+    },
+    async update(channel, ts, m) {
+      await api('chat.update', { channel, ts, text: m.text, blocks: m.blocks });
+    },
+    async mention(email) {
+      if (!connected) return null;
+      return userId(email)
+        .then((id) => `<@${id}>`)
+        .catch(() => null);
     },
     async channels() {
       const r = await api<{ channels: { id: string; name: string }[] }>(

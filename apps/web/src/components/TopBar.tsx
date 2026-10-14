@@ -3,6 +3,7 @@
 import * as Popover from '@radix-ui/react-popover';
 import clsx from 'clsx';
 import { ROLE_LABEL, useMe } from '../api/me';
+import { signOutAfterWrap } from '../features/daily/store';
 import { initials } from '../features/dev/format';
 import { useTheme, type ThemeChoice } from '../store/theme';
 import type { Tab } from '../features/filters/toParams';
@@ -209,7 +210,10 @@ function UserMenu() {
             <div className="border-t border-border p-3">
               <button
                 type="button"
-                onClick={() => void signOut()}
+                // The day's wrap-up first when the plan was posted and the day is not wrapped up.
+                onClick={() =>
+                  void signOutAfterWrap(() => void signOut(), me.dailyUpdate !== false)
+                }
                 className="flex h-9 w-full items-center justify-center gap-2 rounded-control border border-border font-heading text-button text-bad hover:border-bad hover:bg-bad-soft/20"
               >
                 <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>

@@ -28,6 +28,13 @@ export const IconGrid = (p: P) => (
     <rect x="11" y="11" width="6" height="6" rx="1.5" />
   </Svg>
 );
+/** Daily update: a clipboard with ticks (plan the day, wrap it up). */
+export const IconDaily = (p: P) => (
+  <Svg {...p}>
+    <rect x="4" y="3.5" width="12" height="14" rx="2" />
+    <path d="M7.5 3.5V2.8c0-.4.3-.8.8-.8h3.4c.5 0 .8.4.8.8v.7M7 8.5l1.2 1.2L10.5 7.4M7 13l1.2 1.2 2.3-2.3M12.2 8.6h1.3M12.2 13.1h1.3" />
+  </Svg>
+);
 export const IconHelp = (p: P) => (
   <Svg {...p}>
     <circle cx="10" cy="10" r="7.5" />

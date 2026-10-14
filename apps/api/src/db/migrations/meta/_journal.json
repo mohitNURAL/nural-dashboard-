@@ -85,6 +85,13 @@
       "when": 1791768728872,
       "tag": "0011_same_archangel",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791983572245,
+      "tag": "0012_daily_updates",
+      "breakpoints": true
     }
   ]
 }

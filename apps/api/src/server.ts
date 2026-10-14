@@ -14,7 +14,15 @@ import { slackBot, type Slack } from './integrations/slack';
 import { runReport, type EngineDeps } from './reports/engine';
 import { startReportScheduler, type ReportScheduler } from './reports/schedule';
 import { memoryReportStore, type ReportStore } from './reports/store';
-import { actionRoutes, type ActionDeps } from './routes/actions';
+import { actionRoutes, taskWriter, type ActionDeps } from './routes/actions';
+import {
+  dailyRoutes,
+  memoryDailyStore,
+  memorySettingsStore,
+  type DailyStore,
+  type SettingsStore,
+} from './routes/daily';
+import { kpiConfig } from './data/kpiConfig';
 import { feedbackRoutes, memoryFeedbackStore, type FeedbackStore } from './routes/feedback';
 import { helpRoutes, memoryHelpStore, type HelpStore } from './routes/help';
 import {
@@ -86,6 +94,8 @@ export interface ServerOptions {
   people?: Pick<PeopleDeps, 'peopleCall' | 'tokens' | 'record' | 'refreshDirectory'>;
   /** Task description for the drawer, read live from Bitrix24 (not stored by the sync). */
   describe?: (taskId: number) => Promise<string | null>;
+  /** Daily update (SRS 23): plans and wrap-ups, and the channel setting; in-memory by default. */
+  daily?: { store?: DailyStore; settings?: SettingsStore };
 }
 
 export async function buildServer({
@@ -106,6 +116,7 @@ export async function buildServer({
   prefs,
   access,
   reports,
+  daily,
 }: ServerOptions = {}) {
   const app = Fastify({
     logger: logger && {
@@ -232,6 +243,7 @@ export async function buildServer({
         helpInbox: v.helpInbox,
         helpDocs: v.helpDocs,
         helpFaq: v.helpFaq,
+        dailyUpdate: v.dailyUpdate,
         dept: d.kpiDept?.get(v.userId) ?? 'other',
         position: d.users.get(v.userId)?.workPosition ?? null,
       };
@@ -260,6 +272,7 @@ export async function buildServer({
     // The people list also fills the person pickers of Mailing and Access permissions.
     ['/api/employees', (v) => v.people || v.mailing || v.admin, 'the People directory'],
     ['/api/reports', (v) => v.mailing, 'Mailing'],
+    ['/api/daily', (v) => v.dailyUpdate, 'Daily update'],
     ['/api/integrations/test', (v) => v.connections, 'Connections'],
     ['/api/integrations', (v) => v.connections || v.mailing, 'Integration'],
   ];
@@ -370,6 +383,24 @@ export async function buildServer({
     app.addHook('onClose', async () => scheduler.close());
   }
   reportRoutes(app, scoping.viewer, { engine, store: reportStore, scheduler });
+  // Daily update: the KPI calendar's holidays with the company's working days (WORK_DAYS).
+  const cal = kpiConfig().calendar;
+  dailyRoutes(app, scoping.dataset, scoping.viewer, {
+    store: daily?.store ?? memoryDailyStore(),
+    settings: daily?.settings ?? memorySettingsStore(),
+    slack: engine.slack,
+    writer: taskWriter({ now, ...actions, userOf: sessionUserOf, viewer: scoping.viewer }),
+    tz: config.APP_TIMEZONE,
+    calendar: {
+      ...cal,
+      days: new Set(
+        config.WORK_DAYS.split(',')
+          .map((d) => Number(d.trim()))
+          .filter(Boolean),
+      ),
+    },
+    now,
+  });
   employeeRoutes(app, scoping.dataset, scoping.viewer, {
     ...opts,
     activity: () => prefStore.activity(),
@@ -439,6 +470,7 @@ async function main() {
     workflow: await (await import('./routes/workflow')).dbWorkflowStore(),
     prefs: await (await import('./routes/prefs')).dbPrefsStore(),
     access: await (await import('./routes/access')).dbAccessStore(),
+    daily: await (await import('./routes/daily')).dbDailyStores(),
     reports: {
       store: await (await import('./reports/store')).dbReportStore(),
       // Only where the worker runs (the server): a laptop copy never sends reports.

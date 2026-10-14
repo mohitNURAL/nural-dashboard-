@@ -108,6 +108,8 @@ function senders(connected = true, failFor?: string) {
     team: async () => 'Nural',
     toPerson: async (email, m) => void dms.push({ email, m }),
     toChannel: async (channel, m) => void posts.push({ channel, m }),
+    update: async () => undefined,
+    mention: async () => null,
     channels: async () => [],
   };
   return { mails, dms, posts, mailer, slack };

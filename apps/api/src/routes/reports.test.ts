@@ -64,6 +64,8 @@ async function server() {
         team: async () => null,
         toPerson: async () => undefined,
         toChannel: async () => undefined,
+        update: async () => undefined,
+        mention: async () => null,
         channels: async () => [],
       },
     },

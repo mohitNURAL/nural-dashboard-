@@ -6,6 +6,7 @@ import type { Tab } from '../../features/filters/toParams';
 import {
   IconBook,
   IconCoin,
+  IconDaily,
   IconDev,
   IconFeedback,
   IconFlow,
@@ -73,6 +74,19 @@ const ALL: {
         hint: 'Feedback for the Support tab',
         icon: <IconSupport />,
         allowed: (me) => me.support,
+      },
+    ],
+  },
+  {
+    label: 'My work',
+    icon: <IconDaily />,
+    items: [
+      {
+        id: 'daily',
+        label: 'Daily update',
+        hint: 'Plan the day, wrap it up, post to Slack',
+        icon: <IconDaily />,
+        allowed: (me) => me.dailyUpdate !== false,
       },
     ],
   },
