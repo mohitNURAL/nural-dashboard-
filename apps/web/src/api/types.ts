@@ -121,8 +121,10 @@ export interface WorkCounts {
   open: number;
   /** In On Hold. */
   hold: number;
+  /** Open with no deadline set. */
+  noDeadline: number;
   /** Of open, done, overdue and spill: the issues (bug or feedback); the rest are dev tasks. */
-  issues: { open: number; done: number; overdue: number; spill: number };
+  issues: { open: number; done: number; overdue: number; spill: number; noDeadline: number };
   total: number;
   /** Done in the previous day / week / month (the popup's switch). */
   done: number;

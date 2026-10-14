@@ -16,6 +16,7 @@ const PRESET_RULE: Record<Drill['preset'], string> = {
   spill: INFO.spill,
   donePrev: INFO.donePrev,
   overduePeriod: INFO.overduePeriod,
+  noDeadline: INFO.openNoDeadline,
 };
 
 const AGEING: Record<string, string> = {

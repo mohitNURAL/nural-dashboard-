@@ -928,7 +928,11 @@ describe('projects at work', () => {
         projectIds: [1],
       },
     );
-    expect(withBug[0]).toMatchObject({ open: 4, issues: { open: 1, spill: 0 } });
+    expect(withBug[0]).toMatchObject({
+      open: 4,
+      noDeadline: 1,
+      issues: { open: 1, spill: 0, noDeadline: 1 },
+    });
     expect(withBug[0]!.people[0]).toMatchObject({ id: 5, open: 3, issues: { open: 1 } });
     // Someone with nothing open in a project is not listed under it.
     const withDoneOnly = projectWork(

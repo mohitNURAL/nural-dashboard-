@@ -260,6 +260,9 @@ export function isSpill(t: MetricTask, ctx: MetricContext, period: WorkPeriod): 
   return at ? dayKey(at, ctx.tz) > prev.to : !isSentToQa(t);
 }
 
+/** Pending (open) with no deadline set (Projects at work "No deadline"). */
+export const isOpenNoDeadline = (t: MetricTask): boolean => isPending(t) && !t.deadline;
+
 /** Days (YYYY-MM-DD, app time zone) on which the task was pushed to QA Backlog. */
 const qaBacklogDays = (t: MetricTask, tz: string) =>
   t.events.filter((e) => e.to === stageWithRole('qaEntry')).map((e) => dayKey(e.at, tz));
@@ -1131,6 +1134,7 @@ export const DEV_PRESETS = [
   'spill',
   'donePrev',
   'overduePeriod',
+  'noDeadline',
 ] as const;
 export const ISSUE_PRESETS = [
   'all',
@@ -1184,6 +1188,8 @@ export function presetPredicate(
       return (t) => isDonePrev(t, ctx, period);
     case 'overduePeriod':
       return (t) => isOverdueInPeriod(t, ctx, period);
+    case 'noDeadline':
+      return isOpenNoDeadline;
     case 'dueToday':
       return (t) => isDueToday(t, ctx);
     case 'open':
@@ -1329,6 +1335,8 @@ export interface WorkCounts {
   open: number;
   /** In On Hold (not completed). */
   hold: number;
+  /** Open with no deadline set. */
+  noDeadline: number;
   total: number;
   /** Pushed to QA Backlog in the previous day / week / month. */
   done: number;
@@ -1339,7 +1347,7 @@ export interface WorkCounts {
   /** The latest task deadline (the project's deadline on a project row). */
   lastDeadline: Date | null;
   /** Of open, done, overdue and spill: how many are issues (bug or feedback); the rest are dev tasks. */
-  issues: { open: number; done: number; overdue: number; spill: number };
+  issues: { open: number; done: number; overdue: number; spill: number; noDeadline: number };
   /** Tasks touched (changed or moved) in the last ACTIVITY_DAYS days, bulk changes left out. */
   activityWeek: number;
   lastActivity: Date | null;
@@ -1366,7 +1374,9 @@ function workCounts(
   return {
     open: list.filter(isPending).length,
     hold: list.filter(isOnHold).length,
+    noDeadline: list.filter(isOpenNoDeadline).length,
     issues: {
+      noDeadline: issueList.filter(isOpenNoDeadline).length,
       open: issueList.filter(isPending).length,
       done: issueList.filter((t) => isDonePrev(t, ctx, period)).length,
       overdue: issueList.filter((t) => isOverdueInPeriod(t, ctx, period)).length,

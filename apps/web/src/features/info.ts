@@ -14,6 +14,7 @@ export const INFO = {
     'Pending tasks (behind QA Backlog, not on hold) whose deadline is still ahead (IST). Under it, when they are planned: tomorrow, the rest of this week, the rest of this month, next week, next month. The parts overlap (tomorrow is also in the rest of the week), so they do not add up. Overdue and no-deadline tasks are not in hand.',
   spill:
     'Spill: the deadline was in the previous day, week or month (IST, weeks Monday to Sunday) and the task was not pushed to QA Backlog by its end (still pending or on hold, or completed later).',
+  openNoDeadline: 'Open (pending, not on hold) with no deadline set in Bitrix24.',
   donePrev:
     'Pushed to QA Backlog in the previous day, week or month (IST, weeks Monday to Sunday).',
   overduePeriod:

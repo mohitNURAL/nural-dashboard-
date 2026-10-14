@@ -94,6 +94,7 @@ export const TILE_LABELS: Record<DevPreset, string> = {
   spill: 'Spill',
   donePrev: 'Done',
   overduePeriod: 'Overdue',
+  noDeadline: 'No deadline',
 };
 
 /** Column and title word for the Assignee / Project switch. */
