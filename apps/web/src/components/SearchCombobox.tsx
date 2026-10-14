@@ -5,6 +5,7 @@ import clsx from 'clsx';
 import { Command } from 'cmdk';
 import { useMemo, useRef, useState } from 'react';
 import { IconClose, IconSearch } from './ui/icons';
+import { DROPDOWN_BOX, DropdownChevron } from './ui/Select';
 
 export interface ComboOption {
   value: string;
@@ -84,9 +85,9 @@ export function SearchCombobox({
           <button
             type="button"
             className={clsx(
-              'flex h-full w-full min-w-0 items-center gap-2 rounded-control border bg-surface px-3 text-left',
+              'flex h-full w-full min-w-0 items-center gap-2 px-3 text-left',
+              DROPDOWN_BOX,
               selected.length ? 'border-primary pr-14' : 'border-border',
-              'hover:border-primary-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary',
             )}
           >
             <span className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
@@ -113,7 +114,7 @@ export function SearchCombobox({
                 </>
               )}
             </span>
-            <Chevron />
+            <DropdownChevron />
           </button>
         </Popover.Trigger>
         {selected.length > 0 && (
@@ -206,14 +207,6 @@ export function SearchCombobox({
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>
-  );
-}
-
-export function Chevron() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden className="shrink-0 text-text">
-      <path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-    </svg>
   );
 }
 

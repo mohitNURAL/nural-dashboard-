@@ -30,69 +30,71 @@ export function StageMatrixTable({ data, rowLabel, noun, onName, onOpen }: Props
     data.rows.reduce((n, r) => n + (r.cells[stage] ?? 0), 0);
   return (
     <div className="max-h-[420px] overflow-auto">
-      <table className="w-full border-separate border-spacing-0.5 text-table">
-        <thead>
-          <tr>
-            <th className="sticky left-0 top-0 z-20 bg-surface px-2 py-1 text-left font-heading text-label font-bold uppercase text-text-muted">
-              {rowLabel}
-            </th>
-            {data.stages.map((s) => (
-              <th
-                key={s.stage}
-                scope="col"
-                className="sticky top-0 z-10 min-w-[4.5rem] bg-surface px-1 py-1 align-bottom font-heading text-label font-bold text-text"
-              >
-                <span className="flex flex-col items-center gap-1">
-                  <span
-                    className="w-full rounded-full text-center font-heading text-label font-bold leading-4 text-white"
-                    style={{ background: s.color, textShadow: '0 0 2px rgb(0 0 0 / 0.45)' }}
-                    title={`${s.stage}: ${stageTotal(s.stage)} ${noun}`}
-                  >
-                    {stageTotal(s.stage).toLocaleString('en-IN')}
-                  </span>
-                  <span className="leading-tight">{s.stage}</span>
-                </span>
-              </th>
-            ))}
-            <th className="sticky top-0 z-10 bg-surface px-2 py-1 text-right font-heading text-label font-bold uppercase text-text-muted">
-              Total
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.rows.map((r) => (
-            <tr key={r.id}>
-              <th
-                scope="row"
-                className="sticky left-0 z-10 whitespace-nowrap bg-surface px-2 py-1 text-left font-normal"
-              >
-                <button
-                  type="button"
-                  title={`Show only this ${rowLabel.toLowerCase()}`}
-                  onClick={() => onName(r)}
-                  className="hover:text-primary hover:underline"
-                >
-                  {r.name}
-                </button>
+      <div className="nural-table-wrap">
+        <table className="nural-table w-full border-separate border-spacing-0.5 text-table">
+          <thead>
+            <tr>
+              <th className="sticky left-0 top-0 z-20 px-2 py-1 text-left font-heading text-label font-bold uppercase">
+                {rowLabel}
               </th>
               {data.stages.map((s) => (
-                <MatrixCell
+                <th
                   key={s.stage}
-                  stage={s.stage}
-                  n={r.cells[s.stage] ?? 0}
-                  overdue={r.overdue[s.stage] ?? 0}
-                  max={data.max}
-                  rowName={r.name}
-                  onOpen={(extra, what) => onOpen(r, extra, what)}
-                />
+                  scope="col"
+                  className="sticky top-0 z-10 min-w-[4.5rem] px-1 py-1 align-bottom font-heading text-label font-bold"
+                >
+                  <span className="flex flex-col items-center gap-1">
+                    <span
+                      className="w-full rounded-full text-center font-heading text-label font-bold leading-4 text-white"
+                      style={{ background: s.color, textShadow: '0 0 2px rgb(0 0 0 / 0.45)' }}
+                      title={`${s.stage}: ${stageTotal(s.stage)} ${noun}`}
+                    >
+                      {stageTotal(s.stage).toLocaleString('en-IN')}
+                    </span>
+                    <span className="leading-tight">{s.stage}</span>
+                  </span>
+                </th>
               ))}
-              <td className="px-2 py-1 text-right font-bold">
-                <CountButton n={r.total} onClick={() => onOpen(r, {}, 'All stages')} />
-              </td>
+              <th className="sticky top-0 z-10 px-2 py-1 text-right font-heading text-label font-bold uppercase">
+                Total
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {data.rows.map((r) => (
+              <tr key={r.id}>
+                <th
+                  scope="row"
+                  className="sticky left-0 z-10 whitespace-nowrap bg-surface px-2 py-1 text-left font-normal"
+                >
+                  <button
+                    type="button"
+                    title={`Show only this ${rowLabel.toLowerCase()}`}
+                    onClick={() => onName(r)}
+                    className="hover:text-primary hover:underline"
+                  >
+                    {r.name}
+                  </button>
+                </th>
+                {data.stages.map((s) => (
+                  <MatrixCell
+                    key={s.stage}
+                    stage={s.stage}
+                    n={r.cells[s.stage] ?? 0}
+                    overdue={r.overdue[s.stage] ?? 0}
+                    max={data.max}
+                    rowName={r.name}
+                    onOpen={(extra, what) => onOpen(r, extra, what)}
+                  />
+                ))}
+                <td className="px-2 py-1 text-right font-bold">
+                  <CountButton n={r.total} onClick={() => onOpen(r, {}, 'All stages')} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       <p className="mt-2 text-table text-text-muted">
         Each cell: not overdue, then <span className="font-bold text-bad">overdue</span> in red.
         Click a number to open those {noun}.

@@ -3,7 +3,8 @@
 import { dayKey } from '@nural/shared';
 import * as Popover from '@radix-ui/react-popover';
 import clsx from 'clsx';
-import { Chevron, ClearButton } from '../../components/SearchCombobox';
+import { ClearButton } from '../../components/SearchCombobox';
+import { DROPDOWN_BOX, DropdownChevron } from '../../components/ui/Select';
 import { APP_TIMEZONE } from '../../config';
 import type { DateField, FilterState } from './toParams';
 
@@ -58,13 +59,13 @@ export function DateRangePicker({ value, onChange }: Props) {
           <button
             type="button"
             className={clsx(
-              'flex h-full w-full min-w-0 items-center gap-2 rounded-control border bg-surface px-3 text-left',
+              'flex h-full w-full min-w-0 items-center gap-2 px-3 text-left',
+              DROPDOWN_BOX,
               active ? 'border-primary pr-14 text-primary-dark' : 'border-border',
-              'hover:border-primary-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary',
             )}
           >
             <span className="flex-1 truncate">{rangeLabel(value)}</span>
-            <Chevron />
+            <DropdownChevron />
           </button>
         </Popover.Trigger>
         {active && (

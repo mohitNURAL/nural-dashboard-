@@ -207,9 +207,11 @@ h3 {
   overflow: visible !important;
 }
 
-/* Tables and grids (2026-10-12): the same feel as the tiles. Tinted gradient header, soft zebra,
-   a glowing hover with an accent edge, and a highlighted totals row. Used by DataTable and the
-   hand-built tables (class "nural-table" on the <table>). */
+/* Tables and grids (2026-10-12; header 2026-10-14): one look for every table. A navy header
+   with white uppercase labels (--chrome, navy in light and dark, so it reads in both themes),
+   soft zebra, a glowing hover with an accent edge, and a highlighted totals row. Used by
+   DataTable and the hand-built tables (class "nural-table" on the <table>, "nural-table-wrap"
+   on its box). Never colour a table header in a page: change it here. */
 .nural-table-wrap {
   border: 1px solid color-mix(in srgb, var(--primary) 14%, var(--border));
   border-radius: 14px;
@@ -217,13 +219,18 @@ h3 {
   box-shadow: 0 1px 2px rgba(16, 24, 64, 0.04);
 }
 .nural-table thead th {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--primary) 11%, var(--surface)),
-    color-mix(in srgb, var(--primary) 5%, var(--surface))
-  );
-  color: color-mix(in srgb, var(--primary-dark) 80%, var(--text-muted));
-  border-bottom: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border));
+  background: var(--chrome);
+  color: #fff;
+  font-family: Manrope, system-ui, sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, var(--chrome));
+}
+/* The "i" in a header: white, like the labels. */
+.nural-table thead th button.cursor-help {
+  color: rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 255, 255, 0.7);
 }
 .nural-table thead th:first-child {
   border-top-left-radius: 13px;

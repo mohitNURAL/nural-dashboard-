@@ -168,7 +168,7 @@ export function AlertDetails() {
         <p className="py-6 text-center text-text-muted">Nothing to flag.</p>
       )}
       {groups.length > 0 && (
-        <div className="max-h-[600px] overflow-auto rounded-control border border-border">
+        <div className="nural-table-wrap max-h-[600px] overflow-auto">
           <table className="nural-table w-full border-separate border-spacing-0 text-table">
             <thead>
               <tr className="font-heading text-label font-bold uppercase text-text-muted">

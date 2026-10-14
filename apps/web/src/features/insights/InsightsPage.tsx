@@ -518,7 +518,7 @@ function OverlapCard({ data, loading, className }: CardProps) {
             ))}
           </ul>
         )}
-        <div className="overflow-x-auto">
+        <div className="nural-table-wrap overflow-x-auto">
           <table className="nural-table w-full border-separate border-spacing-0 text-table [&_td]:px-3 [&_th]:px-3">
             <thead>
               <tr className="text-left font-heading text-label uppercase text-text-muted">
@@ -577,9 +577,9 @@ function ReleasesCard({ data, loading, className }: CardProps) {
         empty={!!data && !rows.length}
         emptyText="Nothing due this week or next."
       >
-        <div className="max-h-[420px] overflow-auto">
+        <div className="nural-table-wrap max-h-[420px] overflow-auto">
           <table className="nural-table w-full border-separate border-spacing-0 text-table [&_td]:px-3 [&_th]:px-3">
-            <thead className="sticky top-0 bg-surface">
+            <thead className="sticky top-0">
               <tr className="text-left font-heading text-label uppercase text-text-muted">
                 <th className="py-2 pr-2">Week</th>
                 <th className="py-2 pr-2">Task</th>

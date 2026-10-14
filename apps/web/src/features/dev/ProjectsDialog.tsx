@@ -287,57 +287,59 @@ export function ProjectsDialog() {
                   )
                 }
               >
-                <table className="w-full border-separate border-spacing-0 overflow-hidden rounded-xl border border-border text-table">
-                  <thead className="sticky top-0 z-10">
-                    <tr className="bg-primary-dark text-white">
-                      <th aria-label="Drag to order projects" data-grip className="w-7 px-1" />
-                      <th className="px-3 py-2.5 text-left font-heading text-label font-bold uppercase tracking-wide">
-                        Project / assignee
-                      </th>
+                <div className="nural-table-wrap">
+                  <table className="nural-table w-full border-separate border-spacing-0 text-table">
+                    <thead className="sticky top-0 z-10">
+                      <tr>
+                        <th aria-label="Drag to order projects" data-grip className="w-7 px-1" />
+                        <th className="px-3 py-2.5 text-left font-heading text-label font-bold uppercase tracking-wide">
+                          Project / assignee
+                        </th>
+                        <SortableContext
+                          items={cols.map((c) => `col:${c.id}`)}
+                          strategy={horizontalListSortingStrategy}
+                        >
+                          {cols.map((c) => (
+                            <SortableTh
+                              key={c.id}
+                              id={c.id}
+                              enabled
+                              title="Drag to move this column"
+                              scope="col"
+                              className={clsx(
+                                'cursor-grab whitespace-nowrap px-3 py-2.5 font-heading text-label font-bold uppercase tracking-wide active:cursor-grabbing',
+                                align(c),
+                              )}
+                            >
+                              <span className="inline-flex items-center gap-1.5">
+                                {c.label}
+                                <InfoTip text={c.info} label={c.label} />
+                              </span>
+                            </SortableTh>
+                          ))}
+                        </SortableContext>
+                      </tr>
+                    </thead>
+                    <tbody>
                       <SortableContext
-                        items={cols.map((c) => `col:${c.id}`)}
-                        strategy={horizontalListSortingStrategy}
+                        items={rows.map((r) => `row:${r.id}`)}
+                        strategy={verticalListSortingStrategy}
                       >
-                        {cols.map((c) => (
-                          <SortableTh
-                            key={c.id}
-                            id={c.id}
-                            enabled
-                            title="Drag to move this column"
-                            scope="col"
-                            className={clsx(
-                              'cursor-grab whitespace-nowrap px-3 py-2.5 font-heading text-label font-bold uppercase tracking-wide active:cursor-grabbing',
-                              align(c),
-                            )}
-                          >
-                            <span className="inline-flex items-center gap-1.5 [&_button]:border-white/70 [&_button]:text-white/80">
-                              {c.label}
-                              <InfoTip text={c.info} label={c.label} />
-                            </span>
-                          </SortableTh>
+                        {rows.map((r) => (
+                          <ProjectRows
+                            key={r.id}
+                            r={r}
+                            cols={cols}
+                            isOpen={expanded === r.id}
+                            onToggle={() => toggle(r.id)}
+                            cell={cell}
+                            align={align}
+                          />
                         ))}
                       </SortableContext>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <SortableContext
-                      items={rows.map((r) => `row:${r.id}`)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      {rows.map((r) => (
-                        <ProjectRows
-                          key={r.id}
-                          r={r}
-                          cols={cols}
-                          isOpen={expanded === r.id}
-                          onToggle={() => toggle(r.id)}
-                          cell={cell}
-                          align={align}
-                        />
-                      ))}
-                    </SortableContext>
-                  </tbody>
-                </table>
+                    </tbody>
+                  </table>
+                </div>
               </TableDnd>
             )}
           </div>

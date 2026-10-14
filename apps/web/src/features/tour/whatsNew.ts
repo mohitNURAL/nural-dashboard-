@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-14-one-table-look',
+    date: '2026-10-14',
+    tab: 'dev',
+    title: 'One look for every table and dropdown',
+    steps: [
+      {
+        target: '[data-group="dev.tiles"]',
+        title: 'One look for every table and dropdown',
+        text: 'Every table now has the navy header of Projects at work, readable in light and dark mode, and every dropdown has the same box, hover, focus ring and arrow.',
+      },
+    ],
+  },
+  {
     id: '2026-10-14-projects-total-overdue',
     date: '2026-10-14',
     tab: 'dev',

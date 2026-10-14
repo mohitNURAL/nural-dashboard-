@@ -219,8 +219,8 @@ export function DataTable<T>({
                               type="button"
                               onClick={h.column.getToggleSortingHandler()}
                               className={clsx(
-                                'inline-flex items-center gap-1 uppercase hover:text-primary',
-                                sort && 'text-primary-dark',
+                                'inline-flex items-center gap-1 uppercase hover:text-accent',
+                                sort && 'text-accent',
                               )}
                             >
                               {flexRender(h.column.columnDef.header, h.getContext())}
