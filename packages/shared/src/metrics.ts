@@ -149,15 +149,32 @@ export const isSentToQa = (t: MetricTask) =>
 export const isCompleted = isSentToQa;
 /** On hold: in On Hold and not completed; neither pending nor completed (SRS 5). */
 export const isOnHold = (t: MetricTask) => isHoldStage(t.stage) && !isSentToQa(t);
-/** Pending: neither completed nor on hold, so pending + completed + hold = total. */
-export const isPending = (t: MetricTask) => !isSentToQa(t) && !isOnHold(t);
+/**
+ * Issue raised (2026-10-15): a testing or re-testing task (tag) in the issue stage. The tester
+ * has finished and filed the issues; the work now waits on the developers, so it is neither
+ * pending nor overdue. Issues (bug, feedback) in that stage stay pending: the fix is the work.
+ */
+export const isIssueRaisedTest = (t: MetricTask) =>
+  !t.isIssue && hasRole(t.stage, 'issue') && t.tags.some(isTestingTag) && !isSentToQa(t);
+/**
+ * Pending: not completed, on hold or an issue-raised test, so pending + completed + hold +
+ * issue raised = total.
+ */
+export const isPending = (t: MetricTask) => !isSentToQa(t) && !isOnHold(t) && !isIssueRaisedTest(t);
 export const isReady = (t: MetricTask) => hasRole(t.stage, 'ready');
 export const isDeployed = (t: MetricTask) => hasRole(t.stage, 'live');
 /** An open issue is a pending one (QA tab "Open"); resolved = completed. Same rule as tasks. */
 export const isOpenIssue = isPending;
-/** "completed" / "pending" / "hold", shown in every task list (SRS 5). */
-export const taskStatus = (t: MetricTask): 'completed' | 'pending' | 'hold' =>
-  isSentToQa(t) ? 'completed' : isOnHold(t) ? 'hold' : 'pending';
+export type TaskStatus = 'completed' | 'pending' | 'hold' | 'issueRaised';
+/** "completed" / "pending" / "hold" / "issueRaised", shown in every task list (SRS 5). */
+export const taskStatus = (t: MetricTask): TaskStatus =>
+  isSentToQa(t)
+    ? 'completed'
+    : isOnHold(t)
+      ? 'hold'
+      : isIssueRaisedTest(t)
+        ? 'issueRaised'
+        : 'pending';
 
 /**
  * When the task was completed (SRS 5): its first move into QA Backlog (the developer pressed

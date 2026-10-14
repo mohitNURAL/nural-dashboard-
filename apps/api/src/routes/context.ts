@@ -13,6 +13,7 @@ import {
   type MetricContext,
   type MetricTask,
   type StageTitle,
+  type TaskStatus,
   hasRole,
 } from '@nural/shared';
 import type { Dataset, DeptGroup } from '../data/dataset';
@@ -62,6 +63,12 @@ export const withGroupNames = <R extends { id: number }>(ds: Dataset, rows: R[],
   );
 
 const PRIORITY = ['low', 'normal', 'high'] as const;
+export const STATUS_LABEL: Record<TaskStatus, string> = {
+  completed: 'Completed',
+  pending: 'Pending',
+  hold: 'On hold',
+  issueRaised: 'Issue raised',
+};
 
 export interface BoardFilter {
   responsibleId?: number;
@@ -176,7 +183,7 @@ export function columnValues(
       return [
         {
           value: r.status,
-          label: r.status === 'hold' ? 'On hold' : r.status[0]!.toUpperCase() + r.status.slice(1),
+          label: STATUS_LABEL[r.status],
         },
       ];
     case 'priority':

@@ -7,6 +7,7 @@ import type {
   StageGroup,
   StageTitle,
   SummaryPart,
+  TaskStatus,
 } from '@nural/shared';
 import type { DeptGroup } from './queries';
 
@@ -42,8 +43,11 @@ export interface TaskRow {
   stageTitle: string | null;
   stageColor: string | null;
   stageGroup: StageGroup | null;
-  /** Completed (QA Backlog, In QA, Done, LIVE) or pending (any stage behind). */
-  status: 'completed' | 'pending' | 'hold';
+  /**
+   * Completed (QA Backlog, In QA, Done, LIVE), pending (any stage behind), on hold, or issue
+   * raised (a testing or re-testing task in Issue Raised: not pending).
+   */
+  status: TaskStatus;
   /** Bitrix24 column ID (0 = never moved, To do) and Bitrix24's own task status. */
   stageId: number;
   bitrixStatus: BitrixStatus;

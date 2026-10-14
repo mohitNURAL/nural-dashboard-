@@ -5,10 +5,9 @@ import { dayKey } from '@nural/shared';
 import ExcelJS from 'exceljs';
 import { brandSheet, exportedAt } from '../exports/theme';
 import type { taskRow } from './context';
+import { STATUS_LABEL } from './context';
 
 type Row = ReturnType<typeof taskRow>;
-
-const STATUS_LABEL = { pending: 'Pending', completed: 'Completed', hold: 'On hold' } as const;
 
 /** A calendar date in the app time zone, as an Excel date (no time part). */
 const asDate = (d: Date | string | null, tz: string) => {

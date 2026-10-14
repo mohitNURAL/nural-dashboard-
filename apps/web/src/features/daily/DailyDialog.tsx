@@ -1,14 +1,13 @@
 // The Daily update dialog (2026-10-14, SRS 23). Plan: the person's overdue and due-today tasks,
 // to keep, remove or add to, with a note, posted to the Slack daily work update group. Wrap-up:
 // the plan with each task Done or WIP (from Bitrix24; Done completes it there), plus work done
-// outside the plan, created in Bitrix24 as their own task. Opens from the dock icon, by itself
-// (DailyPrompt) or before signing out. Tables and dropdowns are the shared ones.
+// outside the plan, created in Bitrix24 as their own task. Opens from the dock icon, the Daily
+// update page or before signing out, never by itself. Tables and dropdowns are the shared ones.
 import * as Dialog from '@radix-ui/react-dialog';
 import { createColumnHelper } from '@tanstack/react-table';
 import clsx from 'clsx';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { usePrefs, useSavePrefs } from '../../api/prefs';
 import { DataTable } from '../../components/DataTable';
 import { SearchCombobox } from '../../components/SearchCombobox';
 import { IconClose, IconDaily } from '../../components/ui/icons';
@@ -23,7 +22,6 @@ import {
   type WrapItem,
 } from './api';
 import { useDailyDialog } from './store';
-import { snooze } from './when';
 
 const WHY: Record<DailyItem['why'], { label: string; cls: string }> = {
   overdue: { label: 'Overdue', cls: 'bg-bad/15 text-bad' },
@@ -39,10 +37,7 @@ const mainBtn =
 export function DailyDialog() {
   const { mode, after, close } = useDailyDialog();
   const { data: today } = useDailyToday(!!mode);
-  const { data: prefs } = usePrefs();
-  const savePrefs = useSavePrefs();
   const later = () => {
-    if (prefs) savePrefs((p) => ({ tour: snooze(p.tour, Date.now()) }));
     const then = after;
     close();
     then?.();
@@ -257,7 +252,7 @@ function PlanView({ today, onLater }: { today: DailyToday; onLater: () => void }
       <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-border px-5 py-3">
         <span className="mr-auto text-table text-text-muted">{keep.size} planned</span>
         <button type="button" className={btn} onClick={onLater}>
-          Later
+          Close
         </button>
         <button type="button" className={mainBtn} disabled={busy} onClick={() => void post()}>
           {busy ? 'Posting…' : today.plan ? 'Post the change' : 'Post my plan'}
@@ -455,7 +450,7 @@ function WrapView({ today, onLater }: { today: DailyToday; onLater: () => void }
       </div>
       <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-border px-5 py-3">
         <button type="button" className={btn} onClick={onLater}>
-          {after ? 'Sign out without posting' : 'Later'}
+          {after ? 'Sign out without posting' : 'Close'}
         </button>
         <button type="button" className={mainBtn} disabled={busy} onClick={() => void post()}>
           {busy ? 'Posting…' : after ? 'Post and sign out' : 'Post my wrap-up'}

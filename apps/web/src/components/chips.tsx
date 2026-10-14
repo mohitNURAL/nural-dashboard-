@@ -1,5 +1,6 @@
 // Small badges used in tables and the drawer (SRS 6: stage chip, tag chips, priority badge).
 import clsx from 'clsx';
+import type { TaskStatus } from '@nural/shared';
 import type { Priority } from '../api/types';
 import { initials } from '../features/dev/format';
 
@@ -94,11 +95,17 @@ const STATUS_STYLE = {
   completed: 'bg-accent-soft text-accent-darker',
   pending: 'bg-warn/15 text-[#92400E]',
   hold: 'bg-[#EF3000]/10 text-[#B42400]',
+  issueRaised: 'bg-primary/10 text-primary',
 } as const;
-const STATUS_TEXT = { completed: 'Completed', pending: 'Pending', hold: 'On hold' } as const;
+const STATUS_TEXT = {
+  completed: 'Completed',
+  pending: 'Pending',
+  hold: 'On hold',
+  issueRaised: 'Issue raised',
+} as const;
 
-/** Completed / Pending / On hold (SRS 5). */
-export function StatusChip({ status }: { status: 'completed' | 'pending' | 'hold' }) {
+/** Completed / Pending / On hold / Issue raised (a testing task, SRS 5). */
+export function StatusChip({ status }: { status: TaskStatus }) {
   return (
     <span
       className={clsx(

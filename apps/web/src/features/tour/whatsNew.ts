@@ -18,6 +18,32 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-15-testing-issue-raised',
+    date: '2026-10-15',
+    tab: 'qa',
+    title: 'Testing tasks in Issue Raised are no longer pending',
+    steps: [
+      {
+        target: slot('qa.tiles', 'inHand'),
+        title: 'Issue raised is not pending',
+        text: 'A task tagged testing or re-testing in the Issue Raised stage now shows the status "Issue raised". The tester has done their part, so it is no longer counted as pending or overdue. Bugs and feedback in Issue Raised still count as pending.',
+      },
+    ],
+  },
+  {
+    id: '2026-10-15-daily-on-click',
+    date: '2026-10-15',
+    tab: 'daily',
+    title: 'Daily update opens only when you click it',
+    steps: [
+      {
+        target: '[data-tour="dock-daily"]',
+        title: 'Open it when you want',
+        text: 'The Plan your day and Wrap up your day window no longer pops up by itself. Open it from this icon in the dock. When you sign out after posting a plan, the wrap-up still comes up first.',
+      },
+    ],
+  },
+  {
     id: '2026-10-14-daily-update',
     date: '2026-10-14',
     tab: 'daily',
@@ -26,12 +52,12 @@ export const WHATS_NEW: WhatsNew[] = [
       {
         target: '[data-tour="daily-plan"]',
         title: 'Plan your day',
-        text: 'New under My work. Each working morning a window shows your overdue and due-today tasks: keep, remove or add, write a note, and post it to the daily work update group on Slack.',
+        text: 'New under My work. Open it from the dock to see your overdue and due-today tasks: keep, remove or add, write a note, and post it to the daily work update group on Slack.',
       },
       {
         target: '[data-tour="daily-wrap"]',
         title: 'Wrap up your day',
-        text: 'In the evening, or when you sign out, mark each planned task Done or WIP and add anything else you did. Done completes the task in Bitrix24; other work becomes a Bitrix24 task assigned to you. The wrap-up goes to the same Slack thread.',
+        text: 'In the evening from the dock, or when you sign out, mark each planned task Done or WIP and add anything else you did. Done completes the task in Bitrix24; other work becomes a Bitrix24 task assigned to you. The wrap-up goes to the same Slack thread.',
       },
       {
         target: '[data-tour="dock-daily"]',

@@ -43,6 +43,7 @@ import {
   issueStageTable,
   reworkByDeveloper,
   isSentToQa,
+  isIssueRaisedTest,
   isPending,
   retestBreakdown,
   reworkCount,
@@ -51,6 +52,7 @@ import {
   testingTasks,
   testingWorkload,
   waitingForRetest,
+  taskStatus,
 } from './metrics';
 import { issueTypeOf } from './tags';
 import { dayKey } from './time';
@@ -809,6 +811,22 @@ describe('pending vs completed (SRS 5)', () => {
     expect(isSentToQa(task({ stage: 'To do', closedAt: closed, qaFlow: false }))).toBe(true);
     expect(isSentToQa(task({ stage: 'To do', closedAt: closed, qaFlow: true }))).toBe(false);
     expect(isSentToQa(task({ stage: 'To do', qaFlow: false }))).toBe(false);
+  });
+
+  it('a testing or re-testing task in Issue Raised is issue raised: not pending, not overdue', () => {
+    const late = new Date(NOW.getTime() - 3 * 86_400_000);
+    for (const tag of ['Testing', 're-testing']) {
+      const t = task({ stage: 'Issue Raised', tags: [tag], deadline: late });
+      expect(isIssueRaisedTest(t)).toBe(true);
+      expect(isPending(t)).toBe(false);
+      expect(isOverdue(t, ctx)).toBe(false);
+      expect(taskStatus(t)).toBe('issueRaised');
+    }
+    // Elsewhere a testing task is pending as before; an issue in Issue Raised stays pending.
+    expect(taskStatus(task({ stage: 'In progress', tags: ['testing'] }))).toBe('pending');
+    const bug = task({ stage: 'Issue Raised', tags: ['bug', 'testing'], isIssue: true });
+    expect(isPending(bug)).toBe(true);
+    expect(taskStatus(task({ stage: 'Issue Raised' }))).toBe('pending');
   });
 });
 

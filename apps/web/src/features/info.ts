@@ -5,7 +5,7 @@ export const INFO = {
   total:
     'All tasks in the filters for the switch (Dev, Issues or both), Development department only.',
   pending:
-    'Behind QA Backlog and not on hold: To do, In progress, Pushed to Master, Merged to Development, Pending for QA, Issue Raised.',
+    'Behind QA Backlog and not on hold: To do, In progress, Pushed to Master, Merged to Development, Pending for QA, Issue Raised. A testing or re-testing task in Issue Raised is not pending.',
   hold: 'In On Hold: neither pending nor completed. Pending + completed + on hold = total.',
   ready: 'In the Done stage, ready to go live.',
   deployed: 'In the LIVE stage.',
@@ -34,7 +34,8 @@ export const INFO = {
   assigneeTable:
     'Per person or project. Done = sent to QA (QA Backlog to LIVE). Comp. today = reached QA Backlog today.',
   colTotal: 'All tasks of this row.',
-  colPending: 'Pending: any stage behind QA Backlog except On Hold, Issue Raised included.',
+  colPending:
+    'Pending: any stage behind QA Backlog except On Hold, Issue Raised included (not for testing or re-testing tasks).',
   colDone: 'Completed: in QA Backlog, In QA, Done or LIVE.',
   colDueToday: 'Deadline is today, not yet LIVE.',
   colCompToday: 'Reached QA Backlog for the first time today.',
@@ -66,7 +67,7 @@ export const INFO = {
   issuesByStage:
     'Issues per stage and person (or project). Red = overdue part. Bug / Feedback narrows it.',
   testing:
-    'Tasks tagged testing or re-testing, or assigned to QA Testing. Late = pending past deadline.',
+    'Tasks tagged testing or re-testing, or assigned to QA Testing. Late = pending past deadline. A testing or re-testing task in Issue Raised is "Issue raised": not pending, never late.',
   retest: 'Issues in QA Backlog or In QA, by who filed them. Oldest = days waiting.',
   issueAge: 'Open issues by days past deadline (same as task ageing). On Hold counts here.',
   rework:
