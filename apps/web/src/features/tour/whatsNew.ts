@@ -26,7 +26,7 @@ export const WHATS_NEW: WhatsNew[] = [
       {
         target: slot('dev.tiles', 'projects'),
         title: 'Projects',
-        text: 'Projects = every project owned by Development, QA or a PM, as Active (open tasks and activity in the last 30 days) + Silent (nothing open, or no activity for 30 days) + Hold (every unfinished task on hold). Click a number for Projects at work, most active this week first, then the earliest deadline. Open a project to see who works on it. The Day / Week / Month switch sets Done (previous period), Overdue (this period) and Spill (previous period). A count opens its tasks, and "Back to Projects at work" brings you back.',
+        text: 'Projects = every project owned by Development, QA or a PM, as Active (open tasks and activity in the last 30 days) + Silent (nothing open, or no activity for 30 days) + Hold (every unfinished task on hold). Click a number for Projects at work, most active this week first, then the earliest deadline. Open a project to see who works on it. The Day / Week / Month switch sets Done (previous period), Overdue (this period) and Spill (previous period). Hover a count for its dev tasks and issues. A count opens its tasks, and "Back to Projects at work" brings you back.',
       },
     ],
   },

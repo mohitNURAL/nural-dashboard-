@@ -9,6 +9,7 @@ import { Fragment, useMemo, useState } from 'react';
 import type { WorkCounts } from '../../api/types';
 import { ViewToggle } from '../../components/Card';
 import { IconClose, IconLayers } from '../../components/ui/icons';
+import { Tip } from '../../components/ui/Tip';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { useDevProjects } from './api';
 import { useDrillTo } from './drill';
@@ -70,29 +71,38 @@ export function ProjectsDialog() {
     close();
     drill({ label, preset, params, back: 'projects' });
   };
+  /** A count: hover shows its dev tasks and issues; a click opens its tasks. */
   const cell = (
     c: ReturnType<typeof columns>[number],
-    n: number,
+    w: WorkCounts,
     label: string,
     params: Record<string, string>,
-  ) =>
-    n ? (
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          openTasks(`${label} · ${c.label}`, c.preset, c.period ? { ...params, period } : params);
-        }}
-        className={clsx(
-          'font-heading font-bold tabular-nums hover:underline',
-          c.tone === 'bad' ? 'text-bad' : 'text-primary-dark',
-        )}
+  ) => {
+    const n = w[c.key];
+    const issues = w.issues[c.key];
+    return n ? (
+      <Tip
+        label={`Dev tasks ${(n - issues).toLocaleString('en-IN')} · Issues ${issues.toLocaleString('en-IN')}`}
+        hint={`${c.label}: click for the tasks`}
       >
-        {n.toLocaleString('en-IN')}
-      </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            openTasks(`${label} · ${c.label}`, c.preset, c.period ? { ...params, period } : params);
+          }}
+          className={clsx(
+            'font-heading font-bold tabular-nums hover:underline',
+            c.tone === 'bad' ? 'text-bad' : 'text-primary-dark',
+          )}
+        >
+          {n.toLocaleString('en-IN')}
+        </button>
+      </Tip>
     ) : (
       <span className="text-text-muted">0</span>
     );
+  };
   const activity = (w: WorkCounts) => (
     <span title={w.lastActivity ? `Last activity ${fmtDate(w.lastActivity)}` : undefined}>
       {w.activityWeek ? (
@@ -222,7 +232,7 @@ export function ProjectsDialog() {
                           </td>
                           {COLS.map((c) => (
                             <td key={c.key} className="text-right">
-                              {cell(c, r[c.key], r.name, { project: String(r.id) })}
+                              {cell(c, r, r.name, { project: String(r.id) })}
                             </td>
                           ))}
                         </tr>
@@ -237,7 +247,7 @@ export function ProjectsDialog() {
                                 </td>
                                 {COLS.map((c) => (
                                   <td key={c.key} className="text-right">
-                                    {cell(c, p[c.key], `${r.name} · ${p.person.name}`, {
+                                    {cell(c, p, `${r.name} · ${p.person.name}`, {
                                       project: String(r.id),
                                       assignee: String(p.id),
                                     })}

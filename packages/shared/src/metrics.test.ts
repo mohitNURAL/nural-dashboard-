@@ -919,6 +919,17 @@ describe('projects at work', () => {
       [6, 1, 0],
     ]);
     expect(rows.find((r) => r.id === 2)!.done).toBe(1);
+    // The dev / issue split of each count (tooltip): an issue in project 1.
+    const withBug = projectWork(
+      [...list, task({ groupId: 1, responsibleId: 5, tags: ['bug'] })],
+      ctx,
+      'day',
+      {
+        projectIds: [1],
+      },
+    );
+    expect(withBug[0]).toMatchObject({ open: 4, issues: { open: 1, spill: 0 } });
+    expect(withBug[0]!.people[0]).toMatchObject({ id: 5, open: 3, issues: { open: 1 } });
     // Someone with nothing open in a project is not listed under it.
     const withDoneOnly = projectWork(
       [

@@ -1338,6 +1338,8 @@ export interface WorkCounts {
   spill: number;
   /** The latest task deadline (the project's deadline on a project row). */
   lastDeadline: Date | null;
+  /** Of open, done, overdue and spill: how many are issues (bug or feedback); the rest are dev tasks. */
+  issues: { open: number; done: number; overdue: number; spill: number };
   /** Tasks touched (changed or moved) in the last ACTIVITY_DAYS days, bulk changes left out. */
   activityWeek: number;
   lastActivity: Date | null;
@@ -1360,9 +1362,16 @@ function workCounts(
     if (!last || a > last) last = a;
     if (a.getTime() >= weekCut) activityWeek += 1;
   }
+  const issueList = list.filter((t) => t.isIssue);
   return {
     open: list.filter(isPending).length,
     hold: list.filter(isOnHold).length,
+    issues: {
+      open: issueList.filter(isPending).length,
+      done: issueList.filter((t) => isDonePrev(t, ctx, period)).length,
+      overdue: issueList.filter((t) => isOverdueInPeriod(t, ctx, period)).length,
+      spill: issueList.filter((t) => isSpill(t, ctx, period)).length,
+    },
     total: list.length,
     done: list.filter((t) => isDonePrev(t, ctx, period)).length,
     overdue: list.filter((t) => isOverdueInPeriod(t, ctx, period)).length,
