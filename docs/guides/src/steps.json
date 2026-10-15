@@ -50,7 +50,10 @@
   "feedback": "Feedback",
   "docs": "Documents",
   "faq": "FAQs",
-  "finance": "Cost to company"
+  "finance": "Cost to company",
+  "workflow": "Workflow",
+  "projecttypes": "Project types",
+  "daily": "Daily update"
  },
  "TAB_STEPS": {
   "dev": [
@@ -64,6 +67,11 @@
     ]
    },
    {
+    "target": "[data-group=\"dev.tiles\"] [data-slot=\"projects\"]",
+    "title": "Projects",
+    "text": "Every project active in Bitrix24 whose owner is in the Development or QA Testing department, or a PM (fixed: the switch and filters do not change it; only the Project filter narrows it) = Active + Silent + Hold. Hold: every unfinished task is in On Hold. Active: open tasks and a task changed or moved in the last 30 days (bulk changes left out). Silent: the rest (no open task, or no activity for 30 days). Click for Projects at work, most active this week first, then the earliest deadline: open a project for who works on it. Its Day / Week / Month switch sets Done (previous period), Overdue (this period) and Spill (previous period)."
+   },
+   {
     "target": "[data-group=\"dev.tiles\"] [data-slot=\"total\"]",
     "title": "Total",
     "text": "All tasks in the filters for the switch (Dev, Issues or both), Development department only. Under the number: the split into Dev and Issues (or Bug and Feedback). Click any count to list those tasks below.",
@@ -72,7 +80,7 @@
    {
     "target": "[data-group=\"dev.tiles\"] [data-slot=\"pending\"]",
     "title": "Pending",
-    "text": "Behind QA Backlog and not on hold: To do, In progress, Pushed to Master, Merged to Development, Pending for QA, Issue Raised. Click any count to list those tasks below."
+    "text": "Behind QA Backlog and not on hold: To do, In progress, Pushed to Master, Merged to Development, Pending for QA, Issue Raised. A testing or re-testing task in Issue Raised is not pending. Click any count to list those tasks below."
    },
    {
     "target": "[data-group=\"dev.tiles\"] [data-slot=\"hold\"]",
@@ -93,6 +101,16 @@
     "target": "[data-group=\"dev.tiles\"] [data-slot=\"doneToday\"]",
     "title": "Done today",
     "text": "Reached QA Backlog for the first time today (IST)."
+   },
+   {
+    "target": "[data-group=\"dev.tiles\"] [data-slot=\"inHand\"]",
+    "title": "Tasks in hand",
+    "text": "Pending tasks (behind QA Backlog, not on hold) whose deadline is still ahead (IST). Under it, when they are planned: tomorrow, the rest of this week, the rest of this month, next week, next month. The parts overlap (tomorrow is also in the rest of the week), so they do not add up. Overdue and no-deadline tasks are not in hand."
+   },
+   {
+    "target": "[data-group=\"dev.cards\"] [data-slot=\"inHand\"]",
+    "title": "Tasks in hand by assignee",
+    "text": "Pending tasks with the deadline ahead, per assignee or project. The chart shows the window picked above it (All, Tomorrow, Rest of week, Rest of month, Next week, Next month); the table shows every window. A bar or count opens those tasks; a name sets the filter."
    },
    {
     "target": "[data-group=\"dev.cards\"] [data-slot=\"assignees\"]",
@@ -134,6 +152,16 @@
     "member": "Bugs and feedback assigned to you or filed by you. Click any count to list those tasks below."
    },
    {
+    "target": "[data-group=\"qa.tiles\"] [data-slot=\"inHand\"]",
+    "title": "Tasks in hand",
+    "text": "The QA Testing team's pending testing tasks whose deadline is still ahead (IST), by when they are planned: tomorrow, the rest of this week, the rest of this month, next week, next month. The parts overlap, so they do not add up."
+   },
+   {
+    "target": "[data-group=\"qa.cards\"] [data-slot=\"inHand\"]",
+    "title": "Tasks in hand by assignee",
+    "text": "The testing team's pending tasks with the deadline ahead, per assignee or project. The chart shows the window picked above it; the table shows every window. A bar or count opens those tasks; a name sets the filter."
+   },
+   {
     "target": "[data-group=\"qa.tiles\"] [data-slot=\"qaOpen\"]",
     "title": "Open / pending",
     "text": "Open = pending: any stage behind QA Backlog except On Hold (Issue Raised included). Resolved = QA Backlog, In QA, Done or LIVE. On Hold is its own tile. The ring shows the resolved %."
@@ -171,7 +199,7 @@
    {
     "target": "[data-group=\"qa.cards\"] [data-slot=\"testing\"]",
     "title": "Testing tasks",
-    "text": "Tasks tagged testing or re-testing, or assigned to QA Testing. Late = pending past deadline."
+    "text": "Tasks tagged testing or re-testing, or assigned to QA Testing. Late = pending past deadline. A testing or re-testing task in Issue Raised is \"Issue raised\": not pending, never late."
    },
    {
     "target": "[data-group=\"qa.cards\"] [data-slot=\"retest\"]",
@@ -208,7 +236,7 @@
    {
     "target": "[data-tour=\"kpi-period\"]",
     "title": "Day, Week or Month",
-    "text": "The period changes only the glowing data points: Closed, On-time, Project health (closed in the period) and People (delivered in the period), each compared with the period before. Open, On hold, Overdue, Active projects and No deadline are counted as of now, whatever the period. Every task in every project, all departments. A task is closed when it first reaches QA Backlog (or, without QA stages, when Bitrix24 closes it).",
+    "text": "The period changes only the glowing data points: Closed, On-time, Project health (closed in the period) and People (delivered in the period), each compared with the period before. Open, On hold, Overdue, Projects and No deadline are counted as of now, whatever the period. Every task in every project, all departments. A task is closed when it first reaches QA Backlog (or, without QA stages, when Bitrix24 closes it).",
     "affects": [
      "[data-group=\"kpi.tiles\"] [data-slot=\"closed\"]",
      "[data-group=\"kpi.tiles\"] [data-slot=\"onTime\"]",
@@ -238,8 +266,18 @@
    },
    {
     "target": "[data-group=\"kpi.tiles\"] [data-slot=\"active\"]",
-    "title": "Active projects",
-    "text": "Projects with open tasks and any action (task change or comment) in the last 30 days. Silent = open tasks and no action for 10+ working days."
+    "title": "Projects",
+    "text": "Every project active in Bitrix24, all departments (only the Project filter narrows it) = Active + Silent + Hold, the same rule as the Development Projects tile. Hold: every unfinished task is in On Hold. Active: open tasks and a task changed or moved in the last 30 days (bulk changes left out). Silent: the rest (no open task, or no activity for 30 days). Click the tile or a part to list those projects in Project health."
+   },
+   {
+    "target": "[data-group=\"kpi.tiles\"] [data-slot=\"inHand\"]",
+    "title": "Tasks in hand",
+    "text": "Open tasks whose deadline is still ahead (IST), by when they are planned: tomorrow, the rest of this week, the rest of this month, next week, next month. The parts overlap (tomorrow is also in the rest of the week), so they do not add up. Overdue and no-deadline tasks are counted in their own tiles."
+   },
+   {
+    "target": "[data-group=\"kpi.cards\"] [data-slot=\"inHand\"]",
+    "title": "Tasks in hand by assignee",
+    "text": "Open tasks with the deadline ahead, per assignee or project. The chart shows the window picked above it (All, Tomorrow, Rest of week, Rest of month, Next week, Next month); the table shows every window. A bar or count opens those tasks; a name sets the filter."
    },
    {
     "target": "[data-group=\"kpi.tiles\"] [data-slot=\"noDeadline\"]",
@@ -354,6 +392,57 @@
     "text": "New reports start in Preview: only admins get them, with the list of who would. Preview shows the mail as any person would get it; Send test sends it to you; Go live sends it to everyone on schedule. Last runs show what went out."
    }
   ],
+  "workflow": [
+   {
+    "target": "[data-group=\"workflow.cards\"] [data-slot=\"diagram\"]",
+    "title": "How work flows",
+    "text": "A task moves left to right through the Kanban stages to LIVE. Each lane is a department: the PM or team lead plans it (To do), Development builds it (In progress, Pushed to Master, Merged to Development, Pending for QA), QA tests it (QA Backlog, In QA, Done, or Issue Raised to send it back) and Release puts it live. Solid arrows are the usual moves, red dashed ones QA sending work back. The band underneath shows what each stage counts as. Click a stage for details."
+   },
+   {
+    "target": "[data-group=\"workflow.cards\"] [data-slot=\"stage\"]",
+    "title": "One stage",
+    "text": "What the stage means, who acts there, where it moves on to, the board column names that mean it, and which numbers on the dashboard it feeds."
+   },
+   {
+    "target": "[data-group=\"workflow.cards\"] [data-slot=\"departments\"]",
+    "title": "Who does what",
+    "text": "Each department and the stages where the next step is theirs."
+   },
+   {
+    "target": "[data-tour=\"workflow-edit\"]",
+    "title": "Edit the workflow (admins)",
+    "text": "Admins change the stages: order, names, departments, what each counts as, its roles, column names and arrows, and the rework rule. Once saved, every number on every page counts with it. Every version is kept and can be restored."
+   }
+  ],
+  "projecttypes": [
+   {
+    "target": "[data-group=\"projecttypes.tiles\"] [data-slot=\"differ\"]",
+    "title": "Projects that differ",
+    "text": "Most projects follow the full development flow to LIVE. Support desks, DevOps and personal projects use short boards (New › In progress › Finished), others skip the code or release stages. Their numbers follow the same rules, with fewer stages."
+   },
+   {
+    "target": "[data-group=\"projecttypes.cards\"] [data-slot=\"type-support\"]",
+    "title": "Projects by type",
+    "text": "Each type with its rule and its projects. Every project shows its own columns and the stage each counts as; a column the workflow does not know is outlined in red. Admins set a project’s type by hand, map an unknown column to a stage, and edit the types."
+   }
+  ],
+  "daily": [
+   {
+    "target": "[data-tour=\"daily-plan\"]",
+    "title": "Plan your day",
+    "text": "Open it from the Daily update icon in the dock: it lists your overdue and due-today tasks. Keep, remove or add your own tasks, write a note and post it: it goes to the daily work update group on Slack with your name."
+   },
+   {
+    "target": "[data-tour=\"daily-wrap\"]",
+    "title": "Wrap up your day",
+    "text": "In the evening from the same icon, or when you sign out, your plan comes back with each task Done or WIP. Marking one Done completes it in Bitrix24; work outside the plan becomes a Bitrix24 task assigned to you. Then it goes to the same Slack thread."
+   },
+   {
+    "target": "[data-group=\"daily.cards\"] [data-slot=\"history\"]",
+    "title": "My last 30 days",
+    "text": "Each day you posted: tasks planned, done, WIP and outside the plan. Open the Daily update any time from its icon in the dock on the right."
+   }
+  ],
   "feedback": [
    {
     "target": "[data-group=\"feedback.cards\"] [data-slot=\"form\"]",
@@ -458,17 +547,20 @@
  },
  "POINT_LABELS": {
   "dev.tiles": {
+   "projects": "Projects",
    "total": "Total tasks",
    "pending": "Pending",
    "hold": "On hold",
    "ready": "Ready",
    "deployed": "Deployed",
    "overdue": "Overdue",
-   "doneToday": "Done today"
+   "doneToday": "Done today",
+   "inHand": "Tasks in hand"
   },
   "dev.cards": {
    "assignees": "Assignee-wise tasks",
    "pendingDone": "Pending vs Done",
+   "inHand": "Tasks in hand by assignee",
    "ageing": "Task ageing",
    "ranking": "Fastest to QA Backlog",
    "matrix": "Tasks by stage"
@@ -480,6 +572,7 @@
    "alerts": "Alert details"
   },
   "qa.tiles": {
+   "inHand": "Tasks in hand",
    "qaTotal": "Total issues filed",
    "qaOpen": "Open / pending",
    "hold": "On hold",
@@ -492,6 +585,7 @@
    "issuesByAssignee": "Issues by assignee",
    "rework": "Rework by developer",
    "testing": "Testing team workload",
+   "inHand": "Tasks in hand by assignee",
    "retest": "Waiting for retest",
    "retestByGroup": "Retesting awaited by assignee",
    "issueTrend": "Issue trend",
@@ -509,12 +603,14 @@
    "overdue": "Overdue",
    "closed": "Closed",
    "onTime": "On-time",
-   "active": "Active projects",
-   "noDeadline": "No deadline"
+   "active": "Projects",
+   "noDeadline": "No deadline",
+   "inHand": "Tasks in hand"
   },
   "kpi.cards": {
    "insights": "Insights",
    "projectHealth": "Project health",
+   "inHand": "Tasks in hand by assignee",
    "overdue": "Overdue breakdown",
    "workload": "Workload",
    "people": "People",
@@ -550,6 +646,43 @@
    "live": "Live",
    "preview": "In preview",
    "paused": "Paused"
+  },
+  "workflow.tiles": {
+   "stages": "Stages",
+   "open": "Open stages",
+   "completed": "Completed stages",
+   "version": "Version"
+  },
+  "workflow.cards": {
+   "diagram": "Flow diagram",
+   "stage": "Stage",
+   "departments": "Who does what",
+   "versions": "Versions"
+  },
+  "projecttypes.tiles": {
+   "projects": "Projects",
+   "full": "Full development",
+   "differ": "Different stages",
+   "unmapped": "Unknown columns"
+  },
+  "projecttypes.cards": {
+   "type-support": "Support / individual",
+   "type-design": "Design-first development",
+   "type-qaOnly": "QA only",
+   "type-release": "Development with release",
+   "type-noRelease": "Development without release stage",
+   "type-other": "Other",
+   "untyped": "No type"
+  },
+  "daily.tiles": {
+   "planned": "Planned today",
+   "done": "Done",
+   "wip": "WIP",
+   "extra": "Outside the plan",
+   "streak": "Days posted"
+  },
+  "daily.cards": {
+   "history": "My last 30 days"
   },
   "feedback.tiles": {
    "sent": "You sent",
@@ -605,16 +738,25 @@
  },
  "INFO": {
   "total": "All tasks in the filters for the switch (Dev, Issues or both), Development department only.",
-  "pending": "Behind QA Backlog and not on hold: To do, In progress, Pushed to Master, Merged to Development, Pending for QA, Issue Raised.",
+  "pending": "Behind QA Backlog and not on hold: To do, In progress, Pushed to Master, Merged to Development, Pending for QA, Issue Raised. A testing or re-testing task in Issue Raised is not pending.",
   "hold": "In On Hold: neither pending nor completed. Pending + completed + on hold = total.",
   "ready": "In the Done stage, ready to go live.",
   "deployed": "In the LIVE stage.",
   "overdue": "Pending, not On Hold, and the deadline has passed.",
+  "inHand": "Pending tasks (behind QA Backlog, not on hold) whose deadline is still ahead (IST). Under it, when they are planned: tomorrow, the rest of this week, the rest of this month, next week, next month. The parts overlap (tomorrow is also in the rest of the week), so they do not add up. Overdue and no-deadline tasks are not in hand.",
+  "spill": "Spill: the deadline was in the previous day, week or month (IST, weeks Monday to Sunday) and the task was not pushed to QA Backlog by its end (still pending or on hold, or completed later).",
+  "openNoDeadline": "Open (pending, not on hold) with no deadline set in Bitrix24.",
+  "donePrev": "Pushed to QA Backlog in the previous day, week or month (IST, weeks Monday to Sunday).",
+  "overduePeriod": "Pending, not on hold, the deadline has passed and it fell in the current day, week or month (IST).",
+  "devProjects": "Every project active in Bitrix24 whose owner is in the Development or QA Testing department, or a PM (fixed: the switch and filters do not change it; only the Project filter narrows it) = Active + Silent + Hold. Hold: every unfinished task is in On Hold. Active: open tasks and a task changed or moved in the last 30 days (bulk changes left out). Silent: the rest (no open task, or no activity for 30 days). Click for Projects at work, most active this week first, then the earliest deadline: open a project for who works on it. Its Day / Week / Month switch sets Done (previous period), Overdue (this period) and Spill (previous period).",
+  "inHandBy": "Pending tasks with the deadline ahead, per assignee or project. The chart shows the window picked above it (All, Tomorrow, Rest of week, Rest of month, Next week, Next month); the table shows every window. A bar or count opens those tasks; a name sets the filter.",
+  "qaInHandBy": "The testing team's pending tasks with the deadline ahead, per assignee or project. The chart shows the window picked above it; the table shows every window. A bar or count opens those tasks; a name sets the filter.",
+  "qaInHand": "The QA Testing team's pending testing tasks whose deadline is still ahead (IST), by when they are planned: tomorrow, the rest of this week, the rest of this month, next week, next month. The parts overlap, so they do not add up.",
   "doneToday": "Reached QA Backlog for the first time today (IST).",
   "dueToday": "Deadline is today (IST), in any stage except LIVE.",
   "assigneeTable": "Per person or project. Done = sent to QA (QA Backlog to LIVE). Comp. today = reached QA Backlog today.",
   "colTotal": "All tasks of this row.",
-  "colPending": "Pending: any stage behind QA Backlog except On Hold, Issue Raised included.",
+  "colPending": "Pending: any stage behind QA Backlog except On Hold, Issue Raised included (not for testing or re-testing tasks).",
   "colDone": "Completed: in QA Backlog, In QA, Done or LIVE.",
   "colDueToday": "Deadline is today, not yet LIVE.",
   "colCompToday": "Reached QA Backlog for the first time today.",
@@ -632,7 +774,7 @@
   "qaRework": "Issues QA sent back after testing: from QA Backlog, In QA or Done to Issue Raised, To do or In progress. Stage flow only.",
   "issuesByAssignee": "Open vs resolved, each split into bug and feedback (or the reverse), per person or project. Table: the assignee-wise table.",
   "issuesByStage": "Issues per stage and person (or project). Red = overdue part. Bug / Feedback narrows it.",
-  "testing": "Tasks tagged testing or re-testing, or assigned to QA Testing. Late = pending past deadline.",
+  "testing": "Tasks tagged testing or re-testing, or assigned to QA Testing. Late = pending past deadline. A testing or re-testing task in Issue Raised is \"Issue raised\": not pending, never late.",
   "retest": "Issues in QA Backlog or In QA, by who filed them. Oldest = days waiting.",
   "issueAge": "Open issues by days past deadline (same as task ageing). On Hold counts here.",
   "rework": "QA send-backs per person or project, split into bug and feedback, and the % of their issues sent back. First Issue Raised to To do is not counted.",
@@ -650,7 +792,9 @@
   "overdue": "Open tasks whose deadline has passed. \"Over 30 days\" = more than 30 days late.",
   "closed": "Tasks closed in the period (first QA Backlog, else the Bitrix24 closed date). Clean-ups of 30+ tasks closed in one project on one day are left out.",
   "onTime": "Of the tasks closed in the period that had a deadline, the share closed on or before it.",
-  "active": "Projects with open tasks and any action (task change or comment) in the last 30 days. Silent = open tasks and no action for 10+ working days.",
+  "inHandBy": "Open tasks with the deadline ahead, per assignee or project. The chart shows the window picked above it (All, Tomorrow, Rest of week, Rest of month, Next week, Next month); the table shows every window. A bar or count opens those tasks; a name sets the filter.",
+  "inHand": "Open tasks whose deadline is still ahead (IST), by when they are planned: tomorrow, the rest of this week, the rest of this month, next week, next month. The parts overlap (tomorrow is also in the rest of the week), so they do not add up. Overdue and no-deadline tasks are counted in their own tiles.",
+  "active": "Every project active in Bitrix24, all departments (only the Project filter narrows it) = Active + Silent + Hold, the same rule as the Development Projects tile. Hold: every unfinished task is in On Hold. Active: open tasks and a task changed or moved in the last 30 days (bulk changes left out). Silent: the rest (no open task, or no activity for 30 days). Click the tile or a part to list those projects in Project health.",
   "noDeadline": "Open tasks without a deadline: they cannot be overdue or planned.",
   "projects": "One row per project, worst first. Red: over 25 % of open tasks overdue (at least 3), or a task over 30 days late. Amber: any overdue task, or silent. Green: neither.",
   "overdue2": "Open tasks past their deadline, by how many days late, per project and per person.",

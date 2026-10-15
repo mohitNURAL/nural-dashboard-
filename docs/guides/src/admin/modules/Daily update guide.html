@@ -1,0 +1,59 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Nural Pulse: Daily update guide (Admins)</title><style>
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Work+Sans:wght@400;500;600&display=swap');
+@page { size: A4; margin: 16mm 15mm 18mm; }
+@page :first { margin: 0; }
+:root { --navy: #18244e; --blue: #32499f; --teal: #13b5c1; --ink: #231f20; --muted: #6b6567; --line: #e3e1e6; --soft: #f3f5fb; }
+* { box-sizing: border-box; }
+body { font-family: 'Work Sans', system-ui, sans-serif; color: var(--ink); font-size: 10.5pt; line-height: 1.55; margin: 0; }
+h1, h2, h3, h4 { font-family: Manrope, system-ui, sans-serif; color: var(--navy); line-height: 1.25; }
+.cover { height: 297mm; width: 210mm; padding: 34mm 22mm; color: #fff; position: relative; overflow: hidden; page-break-after: always;
+  background: radial-gradient(circle at 85% 15%, rgba(19,181,193,.55), transparent 45%), radial-gradient(circle at 10% 90%, rgba(50,73,159,.9), transparent 55%), linear-gradient(160deg, #0f1836, #18244e 55%, #1d3a7a); }
+.cover .brand { font-family: Manrope; font-weight: 800; font-size: 26pt; letter-spacing: .5px; }
+.cover .brand span { font-weight: 500; font-size: 13pt; opacity: .75; margin-left: 10px; }
+.cover h1 { color: #fff; font-size: 38pt; margin: 58mm 0 6mm; letter-spacing: -.5px; }
+.cover p.lead { font-size: 14pt; max-width: 140mm; opacity: .9; }
+.cover .meta { position: absolute; bottom: 26mm; left: 22mm; right: 22mm; display: flex; justify-content: space-between; font-size: 10pt; opacity: .8; border-top: 1px solid rgba(255,255,255,.25); padding-top: 5mm; }
+.cover .orb { position: absolute; right: -30mm; top: 70mm; width: 120mm; height: 120mm; border-radius: 50%; border: 1px solid rgba(255,255,255,.18); }
+.cover .orb.two { right: -10mm; top: 95mm; width: 80mm; height: 80mm; border-color: rgba(19,181,193,.45); }
+.toc { page-break-after: always; }
+.toc h2 { font-size: 20pt; margin: 0 0 6mm; }
+.toc ol { list-style: none; padding: 0; margin: 0; counter-reset: c; }
+.toc li { counter-increment: c; display: flex; align-items: baseline; gap: 4mm; padding: 2.6mm 0; border-bottom: 1px solid var(--line); font-family: Manrope; font-weight: 700; color: var(--navy); }
+.toc li::before { content: counter(c, decimal-leading-zero); color: var(--teal); font-weight: 800; width: 9mm; }
+.toc li small { margin-left: auto; font-family: 'Work Sans'; font-weight: 400; color: var(--muted); }
+section.chapter { page-break-before: always; }
+section.chapter:first-of-type { page-break-before: auto; }
+.chead { display: flex; align-items: center; gap: 4mm; margin-bottom: 4mm; }
+.num { width: 13mm; height: 13mm; border-radius: 4mm; display: grid; place-items: center; color: #fff; font-family: Manrope; font-weight: 800; font-size: 13pt; background: linear-gradient(135deg, var(--blue), var(--teal)); box-shadow: 0 4px 12px rgba(50,73,159,.3); }
+.chead h2 { margin: 0; font-size: 19pt; }
+.chead p { margin: 0; color: var(--muted); }
+h3 { font-size: 12.5pt; margin: 6mm 0 2mm; }
+p { margin: 0 0 3mm; }
+ul { margin: 0 0 3mm; padding-left: 5mm; }
+li { margin: 1mm 0; }
+figure { margin: 4mm 0 5mm; page-break-inside: avoid; }
+figure img { width: 100%; border-radius: 3mm; border: 1px solid var(--line); box-shadow: 0 6px 18px rgba(24,36,78,.12); display: block; }
+figure.narrow img { width: auto; max-width: 100%; max-height: 120mm; margin: 0 auto; }
+figure.side { display: flex; gap: 6mm; align-items: flex-start; }
+figure.side img { width: 50mm; flex: none; }
+figure.side figcaption { margin-top: 0; }
+figcaption { font-size: 9pt; color: var(--muted); margin-top: 2mm; text-align: center; }
+figure.side figcaption { text-align: left; }
+.callout { border-radius: 3mm; padding: 3.5mm 4.5mm; margin: 4mm 0; background: var(--soft); border-left: 3px solid var(--blue); page-break-inside: avoid; }
+.callout.tip { border-left-color: var(--teal); background: #eefafb; }
+.callout.warn { border-left-color: #e0a100; background: #fff8e6; }
+.callout b { font-family: Manrope; color: var(--navy); }
+table { width: 100%; border-collapse: separate; border-spacing: 0; margin: 3mm 0 5mm; font-size: 9.5pt; page-break-inside: auto; }
+th { text-align: left; font-family: Manrope; font-size: 8pt; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: 2mm 3mm; border-bottom: 1.5px solid var(--navy); }
+td { padding: 2.4mm 3mm; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr { page-break-inside: avoid; }
+td.name { font-family: Manrope; font-weight: 700; color: var(--navy); width: 30%; }
+.pill { display: inline-block; padding: .4mm 2.2mm; border-radius: 9mm; font-family: Manrope; font-size: 8pt; font-weight: 700; background: #e8ecf8; color: var(--blue); margin: 0 1mm 1mm 0; }
+.pill.t { background: #e2f7f8; color: #0b8f99; }
+.who { display: flex; flex-wrap: wrap; gap: 1mm; margin: 0 0 3mm; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+.card { border: 1px solid var(--line); border-radius: 3mm; padding: 3.5mm 4mm; page-break-inside: avoid; }
+.card h4 { margin: 0 0 1.5mm; font-size: 11pt; }
+.card p { margin: 0; font-size: 9.5pt; color: #3a3537; }
+.small { font-size: 9pt; color: var(--muted); }
+</style></head><body><div class="cover"><div class="orb"></div><div class="orb two"></div><div class="brand">Nural<span>Pulse</span></div><h1>Daily update guide</h1><p class="lead">Plan, wrap up, post to Slack. What the page shows and how to use it.</p><p class="lead" style="margin-top:6mm;font-size:12pt;opacity:.75">For Admins</p><div class="meta"><span>NURALTECH · internal · Powered by Bitrix24 and Nural</span><span>15 October 2026</span></div></div><section class="chapter" id="c1"><div class="chead"><div class="num">01</div><div><h2>Daily update</h2><p>Plan, wrap up, post to Slack</p></div></div><p>Your morning plan and evening wrap-up, opened from the Daily update icon in the page tools and posted to the daily work update group on Slack. The page lists your last 30 days.</p><h3>Every data point</h3><table><tr><th>Data point</th><th>What it shows and how to use it</th></tr><tr><td class="name">Plan your day</td><td>Open it from the Daily update icon in the dock: it lists your overdue and due-today tasks. Keep, remove or add your own tasks, write a note and post it: it goes to the daily work update group on Slack with your name.</td></tr><tr><td class="name">Wrap up your day</td><td>In the evening from the same icon, or when you sign out, your plan comes back with each task Done or WIP. Marking one Done completes it in Bitrix24; work outside the plan becomes a Bitrix24 task assigned to you. Then it goes to the same Slack thread.</td></tr><tr><td class="name">My last 30 days</td><td>Each day you posted: tasks planned, done, WIP and outside the plan. Open the Daily update any time from its icon in the dock on the right.</td></tr></table></section></body></html>

@@ -84,15 +84,21 @@ IMG = '../../img/'
 
 # What each level can open, and how it reads (the dock picks the set from the person's rights).
 SETS = {
-    'member': dict(label='Members', who='a team member', pages=['dev', 'qa', 'insights', 'feedback', 'docs', 'faq'], member=True, edit='limited'),
-    'support': dict(label='Support team', who='a member of the Tech Support team', pages=['dev', 'qa', 'support', 'insights', 'feedback', 'docs', 'faq'], member=True, edit='limited'),
-    'owner': dict(label='Product owners', who='a product owner', pages=['kpi', 'dev', 'qa', 'insights', 'feedback', 'docs', 'faq'], member=False, edit='all'),
-    'manager': dict(label='Team leads and PM', who='a team lead or project manager', pages=['kpi', 'dev', 'qa', 'support', 'insights', 'org', 'people', 'feedback', 'docs', 'faq'], member=False, edit='all'),
-    'admin': dict(label='Admins', who='an admin', pages=['kpi', 'dev', 'qa', 'support', 'insights', 'org', 'people', 'access', 'connections', 'mailing', 'feedback', 'docs', 'faq', 'finance'], member=False, edit='all'),
+    'member': dict(label='Members', who='a team member', pages=['dev', 'qa', 'daily', 'insights', 'workflow', 'projecttypes', 'feedback', 'docs', 'faq'], member=True, edit='limited'),
+    'support': dict(label='Support team', who='a member of the Tech Support team', pages=['dev', 'qa', 'support', 'daily', 'insights', 'workflow', 'projecttypes', 'feedback', 'docs', 'faq'], member=True, edit='limited'),
+    'owner': dict(label='Product owners', who='a product owner', pages=['kpi', 'dev', 'qa', 'daily', 'insights', 'workflow', 'projecttypes', 'feedback', 'docs', 'faq'], member=False, edit='all'),
+    'manager': dict(label='Team leads and PM', who='a team lead or project manager', pages=['kpi', 'dev', 'qa', 'support', 'daily', 'insights', 'workflow', 'projecttypes', 'org', 'people', 'feedback', 'docs', 'faq'], member=False, edit='all'),
+    'admin': dict(label='Admins', who='an admin', pages=['kpi', 'dev', 'qa', 'support', 'daily', 'insights', 'workflow', 'projecttypes', 'org', 'people', 'access', 'connections', 'mailing', 'feedback', 'docs', 'faq', 'finance'], member=False, edit='all'),
 }
 
 
+def has_img(set_, name):
+    return os.path.exists(os.path.join(HERE, '..', 'img', set_, f'{name}.jpg'))
+
+
 def fig(set_, name, caption, cls=''):
+    if not has_img(set_, name):
+        return ''
     return f'<figure class="{cls}"><img src="{IMG}{set_}/{name}.jpg" alt=""><figcaption>{e(caption)}</figcaption></figure>'
 
 
@@ -137,13 +143,17 @@ PAGE_CARD = {
     'org': ('Company tree', 'Departments as in Bitrix24, with heads and people.'),
     'people': ('People directory', "Everyone's designation, department, access areas, dashboard status, last active, and open and overdue tasks."),
     'access': ('Access permissions', 'Set each right per person or department; every change is logged.'),
+    'daily': ('Daily update', 'Plan your day in the morning and wrap it up in the evening, from the dock icon; both are posted to the daily work update group on Slack. Your last 30 days.'),
+    'workflow': ('Workflow', 'The stages tasks move through, what each counts as (pending, on hold, completed) and who works in it.'),
+    'projecttypes': ('Project types', 'Projects grouped by the stages on their boards, with the rule for each type.'),
 }
 
 LEVELS_TABLE = '''<table><tr><th>Level</th><th>Data</th><th>Pages</th><th>Can change on tasks</th></tr>
 <tr><td class="name">Admin</td><td>Everything</td><td>All, including Access permissions, Integration (Connections, Mailing) and Finance</td><td>Every field</td></tr>
 <tr><td class="name">Project manager, team lead</td><td>Everything</td><td>KPI, Development, QA, Support, Insights, Company tree, People directory</td><td>Every field</td></tr>
 <tr><td class="name">Product owner</td><td>Everything</td><td>KPI, Development, QA, Insights</td><td>Every field</td></tr>
-<tr><td class="name">Member</td><td>Tasks assigned to them or created by them</td><td>Development, QA, My insights (and Support for the Tech Support team)</td><td>Stage, status and tags</td></tr></table>'''
+<tr><td class="name">Member</td><td>Tasks assigned to them or created by them</td><td>Development, QA, My insights (and Support for the Tech Support team)</td><td>Stage, status and tags</td></tr></table>
+<p class="small">Everyone also opens Daily update (My work), and Workflow and Project types (Projects).</p>'''
 
 
 def user_guide(key):
@@ -178,7 +188,12 @@ def user_guide(key):
         + ('' if member else LEVELS_TABLE)))
 
     groups = ['<b>Dashboard</b>: ' + ', '.join(PAGE_CARD[p][0] for p in pages if p in ('kpi', 'dev', 'qa', 'support')) + '.']
+    if 'daily' in pages:
+        groups.append('<b>My work</b>: Daily update.')
     groups.append('<b>Insights</b>: ' + ('My insights' if member else 'Insights') + '.')
+    proj = [PAGE_CARD[p][0] for p in pages if p in ('workflow', 'projecttypes')]
+    if proj:
+        groups.append('<b>Projects</b>: ' + ', '.join(proj) + '.')
     emp = [PAGE_CARD[p][0] for p in pages if p in ('org', 'people', 'access')]
     if emp:
         groups.append('<b>Employees</b>: ' + ', '.join(emp) + '.')
@@ -197,7 +212,7 @@ def user_guide(key):
         '<li><b>Live</b>: green when updates are flowing in from Bitrix24.</li>'
         '<li><b>Profile</b>: your name and role, the theme (Light, Dark, System), live-update toasts and Sign out.</li></ul>'
         f'<figure class="side"><img src="{IMG}{key}/dock.jpg" alt="" style="width:16mm"><figcaption><b>Page tools</b> float on the right, as icons; hover any icon for its name.<br><br>'
-        '<b>Customise</b>: choose the tiles and cards to show.<br><b>Guided tour</b>: a walk through the page.<br><b>Guides</b>: this guide and the Module guide.<br>'
+        '<b>Customise</b>: choose the tiles and cards to show.<br><b>Guided tour</b>: a walk through the page.<br><b>Guides</b>: this guide and the Module guide.<br><b>Daily update</b>: plan or wrap up your day.<br>'
         '<b>Voice</b>: read tours aloud.<br><b>Reset layout</b>: back to the default, with Undo.</figcaption></figure>'))
 
     ch.append(('Reading the numbers', 'Tiles, cards, filters and drill-downs',
@@ -217,6 +232,15 @@ def user_guide(key):
         + '<ul><li>Choose the period (7, 14 or 30 days) at the top.</li><li>Every finding names its numbers; <b>click it</b> to list the tasks behind it.</li>'
         '<li>Leave and attendance from Infowan join the findings once Infowan is connected; until then Insights uses Bitrix24 and dashboard data only.</li></ul>'
         + fig(key, 'page-insights', ('My insights' if member else 'Insights') + ', as you see it (names replaced).')))
+
+    if 'daily' in pages:
+        ch.append(('Daily update', 'Plan your day, wrap it up, post to Slack',
+            '<p>The <b>Daily update</b> icon in the page tools on the right opens it; it never opens by itself. It is also under <b>My work › Daily update</b>, with your last 30 days.</p>'
+            '<ul><li><b>Morning: Plan your day.</b> Your overdue and due-today tasks are listed. Untick what you will not do, add any of your other open tasks, write a note and <b>Post my plan</b>. Posting again the same day changes the same Slack message.</li>'
+            '<li><b>Evening: Wrap up your day.</b> Your plan comes back with each task <b>Done</b> or <b>WIP</b>. Ticking Done on an open task completes it in Bitrix24, in your name. <b>Work outside the plan</b> becomes a new Bitrix24 task assigned to you (completed at once if you mark it Done). The wrap-up is posted in the same Slack thread.</li>'
+            '<li><b>Signing out</b> after posting a plan opens the wrap-up first: <b>Post and sign out</b> or <b>Sign out without posting</b>.</li></ul>'
+            + callout('tip', 'Where it goes.', 'Posts go to the daily work update group on Slack, with your name, once an admin has set the channel (Integration › Connections). Until then your update is saved on the dashboard only, and the window says so.')
+            + fig(key, 'page-daily', 'Daily update: your days, with planned, done, WIP and work outside the plan.')))
 
     ch.append(('Changing tasks', 'Edit in place and in bulk',
         f'<p>Changes are made in Bitrix24, in your name, and show on the dashboard straight away. You can change {e(edits)}.</p>'
@@ -271,7 +295,10 @@ MODULES = [
     ('dev', 'Development', 'Tasks, issues and deadlines', "The Development department's tasks and issues. The All / Dev / Issues switch at the top steers every number."),
     ('qa', 'QA', 'Bugs, feedback, testing and retesting', 'Bugs and feedback (tasks tagged bug or feedback), testing work and the retest queue. The Bug or Feedback filter narrows the page.'),
     ('support', 'Support', 'Feedback for the coming Support tab', 'Coming soon. Until then it collects what the support team and management need; admins and the Support lead read the answers.'),
+    ('daily', 'Daily update', 'Plan, wrap up, post to Slack', 'Your morning plan and evening wrap-up, opened from the Daily update icon in the page tools and posted to the daily work update group on Slack. The page lists your last 30 days.'),
     ('insights', 'Insights', 'What is holding us back', 'Findings from Bitrix24 and dashboard data, ranked: causes first (projects pulling people away), then releases at risk, lagging projects, overload, lagging people and people with room. Period: 7, 14 or 30 days. Every finding opens its tasks.'),
+    ('workflow', 'Workflow', 'Stages and what they count as', 'The stages a task moves through, in order: what each counts as (pending, on hold or completed), the part it plays, who works in it and the usual moves. Admins change it; every number follows.'),
+    ('projecttypes', 'Project types', 'Projects grouped by their boards', 'Each project type with its rule (the stages its board must or must not have) and its projects. A board column the workflow does not know is outlined in red.'),
     ('org', 'Company tree', 'Departments, heads and people', 'The company structure from Bitrix24: departments, their heads and people.'),
     ('people', 'People directory', 'Who has access, who is active', 'Everyone in Bitrix24 with what they can open on the dashboard and whether they use it.'),
     ('access', 'Access permissions', 'Rights per person or department', 'Who sees what and who may change what, set per person or department, with every change logged.'),
@@ -352,7 +379,8 @@ def module_guide(key):
     defs = D['INFO']
     glossary = [('Pending', defs['pending']), ('On hold', defs['hold']), ('Completed (done)', defs['colDone']),
                 ('Overdue', defs['overdue']), ('Done today', defs['doneToday']), ('Due today', defs['dueToday']),
-                ('Rework', defs['qaRework']), ('Retesting awaited', defs['retestAwaited'])]
+                ('Rework', defs['qaRework']), ('Retesting awaited', defs['retestAwaited']),
+                ('Testing tasks', defs['testing'])]
     if 'kpi' in S['pages']:
         glossary += [('Closed (KPI)', D['KPI_INFO']['closed']), ('On-time (KPI)', D['KPI_INFO']['onTime']),
                      ('Working time', D['KPI_INFO']['workingTime'])]
