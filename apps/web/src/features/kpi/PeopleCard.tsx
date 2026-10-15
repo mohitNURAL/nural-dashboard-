@@ -47,7 +47,7 @@ export function PeopleCard({ className }: { className?: string }) {
       col.accessor((p) => p.rates.closed, {
         id: 'closed',
         header: closedLabel,
-        meta: { align: 'right', info: KPI_INFO.closed },
+        meta: { align: 'center', info: KPI_INFO.closed },
         cell: (c) => {
           const p = c.row.original;
           const diff = p.rates.closed - p.closedPrev;
@@ -73,7 +73,7 @@ export function PeopleCard({ className }: { className?: string }) {
       col.accessor((p) => p.rates.onTimePct ?? -1, {
         id: 'onTime',
         header: 'On-time',
-        meta: { align: 'right', info: KPI_INFO.onTime },
+        meta: { align: 'center', info: KPI_INFO.onTime },
         cell: (c) => {
           const v = c.row.original.rates.onTimePct;
           return v === null ? <span className="text-text-muted">—</span> : `${v} %`;
@@ -82,7 +82,7 @@ export function PeopleCard({ className }: { className?: string }) {
       col.accessor((p) => p.rates.open, {
         id: 'open',
         header: 'Open',
-        meta: { align: 'right' },
+        meta: { align: 'center' },
         cell: (c) => (
           <CountButton
             n={c.getValue()}
@@ -93,7 +93,7 @@ export function PeopleCard({ className }: { className?: string }) {
       col.accessor((p) => p.rates.overdue, {
         id: 'overdue',
         header: 'Overdue',
-        meta: { align: 'right', info: KPI_INFO.overdue },
+        meta: { align: 'center', info: KPI_INFO.overdue },
         cell: (c) => (
           <CountButton
             n={c.getValue()}
@@ -105,7 +105,7 @@ export function PeopleCard({ className }: { className?: string }) {
       col.accessor((p) => p.workload?.dueSoon ?? 0, {
         id: 'dueSoon',
         header: 'Due in 10 days',
-        meta: { align: 'right', info: 'Open tasks due in the next 10 working days.' },
+        meta: { align: 'center', info: 'Open tasks due in the next 10 working days.' },
         cell: (c) => (
           <CountButton
             n={c.getValue()}
@@ -119,7 +119,7 @@ export function PeopleCard({ className }: { className?: string }) {
         id: 'rework',
         header: 'Sent back',
         meta: {
-          align: 'right',
+          align: 'center',
           info: 'QA send-backs on the tasks this person closed in the period.',
         },
       }),

@@ -42,9 +42,9 @@ export function RankingCard({ className }: { className?: string }) {
             <tr className="font-heading text-label font-bold uppercase text-text-muted">
               <th className="sticky top-0 bg-surface px-2 py-1.5 text-left">#</th>
               <th className="sticky top-0 bg-surface px-2 py-1.5 text-left">Employee</th>
-              <th className="sticky top-0 bg-surface px-2 py-1.5 text-right">Tasks</th>
-              <th className="sticky top-0 bg-surface px-2 py-1.5 text-right">Avg early</th>
-              <th className="sticky top-0 bg-surface px-2 py-1.5 text-right">On time</th>
+              <th className="sticky top-0 bg-surface px-2 py-1.5 text-center">Tasks</th>
+              <th className="sticky top-0 bg-surface px-2 py-1.5 text-center">Avg early</th>
+              <th className="sticky top-0 bg-surface px-2 py-1.5 text-center">On time</th>
             </tr>
           </thead>
           <tbody>
@@ -79,18 +79,18 @@ export function RankingCard({ className }: { className?: string }) {
                     </span>
                   </span>
                 </td>
-                <td className="border-b border-primary-soft-100 px-2 py-1.5 text-right">
+                <td className="border-b border-primary-soft-100 px-2 py-1.5 text-center tabular-nums">
                   <CountButton n={r.completed} onClick={() => open(r)} />
                 </td>
                 <td
                   className={clsx(
-                    'whitespace-nowrap border-b border-primary-soft-100 px-2 py-1.5 text-right',
+                    'whitespace-nowrap border-b border-primary-soft-100 px-2 py-1.5 text-center tabular-nums',
                     r.rank !== null && (r.avgDaysEarly >= 0 ? 'text-good' : 'text-bad'),
                   )}
                 >
                   {daysEarlyText(r.avgDaysEarly)}
                 </td>
-                <td className="border-b border-primary-soft-100 px-2 py-1.5 text-right tabular-nums">
+                <td className="border-b border-primary-soft-100 px-2 py-1.5 text-center tabular-nums">
                   {r.onTimePct.toFixed(0)}%
                 </td>
               </tr>

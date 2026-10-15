@@ -80,7 +80,7 @@ export const ProjectHealthCard = forwardRef<HTMLDivElement, { className?: string
         }),
         col.accessor('open', {
           header: 'Open',
-          meta: { align: 'right' },
+          meta: { align: 'center' },
           cell: (c) => (
             <CountButton
               n={c.getValue()}
@@ -90,7 +90,7 @@ export const ProjectHealthCard = forwardRef<HTMLDivElement, { className?: string
         }),
         col.accessor('overdue', {
           header: 'Overdue',
-          meta: { align: 'right', info: KPI_INFO.overdue },
+          meta: { align: 'center', info: KPI_INFO.overdue },
           cell: (c) => (
             <CountButton
               n={c.getValue()}
@@ -101,7 +101,7 @@ export const ProjectHealthCard = forwardRef<HTMLDivElement, { className?: string
         }),
         col.accessor('oldestOverdueDays', {
           header: 'Most late',
-          meta: { align: 'right', info: 'Days past deadline of its most overdue open task.' },
+          meta: { align: 'center', info: 'Days past deadline of its most overdue open task.' },
           cell: (c) =>
             c.getValue() ? (
               <span className={clsx(c.getValue() > 30 && 'font-bold text-bad')}>
@@ -113,7 +113,7 @@ export const ProjectHealthCard = forwardRef<HTMLDivElement, { className?: string
         }),
         col.accessor('noDeadline', {
           header: 'No deadline',
-          meta: { align: 'right' },
+          meta: { align: 'center' },
           cell: (c) => (
             <CountButton
               n={c.getValue()}
@@ -126,7 +126,7 @@ export const ProjectHealthCard = forwardRef<HTMLDivElement, { className?: string
         col.accessor((p) => p.rates.closed, {
           id: 'closed',
           header: `Closed ${words.now.toLowerCase()}`,
-          meta: { align: 'right', info: KPI_INFO.closed },
+          meta: { align: 'center', info: KPI_INFO.closed },
           cell: (c) => (
             <CountButton
               n={c.getValue()}
@@ -144,7 +144,7 @@ export const ProjectHealthCard = forwardRef<HTMLDivElement, { className?: string
         col.accessor((p) => p.rates.onTimePct ?? -1, {
           id: 'onTime',
           header: 'On-time',
-          meta: { align: 'right', info: KPI_INFO.onTime },
+          meta: { align: 'center', info: KPI_INFO.onTime },
           cell: (c) => {
             const v = c.row.original.rates.onTimePct;
             return v === null ? <span className="text-text-muted">—</span> : `${v} %`;
@@ -152,9 +152,9 @@ export const ProjectHealthCard = forwardRef<HTMLDivElement, { className?: string
         }),
         col.accessor('completionPct', {
           header: 'Done',
-          meta: { info: 'Closed tasks out of all its tasks.' },
+          meta: { align: 'center', info: 'Closed tasks out of all its tasks.' },
           cell: (c) => (
-            <span className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-2">
               <span className="h-1.5 w-16 overflow-hidden rounded bg-primary-soft-100">
                 <span
                   className="block h-full bg-primary"

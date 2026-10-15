@@ -665,7 +665,7 @@ function EntityTable({
             <th>{list.kind === 'project' ? 'Project' : 'Person'}</th>
             <th>Why</th>
             {heads.map((h) => (
-              <th key={h} className="text-right">
+              <th key={h} className="text-center">
                 {h}
               </th>
             ))}
@@ -678,7 +678,7 @@ function EntityTable({
               <td className="font-heading font-bold text-primary-dark">{e.name}</td>
               <td className="text-text">{e.reason}</td>
               {e.stats.map(([h, n]) => (
-                <td key={h} className="text-right tabular-nums">
+                <td key={h} className="text-center tabular-nums">
                   {n.toLocaleString('en-IN')}
                 </td>
               ))}

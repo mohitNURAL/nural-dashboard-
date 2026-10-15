@@ -172,7 +172,8 @@ export function ProjectsDialog() {
     }
     return countCell(c, w, label, params, strong);
   };
-  const align = (c: ProjectColumn) => (c.id === 'deadline' ? 'text-left' : 'text-right');
+  const align = (c: ProjectColumn) =>
+    c.id === 'deadline' ? 'text-left' : 'text-center tabular-nums';
 
   return (
     <Dialog.Root open onOpenChange={(o) => !o && close()}>

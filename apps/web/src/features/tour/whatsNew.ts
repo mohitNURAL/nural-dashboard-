@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-15-centred-numbers',
+    date: '2026-10-15',
+    tab: 'dev',
+    title: 'Numbers centred in every table',
+    steps: [
+      {
+        target: slot('dev.tiles', 'pending'),
+        title: 'Easier to scan',
+        text: 'Counts, days and percentages now sit in the middle of their column, under a centred heading, in every table and in the Projects PDF. Names and other text stay on the left.',
+      },
+    ],
+  },
+  {
     id: '2026-10-15-testing-issue-raised',
     date: '2026-10-15',
     tab: 'qa',

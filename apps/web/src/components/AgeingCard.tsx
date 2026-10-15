@@ -81,7 +81,7 @@ export function AgeingCard({
           col.accessor((r) => r.buckets[b.key], {
             id: b.key,
             header: b.label,
-            meta: { align: 'right' },
+            meta: { align: 'center' },
             cell: (c) => (
               <CountButton
                 n={c.getValue()}

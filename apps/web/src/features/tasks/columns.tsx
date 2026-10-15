@@ -187,7 +187,7 @@ export function issueColumns({ full = false } = {}): Columns<TaskRow> {
           col.accessor('rework', {
             header: 'Rework',
             enableSorting: false,
-            meta: { align: 'right' },
+            meta: { align: 'center' },
             cell: (c) =>
               c.getValue() ? (
                 <span className="font-bold text-bad">{c.getValue()}</span>
@@ -198,7 +198,7 @@ export function issueColumns({ full = false } = {}): Columns<TaskRow> {
           col.accessor('ageDays', {
             header: 'Age',
             enableSorting: false,
-            meta: { align: 'right' },
+            meta: { align: 'center' },
             cell: (c) => {
               const d = c.getValue();
               return d === null || d === undefined ? (

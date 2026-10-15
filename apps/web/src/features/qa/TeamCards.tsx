@@ -13,7 +13,7 @@ import { useOpenIssues } from './issueList';
 import { INFO } from '../info';
 
 const tcol = createColumnHelper<TestingRow>();
-const num = { meta: { align: 'right' } } as const;
+const num = { meta: { align: 'center' } } as const;
 
 export function TestingCard({ className }: { className?: string }) {
   const { data, isLoading } = useQaTesting();

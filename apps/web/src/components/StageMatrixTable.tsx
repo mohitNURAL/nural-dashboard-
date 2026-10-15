@@ -55,7 +55,7 @@ export function StageMatrixTable({ data, rowLabel, noun, onName, onOpen }: Props
                   </span>
                 </th>
               ))}
-              <th className="sticky top-0 z-10 px-2 py-1 text-right font-heading text-label font-bold uppercase">
+              <th className="sticky top-0 z-10 px-2 py-1 text-center font-heading text-label font-bold uppercase">
                 Total
               </th>
             </tr>
@@ -87,7 +87,7 @@ export function StageMatrixTable({ data, rowLabel, noun, onName, onOpen }: Props
                     onOpen={(extra, what) => onOpen(r, extra, what)}
                   />
                 ))}
-                <td className="px-2 py-1 text-right font-bold">
+                <td className="px-2 py-1 text-center font-bold tabular-nums">
                   <CountButton n={r.total} onClick={() => onOpen(r, {}, 'All stages')} />
                 </td>
               </tr>

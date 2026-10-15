@@ -32,6 +32,13 @@ export type { SortingState };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Columns<T> = ColumnDef<T, any>[];
 
+/**
+ * A column's `meta.align`: 'center' for numbers (counts, days, %, in tabular figures, header
+ * centred over them), 'right' kept for the odd case; text is left-aligned.
+ */
+const alignClass = (align?: string) =>
+  align === 'center' ? 'text-center' : align === 'right' ? 'text-right' : 'text-left';
+
 interface Props<T> {
   columns: Columns<T>;
   data: T[];
@@ -210,7 +217,7 @@ export function DataTable<T>({
                           className={clsx(
                             'sticky top-0 z-10 whitespace-nowrap font-heading text-label font-bold uppercase',
                             cell,
-                            align === 'right' ? 'text-right' : 'text-left',
+                            alignClass(align),
                             lay.enabled && 'cursor-grab active:cursor-grabbing',
                           )}
                         >
@@ -219,12 +226,13 @@ export function DataTable<T>({
                               type="button"
                               onClick={h.column.getToggleSortingHandler()}
                               className={clsx(
-                                'inline-flex items-center gap-1 uppercase hover:text-accent',
+                                'relative inline-flex items-center uppercase hover:text-accent',
                                 sort && 'text-accent',
                               )}
                             >
                               {flexRender(h.column.columnDef.header, h.getContext())}
-                              <span aria-hidden className="w-2">
+                              {/* Outside the label's box, so a centred header stays centred. */}
+                              <span aria-hidden className="absolute -right-3 w-2">
                                 {sort === 'asc' ? '▲' : sort === 'desc' ? '▼' : ''}
                               </span>
                             </button>
@@ -281,7 +289,7 @@ export function DataTable<T>({
                           className={clsx(
                             'align-middle',
                             cell,
-                            align === 'right' && 'text-right tabular-nums',
+                            align && clsx(alignClass(align), 'tabular-nums'),
                           )}
                         >
                           {flexRender(c.column.columnDef.cell, c.getContext())}
@@ -316,7 +324,7 @@ export function DataTable<T>({
                           className={clsx(
                             'sticky bottom-0 font-bold',
                             cell,
-                            align === 'right' && 'text-right tabular-nums',
+                            align && clsx(alignClass(align), 'tabular-nums'),
                           )}
                         >
                           {flexRender(h.column.columnDef.footer, h.getContext())}

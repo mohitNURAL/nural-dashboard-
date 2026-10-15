@@ -174,9 +174,9 @@ export function AlertDetails() {
               <tr className="font-heading text-label font-bold uppercase text-text-muted">
                 <Th>{by === 'project' ? 'Project / assignee' : 'Assignee / project'}</Th>
                 {kind === 'stuck' && <Th>Stage</Th>}
-                <Th right>{kind === 'overdue' ? 'Overdue' : `Over ${days(stuckDays)}`}</Th>
-                <Th right>{kind === 'overdue' ? 'Most overdue' : 'Longest'}</Th>
-                {kind === 'stuck' && <Th right>In stage in Bitrix24</Th>}
+                <Th center>{kind === 'overdue' ? 'Overdue' : `Over ${days(stuckDays)}`}</Th>
+                <Th center>{kind === 'overdue' ? 'Most overdue' : 'Longest'}</Th>
+                {kind === 'stuck' && <Th center>In stage in Bitrix24</Th>}
                 <Th right>Bitrix24</Th>
               </tr>
             </thead>
@@ -213,7 +213,7 @@ export function AlertDetails() {
                       </span>
                     </button>
                   </td>
-                  <td className="border-b border-border px-3 py-2 text-right font-bold">
+                  <td className="border-b border-border px-3 py-2 text-center font-bold tabular-nums">
                     <CountButton
                       n={g.total}
                       tone={kind === 'overdue' ? 'bad' : undefined}
@@ -251,12 +251,21 @@ export function AlertDetails() {
   );
 }
 
-function Th({ children, right }: { children: ReactNode; right?: boolean }) {
+function Th({
+  children,
+  right,
+  center,
+}: {
+  children: ReactNode;
+  right?: boolean;
+  /** Number columns. */
+  center?: boolean;
+}) {
   return (
     <th
       className={clsx(
         'sticky top-0 z-10 border-b border-border bg-surface px-3 py-2',
-        right ? 'text-right' : 'text-left',
+        center ? 'text-center' : right ? 'text-right' : 'text-left',
       )}
     >
       {children}
@@ -297,7 +306,7 @@ function LineRow({
           </span>
         </td>
       )}
-      <td className="border-b border-primary-soft-100 px-3 py-1.5 text-right">
+      <td className="border-b border-primary-soft-100 px-3 py-1.5 text-center tabular-nums">
         <CountButton
           n={line.count}
           tone={stuck ? undefined : 'bad'}
@@ -305,11 +314,11 @@ function LineRow({
           onClick={() => onOpen(target)}
         />
       </td>
-      <td className="whitespace-nowrap border-b border-primary-soft-100 px-3 py-1.5 text-right">
+      <td className="whitespace-nowrap border-b border-primary-soft-100 px-3 py-1.5 text-center tabular-nums">
         {days(line.oldestDays)}
       </td>
       {stuck && (
-        <td className="border-b border-primary-soft-100 px-3 py-1.5 text-right text-text-muted">
+        <td className="border-b border-primary-soft-100 px-3 py-1.5 text-center tabular-nums text-text-muted">
           {line.boardCount}
         </td>
       )}

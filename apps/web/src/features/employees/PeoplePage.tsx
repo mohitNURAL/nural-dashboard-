@@ -120,10 +120,10 @@ const baseColumns = [
       </span>
     ),
   }),
-  col.accessor('open', { header: 'Open', meta: { align: 'right' } }),
+  col.accessor('open', { header: 'Open', meta: { align: 'center' } }),
   col.accessor('overdue', {
     header: 'Overdue',
-    meta: { align: 'right' },
+    meta: { align: 'center' },
     cell: (c) => (
       <span className={clsx(c.getValue() > 0 && 'font-bold text-bad')}>{c.getValue()}</span>
     ),

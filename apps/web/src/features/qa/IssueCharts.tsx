@@ -116,7 +116,7 @@ export function IssuesByAssigneeCard({ className }: { className?: string }) {
     const count = (key: CountKey, header: string, info: string) =>
       tcol.accessor(key, {
         header,
-        meta: { align: 'right', info },
+        meta: { align: 'center', info },
         cell: (c) => {
           const r = c.row.original;
           return (

@@ -69,7 +69,7 @@ export function IssueStageCard({ className }: { className?: string }) {
       col.accessor((r) => value(r), {
         id,
         header,
-        meta: { align: 'right', info },
+        meta: { align: 'center', info },
         cell: (c) => (
           <CountButton
             n={c.getValue()}

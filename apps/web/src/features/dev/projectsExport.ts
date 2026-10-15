@@ -97,7 +97,7 @@ export function exportProjectsPdf(title: string, showing: string, table: Value[]
     let x = m;
     head.forEach((h, i) => {
       const t = fit(textOf(h), widths[i]!);
-      if (i >= 3) pdf.text(t, x + widths[i]! - 4, y + 12, { align: 'right' });
+      if (i >= 3) pdf.text(t, x + widths[i]! / 2, y + 12, { align: 'center' });
       else pdf.text(t, x + 4, y + 12);
       x += widths[i]!;
     });
@@ -123,7 +123,7 @@ export function exportProjectsPdf(title: string, showing: string, table: Value[]
     row.forEach((v, i) => {
       // A person's line repeats no project name.
       const t = fit(i === 0 && !projectLine ? '' : textOf(v), widths[i]!);
-      if (i >= 3) pdf.text(t, x + widths[i]! - 4, y + 12, { align: 'right' });
+      if (i >= 3) pdf.text(t, x + widths[i]! / 2, y + 12, { align: 'center' });
       else pdf.text(i === 2 && !projectLine ? `   ${t}` : t, x + 4, y + 12);
       x += widths[i]!;
     });

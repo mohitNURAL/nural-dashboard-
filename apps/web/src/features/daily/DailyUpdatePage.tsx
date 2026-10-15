@@ -46,10 +46,10 @@ export function DailyUpdatePage() {
   const columns = useMemo(
     () => [
       col.accessor('day', { header: 'Day' }),
-      col.accessor('planned', { header: 'Planned', meta: { align: 'right' } }),
-      col.accessor('done', { header: 'Done', meta: { align: 'right' } }),
-      col.accessor('wip', { header: 'WIP', meta: { align: 'right' } }),
-      col.accessor('extra', { header: 'Outside the plan', meta: { align: 'right' } }),
+      col.accessor('planned', { header: 'Planned', meta: { align: 'center' } }),
+      col.accessor('done', { header: 'Done', meta: { align: 'center' } }),
+      col.accessor('wip', { header: 'WIP', meta: { align: 'center' } }),
+      col.accessor('extra', { header: 'Outside the plan', meta: { align: 'center' } }),
       col.accessor('note', { header: 'Notes', enableSorting: false }),
     ],
     [],

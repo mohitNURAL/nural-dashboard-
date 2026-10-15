@@ -74,7 +74,7 @@ export function RetestByGroupCard({ className }: { className?: string }) {
       ...columnsNow().map((c) =>
         col.accessor(c.key, {
           header: c.header,
-          meta: { align: 'right' },
+          meta: { align: 'center' },
           cell: (x) => (
             <CountButton
               n={x.getValue()}

@@ -78,7 +78,7 @@ export function InHandCard({
         ...WINDOWS.map((w) =>
           col.accessor(w, {
             header: w === 'ahead' ? 'In hand' : DUE_TEXT[w],
-            meta: { align: 'right' },
+            meta: { align: 'center' },
             cell: (c) => (
               <CountButton
                 n={c.getValue()}
