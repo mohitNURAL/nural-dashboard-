@@ -74,6 +74,10 @@ export function slackBot(token: string | undefined, fetchImpl: typeof fetch = fe
     return r.user.id;
   }
 
+  // Task links are Bitrix24 pages behind its sign-in: Slack's preview of each one is a large
+  // "Log in to Bitrix24" card, so posts go out without link previews.
+  const noPreviews = { unfurl_links: false, unfurl_media: false };
+
   return {
     connected,
     async team() {
@@ -88,6 +92,7 @@ export function slackBot(token: string | undefined, fetchImpl: typeof fetch = fe
         channel: await userId(email),
         text: m.text,
         blocks: m.blocks,
+        ...noPreviews,
       });
     },
     async toChannel(channel, m, opts) {
@@ -95,6 +100,7 @@ export function slackBot(token: string | undefined, fetchImpl: typeof fetch = fe
         channel: channel.replace(/^#/, ''),
         text: m.text,
         blocks: m.blocks,
+        ...noPreviews,
         ...(opts?.threadTs ? { thread_ts: opts.threadTs, reply_broadcast: true } : {}),
       });
       return { channel: r.channel, ts: r.ts };
