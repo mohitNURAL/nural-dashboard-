@@ -426,7 +426,9 @@ export interface KpiSummary {
   closedPrev: number;
   onTimePct: number | null;
   onTimePrevPct: number | null;
-  /** Active Bitrix24 projects in view = recent + silent + other. */
+  /** Projects tile (2026-10-15): every active project = active + silent + hold (Development rule). */
+  projectWork: { projects: number; active: number; silent: number; hold: number };
+  /** Active Bitrix24 projects in view = recent + silent + other (before 2026-10-15). */
   activeProjects: number;
   recentProjects: number;
   silentProjects: number;
@@ -455,11 +457,9 @@ export interface KpiProject {
   status: Health;
   /** Still a project in Bitrix24 (archived ones keep their tasks here). */
   active: boolean;
-  /** Its part of the Active projects tile; null when not active. */
-  activity: ProjectActivity | null;
+  /** Its part of the Projects tile (Active, Silent, Hold); null when not active in Bitrix24. */
+  work: ProjectWorkRow['status'] | null;
 }
-
-export type ProjectActivity = 'recent' | 'silent' | 'other';
 
 export interface KpiWorkload {
   id: number;

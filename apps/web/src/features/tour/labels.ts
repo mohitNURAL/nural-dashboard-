@@ -58,7 +58,7 @@ export const POINT_LABELS: Record<string, Record<string, string>> = {
     overdue: 'Overdue',
     closed: 'Closed',
     onTime: 'On-time',
-    active: 'Active projects',
+    active: 'Projects',
     noDeadline: 'No deadline',
     inHand: 'Tasks in hand',
   },

@@ -211,7 +211,7 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
     {
       target: tour('kpi-period'),
       title: 'Day, Week or Month',
-      text: `The period changes only the glowing data points: Closed, On-time, Project health (closed in the period) and People (delivered in the period), each compared with the period before. Open, On hold, Overdue, Active projects and No deadline are counted as of now, whatever the period. ${KPI_INFO.tab}`,
+      text: `The period changes only the glowing data points: Closed, On-time, Project health (closed in the period) and People (delivered in the period), each compared with the period before. Open, On hold, Overdue, Projects and No deadline are counted as of now, whatever the period. ${KPI_INFO.tab}`,
       affects: [
         slot('kpi.tiles', 'closed'),
         slot('kpi.tiles', 'onTime'),
@@ -227,7 +227,7 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
     { target: slot('kpi.tiles', 'overdue'), title: 'Overdue', text: KPI_INFO.overdue },
     { target: slot('kpi.tiles', 'closed'), title: 'Closed', text: KPI_INFO.closed },
     { target: slot('kpi.tiles', 'onTime'), title: 'On-time', text: KPI_INFO.onTime },
-    { target: slot('kpi.tiles', 'active'), title: 'Active projects', text: KPI_INFO.active },
+    { target: slot('kpi.tiles', 'active'), title: 'Projects', text: KPI_INFO.active },
     { target: slot('kpi.tiles', 'inHand'), title: 'Tasks in hand', text: KPI_INFO.inHand },
     {
       target: slot('kpi.cards', 'inHand'),

@@ -1,4 +1,4 @@
-// KPI-01 headline tiles: active projects (first), open, overdue, closed, on-time %, no deadline.
+// KPI-01 headline tiles: projects (first; the Development tile's rule, all departments), open, overdue, closed, on-time %, no deadline.
 // Every number opens the tasks behind it.
 import { SortableGroup } from '../../components/layout/SortableGroup';
 import { InHandTile } from '../../components/InHandTile';
@@ -29,19 +29,24 @@ export function KpiTiles({ onProjects }: { onProjects: (show: ProjectShow) => vo
           id: 'active',
           node: (
             <StatTile
-              label="Active projects"
-              value={s?.activeProjects}
+              label="Projects"
+              value={s?.projectWork.projects}
+              sub="Active + silent + hold"
               info={KPI_INFO.active}
-              onClick={() => onProjects('active')}
+              onClick={() => onProjects('all')}
               parts={
                 s && [
                   {
-                    label: 'Recent action',
-                    value: s.recentProjects,
-                    onClick: () => onProjects('recent'),
+                    label: 'Active',
+                    value: s.projectWork.active,
+                    onClick: () => onProjects('active'),
                   },
-                  { label: 'Silent', value: s.silentProjects, onClick: () => onProjects('silent') },
-                  { label: 'Others', value: s.otherProjects, onClick: () => onProjects('other') },
+                  {
+                    label: 'Silent',
+                    value: s.projectWork.silent,
+                    onClick: () => onProjects('silent'),
+                  },
+                  { label: 'Hold', value: s.projectWork.hold, onClick: () => onProjects('hold') },
                 ]
               }
             />

@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-15-kpi-projects',
+    date: '2026-10-15',
+    tab: 'kpi',
+    title: 'KPI: Projects tile, the same as on Development',
+    steps: [
+      {
+        target: slot('kpi.tiles', 'active'),
+        title: 'Projects: Active, Silent, Hold',
+        text: 'The first KPI tile now counts projects the same way as the Development Projects tile, for every department: Active, Silent and Hold. Click the tile or a part to list those projects in Project health.',
+      },
+    ],
+  },
+  {
     id: '2026-10-15-centred-numbers',
     date: '2026-10-15',
     tab: 'dev',

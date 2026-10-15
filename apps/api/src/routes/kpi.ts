@@ -8,7 +8,8 @@ import {
   insights,
   kpiScope,
   kpiSummary,
-  projectActivity,
+  projectWork,
+  projectWorkSummary,
   tasksInHand,
   inHandByGroup,
   GROUP_BY,
@@ -47,7 +48,16 @@ function compute(ds: Dataset, query: unknown, opts: AppOptions) {
   const ctx = kpiContext(ds, opts.now?.() ?? new Date(), opts.tz);
   const scope = kpiScope(applyFilters(ds.tasks, filters, opts.tz), ctx, q.dept as Dept | 'all');
   const projects = projectHealth(scope, ctx, q.period, (g) => ds.owners?.get(g) ?? null);
-  return { q, ctx, scope, projects, activeIds: activeProjectIds(ds, filters.projectIds) };
+  const activeIds = activeProjectIds(ds, filters.projectIds);
+  // The Projects tile (2026-10-15): the Development tab's rule (Active, Silent, Hold) for every
+  // active project, all departments, from all its tasks.
+  const work = new Map(
+    projectWork(ds.tasks, contextOf(ds, opts), 'day', {
+      projectIds: activeIds,
+      allTasks: ds.tasks,
+    }).map((r) => [r.id, r]),
+  );
+  return { q, ctx, scope, projects, activeIds, work };
 }
 
 /**
@@ -103,9 +113,11 @@ export function kpiRoutes(
   });
 
   app.get('/api/kpi/summary', async (req) => {
-    const { ds, q, ctx, scope, projects, activeIds } = await get(req);
+    const { ds, q, ctx, scope, projects, activeIds, work } = await get(req);
     return {
       ...kpiSummary(scope, ctx, q.period, projects, activeIds),
+      /** Projects tile: every active project = Active + Silent + Hold (the Development rule). */
+      projectWork: projectWorkSummary([...work.values()]),
       // Tasks in hand: KPI open tasks with the deadline ahead, by window.
       inHand: (() => {
         const open = new Set(scope.all.filter((k) => k.open).map((k) => k.t.id));
@@ -138,7 +150,7 @@ export function kpiRoutes(
   });
 
   app.get('/api/kpi/projects', async (req) => {
-    const { ds, ctx, projects, activeIds } = await get(req);
+    const { ds, projects, activeIds, work } = await get(req);
     const active = new Set(activeIds);
     const withTasks = new Set(projects.map((p) => p.id));
     // Active projects without tasks in view are listed too, so the tile's parts each have rows.
@@ -151,7 +163,8 @@ export function kpiRoutes(
         name: projectName(ds, p.id),
         owner: ownerOf(ds, p.id),
         active: active.has(p.id),
-        activity: active.has(p.id) ? projectActivity(p, ctx) : null,
+        /** Active, Silent or Hold (the Projects tile); null when not active in Bitrix24. */
+        work: work.get(p.id)?.status ?? null,
       })),
     };
   });

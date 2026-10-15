@@ -13,7 +13,7 @@ export const KPI_INFO = {
   inHand:
     'Open tasks whose deadline is still ahead (IST), by when they are planned: tomorrow, the rest of this week, the rest of this month, next week, next month. The parts overlap (tomorrow is also in the rest of the week), so they do not add up. Overdue and no-deadline tasks are counted in their own tiles.',
   active:
-    'Every active project in Bitrix24 (archived ones drop out), split three ways that add up to the total. Recent action: open tasks and a task change or comment in the last 30 days. Silent: open tasks and no action for 10+ working days. Others: no open tasks, no tasks yet, or no action for 30 days. Click a part to list those projects in Project health.',
+    'Every project active in Bitrix24, all departments (only the Project filter narrows it) = Active + Silent + Hold, the same rule as the Development Projects tile. Hold: every unfinished task is in On Hold. Active: open tasks and a task changed or moved in the last 30 days (bulk changes left out). Silent: the rest (no open task, or no activity for 30 days). Click the tile or a part to list those projects in Project health.',
   noDeadline: 'Open tasks without a deadline: they cannot be overdue or planned.',
   projects:
     'One row per project, worst first. Red: over 25 % of open tasks overdue (at least 3), or a task over 30 days late. Amber: any overdue task, or silent. Green: neither.',

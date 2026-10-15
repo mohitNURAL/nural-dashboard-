@@ -13,13 +13,15 @@ import { KPI_INFO } from './info';
 import { useOpenKpiList } from './kpiList';
 import { ago, PERIOD_WORDS } from './format';
 import { HealthChip } from './parts';
-import { ACTIVITY_LABEL, useProjectShow, type ProjectShow } from './projectShow';
+import { useProjectShow, WORK_LABEL, type ProjectShow } from './projectShow';
 
 const col = createColumnHelper<KpiProject>();
 const RANK: Record<Health, number> = { red: 0, amber: 1, green: 2 };
 
+/** All = every active project (the Projects tile); else its part: Active, Silent or Hold. */
 const showsRow = (show: ProjectShow, p: KpiProject) =>
-  show === 'all' ? p.total > 0 || p.active : show === 'active' ? p.active : p.activity === show;
+  show === 'all' ? p.work !== null : p.work === show;
+const WORK_TEXT = { active: 'text-good', silent: 'text-warn', hold: 'text-primary' } as const;
 
 export const ProjectHealthCard = forwardRef<HTMLDivElement, { className?: string }>(
   function ProjectHealthCard({ className }, ref) {
@@ -53,24 +55,18 @@ export const ProjectHealthCard = forwardRef<HTMLDivElement, { className?: string
           ),
         }),
         col.accessor((p) => p.owner?.name ?? '', { id: 'owner', header: 'Owner' }),
-        col.accessor((p) => (p.activity ? ACTIVITY_LABEL[p.activity] : 'Not in Bitrix24'), {
+        col.accessor((p) => (p.work ? WORK_LABEL[p.work] : 'Not in Bitrix24'), {
           id: 'activity',
           header: 'Activity',
           meta: { info: KPI_INFO.active },
-          cell: (c) => (
-            <span
-              className={clsx(
-                'font-bold',
-                c.row.original.activity === 'silent'
-                  ? 'text-bad'
-                  : c.row.original.activity === 'recent'
-                    ? 'text-good'
-                    : 'text-text-muted',
-              )}
-            >
-              {c.getValue()}
-            </span>
-          ),
+          cell: (c) => {
+            const w = c.row.original.work;
+            return (
+              <span className={clsx('font-bold', w ? WORK_TEXT[w] : 'text-text-muted')}>
+                {c.getValue()}
+              </span>
+            );
+          },
         }),
         col.accessor((p) => RANK[p.status], {
           id: 'status',
@@ -196,9 +192,9 @@ export const ProjectHealthCard = forwardRef<HTMLDivElement, { className?: string
               <ViewToggle<ProjectShow>
                 value={show}
                 onChange={setShow}
-                options={(['all', 'active', 'recent', 'silent', 'other'] as const).map((s) => ({
+                options={(['all', 'active', 'silent', 'hold'] as const).map((s) => ({
                   value: s,
-                  label: `${s === 'all' ? 'All' : s === 'active' ? 'Active' : ACTIVITY_LABEL[s]} ${count(s)}`,
+                  label: `${s === 'all' ? 'All' : WORK_LABEL[s]} ${count(s)}`,
                 }))}
               />
             )
