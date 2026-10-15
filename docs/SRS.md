@@ -1034,7 +1034,7 @@ The filter bar has Project, Assignee, **Department** (in place of Tag) and Date 
 | On-time | % of the period's closed tasks with a deadline that were on time | Previous period's % |
 | Active projects (first by default) | Every active project in Bitrix24 (still listed by sonet_group.get; archived or deleted ones drop out), narrowed by the Project filter; a person who sees only their tasks counts those tasks' projects | Recent action · Silent · Others, adding up to the total, each clickable (lists those projects in Project health) |
 | No deadline | Open tasks without a deadline | — |
-| Tasks in hand | Open tasks whose deadline is still ahead | Tomorrow · Rest of week · Rest of month · Next week · Next month, each clickable (they overlap, so they do not add up) |
+| Tasks in hand | Open tasks whose deadline is still ahead | Tomorrow · Rest of week · Next week · Rest of month · Next month (week first, then month), each clickable (they overlap, so they do not add up) |
 
 **KPI-09 Insights** (first card): up to six findings from the same numbers, each opening its tasks:
 - who holds the biggest share of open work;

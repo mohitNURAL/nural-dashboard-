@@ -14,12 +14,13 @@ import { DataTable, type Columns } from './DataTable';
 import { DUE_TEXT } from './dueText';
 
 const col = createColumnHelper<InHandRow>();
+// Week first, then month (2026-10-15).
 const WINDOWS: DueWindow[] = [
   'ahead',
   'tomorrow',
   'restWeek',
-  'restMonth',
   'nextWeek',
+  'restMonth',
   'nextMonth',
 ];
 const CHART_ROWS = 15;

@@ -4,7 +4,8 @@ import type { DueWindow } from '@nural/shared';
 import { DUE_TEXT as DUE_LABEL } from './dueText';
 import { StatTile } from './StatTile';
 
-const PARTS = ['tomorrow', 'restWeek', 'restMonth', 'nextWeek', 'nextMonth'] as const;
+// Week first, then month (2026-10-15).
+const PARTS = ['tomorrow', 'restWeek', 'nextWeek', 'restMonth', 'nextMonth'] as const;
 
 export function InHandTile({
   counts,
