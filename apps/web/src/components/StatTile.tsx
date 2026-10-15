@@ -60,7 +60,8 @@ export function StatTile({ label, value, sub, tone, active, onClick, aside, part
         )}
       >
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate font-heading text-label uppercase text-text-muted">
+          {/* Clear, not faded (2026-10-15): the name in bold Blue B500, the rest in body text. */}
+          <span className="truncate font-heading text-label font-bold uppercase tracking-wide text-primary">
             {label}
           </span>
           {value === undefined ? (
@@ -87,7 +88,7 @@ export function StatTile({ label, value, sub, tone, active, onClick, aside, part
                   |
                 </span>
               )}
-              <span className="text-text-muted">{p.label}</span>
+              <span className="font-medium text-text">{p.label}</span>
               <button
                 type="button"
                 onClick={p.onClick}
@@ -96,7 +97,7 @@ export function StatTile({ label, value, sub, tone, active, onClick, aside, part
                 className={clsx(
                   'font-heading font-bold tabular-nums hover:underline disabled:no-underline',
                   tone === 'bad' && p.value ? 'text-bad' : 'text-primary-dark',
-                  !p.value && 'text-text-muted',
+                  !p.value && 'font-normal text-text',
                 )}
               >
                 {p.value.toLocaleString('en-IN')}
@@ -106,7 +107,7 @@ export function StatTile({ label, value, sub, tone, active, onClick, aside, part
         </span>
       )}
       <span
-        className="min-h-[14px] truncate px-3 pb-3 pt-0.5 text-table text-text-muted"
+        className="min-h-[14px] truncate px-3 pb-3 pt-0.5 text-table font-medium text-text"
         title={sub}
       >
         {sub}
