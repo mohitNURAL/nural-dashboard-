@@ -55,16 +55,40 @@ const rgb = (hex: string): [number, number, number] => [
   parseInt(hex.slice(5, 7), 16),
 ];
 
-export function exportProjectsPdf(title: string, showing: string, table: Value[][]) {
+/** How a grouped table prints (defaults: Projects at work, a project line then its people). */
+export interface PdfLayout {
+  /** Widths of the leading text columns; the counts after them share the rest. */
+  textWidths?: number[];
+  /** A group's own line (bold, tinted). */
+  isGroup?: (row: Value[]) => boolean;
+  /** The text of a leading cell (e.g. blank a repeated name, indent a child line). */
+  text?: (row: Value[], i: number, t: string) => string;
+}
+
+const PROJECT_LAYOUT: Required<PdfLayout> = {
+  textWidths: [150, 54, 120],
+  isGroup: (row) => row[2] === 'All',
+  // A person's line repeats no project name.
+  text: (row, i, t) => (row[2] === 'All' ? t : i === 0 ? '' : i === 2 ? `   ${t}` : t),
+};
+
+export function exportProjectsPdf(
+  title: string,
+  showing: string,
+  table: Value[][],
+  layout: PdfLayout = {},
+) {
+  const { textWidths, isGroup, text } = { ...PROJECT_LAYOUT, ...layout };
   const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
   const W = pdf.internal.pageSize.getWidth();
   const H = pdf.internal.pageSize.getHeight();
   const m = 28;
   const [head = [], ...body] = table;
-  // Project and Assignee wide, Status narrow, the rest share what is left.
-  const fixed = [150, 54, 120];
+  // The text columns at their widths; the counts share what is left.
+  const fixed = textWidths;
+  const used = fixed.reduce((a, b) => a + b, 0);
   const rest = Math.max(1, head.length - fixed.length);
-  const widths = head.map((_, i) => fixed[i] ?? (W - 2 * m - 324) / rest);
+  const widths = head.map((_, i) => fixed[i] ?? (W - 2 * m - used) / rest);
   const rowH = 17;
   const textOf = (v: Value) => (v === null ? '' : String(v));
   const fit = (t: string, w: number) => {
@@ -97,7 +121,7 @@ export function exportProjectsPdf(title: string, showing: string, table: Value[]
     let x = m;
     head.forEach((h, i) => {
       const t = fit(textOf(h), widths[i]!);
-      if (i >= 3) pdf.text(t, x + widths[i]! / 2, y + 12, { align: 'center' });
+      if (i >= fixed.length) pdf.text(t, x + widths[i]! / 2, y + 12, { align: 'center' });
       else pdf.text(t, x + 4, y + 12);
       x += widths[i]!;
     });
@@ -111,7 +135,7 @@ export function exportProjectsPdf(title: string, showing: string, table: Value[]
       y = m;
       header();
     }
-    const projectLine = row[2] === 'All';
+    const projectLine = isGroup(row);
     pdf.setFillColor(...rgb(projectLine ? XL.total : n % 2 ? XL.zebra : '#FFFFFF'));
     pdf.rect(m, y, W - 2 * m, rowH, 'F');
     pdf.setDrawColor(...rgb(XL.border));
@@ -121,10 +145,9 @@ export function exportProjectsPdf(title: string, showing: string, table: Value[]
     pdf.setFontSize(8);
     let x = m;
     row.forEach((v, i) => {
-      // A person's line repeats no project name.
-      const t = fit(i === 0 && !projectLine ? '' : textOf(v), widths[i]!);
-      if (i >= 3) pdf.text(t, x + widths[i]! / 2, y + 12, { align: 'center' });
-      else pdf.text(i === 2 && !projectLine ? `   ${t}` : t, x + 4, y + 12);
+      if (i >= fixed.length) {
+        pdf.text(fit(textOf(v), widths[i]!), x + widths[i]! / 2, y + 12, { align: 'center' });
+      } else pdf.text(fit(text(row, i, textOf(v)), widths[i]!), x + 4, y + 12);
       x += widths[i]!;
     });
     y += rowH;

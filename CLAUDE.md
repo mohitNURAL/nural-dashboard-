@@ -14,6 +14,7 @@ Build order: SRS section 10.5, milestones 1 to 9. Do one milestone per session, 
 - Integration (SRS 19): MS_TENANT_ID, MS_CLIENT_ID, MS_CLIENT_SECRET, MAIL_FROM, SLACK_BOT_TOKEN (and later INFOWAN_*) live only in `.env` / `.env.prod`, read by apps/api; never in apps/web, never logged. Integration pages and /api/reports, /api/integrations need the admin right. A report recipient's content is built from their own scope (reports/scope.ts, their rights), never more. New reports start in Preview (admins only); only the server with the sync worker schedules sends, and report_runs keeps one send per report, period, recipient and channel.
 - Help attachments (SRS 20): only images, PDF, Excel, Word; 5 files, 8 MB each; checked on the server, served as downloads with nosniff, readable only by the sender and the helpInbox right.
 - Metric logic lives in packages/shared/src/metrics.ts as pure functions with Vitest tests.
+- Every commit adds one line to docs/CHANGELOG.md under today's date (newest first), and fills in the commit ID of the line before it; open questions from a session go in its Open questions list.
 - "Today" and "overdue" use APP_TIMEZONE (Asia/Kolkata).
 - Scope: all workgroups (DEV_GROUP_IDS empty = all; a comma list narrows it).
 - Issues = tasks tagged bug or feedback (case-insensitive), assigned to developers and normally created by testers.

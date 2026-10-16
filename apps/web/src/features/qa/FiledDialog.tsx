@@ -8,8 +8,9 @@ import { Fragment, useMemo, useState } from 'react';
 import { useApi } from '../../api/queries';
 import type { QaFiled, QaFiledCounts } from '../../api/types';
 import { InfoTip } from '../../components/InfoTip';
-import { IconClose, IconQa } from '../../components/ui/icons';
+import { IconClose, IconExcel, IconPdf, IconQa } from '../../components/ui/icons';
 import { SearchInput } from '../../components/ui/SearchInput';
+import { useFilterSummary } from '../filters/useFilters';
 import { useQaParams } from './api';
 import { useFiledPopup } from './filedPopup';
 import { lastFiledText } from './format';
@@ -68,6 +69,8 @@ export function FiledDialog({
   const [q, setQ] = useState('');
   const [project, setProject] = useState<number | null>(null);
   const [creator, setCreator] = useState<string | null>(null);
+  const [busy, setBusy] = useState<'xlsx' | 'pdf' | null>(null);
+  const showing = useFilterSummary('qa');
 
   const rows = useMemo(() => {
     const words = q.trim().toLowerCase();
@@ -87,6 +90,19 @@ export function FiledDialog({
 
   const day = data?.day ?? null;
   const when = lastFiledText(day ? { date: day, isToday: !!data?.isToday } : null);
+  // Excel and PDF of every project shown (search applied), opened or not.
+  const exportAs = async (kind: 'xlsx' | 'pdf') => {
+    setBusy(kind);
+    try {
+      const m = await import('./filedExport');
+      const title = `Last filed · ${when}`;
+      const note = `Issues filed ${when}${showing ? ` · ${showing}` : ''}${q.trim() ? ` · search “${q.trim()}”` : ''}`;
+      if (kind === 'xlsx') await m.exportFiledExcel(title, note, rows);
+      else m.exportFiledPdf(title, note, rows);
+    } finally {
+      setBusy(null);
+    }
+  };
   const dayParams: Record<string, string> = day ? { dateField: 'created', from: day, to: day } : {};
   const count = (
     c: (typeof COLS)[number],
@@ -170,6 +186,23 @@ export function FiledDialog({
               label="Search filed issues"
               className="w-60"
             />
+            <span className="flex-1" />
+            <button
+              type="button"
+              onClick={() => void exportAs('xlsx')}
+              disabled={!!busy || !rows.length}
+              className="inline-flex h-8 items-center gap-1.5 rounded-control border border-border bg-surface px-2.5 font-heading text-button text-text hover:border-primary hover:text-primary disabled:opacity-50"
+            >
+              <IconExcel size={14} /> {busy === 'xlsx' ? 'Exporting…' : 'Excel'}
+            </button>
+            <button
+              type="button"
+              onClick={() => void exportAs('pdf')}
+              disabled={!!busy || !rows.length}
+              className="inline-flex h-8 items-center gap-1.5 rounded-control border border-border bg-surface px-2.5 font-heading text-button text-text hover:border-primary hover:text-primary disabled:opacity-50"
+            >
+              <IconPdf size={14} /> {busy === 'pdf' ? 'Exporting…' : 'PDF'}
+            </button>
           </div>
           <div className="flex-1 overflow-auto px-5 py-3">
             {isLoading ? (
