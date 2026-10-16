@@ -2,6 +2,7 @@
 // the bell badge and the Alert details accordion on the Development tab.
 import type { DevPreset } from '@nural/shared';
 import { useCallback } from 'react';
+import { create } from 'zustand';
 import { useApi } from '../../api/queries';
 import type { AlertsResponse } from '../../api/types';
 import { EMPTY_FILTERS } from '../filters/toParams';
@@ -9,6 +10,12 @@ import { useDevScope, useFilters } from '../filters/useFilters';
 import { filterKey, useDrill } from './drill';
 
 export const useAlerts = () => useApi<AlertsResponse>('/api/alerts', {});
+
+/** Alert details' view: Overdue or over N days in a stage (the Overdue tile picks Overdue). */
+export const useAlertKind = create<{
+  kind: 'overdue' | 'stuck';
+  setKind: (kind: 'overdue' | 'stuck') => void;
+}>((set) => ({ kind: 'overdue', setKind: (kind) => set({ kind }) }));
 
 export type OverdueLine = AlertsResponse['overdue'][number];
 export type StuckLine = AlertsResponse['stuck'][number];

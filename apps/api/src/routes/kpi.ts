@@ -29,6 +29,7 @@ import {
   contextOf,
   person,
   project,
+  unassignedOpen,
   withAssignees,
   withGroupNames,
   type AppOptions,
@@ -125,6 +126,14 @@ export function kpiRoutes(
       ...kpiSummary(scope, ctx, q.period, projects, activeIds),
       /** Projects tile: every active project = Active + Silent + Hold (the Development rule). */
       projectWork: projectWorkSummary([...work.values()]),
+      // Open tile: open tasks nobody has picked up (placeholder assignee).
+      unassigned: (() => {
+        const open = new Set(scope.all.filter((k) => k.open).map((k) => k.t.id));
+        return unassignedOpen(
+          scope.all.map((k) => k.t),
+          (t) => open.has(t.id),
+        );
+      })(),
       // Tasks in hand: KPI open tasks with the deadline ahead, by window.
       inHand: (() => {
         const open = new Set(scope.all.filter((k) => k.open).map((k) => k.t.id));

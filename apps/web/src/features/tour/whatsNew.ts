@@ -18,6 +18,32 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-16-overdue-tiles',
+    date: '2026-10-16',
+    tab: 'kpi',
+    title: 'Overdue tiles open their breakdown in the centre',
+    steps: [
+      {
+        target: slot('kpi.tiles', 'overdue'),
+        title: 'Overdue, in focus',
+        text: 'On KPI, the Overdue tile now brings the Overdue card to the centre: days late, then the projects and people holding it. On Development, the Overdue tile opens Alert details on its Overdue view, project-wise or assignee-wise, for the Development department.',
+      },
+    ],
+  },
+  {
+    id: '2026-10-16-unassigned-tile',
+    date: '2026-10-16',
+    tab: 'dev',
+    title: 'Unassigned on the Pending and Open tiles',
+    steps: [
+      {
+        target: slot('dev.tiles', 'pending'),
+        title: 'Unassigned',
+        text: 'Pending on Development, Open on QA and Open tasks on KPI now show how many of them nobody has picked up yet. Click Unassigned to list them.',
+      },
+    ],
+  },
+  {
     id: '2026-10-16-unassigned',
     date: '2026-10-16',
     tab: 'dev',

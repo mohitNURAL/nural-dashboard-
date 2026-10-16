@@ -5,7 +5,7 @@ export const INFO = {
   total:
     'All tasks in the filters for the switch (Dev, Issues or both), Development department only.',
   pending:
-    'Behind QA Backlog and not on hold: To do, In progress, Pushed to Master, Merged to Development, Pending for QA, Issue Raised. A testing or re-testing task in Issue Raised is not pending.',
+    'Behind QA Backlog and not on hold: To do, In progress, Pushed to Master, Merged to Development, Pending for QA, Issue Raised. A testing or re-testing task in Issue Raised is not pending. Unassigned: those of them nobody has picked up yet (the placeholder assignee); click to list them.',
   hold: 'In On Hold: neither pending nor completed. Pending + completed + on hold = total.',
   ready: 'In the Done stage, ready to go live.',
   deployed: 'In the LIVE stage.',
@@ -54,7 +54,7 @@ export const INFO = {
   // QA tiles (QA-01)
   qaTotal: 'Every task tagged bug or feedback in the filters, whoever it is assigned to.',
   qaOpen:
-    'Open = pending: any stage behind QA Backlog except On Hold (Issue Raised included). Resolved = QA Backlog, In QA, Done or LIVE. On Hold is its own tile. The ring shows the resolved %.',
+    'Open = pending: any stage behind QA Backlog except On Hold (Issue Raised included). Resolved = QA Backlog, In QA, Done or LIVE. On Hold is its own tile. The ring shows the resolved %. Unassigned: those of them nobody has picked up yet (the placeholder assignee); click to list them.',
   qaLastFiled:
     'Latest day an issue was created, and how many that day. Click for that day by project: open a project for who filed its issues (bug and feedback), and a creator for who they went to.',
   qaLastResolved:

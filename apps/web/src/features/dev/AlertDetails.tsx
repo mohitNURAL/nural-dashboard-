@@ -12,6 +12,7 @@ import {
   days,
   overdueTarget,
   stuckTarget,
+  useAlertKind,
   useAlerts,
   useOpenAlert,
   type AlertTarget,
@@ -19,7 +20,6 @@ import {
   type StuckLine,
 } from './alerts';
 
-type Kind = 'overdue' | 'stuck';
 type Line = OverdueLine | StuckLine;
 
 const ROLE_NOTE = { assignee: '', tester: ' (tester)', qaLead: ' (QA lead)' } as const;
@@ -35,7 +35,7 @@ interface Group {
 export function AlertDetails() {
   const { data, isLoading } = useAlerts();
   const openAlert = useOpenAlert();
-  const [kind, setKind] = useState<Kind>('overdue');
+  const { kind, setKind } = useAlertKind();
   const [by, setBy] = useState<GroupBy>('project');
   const [stages, setStages] = useState<string[]>([]);
   // Groups start collapsed; a new view (kind, grouping or stage filter) collapses them again.

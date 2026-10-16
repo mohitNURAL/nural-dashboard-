@@ -95,6 +95,20 @@ export function SummaryTiles({ active, onSelect }: Props) {
                       params: PART[p.key].params,
                     }),
                 }))}
+                note={
+                  preset === 'pending' && data?.unassigned.ids.length
+                    ? {
+                        label: 'Unassigned',
+                        value: data.unassigned.count,
+                        onClick: () =>
+                          drill({
+                            label: 'Pending · Unassigned',
+                            preset: 'pending',
+                            params: { assignee: data.unassigned.ids.join(',') },
+                          }),
+                      }
+                    : undefined
+                }
               />
             ),
           })),

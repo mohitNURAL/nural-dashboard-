@@ -94,6 +94,18 @@ export function QaTiles({ active, onSelect, onPart, onRetest }: Props) {
                     : undefined
                 }
                 parts={parts('Open', 'open', 'open')}
+                note={
+                  data?.unassigned.ids.length
+                    ? {
+                        label: 'Unassigned',
+                        value: data.unassigned.count,
+                        onClick: () =>
+                          onPart('open', 'Open · Unassigned', {
+                            assignee: data.unassigned.ids.join(','),
+                          }),
+                      }
+                    : undefined
+                }
                 active={active === 'open'}
                 onClick={() => onSelect('open')}
                 aside={data && <Ring resolvedPct={data.resolvedPct} />}

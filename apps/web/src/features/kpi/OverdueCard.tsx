@@ -1,6 +1,7 @@
 // KPI-06 overdue: the total by days late, then the projects and people holding it. Every
 // number opens its tasks; a project or person number also sets that filter.
 import clsx from 'clsx';
+import { forwardRef } from 'react';
 import type { KpiOverdueGroup, OverdueBucket } from '../../api/types';
 import { Card } from '../../components/Card';
 import { CountButton } from '../../components/CountButton';
@@ -17,7 +18,10 @@ const BUCKETS: { key: OverdueBucket; label: string; cls: string }[] = [
 ];
 const TOP = 8;
 
-export function OverdueCard({ className }: { className?: string }) {
+export const OverdueCard = forwardRef<HTMLDivElement, { className?: string }>(function OverdueCard(
+  { className },
+  ref,
+) {
   const { data, isLoading } = useKpiOverdue();
   const openList = useOpenKpiList();
   const focus = useFocusRow();
@@ -84,48 +88,49 @@ export function OverdueCard({ className }: { className?: string }) {
   );
 
   return (
-    <Card
-      title="Overdue"
-      info={KPI_INFO.overdue2}
-      className={className}
-      loading={isLoading}
-      empty={!!data && data.total === 0}
-      emptyText="Nothing overdue in these filters."
-    >
-      {data && (
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={() => open('Overdue', {})}
-              className="font-heading text-title text-bad hover:underline"
-            >
-              {data.total.toLocaleString('en-IN')}
-            </button>
-            <span className="text-text-muted">open tasks past deadline</span>
-            <span className="flex flex-wrap gap-1.5">
-              {BUCKETS.map((b) => (
-                <button
-                  key={b.key}
-                  type="button"
-                  disabled={!data.buckets[b.key]}
-                  onClick={() => open(`Overdue · ${b.label} late`, { kpiAgeing: b.key })}
-                  className={clsx(
-                    'rounded px-2 py-0.5 text-table font-bold disabled:opacity-40',
-                    b.cls,
-                  )}
-                >
-                  {b.label}: {data.buckets[b.key]}
-                </button>
-              ))}
-            </span>
+    <div ref={ref} className={className}>
+      <Card
+        title="Overdue"
+        info={KPI_INFO.overdue2}
+        loading={isLoading}
+        empty={!!data && data.total === 0}
+        emptyText="Nothing overdue in these filters."
+      >
+        {data && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => open('Overdue', {})}
+                className="font-heading text-title text-bad hover:underline"
+              >
+                {data.total.toLocaleString('en-IN')}
+              </button>
+              <span className="text-text-muted">open tasks past deadline</span>
+              <span className="flex flex-wrap gap-1.5">
+                {BUCKETS.map((b) => (
+                  <button
+                    key={b.key}
+                    type="button"
+                    disabled={!data.buckets[b.key]}
+                    onClick={() => open(`Overdue · ${b.label} late`, { kpiAgeing: b.key })}
+                    className={clsx(
+                      'rounded px-2 py-0.5 text-table font-bold disabled:opacity-40',
+                      b.cls,
+                    )}
+                  >
+                    {b.label}: {data.buckets[b.key]}
+                  </button>
+                ))}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {group('By project', 'project', data.byProject)}
+              {group('By person', 'assignee', data.byAssignee)}
+            </div>
           </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {group('By project', 'project', data.byProject)}
-            {group('By person', 'assignee', data.byAssignee)}
-          </div>
-        </div>
-      )}
-    </Card>
+        )}
+      </Card>
+    </div>
   );
-}
+});

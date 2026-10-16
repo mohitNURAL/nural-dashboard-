@@ -43,6 +43,7 @@ export function KpiTab() {
   const [listTotal, setListTotal] = useState<number>();
   const allRef = useRef<HTMLElement>(null);
   const projectsRef = useRef<HTMLDivElement>(null);
+  const overdueRef = useRef<HTMLDivElement>(null);
 
   // A number clicked anywhere on the tab opens and scrolls to "All tasks".
   useEffect(() => {
@@ -83,6 +84,11 @@ export function KpiTab() {
             useProjectShow.getState().set(show);
             spotlightSoon(projectsRef);
           }}
+          onOverdue={() => {
+            if (!overdueRef.current) return false;
+            spotlightSoon(overdueRef);
+            return true;
+          }}
         />
         {summary && summary.noProject.open > 0 && <NoProjectNote n={summary.noProject.open} />}
 
@@ -98,7 +104,7 @@ export function KpiTab() {
               node: <ProjectHealthCard ref={projectsRef} />,
             },
             { id: 'inHand', className: 'lg:col-span-12', node: <KpiInHandCard /> },
-            { id: 'overdue', className: 'lg:col-span-6', node: <OverdueCard /> },
+            { id: 'overdue', className: 'lg:col-span-6', node: <OverdueCard ref={overdueRef} /> },
             { id: 'workload', className: 'lg:col-span-6', node: <WorkloadCard /> },
             { id: 'people', className: 'lg:col-span-12', node: <PeopleCard /> },
             { id: 'activity', className: 'lg:col-span-12', node: <ActivityCard /> },

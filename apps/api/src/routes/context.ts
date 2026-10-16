@@ -27,11 +27,21 @@ export interface AppOptions {
   now?: () => Date;
 }
 
+// Development counts the placeholder assignee too: a task nobody has picked up yet is still
+// development work waiting (2026-10-16). One set per dataset.
+const devWithUnassigned = new WeakMap<ReadonlySet<number>, ReadonlySet<number>>();
+const developersOf = (ds: Dataset) => {
+  if (!ds.developers) return undefined;
+  let s = devWithUnassigned.get(ds.developers);
+  if (!s) devWithUnassigned.set(ds.developers, (s = new Set([...ds.developers, ...UNASSIGNED])));
+  return s;
+};
+
 export const contextOf = (ds: Dataset, opts: AppOptions): MetricContext => ({
   now: opts.now?.() ?? new Date(),
   tz: opts.tz,
   testers: ds.testers,
-  developers: ds.developers,
+  developers: developersOf(ds),
   qaLead: ds.qaLead,
 });
 
@@ -58,6 +68,15 @@ const UNASSIGNED: ReadonlySet<number> = (() => {
     Array.isArray(raw.userIds) ? raw.userIds.map(Number).filter(Number.isInteger) : [],
   );
 })();
+
+/**
+ * The Unassigned data point on the Pending / Open tiles: how many of these open tasks sit with a
+ * placeholder assignee, and their ids (a click lists them with the Assignee filter).
+ */
+export const unassignedOpen = (tasks: readonly MetricTask[], open: (t: MetricTask) => boolean) => ({
+  count: tasks.filter((t) => UNASSIGNED.has(t.responsibleId) && open(t)).length,
+  ids: [...UNASSIGNED],
+});
 
 /** The person a task is assigned to: "Unassigned" for a placeholder assignee. */
 export const assignee = (ds: Dataset, id: number): PersonRef =>

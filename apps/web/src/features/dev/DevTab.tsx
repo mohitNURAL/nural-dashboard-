@@ -14,7 +14,7 @@ import { taskColumns } from '../tasks/columns';
 import { TaskList } from '../tasks/TaskList';
 import { TaskAgeingCard } from './AgeingCard';
 import { AlertDetails } from './AlertDetails';
-import { useAlerts } from './alerts';
+import { useAlertKind, useAlerts } from './alerts';
 import { useDevAssignees, useDevParams, useDevSummary } from './api';
 import { AssigneeTableCard, PendingDoneCard } from './AssigneeCards';
 import { filterKey, useDrillStore } from './drill';
@@ -95,7 +95,11 @@ export function DevTab() {
   useEffect(() => () => closeSpotlight(), []);
 
   const onTile = (preset: DevPreset) => {
-    if (preset === 'overdue') return reveal('overdue');
+    // Overdue: Alert details on its Overdue view, project-wise or assignee-wise (2026-10-16).
+    if (preset === 'overdue') {
+      useAlertKind.getState().setKind('overdue');
+      return reveal('alerts');
+    }
     openDrill({ label: TILE_LABELS[preset], preset });
   };
 

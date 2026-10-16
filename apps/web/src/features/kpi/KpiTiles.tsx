@@ -10,7 +10,14 @@ import { useKpiList, useOpenKpiList } from './kpiList';
 import { PERIOD_WORDS } from './format';
 import type { ProjectShow } from './projectShow';
 
-export function KpiTiles({ onProjects }: { onProjects: (show: ProjectShow) => void }) {
+export function KpiTiles({
+  onProjects,
+  onOverdue,
+}: {
+  onProjects: (show: ProjectShow) => void;
+  /** Brings the Overdue card into view; false when it is hidden (Customise). */
+  onOverdue: () => boolean;
+}) {
   const { data: s } = useKpiSummary();
   const { period } = useKpiControls();
   const open = useOpenKpiList();
@@ -60,6 +67,20 @@ export function KpiTiles({ onProjects }: { onProjects: (show: ProjectShow) => vo
               value={s?.open}
               info={KPI_INFO.open}
               onClick={() => list('Open', { kpi: 'open' }, KPI_INFO.open)}
+              note={
+                s?.unassigned.ids.length
+                  ? {
+                      label: 'Unassigned',
+                      value: s.unassigned.count,
+                      onClick: () =>
+                        list(
+                          'Open · Unassigned',
+                          { kpi: 'open', assignee: s.unassigned.ids.join(',') },
+                          KPI_INFO.open,
+                        ),
+                    }
+                  : undefined
+              }
               parts={
                 s && [
                   {
@@ -105,7 +126,8 @@ export function KpiTiles({ onProjects }: { onProjects: (show: ProjectShow) => vo
               tone="bad"
               info={KPI_INFO.overdue}
               sub={s && `${s.overduePct} % of open`}
-              onClick={() => list('Overdue', { kpi: 'overdue' }, KPI_INFO.overdue)}
+              // The Overdue card below (by days late, project and person); its list if hidden.
+              onClick={() => onOverdue() || list('Overdue', { kpi: 'overdue' }, KPI_INFO.overdue)}
               parts={
                 s && [
                   {

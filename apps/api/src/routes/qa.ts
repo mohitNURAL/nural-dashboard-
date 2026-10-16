@@ -9,6 +9,7 @@ import {
   lastFiled,
   issueAgeByAssignee,
   issues,
+  isOpenIssue,
   issuesByAssignee,
   issuesByStage,
   issueStageTable,
@@ -33,6 +34,7 @@ import {
   contextOf,
   person,
   project,
+  unassignedOpen,
   withAssignees,
   withGroupNames,
   withPeople,
@@ -55,6 +57,8 @@ export function qaRoutes(app: FastifyInstance, getDataset: RequestDataset, opts:
       ...qaSummary(list, ctx),
       // Tile breakdown: every QA tile split into Bug and Feedback.
       parts: qaSummaryParts(list, ctx),
+      // Open tile: open issues nobody has picked up (placeholder assignee).
+      unassigned: unassignedOpen(list, isOpenIssue),
       // Tasks in hand: the QA team's pending testing tasks with the deadline ahead, by window.
       inHand: tasksInHand(applyFilters(testingTasks(ds.tasks, ctx), filters, ctx.tz), ctx),
       asOf: ctx.now,

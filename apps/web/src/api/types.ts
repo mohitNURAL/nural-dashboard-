@@ -163,7 +163,15 @@ export interface DevProjects {
   rows: ProjectWorkRow[];
 }
 
+/** The Unassigned data point on the Pending / Open tiles. */
+export interface Unassigned {
+  count: number;
+  ids: number[];
+}
+
 export interface DevSummary {
+  /** Open tasks nobody has picked up (placeholder assignee) and those assignee ids (2026-10-16). */
+  unassigned: Unassigned;
   /** Tasks in hand: open, deadline ahead, by window (tomorrow, rest of week, ...). */
   inHand: Record<DueWindow, number>;
   total: number;
@@ -284,6 +292,8 @@ export interface QaFiled {
 }
 
 export interface QaSummary {
+  /** Open tasks nobody has picked up (placeholder assignee) and those assignee ids (2026-10-16). */
+  unassigned: Unassigned;
   /** Tasks in hand: open, deadline ahead, by window (tomorrow, rest of week, ...). */
   inHand: Record<DueWindow, number>;
   total: number;
@@ -434,6 +444,8 @@ export interface KpiRates {
 }
 
 export interface KpiSummary {
+  /** Open tasks nobody has picked up (placeholder assignee) and those assignee ids (2026-10-16). */
+  unassigned: Unassigned;
   /** Tasks in hand: open, deadline ahead, by window (tomorrow, rest of week, ...). */
   inHand: Record<DueWindow, number>;
   period: 'day' | 'week' | 'month';

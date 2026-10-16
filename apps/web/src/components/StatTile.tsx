@@ -24,9 +24,25 @@ interface Props {
   parts?: TilePart[];
   /** One-line explanation behind the "i" icon. */
   info?: string;
+  /**
+   * A data point inside the number that is not one of its parts (e.g. Unassigned on the Pending
+   * tile, 2026-10-16): its own amber line, clickable.
+   */
+  note?: TilePart;
 }
 
-export function StatTile({ label, value, sub, tone, active, onClick, aside, parts, info }: Props) {
+export function StatTile({
+  label,
+  value,
+  sub,
+  tone,
+  active,
+  onClick,
+  aside,
+  parts,
+  info,
+  note,
+}: Props) {
   return (
     <div
       className={clsx(
@@ -104,6 +120,23 @@ export function StatTile({ label, value, sub, tone, active, onClick, aside, part
               </button>
             </span>
           ))}
+        </span>
+      )}
+      {note && (
+        <span className="px-3 pt-1 text-table">
+          <button
+            type="button"
+            onClick={note.onClick}
+            disabled={!note.value || !note.onClick}
+            title={`Open ${label}: ${note.label}`}
+            className={clsx(
+              'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-heading font-bold enabled:hover:underline',
+              note.value ? 'bg-warn/15 text-warn' : 'bg-primary-soft-100 text-text-muted',
+            )}
+          >
+            {note.label}
+            <span className="tabular-nums">{note.value.toLocaleString('en-IN')}</span>
+          </button>
         </span>
       )}
       <span

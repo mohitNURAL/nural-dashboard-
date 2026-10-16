@@ -6,6 +6,7 @@ import {
   devSummary,
   devSummaryParts,
   devTasks,
+  isPending,
   speedRanking,
   stageMatrix,
   STAGE_COLORS,
@@ -25,6 +26,7 @@ import {
   assignee,
   contextOf,
   project,
+  unassignedOpen,
   withAssignees,
   withGroupNames,
   type AppOptions,
@@ -86,6 +88,8 @@ export function devRoutes(
       parts: devSummaryParts(tasks, ctx, q.scope),
       // Tasks in hand: pending, deadline ahead, by window.
       inHand: tasksInHand(tasks, ctx),
+      // Pending tile: how many pending tasks nobody has picked up (placeholder assignee).
+      unassigned: unassignedOpen(tasks, isPending),
       split: s.split && {
         by: s.split.by,
         items: s.split.items.map((i) => ({
