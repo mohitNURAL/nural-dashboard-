@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-16-unassigned',
+    date: '2026-10-16',
+    tab: 'dev',
+    title: 'Tasks nobody has picked up show as Unassigned',
+    steps: [
+      {
+        target: slot('dev.tiles', 'total'),
+        title: 'Unassigned',
+        text: 'Tasks and issues parked on the placeholder account now show as Unassigned, in every list, table, chart and the Assignee filter.',
+      },
+    ],
+  },
+  {
     id: '2026-10-16-qa-last-filed',
     date: '2026-10-16',
     tab: 'qa',

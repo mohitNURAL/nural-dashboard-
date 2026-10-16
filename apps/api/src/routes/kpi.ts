@@ -25,7 +25,14 @@ import { z } from 'zod';
 import type { RequestDataset, Viewer } from '../auth/roles';
 import type { Dataset } from '../data/dataset';
 import { kpiConfig } from '../data/kpiConfig';
-import { contextOf, person, project, withGroupNames, withPeople, type AppOptions } from './context';
+import {
+  contextOf,
+  person,
+  project,
+  withAssignees,
+  withGroupNames,
+  type AppOptions,
+} from './context';
 import { parseQuery } from './params';
 
 export const kpiParams = {
@@ -174,7 +181,7 @@ export function kpiRoutes(
     const rows = peoplePerformance(scope, ctx, q.period);
     const load = new Map(workload(scope, ctx).map((w) => [w.id, w]));
     return {
-      rows: withPeople(ds, rows).map((r) => ({
+      rows: withAssignees(ds, rows).map((r) => ({
         ...r,
         name: r.person.name,
         workload: load.get(r.id) ?? null,
@@ -185,7 +192,7 @@ export function kpiRoutes(
   app.get('/api/kpi/workload', async (req) => {
     const { ds, ctx, scope } = await get(req);
     return {
-      rows: withPeople(ds, workload(scope, ctx)).map((r) => ({ ...r, name: r.person.name })),
+      rows: withAssignees(ds, workload(scope, ctx)).map((r) => ({ ...r, name: r.person.name })),
     };
   });
 
@@ -195,7 +202,7 @@ export function kpiRoutes(
     return {
       ...o,
       byProject: o.byProject.map((g) => ({ ...g, name: projectName(ds, g.id) })),
-      byAssignee: withPeople(ds, o.byAssignee).map((g) => ({ ...g, name: g.person.name })),
+      byAssignee: withAssignees(ds, o.byAssignee).map((g) => ({ ...g, name: g.person.name })),
     };
   });
 

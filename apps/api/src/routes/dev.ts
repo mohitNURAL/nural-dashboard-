@@ -21,7 +21,14 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import type { RequestDataset } from '../auth/roles';
 import type { Dataset } from '../data/dataset';
-import { contextOf, person, project, withGroupNames, withPeople, type AppOptions } from './context';
+import {
+  assignee,
+  contextOf,
+  project,
+  withAssignees,
+  withGroupNames,
+  type AppOptions,
+} from './context';
 import { groupByParam, parseQuery, scopeParam } from './params';
 
 export interface DevRouteDeps {
@@ -83,7 +90,7 @@ export function devRoutes(
         by: s.split.by,
         items: s.split.items.map((i) => ({
           ...i,
-          name: s.split!.by === 'project' ? project(ds, i.id)?.name : person(ds, i.id).name,
+          name: s.split!.by === 'project' ? project(ds, i.id)?.name : assignee(ds, i.id).name,
         })),
       },
       asOf: ctx.now,
@@ -107,7 +114,7 @@ export function devRoutes(
       rows: rows.map((r) => ({
         ...r,
         name: project(ds, r.id)?.name ?? 'No project',
-        people: r.people.map((p) => ({ ...p, person: person(ds, p.id) })),
+        people: r.people.map((p) => ({ ...p, person: assignee(ds, p.id) })),
       })),
     };
   });
@@ -142,7 +149,7 @@ export function devRoutes(
     const eligible = new Set(
       [...ds.users.values()].filter((u) => u.deptGroup === 'Development').map((u) => u.id),
     );
-    return { minTasks, rows: withPeople(ds, speedRanking(tasks, { minTasks, eligible })) };
+    return { minTasks, rows: withAssignees(ds, speedRanking(tasks, { minTasks, eligible })) };
   });
 
   app.get('/api/dev/matrix', async (req) => {

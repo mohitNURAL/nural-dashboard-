@@ -28,7 +28,16 @@ import {
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import type { RequestDataset } from '../auth/roles';
-import { contextOf, person, project, withGroupNames, withPeople, type AppOptions } from './context';
+import {
+  assignee,
+  contextOf,
+  person,
+  project,
+  withAssignees,
+  withGroupNames,
+  withPeople,
+  type AppOptions,
+} from './context';
 import { groupByParam, parseQuery } from './params';
 
 export function qaRoutes(app: FastifyInstance, getDataset: RequestDataset, opts: AppOptions) {
@@ -76,7 +85,7 @@ export function qaRoutes(app: FastifyInstance, getDataset: RequestDataset, opts:
         creators: r.creators.map((c) => ({
           ...c,
           person: person(ds, c.id),
-          assignees: c.assignees.map((a) => ({ ...a, person: person(ds, a.id) })),
+          assignees: c.assignees.map((a) => ({ ...a, person: assignee(ds, a.id) })),
         })),
       })),
     };
@@ -163,6 +172,6 @@ export function qaRoutes(app: FastifyInstance, getDataset: RequestDataset, opts:
   app.get('/api/qa/testing', async (req) => {
     const { filters, ds, ctx } = await scope(req);
     const list = applyFilters(testingTasks(ds.tasks, ctx), filters, ctx.tz);
-    return { total: list.length, rows: withPeople(ds, testingWorkload(list, ctx)) };
+    return { total: list.length, rows: withAssignees(ds, testingWorkload(list, ctx)) };
   });
 }

@@ -16,6 +16,8 @@ import {
   type TaskStatus,
   hasRole,
 } from '@nural/shared';
+import { existsSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import type { Dataset, DeptGroup } from '../data/dataset';
 import { statusOf } from './actions';
 
@@ -44,12 +46,33 @@ export const person = (ds: Dataset, id: number): PersonRef => {
   return { id, name: u?.name ?? `User ${id}`, deptGroup: u?.deptGroup ?? 'Other' };
 };
 
+/**
+ * Placeholder assignees (config/unassigned.json, 2026-10-16): Bitrix24 users who hold tasks nobody
+ * has picked up. As the assignee they show as Unassigned; as a creator, their own name.
+ */
+const UNASSIGNED: ReadonlySet<number> = (() => {
+  const file = fileURLToPath(new URL('../../../../config/unassigned.json', import.meta.url));
+  if (!existsSync(file)) return new Set<number>();
+  const raw = JSON.parse(readFileSync(file, 'utf8')) as { userIds?: unknown };
+  return new Set(
+    Array.isArray(raw.userIds) ? raw.userIds.map(Number).filter(Number.isInteger) : [],
+  );
+})();
+
+/** The person a task is assigned to: "Unassigned" for a placeholder assignee. */
+export const assignee = (ds: Dataset, id: number): PersonRef =>
+  UNASSIGNED.has(id) ? { id, name: 'Unassigned', deptGroup: 'Other' } : person(ds, id);
+
 export const project = (ds: Dataset, id: number) =>
   id ? { id, name: ds.projects.get(id)?.name ?? `Group ${id}` } : null;
 
 /** Adds `person` to rows keyed by a user `id`. */
 export const withPeople = <R extends { id: number }>(ds: Dataset, rows: R[]) =>
   rows.map((r) => ({ ...r, person: person(ds, r.id) }));
+
+/** Adds `person` to rows keyed by an assignee `id` (placeholders show as Unassigned). */
+export const withAssignees = <R extends { id: number }>(ds: Dataset, rows: R[]) =>
+  rows.map((r) => ({ ...r, person: assignee(ds, r.id) }));
 
 /**
  * Names rows keyed by assignee or project (the cards' Assignee / Project switch). Every row
@@ -59,7 +82,7 @@ export const withGroupNames = <R extends { id: number }>(ds: Dataset, rows: R[],
   rows.map((r) =>
     by === 'project'
       ? { ...r, name: project(ds, r.id)?.name ?? 'No project', person: null }
-      : { ...r, name: person(ds, r.id).name, person: person(ds, r.id) },
+      : { ...r, name: assignee(ds, r.id).name, person: assignee(ds, r.id) },
   );
 
 const PRIORITY = ['low', 'normal', 'high'] as const;
@@ -116,7 +139,7 @@ export function taskRow(ds: Dataset, ctx: MetricContext, t: MetricTask) {
     title: t.title,
     url: taskUrl(ds, t),
     project: project(ds, t.groupId),
-    assignee: person(ds, t.responsibleId),
+    assignee: assignee(ds, t.responsibleId),
     creator: person(ds, t.createdBy),
     stage: t.stage,
     stageTitle: t.stageTitle,

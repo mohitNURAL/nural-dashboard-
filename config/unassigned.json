@@ -1,0 +1,4 @@
+{
+  "_note": "Bitrix24 users who hold tasks nobody has picked up yet (a placeholder assignee). Tasks and issues assigned to them show as Unassigned on the dashboard; as creators and in the People directory they keep their own name.",
+  "userIds": [126]
+}

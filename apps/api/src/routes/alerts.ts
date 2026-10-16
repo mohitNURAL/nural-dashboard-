@@ -12,7 +12,7 @@ import {
 } from '@nural/shared';
 import type { FastifyInstance } from 'fastify';
 import type { RequestDataset } from '../auth/roles';
-import { boardUrl, contextOf, person, project, type AppOptions } from './context';
+import { assignee, boardUrl, contextOf, project, type AppOptions } from './context';
 
 /** Overdue = pending and not On Hold (SRS 5), so the Bitrix24 link uses these stages. */
 // Read per request: the workflow can change.
@@ -33,7 +33,7 @@ export function alertRoutes(app: FastifyInstance, getDataset: RequestDataset, op
     const a = alerts(devTasks(ds.tasks, ctx, 'all'), ctx);
     const names = <R extends { personId: number; projectId: number }>(r: R) => ({
       ...r,
-      person: person(ds, r.personId),
+      person: assignee(ds, r.personId),
       project: project(ds, r.projectId),
     });
     // Each alert links to its project's Bitrix24 board, filtered to it; fixing the tasks there

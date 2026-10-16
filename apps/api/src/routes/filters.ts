@@ -4,7 +4,7 @@ import { devTasks, filterOptions, issues, testingTasks } from '@nural/shared';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { RequestDataset } from '../auth/roles';
-import { contextOf, person, project, type AppOptions } from './context';
+import { assignee, contextOf, project, type AppOptions } from './context';
 import { parseQuery, scopeParam } from './params';
 
 const GROUP_ORDER = { Development: 0, Testing: 1, Other: 2 } as const;
@@ -32,7 +32,7 @@ export function filterRoutes(app: FastifyInstance, getDataset: RequestDataset, o
         .sort((a, b) => a.name.localeCompare(b.name)),
       // Grouped by department group in the dropdown (DEV-00).
       assignees: o.assignees
-        .map((a) => ({ ...person(ds, a.value), count: a.count }))
+        .map((a) => ({ ...assignee(ds, a.value), count: a.count }))
         .sort(
           (a, b) =>
             GROUP_ORDER[a.deptGroup] - GROUP_ORDER[b.deptGroup] || a.name.localeCompare(b.name),
