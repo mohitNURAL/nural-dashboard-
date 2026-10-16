@@ -120,6 +120,7 @@ const ENDPOINTS = [
   '/api/qa/issues',
   '/api/qa/issues?groupBy=project',
   '/api/qa/testing',
+  '/api/qa/filed',
   '/api/qa/retest',
   '/api/qa/retest?groupBy=project',
   '/api/filters/options?tab=dev&scope=all',

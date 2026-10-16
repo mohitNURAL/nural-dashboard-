@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-16-qa-last-filed',
+    date: '2026-10-16',
+    tab: 'qa',
+    title: 'QA: Last filed by project, creator and assignee',
+    steps: [
+      {
+        target: slot('qa.tiles', 'qaLastFiled'),
+        title: 'Who filed what',
+        text: 'Click Last filed for that day’s issues by project. Open a project to see who filed them, split into bugs and feedback, then open a creator to see who the issues went to. Any count opens those issues.',
+      },
+    ],
+  },
+  {
     id: '2026-10-15-kpi-projects',
     date: '2026-10-15',
     tab: 'kpi',

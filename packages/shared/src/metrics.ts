@@ -668,6 +668,62 @@ export function lastFiled(list: readonly MetricTask[], ctx: MetricContext) {
   };
 }
 
+/** Issues filed, split into bugs and feedback. */
+export interface FiledCounts {
+  filed: number;
+  bug: number;
+  feedback: number;
+}
+export interface FiledAssignee extends FiledCounts {
+  id: number;
+}
+export interface FiledCreator extends FiledCounts {
+  id: number;
+  /** Who the creator's issues went to. */
+  assignees: FiledAssignee[];
+}
+export interface FiledProject extends FiledCounts {
+  /** Workgroup id; 0 = no project. */
+  id: number;
+  creators: FiledCreator[];
+}
+
+const filedCounts = (l: readonly MetricTask[]): FiledCounts => ({
+  filed: l.length,
+  bug: l.filter((t) => t.issueType === 'bug').length,
+  feedback: l.filter((t) => t.issueType === 'feedback').length,
+});
+const mostFiled = (a: FiledCounts & { id: number }, b: FiledCounts & { id: number }) =>
+  b.filed - a.filed || a.id - b.id;
+
+/**
+ * QA "Last filed" popup (2026-10-16): the issues filed (created) on one day, per project, then per
+ * creator (who filed them), then per assignee (who they went to), each split into bug and
+ * feedback. Most filed first at every level.
+ */
+export function filedOnDay(
+  list: readonly MetricTask[],
+  ctx: MetricContext,
+  day: string,
+): FiledProject[] {
+  const that = list.filter((t) => dayKey(t.createdAt, ctx.tz) === day);
+  return [...groupBy(that, (t) => t.groupId)]
+    .map(([id, pl]) => ({
+      id,
+      ...filedCounts(pl),
+      creators: [...groupBy(pl, (t) => t.createdBy)]
+        .map(([cid, cl]) => ({
+          id: cid,
+          ...filedCounts(cl),
+          assignees: [...groupBy(cl, (t) => t.responsibleId)]
+            .map(([aid, al]) => ({ id: aid, ...filedCounts(al) }))
+            .sort(mostFiled),
+        }))
+        .sort(mostFiled),
+    }))
+    .sort(mostFiled);
+}
+
 /**
  * The issue trend lines, one value per day: bugs and feedback filed (created) that day, and bugs
  * and feedback resolved that day (pushed to QA Backlog, as Last resolved; once per issue per day).

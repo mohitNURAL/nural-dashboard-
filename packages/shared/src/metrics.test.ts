@@ -36,6 +36,7 @@ import {
   issueTrend,
   isCompletedYesterday,
   lastResolved,
+  filedOnDay,
   lastFiled,
   presetPredicate,
   qaSummary,
@@ -584,6 +585,32 @@ describe('QA tab', () => {
       reworkTotal: 2,
     });
     expect(lastFiled([parentIssue], ctx)).toEqual({ date: '2026-10-01', isToday: false, count: 1 });
+  });
+
+  it('lists the issues filed on one day by project, creator and assignee', () => {
+    const day = new Date('2026-10-09T05:00:00Z');
+    const filed = [
+      task({ groupId: 148, createdBy: 14, responsibleId: 30, tags: ['bug'], createdAt: day }),
+      task({ groupId: 148, createdBy: 14, responsibleId: 31, tags: ['feedback'], createdAt: day }),
+      task({ groupId: 148, createdBy: 14, responsibleId: 30, tags: ['bug'], createdAt: day }),
+      task({ groupId: 148, createdBy: 16, responsibleId: 30, tags: ['bug'], createdAt: day }),
+      task({ groupId: 154, createdBy: 16, responsibleId: 32, tags: ['feedback'], createdAt: day }),
+      // Another day: left out.
+      task({ groupId: 154, createdBy: 16, responsibleId: 32, tags: ['bug'] }),
+    ];
+    const rows = filedOnDay(filed, ctx, '2026-10-09');
+    expect(rows.map((r) => [r.id, r.filed, r.bug, r.feedback])).toEqual([
+      [148, 4, 3, 1],
+      [154, 1, 0, 1],
+    ]);
+    const [tester, other] = rows[0]!.creators;
+    expect([tester!.id, tester!.filed, tester!.bug, tester!.feedback]).toEqual([14, 3, 2, 1]);
+    expect(tester!.assignees.map((a) => [a.id, a.filed, a.bug, a.feedback])).toEqual([
+      [30, 2, 2, 0],
+      [31, 1, 0, 1],
+    ]);
+    expect([other!.id, other!.filed]).toEqual([16, 1]);
+    expect(filedOnDay(filed, ctx, '2026-10-08')).toEqual([]);
   });
 
   it('breaks issues down by assignee, stage, age and rework', () => {

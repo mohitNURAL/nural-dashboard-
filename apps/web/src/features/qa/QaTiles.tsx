@@ -6,6 +6,8 @@ import { InHandTile } from '../../components/InHandTile';
 import { StatTile } from '../../components/StatTile';
 import { useIssueList, useOpenIssues } from './issueList';
 import { useQaRetest, useQaSummary } from './api';
+import { FiledDialog } from './FiledDialog';
+import { useFiledPopup } from './filedPopup';
 import { lastFiledText } from './format';
 import { INFO } from '../info';
 
@@ -27,6 +29,7 @@ export function QaTiles({ active, onSelect, onPart, onRetest }: Props) {
   const openList = useOpenIssues();
   const shown = useIssueList((st) => st.list.label);
   const last = data?.lastFiled;
+  const showFiled = useFiledPopup((st) => st.show);
   /** The Bug | Feedback parts of one tile. */
   const parts = (
     tile: string,
@@ -45,147 +48,151 @@ export function QaTiles({ active, onSelect, onPart, onRetest }: Props) {
     : ({} as Record<string, string>);
 
   return (
-    <SortableGroup
-      group="qa.tiles"
-      noun="tile"
-      className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-[repeat(var(--cols),minmax(0,1fr))]"
-      items={[
-        {
-          id: 'inHand',
-          node: (
-            <InHandTile
-              counts={data?.inHand}
-              info={INFO.qaInHand}
-              active={!!shown?.startsWith('Tasks in hand')}
-              onOpen={(w, label) =>
-                openList({ kind: 'testing', preset: 'pending', label, params: { due: w } })
-              }
-            />
-          ),
-        },
-        {
-          id: 'qaTotal',
-          node: (
-            <StatTile
-              label="Total issues filed"
-              info={INFO.qaTotal}
-              value={data?.total}
-              sub="Tagged bug or feedback"
-              parts={parts('Total', 'total', 'all')}
-              active={active === 'all'}
-              onClick={() => onSelect('all')}
-            />
-          ),
-        },
-        {
-          id: 'qaOpen',
-          node: (
-            <StatTile
-              label="Open / pending"
-              info={INFO.qaOpen}
-              value={data?.open}
-              sub={
-                data
-                  ? `Resolved ${data.resolved.toLocaleString('en-IN')} · ${data.resolvedPct}%`
-                  : undefined
-              }
-              parts={parts('Open', 'open', 'open')}
-              active={active === 'open'}
-              onClick={() => onSelect('open')}
-              aside={data && <Ring resolvedPct={data.resolvedPct} />}
-            />
-          ),
-        },
-        {
-          id: 'hold',
-          node: (
-            <StatTile
-              label="On hold"
-              info={INFO.hold}
-              value={data?.hold}
-              sub="Issues in On Hold"
-              parts={parts('On hold', 'hold', 'hold')}
-              active={active === 'hold'}
-              onClick={() => onSelect('hold')}
-            />
-          ),
-        },
-        {
-          id: 'qaLastFiled',
-          node: (
-            <StatTile
-              label="Last filed"
-              info={INFO.qaLastFiled}
-              value={data && lastFiledText(last ?? null)}
-              sub="Latest day an issue was filed"
-              parts={parts('Last filed', 'lastFiled', 'all', lastDay)}
-              active={active === 'lastFiled'}
-              onClick={() => onSelect('lastFiled')}
-            />
-          ),
-        },
-        {
-          id: 'qaLastResolved',
-          node: (
-            <StatTile
-              label="Last resolved"
-              info={INFO.qaLastResolved}
-              value={data && lastFiledText(data.lastResolved ?? null)}
-              sub="Latest day fixes reached QA Backlog"
-              parts={parts(
-                'Last resolved',
-                'lastResolved',
-                'lastResolved',
-                data?.lastResolved ? { day: data.lastResolved.date } : {},
-              )}
-              active={active === 'lastResolved'}
-              onClick={() => onSelect('lastResolved')}
-            />
-          ),
-        },
-        {
-          id: 'qaRework',
-          node: (
-            <StatTile
-              label="Rework issues"
-              info={INFO.qaRework}
-              value={data?.reworkIssues}
-              sub="Sent back from QA for a fix"
-              parts={parts('Rework', 'rework', 'rework')}
-              tone="bad"
-              active={active === 'rework'}
-              onClick={() => onSelect('rework')}
-            />
-          ),
-        },
-        {
-          id: 'retestAwaited',
-          node: (
-            <StatTile
-              label="Retesting awaited"
-              info={INFO.retestAwaited}
-              value={retest?.totals.total}
-              sub="In QA Backlog or In QA"
-              parts={
-                retest && [
-                  {
-                    label: 'Dev tasks',
-                    value: retest.totals.dev,
-                    onClick: () => onRetest('Retesting awaited · Dev tasks', false),
-                  },
-                  {
-                    label: 'Issues',
-                    value: retest.totals.issues,
-                    onClick: () => onRetest('Retesting awaited · Issues', true),
-                  },
-                ]
-              }
-              onClick={() => onRetest('Retesting awaited')}
-            />
-          ),
-        },
-      ]}
-    />
+    <>
+      <SortableGroup
+        group="qa.tiles"
+        noun="tile"
+        className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-[repeat(var(--cols),minmax(0,1fr))]"
+        items={[
+          {
+            id: 'inHand',
+            node: (
+              <InHandTile
+                counts={data?.inHand}
+                info={INFO.qaInHand}
+                active={!!shown?.startsWith('Tasks in hand')}
+                onOpen={(w, label) =>
+                  openList({ kind: 'testing', preset: 'pending', label, params: { due: w } })
+                }
+              />
+            ),
+          },
+          {
+            id: 'qaTotal',
+            node: (
+              <StatTile
+                label="Total issues filed"
+                info={INFO.qaTotal}
+                value={data?.total}
+                sub="Tagged bug or feedback"
+                parts={parts('Total', 'total', 'all')}
+                active={active === 'all'}
+                onClick={() => onSelect('all')}
+              />
+            ),
+          },
+          {
+            id: 'qaOpen',
+            node: (
+              <StatTile
+                label="Open / pending"
+                info={INFO.qaOpen}
+                value={data?.open}
+                sub={
+                  data
+                    ? `Resolved ${data.resolved.toLocaleString('en-IN')} · ${data.resolvedPct}%`
+                    : undefined
+                }
+                parts={parts('Open', 'open', 'open')}
+                active={active === 'open'}
+                onClick={() => onSelect('open')}
+                aside={data && <Ring resolvedPct={data.resolvedPct} />}
+              />
+            ),
+          },
+          {
+            id: 'hold',
+            node: (
+              <StatTile
+                label="On hold"
+                info={INFO.hold}
+                value={data?.hold}
+                sub="Issues in On Hold"
+                parts={parts('On hold', 'hold', 'hold')}
+                active={active === 'hold'}
+                onClick={() => onSelect('hold')}
+              />
+            ),
+          },
+          {
+            id: 'qaLastFiled',
+            node: (
+              <StatTile
+                label="Last filed"
+                info={INFO.qaLastFiled}
+                value={data && lastFiledText(last ?? null)}
+                sub="Latest day an issue was filed"
+                parts={parts('Last filed', 'lastFiled', 'all', lastDay)}
+                active={active === 'lastFiled'}
+                // The day's issues by project, creator and assignee (2026-10-16).
+                onClick={showFiled}
+              />
+            ),
+          },
+          {
+            id: 'qaLastResolved',
+            node: (
+              <StatTile
+                label="Last resolved"
+                info={INFO.qaLastResolved}
+                value={data && lastFiledText(data.lastResolved ?? null)}
+                sub="Latest day fixes reached QA Backlog"
+                parts={parts(
+                  'Last resolved',
+                  'lastResolved',
+                  'lastResolved',
+                  data?.lastResolved ? { day: data.lastResolved.date } : {},
+                )}
+                active={active === 'lastResolved'}
+                onClick={() => onSelect('lastResolved')}
+              />
+            ),
+          },
+          {
+            id: 'qaRework',
+            node: (
+              <StatTile
+                label="Rework issues"
+                info={INFO.qaRework}
+                value={data?.reworkIssues}
+                sub="Sent back from QA for a fix"
+                parts={parts('Rework', 'rework', 'rework')}
+                tone="bad"
+                active={active === 'rework'}
+                onClick={() => onSelect('rework')}
+              />
+            ),
+          },
+          {
+            id: 'retestAwaited',
+            node: (
+              <StatTile
+                label="Retesting awaited"
+                info={INFO.retestAwaited}
+                value={retest?.totals.total}
+                sub="In QA Backlog or In QA"
+                parts={
+                  retest && [
+                    {
+                      label: 'Dev tasks',
+                      value: retest.totals.dev,
+                      onClick: () => onRetest('Retesting awaited · Dev tasks', false),
+                    },
+                    {
+                      label: 'Issues',
+                      value: retest.totals.issues,
+                      onClick: () => onRetest('Retesting awaited · Issues', true),
+                    },
+                  ]
+                }
+                onClick={() => onRetest('Retesting awaited')}
+              />
+            ),
+          },
+        ]}
+      />
+      <FiledDialog onOpen={(label, params) => onPart('all', label, params)} />
+    </>
   );
 }
 

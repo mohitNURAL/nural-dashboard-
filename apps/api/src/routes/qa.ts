@@ -4,6 +4,9 @@ import {
   ageingByAssignee,
   assigneeTable,
   applyFilters,
+  dayKey,
+  filedOnDay,
+  lastFiled,
   issueAgeByAssignee,
   issues,
   issuesByAssignee,
@@ -23,8 +26,9 @@ import {
   waitingForRetest,
 } from '@nural/shared';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { z } from 'zod';
 import type { RequestDataset } from '../auth/roles';
-import { contextOf, withGroupNames, withPeople, type AppOptions } from './context';
+import { contextOf, person, project, withGroupNames, withPeople, type AppOptions } from './context';
 import { groupByParam, parseQuery } from './params';
 
 export function qaRoutes(app: FastifyInstance, getDataset: RequestDataset, opts: AppOptions) {
@@ -46,6 +50,35 @@ export function qaRoutes(app: FastifyInstance, getDataset: RequestDataset, opts:
       inHand: tasksInHand(applyFilters(testingTasks(ds.tasks, ctx), filters, ctx.tz), ctx),
       asOf: ctx.now,
       dataLoadedAt: ds.loadedAt,
+    };
+  });
+
+  // Last filed popup (2026-10-16): the issues filed on one day (default: the Last filed day) per
+  // project, then per creator, then per assignee, each split into bug and feedback.
+  app.get('/api/qa/filed', async (req) => {
+    const { query, filters } = parseQuery(req.query, {
+      day: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional(),
+    });
+    const ds = await getDataset(req);
+    const ctx = contextOf(ds, opts);
+    const list = applyFilters(issues(ds.tasks), filters, ctx.tz);
+    const day = (query as { day?: string }).day ?? lastFiled(list, ctx)?.date ?? null;
+    const rows = day ? filedOnDay(list, ctx, day) : [];
+    return {
+      day,
+      isToday: day === dayKey(ctx.now, ctx.tz),
+      rows: rows.map((r) => ({
+        ...r,
+        name: project(ds, r.id)?.name ?? 'No project',
+        creators: r.creators.map((c) => ({
+          ...c,
+          person: person(ds, c.id),
+          assignees: c.assignees.map((a) => ({ ...a, person: person(ds, a.id) })),
+        })),
+      })),
     };
   });
 

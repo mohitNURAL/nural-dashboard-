@@ -262,6 +262,27 @@ export interface DevMatrix {
 
 // ---------------------------------------------------------------- QA tab (routes/qa.ts)
 
+/** QA Last filed popup: issues filed on one day by project, creator and assignee. */
+export interface QaFiledCounts {
+  filed: number;
+  bug: number;
+  feedback: number;
+}
+export interface QaFiled {
+  /** YYYY-MM-DD (IST); null when no issue was ever filed. */
+  day: string | null;
+  isToday: boolean;
+  rows: (QaFiledCounts & {
+    id: number;
+    name: string;
+    creators: (QaFiledCounts & {
+      id: number;
+      person: Person;
+      assignees: (QaFiledCounts & { id: number; person: Person })[];
+    })[];
+  })[];
+}
+
 export interface QaSummary {
   /** Tasks in hand: open, deadline ahead, by window (tomorrow, rest of week, ...). */
   inHand: Record<DueWindow, number>;
