@@ -7,6 +7,8 @@ import {
   slackPlan,
   slackWrap,
   wrapState,
+  dailyState,
+  dailyUpcoming,
 } from './daily';
 import type { MetricTask } from './types';
 
@@ -95,11 +97,48 @@ describe('daily clock', () => {
 });
 
 describe('wrap state', () => {
-  it('is done when completed in Bitrix24 or sent to QA, else WIP', () => {
+  it('is done when completed in Bitrix24 or sent to QA, else its stage state', () => {
     expect(wrapState(task({ status: 5 }))).toBe('done');
     expect(wrapState(task({ stage: 'QA Backlog' }))).toBe('done');
     expect(wrapState(task({ stage: 'In progress', status: 3 }))).toBe('wip');
-    expect(wrapState(undefined)).toBe('wip');
+    expect(wrapState(undefined)).toBe('pending');
+  });
+});
+
+describe('daily state (Slack status rules)', () => {
+  const testers = new Set([77]);
+  it('dev task or issue: To do pending, In progress..before QA entry WIP, QA entry on done', () => {
+    expect(dailyState(task({ stage: 'To do' }))).toBe('pending');
+    expect(dailyState(task({ stage: 'In progress' }))).toBe('wip');
+    expect(dailyState(task({ stage: 'Pending for QA' }))).toBe('wip');
+    expect(dailyState(task({ stage: 'Issue Raised' }))).toBe('wip');
+    expect(dailyState(task({ stage: 'QA Backlog' }))).toBe('done');
+    expect(dailyState(task({ stage: 'Done' }))).toBe('done');
+    expect(dailyState(task({ stage: 'On Hold' }))).toBe('hold');
+  });
+  it('testing task: To do pending, In progress WIP, Issue Raised or Done done', () => {
+    const qa = (stage: string) => task({ stage, responsibleId: 77 });
+    expect(dailyState(qa('To do'), testers)).toBe('pending');
+    expect(dailyState(qa('In progress'), testers)).toBe('wip');
+    expect(dailyState(qa('Issue Raised'), testers)).toBe('done');
+    expect(dailyState(qa('Done'), testers)).toBe('done');
+  });
+});
+
+describe('carry-over and upcoming', () => {
+  it('carries only pending or WIP tasks from the last plan, first, and never a done one', () => {
+    const wip = task({ id: 501, stage: 'In progress' });
+    const done = task({ id: 502, stage: 'QA Backlog' });
+    const s = dailySuggestions([wip, done], 7, ctx, project, [501, 502]);
+    expect(s.map((i) => [i.taskId, i.why])).toEqual([[501, 'carried']]);
+  });
+  it('upcoming: open tasks due after today, soonest first', () => {
+    const later = task({ id: 601, deadline: ist('2026-10-20T18:00') });
+    const sooner = task({ id: 602, deadline: ist('2026-10-15T18:00') });
+    const today = task({ id: 603, deadline: ist('2026-10-14T18:00') });
+    expect(dailyUpcoming([later, sooner, today], 7, ctx, project).map((i) => i.taskId)).toEqual([
+      602, 601,
+    ]);
   });
 });
 

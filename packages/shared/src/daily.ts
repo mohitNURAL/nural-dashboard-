@@ -2,14 +2,48 @@
 // the Slack daily work update group. Pure functions: what to suggest in the morning, whether a
 // planned task is done by the evening, and the two Slack messages.
 import { isWorkingDay, type WorkCalendar } from './calendar';
-import { isDeployed, isDueToday, isOverdue, isPending, isSentToQa } from './metrics';
+import { isDeployed, isDueToday, isOnHold, isOverdue, isPending, isSentToQa } from './metrics';
+import { hasRole } from './stages';
 import { dayKey } from './time';
 import type { MetricContext, MetricTask } from './types';
 
 const DAY_MS = 86_400_000;
 
-/** Why a task is on the plan: overdue, due today, or added by the person. */
-export type DailyWhy = 'overdue' | 'today' | 'added';
+/**
+ * Why a task is on the plan: carried over from the last plan (still pending or WIP), overdue, due
+ * today, upcoming (deadline after today, taken early), or added by the person.
+ */
+export type DailyWhy = 'carried' | 'overdue' | 'today' | 'upcoming' | 'added';
+
+/**
+ * Where a task stands for the Daily update and its Slack posts (2026-10-17), by workflow role:
+ * - a dev task or an issue: the start stage (To do) is Pending; In progress up to before QA entry
+ *   (In progress, Pushed to Master, Merged to Development, Pending for QA, Issue Raised) is WIP;
+ *   QA entry or later (QA Backlog, In QA, Done, LIVE) is Done;
+ * - a testing task (assigned to the QA Testing department): To do is Pending, In progress is WIP,
+ *   Issue Raised or anything from QA entry on is Done;
+ * - On Hold is On hold; completed in Bitrix24 (status 5, or 4 awaiting control) is Done.
+ */
+export type DailyState = 'pending' | 'wip' | 'done' | 'hold';
+
+export function dailyState(
+  t: MetricTask | undefined,
+  testers: ReadonlySet<number> = new Set(),
+): DailyState {
+  if (!t) return 'pending';
+  if (t.status === 5 || t.status === 4 || isSentToQa(t)) return 'done';
+  if (isOnHold(t)) return 'hold';
+  if (!t.stage || hasRole(t.stage, 'start')) return 'pending';
+  if (testers.has(t.responsibleId) && hasRole(t.stage, 'issue')) return 'done';
+  return 'wip';
+}
+
+export const DAILY_STATE_LABEL: Record<DailyState, string> = {
+  pending: 'Pending',
+  wip: 'WIP',
+  done: 'Done',
+  hold: 'On hold',
+};
 
 export interface DailyItem {
   taskId: number;
@@ -24,12 +58,13 @@ export interface WrapItem {
   taskId: number;
   title: string;
   project: string;
-  state: 'done' | 'wip';
+  /** Older wrap-ups hold only done or wip. */
+  state: DailyState;
   /** Unplanned work added in the evening (created in Bitrix24). */
   extra?: boolean;
 }
 
-type Ctx = Pick<MetricContext, 'now' | 'tz'>;
+type Ctx = Pick<MetricContext, 'now' | 'tz'> & { testers?: ReadonlySet<number> };
 const full = (c: Ctx): MetricContext => ({ ...c, testers: new Set() });
 
 /** The person's day: YYYY-MM-DD in the app time zone. */
@@ -49,24 +84,45 @@ export function dailyClock(now: Date, cal: WorkCalendar) {
   };
 }
 
-/** A task the person can put on their plan: theirs and still open (not completed or on hold). */
-export const isPlannable = (t: MetricTask, userId: number) =>
-  t.responsibleId === userId && isPending(t) && !isDeployed(t);
+/**
+ * A task the person can put on their plan: theirs, still open (not completed or on hold) and not
+ * done by the Daily update rule (a testing task in Issue Raised is done).
+ */
+export const isPlannable = (
+  t: MetricTask,
+  userId: number,
+  testers: ReadonlySet<number> = new Set(),
+) =>
+  t.responsibleId === userId && isPending(t) && !isDeployed(t) && dailyState(t, testers) !== 'done';
 
 /**
- * The morning suggestions: the person's open tasks that are overdue (most overdue first), then
- * those due today. A task is listed once.
+ * The morning suggestions: what was planned last time and is still pending or WIP (carried over;
+ * a done task never comes back), then the person's open tasks that are overdue (most overdue
+ * first), then those due today. A task is listed once.
  */
 export function dailySuggestions(
   tasks: readonly MetricTask[],
   userId: number,
   ctx: Ctx,
   project: (groupId: number) => string,
+  carried: readonly number[] = [],
 ): DailyItem[] {
   const c = full(ctx);
-  const mine = tasks.filter((t) => isPlannable(t, userId));
+  const testers = ctx.testers ?? new Set<number>();
+  const mine = tasks.filter((t) => isPlannable(t, userId, testers));
+  const byId = new Map(mine.map((t) => [t.id, t]));
+  const carriedItems = [...new Set(carried)]
+    .map((id) => byId.get(id))
+    .filter((t): t is MetricTask => !!t)
+    .map((t): DailyItem => ({
+      taskId: t.id,
+      title: t.title,
+      project: project(t.groupId),
+      why: 'carried',
+    }));
+  const seen = new Set(carriedItems.map((i) => i.taskId));
   const overdue = mine
-    .filter((t) => isOverdue(t, c) && !isDueToday(t, c))
+    .filter((t) => !seen.has(t.id) && isOverdue(t, c) && !isDueToday(t, c))
     .sort((a, b) => a.deadline!.getTime() - b.deadline!.getTime())
     .map((t): DailyItem => ({
       taskId: t.id,
@@ -76,7 +132,7 @@ export function dailySuggestions(
       daysOverdue: Math.max(1, Math.floor((ctx.now.getTime() - t.deadline!.getTime()) / DAY_MS)),
     }));
   const today = mine
-    .filter((t) => isDueToday(t, c))
+    .filter((t) => !seen.has(t.id) && isDueToday(t, c))
     .sort((a, b) => a.deadline!.getTime() - b.deadline!.getTime())
     .map((t): DailyItem => ({
       taskId: t.id,
@@ -84,12 +140,36 @@ export function dailySuggestions(
       project: project(t.groupId),
       why: 'today',
     }));
-  return [...overdue, ...today];
+  return [...carriedItems, ...overdue, ...today];
 }
 
-/** Done by the evening: completed in Bitrix24 (status 5, or 4 awaiting control) or sent to QA. */
-export const wrapState = (t: MetricTask | undefined): 'done' | 'wip' =>
-  t && (t.status === 5 || t.status === 4 || isSentToQa(t)) ? 'done' : 'wip';
+/**
+ * Upcoming: the person's open tasks with a deadline after today (soonest first), to take on
+ * early or to report as done ahead.
+ */
+export function dailyUpcoming(
+  tasks: readonly MetricTask[],
+  userId: number,
+  ctx: Ctx,
+  project: (groupId: number) => string,
+  limit = 40,
+): DailyItem[] {
+  const today = dayKey(ctx.now, ctx.tz);
+  return tasks
+    .filter(
+      (t) =>
+        isPlannable(t, userId, ctx.testers) && !!t.deadline && dayKey(t.deadline, ctx.tz) > today,
+    )
+    .sort((a, b) => a.deadline!.getTime() - b.deadline!.getTime())
+    .slice(0, limit)
+    .map((t) => ({ taskId: t.id, title: t.title, project: project(t.groupId), why: 'upcoming' }));
+}
+
+/** The evening state of a task: dailyState (done, WIP, pending or on hold). */
+export const wrapState = (
+  t: MetricTask | undefined,
+  testers: ReadonlySet<number> = new Set(),
+): DailyState => dailyState(t, testers);
 
 export interface SlackText {
   text: string;
@@ -140,7 +220,11 @@ export function slackPlan(
         ? `:red_circle: ${i.daysOverdue ?? 1}d overdue`
         : i.why === 'today'
           ? ':large_orange_circle: due today'
-          : ':large_blue_circle: planned';
+          : i.why === 'carried'
+            ? ':repeat: carried over'
+            : i.why === 'upcoming'
+              ? ':calendar: taken early'
+              : ':large_blue_circle: planned';
     return `• ${link(i, taskUrl)} — ${i.project} · ${tag}`;
   });
   const title = `${head(who)} · :sunrise: Plan for ${dayLabel}`;
@@ -166,11 +250,22 @@ export function slackWrap(
 ): SlackText {
   const planned = items.filter((i) => !i.extra);
   const extra = items.filter((i) => i.extra);
-  const done = items.filter((i) => i.state === 'done').length;
-  const wip = items.filter((i) => i.state === 'wip').length;
+  const n = (s: DailyState) => items.filter((i) => i.state === s).length;
+  const icon: Record<DailyState, string> = {
+    done: ':white_check_mark: Done',
+    wip: ':arrows_counterclockwise: WIP',
+    pending: ':hourglass_flowing_sand: Pending',
+    hold: ':double_vertical_bar: On hold',
+  };
   const line = (i: WrapItem) =>
-    `• ${i.state === 'done' ? ':white_check_mark: Done' : ':arrows_counterclockwise: WIP'} — ${link(i, taskUrl)} — ${i.project}`;
-  const counts = [`${done} done`, `${wip} WIP`, extra.length ? `${extra.length} unplanned` : null]
+    `• ${icon[i.state] ?? icon.wip} — ${link(i, taskUrl)} — ${i.project}`;
+  const counts = [
+    `${n('done')} done`,
+    `${n('wip')} WIP`,
+    n('pending') ? `${n('pending')} pending` : null,
+    n('hold') ? `${n('hold')} on hold` : null,
+    extra.length ? `${extra.length} unplanned` : null,
+  ]
     .filter(Boolean)
     .join(' · ');
   const note$ = noteLine(note);

@@ -367,12 +367,12 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
     {
       target: tour('daily-plan'),
       title: 'Plan your day',
-      text: 'Open it from the Daily update icon in the dock: it lists your overdue and due-today tasks. Keep, remove or add your own tasks, write a note and post it: it goes to the daily work update group on Slack with your name.',
+      text: 'Open it from the Daily update icon in the dock: what carries over from your last plan (still pending or WIP), your overdue and due-today tasks, and upcoming ones you can take on early. Change any task right in its row (stage, status, tags…), keep, remove or add, write a note and post it to the daily work update group on Slack. You can open it all day to see and change your plan.',
     },
     {
       target: tour('daily-wrap'),
       title: 'Wrap up your day',
-      text: 'In the evening from the same icon, or when you sign out, your plan comes back with each task Done or WIP. Marking one Done completes it in Bitrix24; work outside the plan becomes a Bitrix24 task assigned to you. Then it goes to the same Slack thread.',
+      text: 'In the evening from the same icon, or when you sign out, your plan comes back with each task Pending, WIP, Done or On hold (from its stage). Report one as Done to complete it in Bitrix24, add tasks you finished ahead, and work outside the plan becomes a Bitrix24 task assigned to you. Then it goes to the same Slack thread.',
     },
     {
       target: slot('daily.cards', 'history'),

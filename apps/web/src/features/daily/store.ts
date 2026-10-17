@@ -20,12 +20,13 @@ export const useDailyDialog = create<DialogState>((set) => ({
 
 const today = () => apiGet<DailyToday>('/api/daily/today').catch(() => undefined);
 
-/** The dock icon: the plan until it is posted (or the day ends), then the wrap-up. */
+/**
+ * The dock icon: the plan, viewable and editable all day (2026-10-17), until the wrap-up time or
+ * once wrapped up; then the wrap-up. The plan view also has "Wrap up now".
+ */
 export async function openDailyNow() {
   const t = await today();
-  useDailyDialog
-    .getState()
-    .open(t && (t.plan || t.wrap || t.nowMin >= t.wrapFromMin) ? 'wrap' : 'plan');
+  useDailyDialog.getState().open(t && (t.wrap || t.nowMin >= t.wrapFromMin) ? 'wrap' : 'plan');
 }
 
 /**

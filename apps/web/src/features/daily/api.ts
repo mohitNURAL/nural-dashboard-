@@ -1,11 +1,12 @@
 // Daily update data (apps/api/src/routes/daily.ts, SRS 23): today's plan and wrap-up, the
 // person's own tasks to add, their projects, history, and the channel setting (Connections).
 import { useQueryClient } from '@tanstack/react-query';
-import type { DailyItem, WrapItem } from '@nural/shared';
+import type { DailyItem, DailyState, WrapItem } from '@nural/shared';
+import type { BoardStage, TaskRow } from '../../api/types';
 import { apiPost } from '../../api/client';
 import { API_KEY, useApi } from '../../api/queries';
 
-export type { DailyItem, WrapItem };
+export type { DailyItem, DailyState, WrapItem };
 
 export interface DailyPlan {
   items: DailyItem[];
@@ -30,7 +31,15 @@ export interface DailyToday {
   wrappedAt: string | null;
   posted: boolean;
   suggestions: DailyItem[];
+  /** Open tasks due after today, soonest first (to take on early or report done ahead). */
+  upcoming: DailyItem[];
   wrapItems: WrapItem[];
+  /** Every listed task as the task lists show it (edited in place), by id. */
+  rows: Record<string, TaskRow>;
+  /** Each listed task's Daily state now: pending, WIP, done or on hold. */
+  states: Record<string, DailyState>;
+  /** The Kanban columns of their projects, for the stage editor. */
+  boards: Record<string, BoardStage[]>;
   channel: string | null;
   slack: boolean;
   /** Signed in with Bitrix24: Done and new tasks reach Bitrix24. */

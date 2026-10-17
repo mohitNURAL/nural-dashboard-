@@ -25,6 +25,11 @@ const base = {
   changedAt: NOW,
   createdAt: ist('2026-10-01T10:00'),
   closedAt: null,
+  priority: 1,
+  parentId: null,
+  relatedIds: [],
+  isIssue: false,
+  issueType: null,
 };
 // Neha (7): 41 overdue, 43 due today, 44 later; 42 is Vijay's (30).
 const overdue = { ...base, id: 41, title: 'Payment bug', deadline: ist('2026-10-12T18:00') };
@@ -120,6 +125,15 @@ const post = (url: string, body: unknown) =>
   });
 
 describe('daily update (SRS 23)', () => {
+  it('lists upcoming tasks and returns each listed task as a full row with its state', async () => {
+    await server();
+    const body = (await get('/api/daily/today')).json();
+    expect(body.upcoming.map((i: { taskId: number }) => i.taskId)).toEqual([44]);
+    expect(body.rows['41']).toMatchObject({ id: 41, title: 'Payment bug' });
+    expect(body.rows['44']).toBeDefined();
+    expect(body.rows['42']).toBeUndefined(); // not hers
+    expect(body.states).toMatchObject({ 41: 'pending', 43: 'pending', 44: 'pending' });
+  });
   it('suggests only my overdue and due-today tasks', async () => {
     await server();
     const res = await get('/api/daily/today');
@@ -167,7 +181,8 @@ describe('daily update (SRS 23)', () => {
     });
     const body = res.json();
     expect(body).toMatchObject({ ok: true, posted: true, failures: [] });
-    expect(body.items.map((i: { state: string }) => i.state)).toEqual(['done', 'wip', 'done']);
+    // Not done and still in To do: Pending under the Daily update rules (2026-10-17).
+    expect(body.items.map((i: { state: string }) => i.state)).toEqual(['done', 'pending', 'done']);
     expect(s.calls).toEqual([
       { method: 'tasks.task.complete', params: { taskId: 41 } },
       {

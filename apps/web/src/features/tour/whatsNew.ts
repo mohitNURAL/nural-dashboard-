@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-17-daily-edit',
+    date: '2026-10-17',
+    tab: 'daily',
+    title: 'Daily update: edit tasks in place, upcoming tasks, carry-over',
+    steps: [
+      {
+        target: '[data-tour="daily-plan"]',
+        title: 'Plan your day, task by task',
+        text: 'Each task in your plan and wrap-up now shows its stage, status, project, priority, tags and deadline, and you can change them right there. Upcoming tasks can be taken on early or reported as done ahead; what you left pending or WIP carries over to the next day, done tasks never do. Your plan stays open all day.',
+      },
+    ],
+  },
+  {
     id: '2026-10-16-last-filed-export',
     date: '2026-10-16',
     tab: 'qa',

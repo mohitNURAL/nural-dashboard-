@@ -7,8 +7,11 @@
 import {
   dailyClock,
   dailyDay,
+  dailyState,
   dailySuggestions,
+  dailyUpcoming,
   isPlannable,
+  type DailyState,
   slackPlan,
   slackWrap,
   wrapState,
@@ -23,7 +26,7 @@ import { sessionUserOf } from '../auth/routes';
 import type { Dataset } from '../data/dataset';
 import type { Slack } from '../integrations/slack';
 import { prepare, type taskWriter } from './actions';
-import { taskUrl } from './context';
+import { contextOf, taskRow, taskUrl } from './context';
 
 export interface DailyPlan {
   items: DailyItem[];
@@ -188,6 +191,35 @@ export function dailyRoutes(
     }
   }
 
+  /**
+   * The ids of the last plan before today (to carry over what is still pending or WIP). The
+   * latest earlier day with a plan, within the person's recent days.
+   */
+  async function lastPlanned(userId: number, day: string): Promise<number[]> {
+    const rows = await deps.store.history(userId, 10);
+    const last = rows.find((r) => r.day < day && r.plan);
+    return (last?.plan?.items ?? []).map((i) => i.taskId).filter((id) => id > 0);
+  }
+
+  /**
+   * Full task rows (as the task lists show them, so the dialog edits them in place), each one's
+   * Daily state, and the Kanban columns of their projects.
+   */
+  function rowsOf(ds: Dataset, ids: Iterable<number>, at: Date) {
+    const ctx = contextOf(ds, { tz: deps.tz, now: () => at });
+    const rows: Record<string, ReturnType<typeof taskRow>> = {};
+    const states: Record<string, DailyState> = {};
+    const boards: Record<string, unknown> = {};
+    for (const id of new Set(ids)) {
+      const t = ds.byId.get(id);
+      if (!t) continue;
+      rows[id] = taskRow(ds, ctx, t);
+      states[id] = dailyState(t, ds.testers);
+      if (t.groupId > 0 && !boards[t.groupId]) boards[t.groupId] = ds.boards?.get(t.groupId) ?? [];
+    }
+    return { rows, states, boards };
+  }
+
   const empty = (userId: number, day: string): DailyRow => ({
     userId,
     day,
@@ -205,15 +237,34 @@ export function dailyRoutes(
     const at = now();
     const day = dailyDay(at, deps.tz);
     const row = await deps.store.get(v.userId, day);
-    const ctx = { now: at, tz: deps.tz };
+    const ctx = { now: at, tz: deps.tz, testers: ds.testers };
     const project = projectOf(ds);
     // The evening view: the morning plan with each task's state in Bitrix24 now.
     const wrapItems: WrapItem[] = (row?.plan?.items ?? []).map((i) => ({
       taskId: i.taskId,
       title: ds.byId.get(i.taskId)?.title ?? i.title,
       project: i.project,
-      state: wrapState(ds.byId.get(i.taskId)),
+      state: wrapState(ds.byId.get(i.taskId), ds.testers),
     }));
+    const suggestions = dailySuggestions(
+      ds.tasks,
+      v.userId,
+      ctx,
+      project,
+      await lastPlanned(v.userId, day),
+    );
+    const upcoming = dailyUpcoming(ds.tasks, v.userId, ctx, project);
+    const extra = (row?.wrap?.items ?? []).map((i) => i.taskId);
+    const live = rowsOf(
+      ds,
+      [
+        ...(row?.plan?.items ?? []).map((i) => i.taskId),
+        ...suggestions.map((i) => i.taskId),
+        ...upcoming.map((i) => i.taskId),
+        ...extra,
+      ],
+      at,
+    );
     const who = await deps.writer.actor(req);
     return {
       day,
@@ -224,8 +275,11 @@ export function dailyRoutes(
       wrap: row?.wrap ?? null,
       wrappedAt: row?.wrappedAt ?? null,
       posted: !!row?.slackTs,
-      suggestions: dailySuggestions(ds.tasks, v.userId, ctx, project),
+      suggestions,
+      upcoming,
       wrapItems,
+      /** Each listed task as the task lists show it, its Daily state, and its board's columns. */
+      ...live,
       channel: await channelOf(),
       slack: deps.slack.connected,
       /** False without a Bitrix24 sign-in token: Done and new tasks cannot reach Bitrix24. */
@@ -285,11 +339,12 @@ export function dailyRoutes(
     const at = now();
     const day = dailyDay(at, deps.tz);
     const project = projectOf(ds);
+    const pctx = { now: at, tz: deps.tz, testers: ds.testers };
     const suggested = new Map(
-      dailySuggestions(ds.tasks, v.userId, { now: at, tz: deps.tz }, project).map((s) => [
-        s.taskId,
-        s,
-      ]),
+      [
+        ...dailySuggestions(ds.tasks, v.userId, pctx, project, await lastPlanned(v.userId, day)),
+        ...dailyUpcoming(ds.tasks, v.userId, pctx, project, 500),
+      ].map((s) => [s.taskId, s]),
     );
     const items: DailyItem[] = [];
     for (const id of [...new Set(parsed.data.taskIds)]) {
@@ -348,7 +403,9 @@ export function dailyRoutes(
     }
     const needsBitrix =
       parsed.data.extra.length > 0 ||
-      parsed.data.items.some((i) => i.done && wrapState(ds.byId.get(i.taskId)) === 'wip');
+      parsed.data.items.some(
+        (i) => i.done && wrapState(ds.byId.get(i.taskId), ds.testers) !== 'done',
+      );
     const who = needsBitrix ? await deps.writer.actor(req) : null;
     const writeError = who && 'error' in who ? who.error : null;
     const full = await deps.writer.isFull(req);
@@ -361,8 +418,8 @@ export function dailyRoutes(
         title: t?.title ?? planned.get(i.taskId)?.title ?? `Task ${i.taskId}`,
         project: t ? project(t.groupId) : (planned.get(i.taskId)?.project ?? ''),
       };
-      let state = wrapState(t);
-      if (i.done && state === 'wip' && t) {
+      let state = wrapState(t, ds.testers);
+      if (i.done && state !== 'done' && t) {
         // Ticked Done: complete it in Bitrix24 as the person (the same as the status dropdown).
         const p = prepare(ds, full, t, { kind: 'status', status: 'completed' }, at);
         if (p.state === 'ok') {
@@ -374,7 +431,7 @@ export function dailyRoutes(
           else failures.push({ title: base.title, message: r.message });
         } else if (p.state === 'skip') state = 'done';
         else failures.push({ title: base.title, message: p.reason });
-      } else if (!i.done) state = 'wip';
+      } else if (!i.done && state === 'done') state = 'wip';
       items.push({ ...base, state });
     }
 

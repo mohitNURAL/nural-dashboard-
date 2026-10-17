@@ -21,9 +21,16 @@ and the next change fills its ID in.
 - Five tables (Alert details, Projects at work, Stage matrix, Ranking, Insights list) still use
   their own markup instead of the shared table.
 
+## 2026-10-17
+
+- Daily update: plan and wrap-up rows show every task field and are edited in place (stage,
+  status, project, priority, tags, deadline); status rules Pending / WIP / Done / On hold for dev
+  tasks, issues and testing tasks (`dailyState`); carry-over of pending or WIP tasks only;
+  Upcoming list to take tasks on early or report them done ahead; plan viewable all day.
+
 ## 2026-10-16
 
-- QA Last filed popup: Excel and PDF of every project shown, its creators and their assignees
+- `2207e9b` QA Last filed popup: Excel and PDF of every project shown, its creators and their assignees
   (Filed, Bug, Feedback). The Projects at work PDF takes a layout, so both print the same way.
   This changelog started, built from the git history.
 - `34a86a3` Unassigned line on the Pending / Open tiles (Development, QA, KPI); Development counts
