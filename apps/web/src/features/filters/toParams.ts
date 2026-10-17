@@ -18,7 +18,8 @@ export type Tab =
   | 'finance'
   | 'workflow'
   | 'projecttypes'
-  | 'daily';
+  | 'daily'
+  | 'dailyreport';
 export const DASHBOARD_TABS = ['kpi', 'dev', 'qa', 'support'] as const;
 export const isDashboardTab = (t: Tab): t is (typeof DASHBOARD_TABS)[number] =>
   (DASHBOARD_TABS as readonly string[]).includes(t);
@@ -64,6 +65,7 @@ export const tabOnlyFacet: Record<Tab, 'tag' | 'type' | null> = {
   workflow: null,
   projecttypes: null,
   daily: null,
+  dailyreport: null,
 };
 
 /** Query params for a metrics request; empty filters are left out, lists sorted for stable keys. */

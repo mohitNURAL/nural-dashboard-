@@ -57,7 +57,7 @@ afterEach(async () => {
   app = undefined;
 });
 
-async function server(opts: { channel?: string | null; token?: boolean } = {}) {
+async function server(opts: { channel?: string | null; token?: boolean; admins?: number[] } = {}) {
   const calls: { method: string; params: Params }[] = [];
   const recorded: unknown[] = [];
   const posts: { channel: string; m: SlackMessage; threadTs?: string }[] = [];
@@ -88,7 +88,7 @@ async function server(opts: { channel?: string | null; token?: boolean } = {}) {
     getDataset: dataset,
     logger: false,
     now: () => NOW,
-    roles: { admins: [], pms: [], teamLeads: [], productOwners: [] },
+    roles: { admins: opts.admins ?? [], pms: [], teamLeads: [], productOwners: [] },
     auth: {
       mode: 'bitrix',
       clientId: 'c',
@@ -268,5 +268,32 @@ describe('daily update (SRS 23)', () => {
       headers: { cookie },
     });
     expect(res.statusCode).toBe(403);
+  });
+});
+
+describe('Report › Daily task update (SRS 24)', () => {
+  const as = (userId: number) =>
+    `${SESSION_COOKIE}=${sign({ userId, name: 'X', exp: Date.now() + 60_000 }, SECRET)}`;
+  const getAs = (userId: number, url: string) =>
+    app!.inject({ method: 'GET', url, headers: { cookie: as(userId) } });
+
+  it('a member sees only their own day; full access sees everyone and who did not post', async () => {
+    await server({ admins: [30] });
+    expect((await post('/api/daily/plan', { taskIds: [41], note: 'Busy day' })).statusCode).toBe(
+      200,
+    );
+    const mine = (await getAs(7, '/api/report/daily')).json();
+    expect(mine.full).toBe(false);
+    expect(mine.lines.map((l: { userId: number }) => l.userId)).toEqual([7]);
+    expect(mine.lines[0]).toMatchObject({ planned: 1, planNote: 'Busy day' });
+    expect(mine.lines[0].tasks[0]).toMatchObject({ taskId: 41, planned: true, now: 'pending' });
+
+    const all = (await getAs(30, '/api/report/daily')).json();
+    expect(all.full).toBe(true);
+    expect(all.summary.expected).toBe(2);
+    expect(all.summary.planned.map((p: { id: number }) => p.id)).toEqual([7]);
+    expect(all.summary.notPlanned.map((p: { id: number }) => p.id)).toEqual([30]);
+    const only = (await getAs(30, '/api/report/daily?assignee=30')).json();
+    expect(only.lines.map((l: { userId: number }) => l.userId)).toEqual([30]);
   });
 });

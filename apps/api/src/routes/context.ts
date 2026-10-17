@@ -60,7 +60,7 @@ export const person = (ds: Dataset, id: number): PersonRef => {
  * Placeholder assignees (config/unassigned.json, 2026-10-16): Bitrix24 users who hold tasks nobody
  * has picked up. As the assignee they show as Unassigned; as a creator, their own name.
  */
-const UNASSIGNED: ReadonlySet<number> = (() => {
+export const UNASSIGNED: ReadonlySet<number> = (() => {
   const file = fileURLToPath(new URL('../../../../config/unassigned.json', import.meta.url));
   if (!existsSync(file)) return new Set<number>();
   const raw = JSON.parse(readFileSync(file, 'utf8')) as { userIds?: unknown };

@@ -23,7 +23,10 @@ and the next change fills its ID in.
 
 ## 2026-10-17
 
-- Daily update Add task (morning and evening): summary, description, project, tags, priority,
+- Report › Daily task update (new module, right `dailyReport`): who planned and wrapped up (tiles,
+  table), planned vs done per person and day with stage moves, filters (dates, department,
+  assignee), Excel and PDF; full data scope sees everyone, others their own days.
+- `bf5e583` Daily update Add task (morning and evening): summary, description, project, tags, priority,
   deadline; created in Bitrix24 for the person with their own login and put on the plan or the
   wrap-up at once. `CREATE_FIELDS` widened (approved): DESCRIPTION, TAGS, PRIORITY, DEADLINE.
 - `2e060f5` Daily update: plan and wrap-up rows show every task field and are edited in place (stage,

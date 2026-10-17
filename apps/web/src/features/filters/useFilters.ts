@@ -42,6 +42,7 @@ const tabParser = parseAsStringLiteral([
   'workflow',
   'projecttypes',
   'daily',
+  'dailyreport',
 ] as const).withDefault('kpi');
 
 export function useTab() {

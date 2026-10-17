@@ -1369,3 +1369,20 @@ For people with the **employees** right (by default admins, PM and team leads). 
 **Data.** `daily_updates` (one row per person and day: plan, wrap-up, times, Slack channel and message ts) and `app_settings` (`dailyUpdate = { channel }`).
 
 **API** (`/api/daily`, right `dailyUpdate`): `GET today` (day, working day, minute now, wrap-up time, plan, wrap-up, suggestions, plan with live status, channel, Slack connected, Bitrix24 sign-in), `GET mine?q=` (own open tasks), `GET projects` (projects they work in), `POST plan {taskIds, note}`, `POST wrap {items: [{taskId, done}], extra: [{title, groupId, done}], note}`, `GET history`. Channel: `GET/PUT /api/integrations/daily-channel` (PUT needs `connections`).
+
+## 24. Report › Daily task update (2026-10-17)
+
+**Purpose.** Managers see who has planned and wrapped up their day, and for each person and day what was planned and what was actually done; everyone else sees their own days. View only.
+
+**Who.** Right `dailyReport` (menu **Report › Daily task update**), on for everyone by default; switched off per department or person on Access permissions. Data follows the data scope (NFR-4): **full** (admins, PM, team leads) see everyone expected to post; anyone else only their own days. Guarded by `PAGE_GUARD` (`/api/report/daily`).
+
+**Expected to post.** Every active person whose Daily update right is on (`resolveFor(...).rights.dailyUpdate`), not a placeholder assignee (`config/unassigned.json`). Only working days count (company working days and the KPI holidays).
+
+**Page.** Filters: From and To (default today, at most two months), Department, Assignee. Tiles for the last working day in the range: **Expected**, **Planned their day**, **Not planned** (names), **Wrapped up**, **Not wrapped up** (names); Not planned and Not wrapped up filter the table. Cards:
+- **Who planned and wrapped up** (shared table, columns chosen and ordered by the reader): one line per person and working day: planned at, planned tasks, wrapped up at, Done, WIP, Pending, On hold (as reported in the wrap-up, else as now), Added; Not planned and Not wrapped up in red; All / Not planned / Not wrapped up switch.
+- **Planned vs done**: each posted day as an accordion (one open): the notes, then every task: on the plan (carried over, overdue, due today, taken early, added) or added in the evening, as reported, as now (`dailyState`), stage, status, priority, tags, deadline, and its **Kanban moves that day** (from → to, time).
+
+**Excel and PDF**: the whole report (every line, each followed by its tasks): Excel in the dashboard's Excel look with every column, PDF as a landscape table with the main ones.
+
+**API.** `GET /api/report/daily?from&to&dept&assignee` returns days, the day the tiles describe, `full`, the summary (`dailyCompliance` in packages/shared daily.ts: planned, not planned, wrapped, not wrapped), the people for the Assignee filter, and the lines with their tasks (`routes/dailyReport.ts`; store `range(from, to)`).
+

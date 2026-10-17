@@ -55,6 +55,8 @@ export interface DailyStore {
   save(row: DailyRow): Promise<void>;
   /** The person's latest days, newest first. */
   history(userId: number, limit: number): Promise<DailyRow[]>;
+  /** Everyone's days from `from` to `to` (YYYY-MM-DD, inclusive): Report › Daily task update. */
+  range(from: string, to: string): Promise<DailyRow[]>;
 }
 
 /** Settings admins change in the dashboard (app_settings). */
@@ -83,6 +85,8 @@ export function memoryDailyStore(): DailyStore {
         .sort((a, b) => b.day.localeCompare(a.day))
         .slice(0, limit)
         .map((r) => structuredClone(r)),
+    range: async (from, to) =>
+      [...rows.values()].filter((r) => r.day >= from && r.day <= to).map((r) => structuredClone(r)),
   };
 }
 
@@ -591,7 +595,7 @@ export function dailyRoutes(
 /** Postgres-backed stores (tables daily_updates and app_settings). */
 export async function dbDailyStores(): Promise<{ store: DailyStore; settings: SettingsStore }> {
   const { db, schema } = await import('../db/client');
-  const { and, desc, eq } = await import('drizzle-orm');
+  const { and, desc, eq, gte, lte } = await import('drizzle-orm');
   const t = schema.dailyUpdates;
   const s = schema.appSettings;
   const toRow = (r: typeof t.$inferSelect): DailyRow => ({
@@ -623,6 +627,13 @@ export async function dbDailyStores(): Promise<{ store: DailyStore; settings: Se
       history: async (userId, limit) =>
         (
           await db.select().from(t).where(eq(t.userId, userId)).orderBy(desc(t.day)).limit(limit)
+        ).map(toRow),
+      range: async (from, to) =>
+        (
+          await db
+            .select()
+            .from(t)
+            .where(and(gte(t.day, from), lte(t.day, to)))
         ).map(toRow),
     },
     settings: {

@@ -32,6 +32,7 @@ export const RIGHT_KEYS = [
   'helpDocs',
   'helpFaq',
   'dailyUpdate',
+  'dailyReport',
 ] as const;
 export type RightKey = (typeof RIGHT_KEYS)[number];
 
@@ -72,6 +73,8 @@ export interface Rights {
   helpFaq: boolean;
   /** My work: Daily update (morning plan and evening wrap-up to Slack, SRS 23). */
   dailyUpdate: boolean;
+  /** Report › Daily task update (data follows the scope: all, or only their own days). */
+  dailyReport: boolean;
 }
 
 const bool = z.boolean();
@@ -98,6 +101,7 @@ export const grantSchema = z
     helpDocs: bool,
     helpFaq: bool,
     dailyUpdate: bool,
+    dailyReport: bool,
     /** Before 2026-10-12: company tree and people directory together. */
     employees: bool,
     /**
@@ -147,6 +151,7 @@ export const ALL_RIGHTS: Rights = {
   helpDocs: true,
   helpFaq: true,
   dailyUpdate: true,
+  dailyReport: true,
 };
 
 /** Rights from the role alone (unchanged behaviour before any override). */
@@ -178,6 +183,7 @@ export function defaultRights(
     helpDocs: true,
     helpFaq: true,
     dailyUpdate: true,
+    dailyReport: true,
   };
 }
 

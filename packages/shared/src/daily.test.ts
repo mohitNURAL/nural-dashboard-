@@ -9,6 +9,7 @@ import {
   wrapState,
   dailyState,
   dailyUpcoming,
+  dailyCompliance,
 } from './daily';
 import type { MetricTask } from './types';
 
@@ -174,5 +175,25 @@ describe('slack messages', () => {
     ]);
     expect(m.text).toBe('Ram Kumar: day wrap-up for Wed 14 Oct (2 done · 1 WIP · 1 unplanned)');
     expect(JSON.stringify(m.blocks)).toContain('Also did');
+  });
+});
+
+describe('who posted', () => {
+  it('lists who planned, who did not, who wrapped up and who planned without wrapping up', () => {
+    const c = dailyCompliance(
+      [1, 2, 3, 4],
+      [
+        { userId: 1, plannedAt: NOW, wrappedAt: NOW },
+        { userId: 2, plannedAt: NOW, wrappedAt: null },
+        { userId: 9, plannedAt: NOW, wrappedAt: NOW }, // not expected
+      ],
+    );
+    expect(c).toMatchObject({
+      planned: [1, 2],
+      notPlanned: [3, 4],
+      wrapped: [1],
+      notWrapped: [2, 3, 4],
+      plannedNotWrapped: [2],
+    });
   });
 });

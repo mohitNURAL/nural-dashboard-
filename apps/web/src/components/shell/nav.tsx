@@ -91,6 +91,19 @@ const ALL: {
     ],
   },
   {
+    label: 'Report',
+    icon: <IconBook />,
+    items: [
+      {
+        id: 'dailyreport',
+        label: 'Daily task update',
+        hint: 'Who planned and wrapped up, planned vs done',
+        icon: <IconDaily />,
+        allowed: (me) => me.dailyReport !== false,
+      },
+    ],
+  },
+  {
     label: 'Insights',
     icon: <IconInsights />,
     items: [

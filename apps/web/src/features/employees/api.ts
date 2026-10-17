@@ -23,6 +23,7 @@ export interface Rights {
   helpDocs: boolean;
   helpFaq: boolean;
   dailyUpdate: boolean;
+  dailyReport: boolean;
 }
 export type RightKey = keyof Rights;
 /** Saved grants may still hold the old `employees` (company tree and people directory). */

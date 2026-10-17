@@ -280,3 +280,31 @@ export function slackWrap(
     ],
   };
 }
+
+// ---------------------------------------------------------------- who posted (2026-10-17)
+
+/** One person's day as far as posting goes. */
+export interface DayPost {
+  userId: number;
+  plannedAt: Date | string | null;
+  wrappedAt: Date | string | null;
+}
+
+/**
+ * Who has and has not planned and wrapped up their day, among the people expected to (everyone
+ * active with the Daily update right). Report tiles and the Slack check-ins to the directors.
+ */
+export function dailyCompliance(expected: readonly number[], posts: readonly DayPost[]) {
+  const by = new Map(posts.map((p) => [p.userId, p]));
+  const planned = expected.filter((id) => !!by.get(id)?.plannedAt);
+  const wrapped = expected.filter((id) => !!by.get(id)?.wrappedAt);
+  return {
+    expected: [...expected],
+    planned,
+    notPlanned: expected.filter((id) => !by.get(id)?.plannedAt),
+    wrapped,
+    notWrapped: expected.filter((id) => !by.get(id)?.wrappedAt),
+    /** Planned in the morning but no wrap-up yet. */
+    plannedNotWrapped: planned.filter((id) => !by.get(id)?.wrappedAt),
+  };
+}

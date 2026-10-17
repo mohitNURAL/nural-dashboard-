@@ -23,7 +23,8 @@ export type PageRight =
   | 'helpFeedback'
   | 'helpDocs'
   | 'helpFaq'
-  | 'dailyUpdate';
+  | 'dailyUpdate'
+  | 'dailyReport';
 
 export type ExtraRight = 'scope' | 'edit' | 'inbox' | 'helpInbox';
 
@@ -99,6 +100,17 @@ export const MODULES: ModuleDef[] = [
         label: 'Daily update',
         hint: 'Plan the day, wrap it up, post to Slack',
         right: 'dailyUpdate',
+      },
+    ],
+  },
+  {
+    label: 'Report',
+    pages: [
+      {
+        id: 'dailyreport',
+        label: 'Daily task update',
+        hint: 'Who planned and wrapped up, planned vs done (own days without full data access)',
+        right: 'dailyReport',
       },
     ],
   },

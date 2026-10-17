@@ -40,6 +40,8 @@ export interface Me {
   helpFaq?: boolean;
   /** Daily update: morning plan and evening wrap-up to Slack (SRS 23). */
   dailyUpdate?: boolean;
+  /** Report › Daily task update (SRS 24). */
+  dailyReport?: boolean;
   /** Department (dev, qa, support, other) and Bitrix24 designation, for the guided tour. */
   dept?: 'dev' | 'qa' | 'support' | 'other';
   position?: string | null;

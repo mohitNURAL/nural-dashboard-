@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-17-daily-report',
+    date: '2026-10-17',
+    tab: 'dailyreport',
+    title: 'Report › Daily task update',
+    steps: [
+      {
+        target: slot('dailyreport.tiles', 'notPlanned'),
+        title: 'Daily task update report',
+        text: 'A new Report module: who has planned and wrapped up their day, and for each person and day what was planned and what was actually done, with every task’s stage moves. Filter by dates, department and assignee; export to Excel or PDF. Admins, PM and team leads see everyone; others see their own days.',
+      },
+    ],
+  },
+  {
     id: '2026-10-17-daily-add-task',
     date: '2026-10-17',
     tab: 'daily',

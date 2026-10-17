@@ -22,6 +22,7 @@ import { FaqPage } from './features/help/FaqPage';
 import { FeedbackNudge } from './features/help/FeedbackNudge';
 import { DailyPrompt } from './features/daily/DailyPrompt';
 import { DailyUpdatePage } from './features/daily/DailyUpdatePage';
+import { DailyReportPage } from './features/reports/DailyReportPage';
 import { FeedbackPage } from './features/help/FeedbackPage';
 import { InsightsPage } from './features/insights/InsightsPage';
 import { isDashboardTab } from './features/filters/toParams';
@@ -101,6 +102,8 @@ export default function App() {
             <AccessPage />
           ) : tab === 'daily' ? (
             <DailyUpdatePage />
+          ) : tab === 'dailyreport' ? (
+            <DailyReportPage />
           ) : (
             <QaTab />
           )}

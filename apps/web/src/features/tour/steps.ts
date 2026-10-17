@@ -46,6 +46,7 @@ export const TAB_LABEL: Record<Tab, string> = {
   workflow: 'Workflow',
   projecttypes: 'Project types',
   daily: 'Daily update',
+  dailyreport: 'Daily task update',
 };
 
 /** Shown once per sign-in, before the first tab tour: the top bar, the same on every tab. */
@@ -361,6 +362,23 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
       target: slot('projecttypes.cards', 'type-support'),
       title: 'Projects by type',
       text: 'Each type with its rule and its projects. Every project shows its own columns and the stage each counts as; a column the workflow does not know is outlined in red. Admins set a project’s type by hand, map an unknown column to a stage, and edit the types.',
+    },
+  ],
+  dailyreport: [
+    {
+      target: slot('dailyreport.tiles', 'notPlanned'),
+      title: 'Who has not planned or wrapped up',
+      text: 'Everyone expected to post (Daily update on), and who has planned and wrapped up their day. Click Not planned or Not wrapped up to list them. Without full data access you see only your own days.',
+    },
+    {
+      target: slot('dailyreport.cards', 'who'),
+      title: 'Who planned and wrapped up',
+      text: 'One line per person and working day: when they posted, how many tasks they planned, and how many ended Done, WIP, Pending or On hold. Pick the dates, department and assignee above; Excel and PDF take the whole report.',
+    },
+    {
+      target: slot('dailyreport.cards', 'detail'),
+      title: 'Planned vs done',
+      text: 'Open a person’s day for every task: on the plan or added in the evening, what was reported, where it is now, its stage, status, priority, tags and deadline, and its Kanban moves that day.',
     },
   ],
   daily: [
