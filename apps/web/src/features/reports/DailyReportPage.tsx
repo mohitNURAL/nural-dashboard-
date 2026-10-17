@@ -6,6 +6,7 @@ import type { DailyState } from '@nural/shared';
 import { createColumnHelper } from '@tanstack/react-table';
 import clsx from 'clsx';
 import { useMemo, useState } from 'react';
+import { useMe } from '../../api/me';
 import { useApi } from '../../api/queries';
 import { Card, ViewToggle } from '../../components/Card';
 import { DataTable } from '../../components/DataTable';
@@ -16,6 +17,7 @@ import { IconDaily, IconExcel, IconPdf } from '../../components/ui/icons';
 import { PageHead } from '../../components/ui/PageHead';
 import { Select } from '../../components/ui/Select';
 import { StateChip } from '../daily/taskColumns';
+import { CheckInsCard } from './CheckInsCard';
 import { reportTables } from './dailyReportTable';
 import type { DailyReport, ReportLine } from './dailyReportTypes';
 
@@ -66,6 +68,7 @@ export function DailyReportPage() {
     return p;
   }, [from, to, dept, assignee]);
   const { data, isLoading } = useApi<DailyReport>('/api/report/daily', params);
+  const { data: me } = useMe();
 
   const lines = useMemo(
     () =>
@@ -323,6 +326,7 @@ export function DailyReportPage() {
               </Card>
             ),
           },
+          ...(me?.admin ? [{ id: 'checkins', node: <CheckInsCard /> }] : []),
         ]}
       />
     </div>

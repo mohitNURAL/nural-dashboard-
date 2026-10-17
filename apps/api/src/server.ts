@@ -23,6 +23,14 @@ import {
   type SettingsStore,
 } from './routes/daily';
 import { dailyReportRoutes } from './routes/dailyReport';
+import {
+  checkInRoutes,
+  loadCheckInConfig,
+  runCheckIn,
+  startCheckIns,
+  type CheckInConfig,
+  type CheckInKind,
+} from './routes/dailyCheckins';
 import { UNASSIGNED } from './routes/context';
 import { kpiConfig } from './data/kpiConfig';
 import { feedbackRoutes, memoryFeedbackStore, type FeedbackStore } from './routes/feedback';
@@ -37,7 +45,7 @@ import { peopleRoutes, type PeopleDeps } from './routes/people';
 import { memoryPrefsStore, prefsRoutes, type PrefsStore } from './routes/prefs';
 import type { Call } from './bitrix/limiter';
 import { config } from './config';
-import { cachedDataset, loadDataset, type DatasetProvider } from './data/dataset';
+import { cachedDataset, loadDataset, type Dataset, type DatasetProvider } from './data/dataset';
 import { createMemoryBus, type EventBus } from './events/bus';
 import { healthStatus, workTime } from './health';
 import { hookRoutes, type ReceiverDeps } from './hooks/receiver';
@@ -97,7 +105,16 @@ export interface ServerOptions {
   /** Task description for the drawer, read live from Bitrix24 (not stored by the sync). */
   describe?: (taskId: number) => Promise<string | null>;
   /** Daily update (SRS 23): plans and wrap-ups, and the channel setting; in-memory by default. */
-  daily?: { store?: DailyStore; settings?: SettingsStore };
+  daily?: {
+    store?: DailyStore;
+    settings?: SettingsStore;
+    /** The 11:30 and 19:00 check-ins to the directors (SRS 24); only where the worker runs. */
+    makeCheckIns?: (
+      run: (kind: CheckInKind) => Promise<unknown>,
+      config: CheckInConfig,
+      log: FastifyBaseLogger,
+    ) => { close: () => Promise<void> };
+  };
 }
 
 export async function buildServer({
@@ -398,9 +415,10 @@ export async function buildServer({
         .filter(Boolean),
     ),
   };
+  const dailySettings = daily?.settings ?? memorySettingsStore();
   dailyRoutes(app, scoping.dataset, scoping.viewer, {
     store: dailyStore,
-    settings: daily?.settings ?? memorySettingsStore(),
+    settings: dailySettings,
     slack: engine.slack,
     writer: taskWriter({ now, ...actions, userOf: sessionUserOf, viewer: scoping.viewer }),
     tz: config.APP_TIMEZONE,
@@ -415,21 +433,42 @@ export async function buildServer({
     now,
   });
   // Report › Daily task update (SRS 24): expected = active people with the Daily update right.
+  const expectedToPost = (d: Dataset) =>
+    [...d.users.values()]
+      .filter(
+        (u) =>
+          u.active &&
+          !UNASSIGNED.has(u.id) &&
+          resolveFor(u.id, d, rolesCfg, grants).rights.dailyUpdate,
+      )
+      .map((u) => u.id);
   dailyReportRoutes(app, scoping.dataset, scoping.viewer, {
     store: dailyStore,
     calendar: dailyCalendar,
     tz: config.APP_TIMEZONE,
     now,
-    expected: (ds) =>
-      [...ds.users.values()]
-        .filter(
-          (u) =>
-            u.active &&
-            !UNASSIGNED.has(u.id) &&
-            resolveFor(u.id, ds, rolesCfg, grants).rights.dailyUpdate,
-        )
-        .map((u) => u.id),
+    expected: expectedToPost,
   });
+  // Check-ins to the directors: previews for admins here; the timed sends only on the server.
+  const checkIns = {
+    dataset: ds,
+    store: dailyStore,
+    settings: dailySettings,
+    slack: engine.slack,
+    calendar: dailyCalendar,
+    tz: config.APP_TIMEZONE,
+    config: loadCheckInConfig(),
+    expected: expectedToPost,
+    reportUrl: `${config.PUBLIC_BASE_URL ?? config.WEB_ORIGIN ?? ''}/?tab=dailyreport`,
+    now,
+  };
+  checkInRoutes(app, scoping.viewer, checkIns);
+  const checkInJobs = daily?.makeCheckIns?.(
+    (kind) => runCheckIn(kind, checkIns),
+    checkIns.config,
+    app.log,
+  );
+  if (checkInJobs) app.addHook('onClose', async () => checkInJobs.close());
   employeeRoutes(app, scoping.dataset, scoping.viewer, {
     ...opts,
     activity: () => prefStore.activity(),
@@ -499,7 +538,20 @@ async function main() {
     workflow: await (await import('./routes/workflow')).dbWorkflowStore(),
     prefs: await (await import('./routes/prefs')).dbPrefsStore(),
     access: await (await import('./routes/access')).dbAccessStore(),
-    daily: await (await import('./routes/daily')).dbDailyStores(),
+    daily: {
+      ...(await (await import('./routes/daily')).dbDailyStores()),
+      // The directors' check-ins run only where the worker runs (the server), never on a laptop.
+      makeCheckIns: workerOn
+        ? (run, cfg, log) =>
+            startCheckIns({
+              redisUrl: config.REDIS_URL,
+              tz: config.APP_TIMEZONE,
+              config: cfg,
+              run,
+              log,
+            })
+        : undefined,
+    },
     reports: {
       store: await (await import('./reports/store')).dbReportStore(),
       // Only where the worker runs (the server): a laptop copy never sends reports.

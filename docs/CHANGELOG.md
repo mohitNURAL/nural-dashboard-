@@ -23,7 +23,10 @@ and the next change fills its ID in.
 
 ## 2026-10-17
 
-- Report › Daily task update (new module, right `dailyReport`): who planned and wrapped up (tiles,
+- Check-ins to the directors: Slack DMs to Deepak, Bhanu and Balram at 11:30 (planned / not)
+  and 19:00 (wrapped up / not), working days, once a day each; off until enabled in
+  `config/daily-checkins.json`; admins preview and send themselves a test on the report page.
+- `2967901` Report › Daily task update (new module, right `dailyReport`): who planned and wrapped up (tiles,
   table), planned vs done per person and day with stage moves, filters (dates, department,
   assignee), Excel and PDF; full data scope sees everyone, others their own days.
 - `bf5e583` Daily update Add task (morning and evening): summary, description, project, tags, priority,

@@ -132,7 +132,11 @@ export const POINT_LABELS: Record<string, Record<string, string>> = {
     wrapped: 'Wrapped up',
     notWrapped: 'Not wrapped up',
   },
-  'dailyreport.cards': { who: 'Who planned and wrapped up', detail: 'Planned vs done' },
+  'dailyreport.cards': {
+    who: 'Who planned and wrapped up',
+    detail: 'Planned vs done',
+    checkins: 'Check-ins to the directors',
+  },
   'feedback.tiles': { sent: 'You sent', reviewed: 'Reviewed', inbox: 'Inbox: new' },
   'feedback.cards': { form: 'Tell us', mine: 'My feedback', inbox: 'Feedback inbox' },
   'docs.cards': { whole: 'The whole dashboard', modules: 'Module by module' },

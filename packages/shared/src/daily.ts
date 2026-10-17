@@ -308,3 +308,54 @@ export function dailyCompliance(expected: readonly number[], posts: readonly Day
     plannedNotWrapped: planned.filter((id) => !by.get(id)?.wrappedAt),
   };
 }
+
+/**
+ * The check-in to the directors (2026-10-17), as a Slack direct message: at 11:30 who has and has
+ * not planned their day; at 19:00 who has and has not wrapped up (and who planned without wrapping
+ * up). Names, counts and a link to Report › Daily task update.
+ */
+export function slackCheckIn(
+  kind: 'plan' | 'wrap',
+  dayLabel: string,
+  c: {
+    expected: number;
+    planned: readonly string[];
+    notPlanned: readonly string[];
+    wrapped: readonly string[];
+    notWrapped: readonly string[];
+    plannedNotWrapped: readonly string[];
+  },
+  reportUrl?: string,
+): SlackText {
+  const list = (names: readonly string[]) =>
+    names.length ? names.map((n) => `• ${n}`).join('\n') : '_Nobody._';
+  const link = reportUrl ? ` · <${reportUrl}|Open the report>` : '';
+  if (kind === 'plan') {
+    const title = `:sunrise: *Daily plans · ${dayLabel}*: ${c.planned.length} of ${c.expected} have planned their day`;
+    return {
+      text: `Daily plans ${dayLabel}: ${c.planned.length} of ${c.expected} planned, ${c.notPlanned.length} not yet`,
+      blocks: [
+        section(title),
+        section(`*Not planned yet (${c.notPlanned.length})*\n${list(c.notPlanned)}`),
+        section(`*Planned (${c.planned.length})*\n${list(c.planned)}`),
+        context(`Sent by Nural Pulse at 11:30${link}`),
+      ],
+    };
+  }
+  const title = `:city_sunset: *Day wrap-ups · ${dayLabel}*: ${c.wrapped.length} of ${c.expected} have posted what they did`;
+  return {
+    text: `Day wrap-ups ${dayLabel}: ${c.wrapped.length} of ${c.expected} wrapped up, ${c.notWrapped.length} not yet`,
+    blocks: [
+      section(title),
+      section(
+        `*Not wrapped up (${c.notWrapped.length})*\n${list(c.notWrapped)}` +
+          (c.plannedNotWrapped.length
+            ? `\n_Of them, planned this morning: ${c.plannedNotWrapped.join(', ')}_`
+            : ''),
+      ),
+      section(`*Wrapped up (${c.wrapped.length})*\n${list(c.wrapped)}`),
+      section(`*Did not plan today (${c.notPlanned.length})*\n${list(c.notPlanned)}`),
+      context(`Sent by Nural Pulse at 19:00${link}`),
+    ],
+  };
+}

@@ -10,6 +10,7 @@ import {
   dailyState,
   dailyUpcoming,
   dailyCompliance,
+  slackCheckIn,
 } from './daily';
 import type { MetricTask } from './types';
 
@@ -195,5 +196,27 @@ describe('who posted', () => {
       notWrapped: [2, 3, 4],
       plannedNotWrapped: [2],
     });
+  });
+});
+
+describe('check-in to the directors', () => {
+  const c = {
+    expected: 3,
+    planned: ['Neha'],
+    notPlanned: ['Vijay', 'Ram'],
+    wrapped: [],
+    notWrapped: ['Neha', 'Vijay', 'Ram'],
+    plannedNotWrapped: ['Neha'],
+  };
+  it('11:30: who has not planned, with the report link', () => {
+    const m = slackCheckIn('plan', 'Fri 16 Oct', c, 'https://pulse/?tab=dailyreport');
+    expect(m.text).toBe('Daily plans Fri 16 Oct: 1 of 3 planned, 2 not yet');
+    expect(JSON.stringify(m.blocks)).toContain('Not planned yet (2)');
+    expect(JSON.stringify(m.blocks)).toContain('https://pulse/?tab=dailyreport');
+  });
+  it('19:00: who has not wrapped up, and who planned without wrapping up', () => {
+    const m = slackCheckIn('wrap', 'Fri 16 Oct', c);
+    expect(m.text).toBe('Day wrap-ups Fri 16 Oct: 0 of 3 wrapped up, 3 not yet');
+    expect(JSON.stringify(m.blocks)).toContain('Of them, planned this morning: Neha');
   });
 });
