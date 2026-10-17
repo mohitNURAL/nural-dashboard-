@@ -20,11 +20,11 @@ import {
   useDailyPost,
   useDailyToday,
   useMyOpenTasks,
-  useMyProjects,
   type DailyItem,
   type DailyToday,
   type WrapItem,
 } from './api';
+import { AddTaskDialog } from './AddTaskDialog';
 import { useDailyDialog } from './store';
 import { StateChip, TaskField, TaskTitle } from './taskColumns';
 import { BoardsContext } from '../tasks/boards';
@@ -218,6 +218,7 @@ function PlanView({ today, onLater }: { today: DailyToday; onLater: () => void }
   const [keep, setKeep] = useState<Set<number>>(new Set());
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
+  const [adding, setAdding] = useState(false);
   const { data: mine } = useMyOpenTasks('');
 
   // The saved plan when posted earlier today, else the suggestions.
@@ -338,16 +339,35 @@ function PlanView({ today, onLater }: { today: DailyToday; onLater: () => void }
           maxHeight={360}
           emptyText="Nothing carried over, overdue or due today. Add the tasks you will work on."
         />
-        <SearchCombobox
-          label="Add one of my tasks"
-          single
-          className="w-full"
-          loading={!mine}
-          options={(mine?.tasks ?? [])
-            .filter((t) => !keep.has(t.id))
-            .map((t) => ({ value: String(t.id), label: `#${t.id} ${t.title} · ${t.project}` }))}
-          selected={[]}
-          onChange={(v) => v[0] && add(Number(v[0]))}
+        <div className="flex flex-wrap items-center gap-2">
+          <SearchCombobox
+            label="Add one of my tasks"
+            single
+            className="min-w-[16rem] flex-1"
+            loading={!mine}
+            options={(mine?.tasks ?? [])
+              .filter((t) => !keep.has(t.id))
+              .map((t) => ({ value: String(t.id), label: `#${t.id} ${t.title} · ${t.project}` }))}
+            selected={[]}
+            onChange={(v) => v[0] && add(Number(v[0]))}
+          />
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            disabled={!today.canWrite}
+            title={today.canWrite ? undefined : 'Sign in again with Bitrix24 to create tasks'}
+            className="h-9 rounded-control bg-primary px-3 font-heading text-button text-white hover:brightness-110 disabled:opacity-50"
+          >
+            + Add task
+          </button>
+        </div>
+        <AddTaskDialog
+          open={adding}
+          forWrap={false}
+          onClose={() => setAdding(false)}
+          onCreated={(t) =>
+            addItem({ taskId: t.taskId, title: t.title, project: t.project, why: 'added' })
+          }
         />
         {upcoming.length > 0 && (
           <div className="rounded-xl border border-border p-3">
@@ -392,12 +412,6 @@ function PlanView({ today, onLater }: { today: DailyToday; onLater: () => void }
   );
 }
 
-interface Extra {
-  key: number;
-  title: string;
-  groupId: number;
-  done: boolean;
-}
 type WrapRow = WrapItem & { row?: TaskRow; now?: DailyState };
 const wrapCol = createColumnHelper<WrapRow>();
 
@@ -405,13 +419,11 @@ function WrapView({ today, onLater }: { today: DailyToday; onLater: () => void }
   const { after } = useDailyDialog();
   const postDaily = useDailyPost();
   const finish = useAfterPost();
-  const { data: projects } = useMyProjects();
+  const [adding, setAdding] = useState(false);
   const [done, setDone] = useState<Map<number, boolean>>(new Map());
   // Tasks added in the evening: finished ahead (upcoming) or any other of their open tasks.
   const [added, setAdded] = useState<WrapItem[]>([]);
   const { data: mine } = useMyOpenTasks('');
-  const [extra, setExtra] = useState<Extra[]>([]);
-  const [draft, setDraft] = useState({ title: '', groupId: 0, done: true });
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -423,10 +435,6 @@ function WrapView({ today, onLater }: { today: DailyToday; onLater: () => void }
     setDone(new Map(planned.map((i) => [i.taskId, i.state === 'done'])));
     setNote(today.wrap?.note ?? '');
   }, [today.day, !!today.wrap]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (!draft.groupId && projects?.projects[0])
-      setDraft((d) => ({ ...d, groupId: projects.projects[0]!.id }));
-  }, [projects]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const columns = useMemo(
     () => [
@@ -481,15 +489,6 @@ function WrapView({ today, onLater }: { today: DailyToday; onLater: () => void }
     setDone((m) => new Map(m).set(id, true));
   };
 
-  const addExtra = () => {
-    if (draft.title.trim().length < 3) {
-      toast.error('Give the work a short title (3 letters or more).');
-      return;
-    }
-    setExtra((xs) => [...xs, { ...draft, title: draft.title.trim(), key: Date.now() }]);
-    setDraft((d) => ({ ...d, title: '' }));
-  };
-
   const post = async () => {
     setBusy(true);
     try {
@@ -497,7 +496,7 @@ function WrapView({ today, onLater }: { today: DailyToday; onLater: () => void }
         items: planned
           .filter((i) => i.taskId > 0)
           .map((i) => ({ taskId: i.taskId, done: !!done.get(i.taskId) })),
-        extra: extra.map(({ title, groupId, done: d }) => ({ title, groupId, done: d })),
+        extra: [],
         note,
       });
       finish(r, 'Your wrap-up');
@@ -510,8 +509,6 @@ function WrapView({ today, onLater }: { today: DailyToday; onLater: () => void }
     }
   };
 
-  const projectName = (id: number) =>
-    projects?.projects.find((p) => p.id === id)?.name ?? 'No project';
   return (
     <>
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 pb-3">
@@ -541,75 +538,38 @@ function WrapView({ today, onLater }: { today: DailyToday; onLater: () => void }
           selected={[]}
           onChange={(v) => v[0] && addDone(Number(v[0]))}
         />
-        <div className="rounded-xl border border-border p-3">
-          <p className="pb-2 font-heading text-label uppercase text-text-muted">
-            Work outside the plan
-          </p>
-          {extra.length > 0 && (
-            <ul className="mb-2 space-y-1 text-table">
-              {extra.map((x) => (
-                <li key={x.key} className="flex items-center gap-2">
-                  <span className="min-w-0 flex-1 truncate font-semibold text-text">{x.title}</span>
-                  <span className="text-text-muted">{projectName(x.groupId)}</span>
-                  <span className={x.done ? 'text-good' : 'text-warn'}>
-                    {x.done ? 'Done' : 'WIP'}
-                  </span>
-                  <button
-                    type="button"
-                    aria-label={`Remove ${x.title}`}
-                    onClick={() => setExtra((xs) => xs.filter((y) => y.key !== x.key))}
-                    className="grid h-6 w-6 place-items-center rounded text-text-muted hover:bg-primary-soft-100"
-                  >
-                    <IconClose size={12} />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          <div className="flex flex-wrap items-center gap-2">
-            <input
-              value={draft.title}
-              onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
-              onKeyDown={(e) => e.key === 'Enter' && addExtra()}
-              maxLength={200}
-              placeholder="What did you do?"
-              className="h-8 min-w-[12rem] flex-1 rounded-control border border-border bg-surface px-3 text-table text-text outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
-            />
-            <Select
-              size="sm"
-              aria-label="Project"
-              value={draft.groupId}
-              onChange={(e) => setDraft((d) => ({ ...d, groupId: Number(e.target.value) }))}
-            >
-              {(projects?.projects ?? []).map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-              <option value={0}>No project</option>
-            </Select>
-            <Select
-              size="sm"
-              aria-label="Done or WIP"
-              value={draft.done ? 'done' : 'wip'}
-              onChange={(e) => setDraft((d) => ({ ...d, done: e.target.value === 'done' }))}
-            >
-              <option value="done">Done</option>
-              <option value="wip">WIP</option>
-            </Select>
-            <button
-              type="button"
-              className="h-8 rounded-control border border-primary px-3 font-heading text-button text-primary hover:bg-primary/10"
-              onClick={addExtra}
-            >
-              Add
-            </button>
-          </div>
-          <p className="pt-2 text-[12px] text-text-muted">
-            Each one becomes a Bitrix24 task assigned to you in that project
-            {today.canWrite ? '.' : ' once you sign in again with Bitrix24.'}
-          </p>
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border p-3">
+          <span className="mr-auto text-table font-medium text-text">
+            Did something outside the plan? Add it as a task
+            {today.canWrite ? '' : ' once you sign in again with Bitrix24'}.
+          </span>
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            disabled={!today.canWrite}
+            className="h-9 rounded-control bg-primary px-3 font-heading text-button text-white hover:brightness-110 disabled:opacity-50"
+          >
+            + Add task
+          </button>
         </div>
+        <AddTaskDialog
+          open={adding}
+          forWrap
+          onClose={() => setAdding(false)}
+          onCreated={(t) => {
+            setAdded((xs) => [
+              ...xs,
+              {
+                taskId: t.taskId,
+                title: t.title,
+                project: t.project,
+                state: t.state,
+                extra: false,
+              },
+            ]);
+            setDone((m) => new Map(m).set(t.taskId, t.state === 'done'));
+          }}
+        />
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}

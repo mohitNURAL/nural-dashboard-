@@ -23,7 +23,10 @@ and the next change fills its ID in.
 
 ## 2026-10-17
 
-- Daily update: plan and wrap-up rows show every task field and are edited in place (stage,
+- Daily update Add task (morning and evening): summary, description, project, tags, priority,
+  deadline; created in Bitrix24 for the person with their own login and put on the plan or the
+  wrap-up at once. `CREATE_FIELDS` widened (approved): DESCRIPTION, TAGS, PRIORITY, DEADLINE.
+- `2e060f5` Daily update: plan and wrap-up rows show every task field and are edited in place (stage,
   status, project, priority, tags, deadline); status rules Pending / WIP / Done / On hold for dev
   tasks, issues and testing tasks (`dailyState`); carry-over of pending or WIP tasks only;
   Upcoming list to take tasks on early or report them done ahead; plan viewable all day.

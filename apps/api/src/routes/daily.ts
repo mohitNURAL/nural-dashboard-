@@ -128,6 +128,23 @@ const wrapBody = z.object({
   note: z.string().trim().max(1000).default(''),
 });
 
+/** A task the person adds from the Daily update (plan or wrap-up), assigned to themselves. */
+const taskBody = z.object({
+  title: z.string().trim().min(3, 'Give the task a summary (3 letters or more).').max(200),
+  description: z.string().trim().max(5000).default(''),
+  groupId: z.coerce.number().int().min(0),
+  tags: z.array(z.string().trim().min(1).max(50)).max(10).default([]),
+  priority: z.enum(['low', 'normal', 'high']).default('normal'),
+  /** YYYY-MM-DD: due at the end of that working day (18:30 IST). */
+  deadline: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .nullable()
+    .default(null),
+  /** Done (completed at once, for the wrap-up) or not. */
+  done: z.boolean().default(false),
+});
+
 const channelBody = z.object({
   channel: z
     .string()
@@ -219,6 +236,15 @@ export function dailyRoutes(
     }
     return { rows, states, boards };
   }
+
+  // Tasks a person created here, until the next data load has them (a minute or so): they can
+  // still go on the plan or the wrap-up at once.
+  const created = new Map<number, Map<number, { title: string; project: string }>>();
+  const createdBy = (userId: number) => {
+    let m = created.get(userId);
+    if (!m) created.set(userId, (m = new Map()));
+    return m;
+  };
 
   const empty = (userId: number, day: string): DailyRow => ({
     userId,
@@ -349,14 +375,15 @@ export function dailyRoutes(
     const items: DailyItem[] = [];
     for (const id of [...new Set(parsed.data.taskIds)]) {
       const t = ds.byId.get(id);
-      if (!t || t.responsibleId !== v.userId) {
+      const fresh = createdBy(v.userId).get(id);
+      if ((!t || t.responsibleId !== v.userId) && !fresh) {
         return reply.code(400).send({ error: `Task ${id} is not one of your tasks.` });
       }
       items.push(
         suggested.get(id) ?? {
           taskId: id,
-          title: t.title,
-          project: project(t.groupId),
+          title: t?.title ?? fresh!.title,
+          project: t ? project(t.groupId) : fresh!.project,
           why: 'added',
         },
       );
@@ -395,9 +422,10 @@ export function dailyRoutes(
     const failures: { title: string; message: string }[] = [];
 
     // Every task must be the person's own, or on their plan this morning.
+    const fresh = createdBy(v.userId);
     for (const i of parsed.data.items) {
       const t = ds.byId.get(i.taskId);
-      if (!planned.has(i.taskId) && (!t || t.responsibleId !== v.userId)) {
+      if (!planned.has(i.taskId) && !fresh.has(i.taskId) && (!t || t.responsibleId !== v.userId)) {
         return reply.code(400).send({ error: `Task ${i.taskId} is not one of your tasks.` });
       }
     }
@@ -415,10 +443,21 @@ export function dailyRoutes(
       const t = ds.byId.get(i.taskId);
       const base = {
         taskId: i.taskId,
-        title: t?.title ?? planned.get(i.taskId)?.title ?? `Task ${i.taskId}`,
-        project: t ? project(t.groupId) : (planned.get(i.taskId)?.project ?? ''),
+        title:
+          t?.title ??
+          planned.get(i.taskId)?.title ??
+          fresh.get(i.taskId)?.title ??
+          `Task ${i.taskId}`,
+        project: t
+          ? project(t.groupId)
+          : (planned.get(i.taskId)?.project ?? fresh.get(i.taskId)?.project ?? ''),
       };
       let state = wrapState(t, ds.testers);
+      if (!t && fresh.has(i.taskId)) {
+        // Created here a moment ago (completed at once when reported Done), not loaded yet.
+        items.push({ ...base, state: i.done ? 'done' : 'pending' });
+        continue;
+      }
       if (i.done && state !== 'done' && t) {
         // Ticked Done: complete it in Bitrix24 as the person (the same as the status dropdown).
         const p = prepare(ds, full, t, { kind: 'status', status: 'completed' }, at);
@@ -479,6 +518,55 @@ export function dailyRoutes(
     );
     await deps.store.save(row);
     return { ok: true, ...result, failures, items };
+  });
+
+  // Add task (morning and evening): a new Bitrix24 task assigned to the person, with their own
+  // login; completed at once when they report it Done in the wrap-up.
+  app.post('/api/daily/task', async (req, reply) => {
+    const parsed = taskBody.safeParse(req.body);
+    if (!parsed.success)
+      return reply.code(400).send({ error: parsed.error.issues[0]?.message ?? 'Invalid task.' });
+    const x = parsed.data;
+    const v = await viewer(req);
+    const ds = await getDataset(req);
+    if (x.groupId && !ds.projects.has(x.groupId))
+      return reply.code(400).send({ error: 'Unknown project.' });
+    const at = now();
+    // The end of the working day, in the app's time zone (calendar offset).
+    const deadline = x.deadline
+      ? new Date(
+          Date.parse(`${x.deadline}T00:00:00Z`) +
+            (deps.calendar.endMin - deps.calendar.offsetMin) * 60_000,
+        )
+      : null;
+    if (deadline && deadline <= at)
+      return reply.code(400).send({ error: 'The deadline must be in the future.' });
+    const who = await deps.writer.actor(req);
+    if ('error' in who) return reply.code(403).send({ error: who.error });
+    const made = await deps.writer.create(who, {
+      title: x.title,
+      groupId: x.groupId,
+      description: x.description,
+      tags: x.tags,
+      priority: x.priority,
+      deadline,
+    });
+    if (!made.ok) return reply.code(made.status).send({ error: made.message });
+    const projectName = projectOf(ds)(x.groupId);
+    createdBy(v.userId).set(made.taskId, { title: x.title, project: projectName });
+    let state: DailyState = 'pending';
+    const failures: { title: string; message: string }[] = [];
+    if (x.done) {
+      const r = await deps.writer.run(who, made.taskId, {
+        state: 'ok',
+        calls: [{ method: 'tasks.task.complete', params: { taskId: made.taskId } }],
+        audit: { action: 'status', fromValue: 'pending', toValue: 'completed' },
+        label: 'Completed',
+      });
+      if (r.ok) state = 'done';
+      else failures.push({ title: x.title, message: r.message });
+    }
+    return { ok: true, taskId: made.taskId, title: x.title, project: projectName, state, failures };
   });
 
   app.get('/api/daily/history', async (req) => {

@@ -352,17 +352,29 @@ export function taskWriter(deps: ActionDeps) {
   }
 
   /**
-   * A new task for the person themselves (Daily update wrap-up, SRS 23): only a title, the person
-   * as assignee and a project (bitrix/methods.ts CREATE_FIELDS). Recorded as 'create'.
+   * A new task for the person themselves (Daily update, SRS 23): a title, the person as assignee,
+   * a project, and optionally a description, tags, priority and deadline (bitrix/methods.ts
+   * CREATE_FIELDS). Recorded as 'create'.
    */
   async function create(
     who: { user: { userId: number }; token: string },
-    task: { title: string; groupId: number },
+    task: {
+      title: string;
+      groupId: number;
+      description?: string;
+      tags?: string[];
+      priority?: keyof typeof PRIORITY_CODE;
+      deadline?: Date | null;
+    },
   ): Promise<{ ok: true; taskId: number } | { ok: false; status: number; message: string }> {
     const fields = {
       TITLE: task.title,
       RESPONSIBLE_ID: who.user.userId,
       ...(task.groupId > 0 ? { GROUP_ID: task.groupId } : {}),
+      ...(task.description ? { DESCRIPTION: task.description } : {}),
+      ...(task.tags?.length ? { TAGS: task.tags } : {}),
+      ...(task.priority ? { PRIORITY: PRIORITY_CODE[task.priority] } : {}),
+      ...(task.deadline ? { DEADLINE: task.deadline.toISOString() } : {}),
     };
     const a = {
       userId: who.user.userId,

@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-17-daily-add-task',
+    date: '2026-10-17',
+    tab: 'daily',
+    title: 'Daily update: Add task',
+    steps: [
+      {
+        target: '[data-tour="daily-plan"]',
+        title: 'Add a task',
+        text: 'In your plan or wrap-up, + Add task opens a form like the task view: summary, description, project, tags, priority and deadline. It is created in Bitrix24, assigned to you, and goes straight onto your plan (or your wrap-up, Done or WIP).',
+      },
+    ],
+  },
+  {
     id: '2026-10-17-daily-edit',
     date: '2026-10-17',
     tab: 'daily',

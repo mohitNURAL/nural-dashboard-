@@ -125,6 +125,50 @@ const post = (url: string, body: unknown) =>
   });
 
 describe('daily update (SRS 23)', () => {
+  it('Add task: creates it for herself with every field, and it can go on the plan at once', async () => {
+    const s = await server();
+    const res = await post('/api/daily/task', {
+      title: 'Write the release notes',
+      description: 'For 2.4',
+      groupId: 154,
+      tags: ['docs'],
+      priority: 'high',
+      deadline: '2026-10-16',
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ taskId: 900, project: 'Moto India', state: 'pending' });
+    expect(s.calls[0]).toMatchObject({
+      method: 'tasks.task.add',
+      params: {
+        fields: {
+          TITLE: 'Write the release notes',
+          RESPONSIBLE_ID: 7,
+          GROUP_ID: 154,
+          DESCRIPTION: 'For 2.4',
+          TAGS: ['docs'],
+          PRIORITY: '2',
+          // 16 Oct, 18:30 IST.
+          DEADLINE: '2026-10-16T13:00:00.000Z',
+        },
+      },
+    });
+    // Not in the data yet, still accepted on the plan.
+    const plan = await post('/api/daily/plan', { taskIds: [900, 41], note: '' });
+    expect(plan.statusCode).toBe(200);
+    const bad = await post('/api/daily/task', { title: 'x', groupId: 154 });
+    expect(bad.statusCode).toBe(400);
+  });
+
+  it('wrap-up: a task created and reported Done a moment ago stays Done', async () => {
+    await server();
+    const made = (
+      await post('/api/daily/task', { title: 'Hotfix for login', groupId: 154, done: true })
+    ).json();
+    expect(made).toMatchObject({ taskId: 900, state: 'done' });
+    const wrap = await post('/api/daily/wrap', { items: [{ taskId: 900, done: true }], note: '' });
+    expect(wrap.statusCode).toBe(200);
+    expect(wrap.json().items).toMatchObject([{ taskId: 900, state: 'done' }]);
+  });
   it('lists upcoming tasks and returns each listed task as a full row with its state', async () => {
     await server();
     const body = (await get('/api/daily/today')).json();

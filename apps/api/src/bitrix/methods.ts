@@ -25,13 +25,24 @@ export const USER_ACTION_METHODS = new Set([
   'tasks.task.renew',
   // Field edits; the route sends only EDITABLE_FIELDS (project, assignee, tags, priority, deadline).
   'tasks.task.update',
-  // The one task creation (2026-10-14, SRS 23): unplanned work added in the evening wrap-up of
-  // the Daily update, assigned to the person themselves; only CREATE_FIELDS. Never a delete.
+  // The one task creation (2026-10-14, SRS 23): a task the person adds in the Daily update (plan or
+  // wrap-up), assigned to themselves; only CREATE_FIELDS. Never a delete.
   'tasks.task.add',
 ]);
 
-/** The only fields tasks.task.add may send: a title, the person themselves, their project. */
-export const CREATE_FIELDS = new Set(['TITLE', 'RESPONSIBLE_ID', 'GROUP_ID']);
+/**
+ * The only fields tasks.task.add may send: a title, the person themselves, their project, and
+ * (approved 2026-10-17) a description, tags, priority and deadline.
+ */
+export const CREATE_FIELDS = new Set([
+  'TITLE',
+  'RESPONSIBLE_ID',
+  'GROUP_ID',
+  'DESCRIPTION',
+  'TAGS',
+  'PRIORITY',
+  'DEADLINE',
+]);
 
 /** Throws unless the new task has a title and an assignee and only CREATE_FIELDS. */
 export function assertCreateFields(fields: Record<string, unknown> | undefined): void {

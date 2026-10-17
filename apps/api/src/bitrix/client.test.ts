@@ -55,13 +55,22 @@ describe('createRawCaller', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it('creates a task as the person only with a title, themselves and a project', async () => {
+  it('creates a task as the person only with the allowed fields', async () => {
     const fetch = reply(200, { result: { task: { id: '9' } } });
     const call = createRawCaller({ baseUrl: BASE, mode: 'userAction', fetch });
-    const ok = { TITLE: 'Fixed the login page', RESPONSIBLE_ID: 7, GROUP_ID: 12 };
+    const ok = {
+      TITLE: 'Fixed the login page',
+      RESPONSIBLE_ID: 7,
+      GROUP_ID: 12,
+      // Approved 2026-10-17 (Daily update Add task).
+      DESCRIPTION: 'Steps…',
+      TAGS: ['bug'],
+      PRIORITY: '2',
+      DEADLINE: '2026-10-20T13:00:00.000Z',
+    };
     await expect(call('tasks.task.add', { fields: ok, auth: 't' })).resolves.toBeTruthy();
     await expect(
-      call('tasks.task.add', { fields: { ...ok, DESCRIPTION: 'x' }, auth: 't' }),
+      call('tasks.task.add', { fields: { ...ok, CREATED_BY: 1 }, auth: 't' }),
     ).rejects.toThrow(/allowed set/);
     await expect(
       call('tasks.task.add', { fields: { TITLE: 'No one' }, auth: 't' }),
