@@ -13,6 +13,8 @@ import { useDevScope, useFilterSummary, useFilters } from '../filters/useFilters
 import { taskColumns } from '../tasks/columns';
 import { TaskList } from '../tasks/TaskList';
 import { TaskAgeingCard } from './AgeingCard';
+import { BackButton } from '../../components/BackButton';
+import { usePlanner } from '../../components/plannerStore';
 import { AlertDetails } from './AlertDetails';
 import { useAlertKind, useAlerts } from './alerts';
 import { useDevAssignees, useDevParams, useDevSummary } from './api';
@@ -208,16 +210,16 @@ export function DevTab() {
                   {drill && (
                     <div className="mb-3 flex flex-wrap items-center gap-4">
                       {drill.back === 'projects' && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            closeSpotlight();
-                            useProjectsPopup.getState().reopen();
-                          }}
-                          className="inline-flex items-center gap-1.5 rounded-control border border-primary/30 px-3 py-1.5 font-heading text-button text-primary hover:bg-primary-soft-100"
-                        >
-                          <span aria-hidden>‹</span> Back to Projects at work
-                        </button>
+                        <BackButton
+                          label="Back to Projects at work"
+                          onBack={() => useProjectsPopup.getState().reopen()}
+                        />
+                      )}
+                      {drill.back === 'planner' && (
+                        <BackButton
+                          label="Back to planner"
+                          onBack={() => usePlanner.getState().show()}
+                        />
                       )}
                       <button
                         type="button"

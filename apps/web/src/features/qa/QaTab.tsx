@@ -1,4 +1,6 @@
 // QA tab (SRS 4, wireframe in SRS 6): issues filed, what is open, what waits for retest.
+import { BackButton } from '../../components/BackButton';
+import { usePlanner } from '../../components/plannerStore';
 import type { IssuePreset } from '@nural/shared';
 import { useEffect, useRef, useState } from 'react';
 import { Accordion } from '../../components/Accordion';
@@ -238,13 +240,21 @@ export function QaTab() {
                   onOpenChange={(o) => setOpen((p) => ({ ...p, all: o }))}
                 >
                   {(allPreset !== 'all' || list.params || testing || everyTask) && (
-                    <button
-                      type="button"
-                      onClick={reset}
-                      className="mb-3 font-heading text-button text-primary hover:underline"
-                    >
-                      Show all issues
-                    </button>
+                    <div className="mb-3 flex flex-wrap items-center gap-4">
+                      {list.back === 'planner' && (
+                        <BackButton
+                          label="Back to planner"
+                          onBack={() => usePlanner.getState().show()}
+                        />
+                      )}
+                      <button
+                        type="button"
+                        onClick={reset}
+                        className="font-heading text-button text-primary hover:underline"
+                      >
+                        Show all issues
+                      </button>
+                    </div>
                   )}
                   <TaskList
                     filterParams={list.params ? { ...params, ...list.params } : params}

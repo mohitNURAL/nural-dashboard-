@@ -14,6 +14,8 @@ export interface IssueList {
   params?: Record<string, string>;
   /** Filter state this list belongs to; any other filter change resets "All issues". */
   filterKey?: string;
+  /** Opened from the Tasks in hand planner: the list shows "Back to planner". */
+  back?: 'planner';
 }
 
 interface IssueListState {

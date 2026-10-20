@@ -77,6 +77,7 @@ export function QaTiles({ active, onSelect, onPart, onRetest }: Props) {
                       preset: overdue ? 'overdue' : 'pending',
                       label,
                       params,
+                      back: 'planner',
                     }),
                 }}
               />

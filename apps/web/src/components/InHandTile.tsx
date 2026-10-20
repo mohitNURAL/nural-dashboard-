@@ -1,9 +1,9 @@
 // Tasks in hand (2026-10-12): open tasks with the deadline ahead, split by when they are planned.
 // The same tile on KPI, Development and QA; each tab passes its own counts and opens its own list.
 import type { DueWindow } from '@nural/shared';
-import { useState } from 'react';
 import { DUE_TEXT as DUE_LABEL } from './dueText';
 import { InHandCalendarDialog, type InHandCalendarSource } from './InHandCalendar';
+import { usePlanner } from './plannerStore';
 import { StatTile } from './StatTile';
 
 // Week first, then month (2026-10-15).
@@ -25,7 +25,7 @@ export function InHandTile({
   /** Opens the tab's list of these tasks, narrowed to one window. */
   onOpen: (w: DueWindow, label: string) => void;
 }) {
-  const [planner, setPlanner] = useState(false);
+  const { open: planner, show, close } = usePlanner();
   return (
     <>
       <StatTile
@@ -33,7 +33,7 @@ export function InHandTile({
         info={info}
         value={counts?.ahead}
         active={active}
-        onClick={() => (calendar ? setPlanner(true) : onOpen('ahead', 'Tasks in hand'))}
+        onClick={() => (calendar ? show() : onOpen('ahead', 'Tasks in hand'))}
         parts={
           counts &&
           PARTS.map((w) => ({
@@ -43,9 +43,7 @@ export function InHandTile({
           }))
         }
       />
-      {planner && calendar && (
-        <InHandCalendarDialog source={calendar} onClose={() => setPlanner(false)} />
-      )}
+      {planner && calendar && <InHandCalendarDialog source={calendar} onClose={close} />}
     </>
   );
 }

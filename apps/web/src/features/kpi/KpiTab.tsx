@@ -1,5 +1,7 @@
 // KPI tab (SRS 13): the management overview of every project, counts first. Every number opens
 // the tasks behind it in "All tasks" at the bottom.
+import { BackButton } from '../../components/BackButton';
+import { usePlanner } from '../../components/plannerStore';
 import clsx from 'clsx';
 import { useEffect, useRef, useState } from 'react';
 import { Accordion } from '../../components/Accordion';
@@ -122,13 +124,18 @@ export function KpiTab() {
           onOpenChange={setOpen}
         >
           {list.params && (
-            <button
-              type="button"
-              onClick={reset}
-              className="mb-3 font-heading text-button text-primary hover:underline"
-            >
-              Show all open tasks
-            </button>
+            <div className="mb-3 flex flex-wrap items-center gap-4">
+              {list.back === 'planner' && (
+                <BackButton label="Back to planner" onBack={() => usePlanner.getState().show()} />
+              )}
+              <button
+                type="button"
+                onClick={reset}
+                className="font-heading text-button text-primary hover:underline"
+              >
+                Show all open tasks
+              </button>
+            </div>
           )}
           <TaskList
             filterParams={{ ...params, kpi: 'open', ...list.params }}

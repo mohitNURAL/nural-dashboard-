@@ -12,6 +12,8 @@ export interface KpiList {
   /** "i" text: the rule behind the number. */
   info?: string;
   filterKey?: string;
+  /** Opened from the Tasks in hand planner: the list shows "Back to planner". */
+  back?: 'planner';
 }
 
 interface State {

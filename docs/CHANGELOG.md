@@ -23,7 +23,9 @@ and the next change fills its ID in.
 
 ## 2026-10-20
 
-- Tasks in hand planner: Excel and PDF (a line per person or project, then what it splits into,
+- Tasks in hand planner: a count opens its tasks with "‹ Back to planner", which reopens the
+  planner as it was left (view, grouping, search), on KPI, Development and QA.
+- `1deecad` Tasks in hand planner: Excel and PDF (a line per person or project, then what it splits into,
   every column, a totals line); PDF guides rebuilt from the current tour texts.
 - `5211396` Tasks in hand planner on KPI, Development and QA: the tile opens day / week / month columns per
   person (with their projects) or per project (with its people), overdue first in red, heat by

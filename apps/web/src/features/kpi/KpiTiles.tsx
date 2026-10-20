@@ -191,9 +191,12 @@ export function KpiTiles({
                 params: kpiParams,
                 showing: showing ?? undefined,
                 onOpen: (label, params, overdue) =>
-                  overdue
-                    ? list(label, { kpi: 'overdue', ...params }, KPI_INFO.overdue)
-                    : list(label, { kpi: 'open', ...params }, KPI_INFO.inHand),
+                  open({
+                    label,
+                    params: { kpi: overdue ? 'overdue' : 'open', ...params },
+                    info: overdue ? KPI_INFO.overdue : KPI_INFO.inHand,
+                    back: 'planner',
+                  }),
               }}
             />
           ),

@@ -20,8 +20,8 @@ export interface Drill {
    * (cleared, reset, another pick), the Development tab drops the drill back to "All tasks".
    */
   filterKey?: string;
-  /** Opened from the Projects at work popup: the list shows "Back to Projects at work". */
-  back?: 'projects';
+  /** Opened from a popup: the list shows "Back to Projects at work" or "Back to planner". */
+  back?: 'projects' | 'planner';
 }
 
 /** Identity of the Development filter state, including the All / Dev / Issues switch. */

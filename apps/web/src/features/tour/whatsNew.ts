@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-20-planner-back',
+    date: '2026-10-20',
+    tab: 'dev',
+    title: 'Back to the planner from its tasks',
+    steps: [
+      {
+        target: slot('dev.tiles', 'inHand'),
+        title: 'Back to planner',
+        text: 'A count in the Tasks in hand planner opens its tasks with a Back to planner button above them: it brings the planner back as you left it, with the same view, grouping and search.',
+      },
+    ],
+  },
+  {
     id: '2026-10-20-inhand-planner',
     date: '2026-10-20',
     tab: 'dev',

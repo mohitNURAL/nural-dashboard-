@@ -127,7 +127,12 @@ export function SummaryTiles({ active, onSelect }: Props) {
                   params: devParams,
                   showing: showing ?? undefined,
                   onOpen: (label, params, overdue) =>
-                    drill({ label, preset: overdue ? 'overdue' : 'pending', params }),
+                    drill({
+                      label,
+                      preset: overdue ? 'overdue' : 'pending',
+                      params,
+                      back: 'planner',
+                    }),
                 }}
               />
             ),

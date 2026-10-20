@@ -7,8 +7,9 @@ import * as Dialog from '@radix-ui/react-dialog';
 import clsx from 'clsx';
 import { useMemo, useState, type CSSProperties } from 'react';
 import { useApi } from '../api/queries';
-import type { GroupBy, InHandCalendar, InHandCalendarCell } from '../api/types';
+import type { InHandCalendar, InHandCalendarCell } from '../api/types';
 import { heading, isWeekend } from './calendarHeading';
+import { usePlanner } from './plannerStore';
 import { GroupToggle, ViewToggle } from './Card';
 import { IconCalendar, IconClose, IconExcel, IconPdf } from './ui/icons';
 import { SearchInput } from './ui/SearchInput';
@@ -49,9 +50,7 @@ export function InHandCalendarDialog({
   source: InHandCalendarSource;
   onClose: () => void;
 }) {
-  const [view, setView] = useState<View>('week');
-  const [by, setBy] = useState<GroupBy>('assignee');
-  const [q, setQ] = useState('');
+  const { view, setView, by, setBy, q, setQ } = usePlanner();
   const [busy, setBusy] = useState<'xlsx' | 'pdf' | null>(null);
   const { data, isLoading } = useApi<InHandCalendar>(source.path, {
     ...source.params,
