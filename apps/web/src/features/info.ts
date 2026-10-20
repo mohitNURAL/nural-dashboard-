@@ -11,7 +11,7 @@ export const INFO = {
   deployed: 'In the LIVE stage.',
   overdue: 'Pending, not On Hold, and the deadline has passed.',
   inHand:
-    'Pending tasks (behind QA Backlog, not on hold) whose deadline is still ahead (IST). Under it, when they are planned: tomorrow, the rest of this week, the rest of this month, next week, next month. The parts overlap (tomorrow is also in the rest of the week), so they do not add up. Overdue and no-deadline tasks are not in hand.',
+    'Pending tasks (behind QA Backlog, not on hold) whose deadline is still ahead (IST). Under it, when they are planned: tomorrow, the rest of this week, the rest of this month, next week, next month. The parts overlap (tomorrow is also in the rest of the week), so they do not add up. Overdue and no-deadline tasks are not in hand. Click the tile for the planner: day, week or month columns per person (with the projects they work on) or per project (with who works on it), overdue first in red.',
   spill:
     'Spill: the deadline was in the previous day, week or month (IST, weeks Monday to Sunday) and the task was not pushed to QA Backlog by its end (still pending or on hold, or completed later).',
   openNoDeadline: 'Open (pending, not on hold) with no deadline set in Bitrix24.',
@@ -26,7 +26,7 @@ export const INFO = {
   qaInHandBy:
     "The testing team's pending tasks with the deadline ahead, per assignee or project. The chart shows the window picked above it; the table shows every window. A bar or count opens those tasks; a name sets the filter.",
   qaInHand:
-    "The QA Testing team's pending testing tasks whose deadline is still ahead (IST), by when they are planned: tomorrow, the rest of this week, the rest of this month, next week, next month. The parts overlap, so they do not add up.",
+    "The QA Testing team's pending testing tasks whose deadline is still ahead (IST), by when they are planned: tomorrow, the rest of this week, the rest of this month, next week, next month. The parts overlap, so they do not add up. Click the tile for the planner: day, week or month columns per person (with the projects they work on) or per project (with who works on it), overdue first in red.",
   doneToday: 'Reached QA Backlog for the first time today (IST).',
   dueToday: 'Deadline is today (IST), in any stage except LIVE.',
 

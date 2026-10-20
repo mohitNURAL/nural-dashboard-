@@ -28,6 +28,7 @@ import {
   isOverdueInPeriod,
   isSpill,
   inHandByGroup,
+  inHandCalendar,
   isOverdue,
   issueAgeByAssignee,
   issues,
@@ -887,6 +888,49 @@ describe('tasks in hand', () => {
       nextMonth: 1,
     });
     expect(isDueIn(list[1]!, ctx, 'restWeek')).toBe(false);
+  });
+});
+
+describe('tasks in hand calendar', () => {
+  const ist = (d: string) => new Date(`${d}T18:00:00+05:30`);
+  const list = [
+    task({ responsibleId: 30, groupId: 148, deadline: ist('2026-10-12') }),
+    task({ responsibleId: 30, groupId: 154, deadline: ist('2026-10-12') }),
+    task({ responsibleId: 30, groupId: 148, deadline: ist('2026-10-05') }),
+    task({ responsibleId: 31, groupId: 148, deadline: ist('2026-12-20') }),
+    // Completed or without a deadline: not planned.
+    task({ responsibleId: 31, stage: 'QA Backlog', deadline: ist('2026-10-12') }),
+    task({ responsibleId: 31 }),
+  ];
+
+  it('plans each person by day, with the projects they work on and what is overdue', () => {
+    const c = inHandCalendar(list, ctx, 'day', 'assignee');
+    expect(c.columns).toHaveLength(15);
+    expect(c.columns[0]).toEqual({ key: '2026-10-10', from: '2026-10-10', to: '2026-10-10' });
+    expect(c.columns[14]).toEqual({ key: 'later', from: '2026-10-24', to: null });
+    const [a, b] = c.rows;
+    expect([a!.id, a!.total, a!.overdue.count]).toEqual([30, 3, 1]);
+    expect(a!.cells['2026-10-12']).toEqual({
+      count: 2,
+      items: [
+        { id: 148, count: 1 },
+        { id: 154, count: 1 },
+      ],
+    });
+    expect([b!.id, b!.cells.later!.count]).toEqual([31, 1]);
+    expect(c.totals).toMatchObject({ total: 4, overdue: 1 });
+    expect(c.totals.cells['2026-10-12']).toBe(2);
+  });
+
+  it('groups by week from this Monday and by month, and by project the other way round', () => {
+    const w = inHandCalendar(list, ctx, 'week', 'assignee');
+    expect(w.columns[0]).toEqual({ key: '2026-10-05', from: '2026-10-05', to: '2026-10-11' });
+    expect(w.rows[0]!.cells['2026-10-12']!.count).toBe(2);
+    const m = inHandCalendar(list, ctx, 'month', 'project');
+    expect(m.columns.map((col) => col.key).slice(0, 3)).toEqual(['2026-10', '2026-11', '2026-12']);
+    const p148 = m.rows.find((r) => r.id === 148)!;
+    expect(p148.overdue).toEqual({ count: 1, items: [{ id: 30, count: 1 }] });
+    expect(p148.cells['2026-12']).toEqual({ count: 1, items: [{ id: 31, count: 1 }] });
   });
 });
 

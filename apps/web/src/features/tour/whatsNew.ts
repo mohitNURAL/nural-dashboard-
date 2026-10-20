@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-20-inhand-planner',
+    date: '2026-10-20',
+    tab: 'dev',
+    title: 'Tasks in hand: a planner by day, week and month',
+    steps: [
+      {
+        target: slot('dev.tiles', 'inHand'),
+        title: 'Plan the sprint',
+        text: 'Click Tasks in hand for a planner: one row per person or project, columns by day, week or month, overdue first in red. A person’s cell lists the projects they work on, a project’s cell who works on it; darker cells hold more. Any count opens its tasks. On KPI, Development and QA.',
+      },
+    ],
+  },
+  {
     id: '2026-10-17-daily-report',
     date: '2026-10-17',
     tab: 'dailyreport',

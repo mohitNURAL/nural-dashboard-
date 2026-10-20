@@ -77,6 +77,12 @@ export const IconLayers = (p: P) => (
     <path d="m2.5 10.5 7.5 4 7.5-4M2.5 14l7.5 4 7.5-4" />
   </Svg>
 );
+export const IconCalendar = (p: P) => (
+  <Svg {...p}>
+    <rect x="3" y="4.5" width="14" height="12.5" rx="2" />
+    <path d="M3 8.5h14M7 2.5v4M13 2.5v4" />
+  </Svg>
+);
 export const IconMenu = (p: P) => (
   <Svg {...p}>
     <path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13" />

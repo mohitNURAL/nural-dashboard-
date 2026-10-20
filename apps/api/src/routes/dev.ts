@@ -12,6 +12,8 @@ import {
   STAGE_COLORS,
   tasksInHand,
   inHandByGroup,
+  inHandCalendar,
+  type CalendarView,
   projectWork,
   WORK_PERIODS,
   projectWorkSummary,
@@ -25,13 +27,14 @@ import type { Dataset } from '../data/dataset';
 import {
   assignee,
   contextOf,
+  namedCalendar,
   project,
   unassignedOpen,
   withAssignees,
   withGroupNames,
   type AppOptions,
 } from './context';
-import { groupByParam, parseQuery, scopeParam } from './params';
+import { calendarParam, groupByParam, parseQuery, scopeParam } from './params';
 
 export interface DevRouteDeps {
   /** PMs (config/roles.json and People directory roles): their projects count on Projects. */
@@ -129,6 +132,13 @@ export function devRoutes(
     const by = q.groupBy ?? 'assignee';
     const r = inHandByGroup(tasks, ctx, by);
     return { groupBy: by, rows: withGroupNames(ds, r.rows, by), totals: r.totals };
+  });
+
+  // Tasks in hand as a planner: day, week or month columns, per assignee or project (2026-10-20).
+  app.get('/api/dev/inhand/calendar', async (req) => {
+    const { ds, ctx, tasks, q } = await scope(req, { ...groupByParam, ...calendarParam });
+    const view = (q as { view?: CalendarView }).view ?? 'week';
+    return namedCalendar(ds, inHandCalendar(tasks, ctx, view, q.groupBy ?? 'assignee'));
   });
 
   app.get('/api/dev/assignees', async (req) => {

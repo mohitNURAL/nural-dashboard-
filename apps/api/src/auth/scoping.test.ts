@@ -121,6 +121,8 @@ const ENDPOINTS = [
   '/api/qa/issues?groupBy=project',
   '/api/qa/testing',
   '/api/qa/filed',
+  '/api/qa/inhand/calendar?view=day',
+  '/api/dev/inhand/calendar?view=month&groupBy=project',
   '/api/qa/retest',
   '/api/qa/retest?groupBy=project',
   '/api/filters/options?tab=dev&scope=all',
@@ -306,7 +308,16 @@ describe('task view, actions and export follow the scope', () => {
 });
 
 describe('KPI tab: managers only', () => {
-  const KPI = ['summary', 'projects', 'people', 'workload', 'overdue', 'activity', 'insights'];
+  const KPI = [
+    'summary',
+    'projects',
+    'people',
+    'workload',
+    'overdue',
+    'activity',
+    'insights',
+    'inhand/calendar',
+  ];
 
   it('every KPI endpoint and KPI task list refuses a member', async () => {
     for (const uid of MEMBERS) {

@@ -21,9 +21,15 @@ and the next change fills its ID in.
 - Five tables (Alert details, Projects at work, Stage matrix, Ranking, Insights list) still use
   their own markup instead of the shared table.
 
+## 2026-10-20
+
+- Tasks in hand planner on KPI, Development and QA: the tile opens day / week / month columns per
+  person (with their projects) or per project (with its people), overdue first in red, heat by
+  load, totals row; every count and name opens its tasks (`inHandCalendar` in metrics.ts).
+
 ## 2026-10-17
 
-- Check-ins to the directors: Slack DMs to Deepak, Bhanu and Balram at 11:30 (planned / not)
+- `bcd3138` Check-ins to the directors: Slack DMs to Deepak, Bhanu and Balram at 11:30 (planned / not)
   and 19:00 (wrapped up / not), working days, once a day each; off until enabled in
   `config/daily-checkins.json`; admins preview and send themselves a test on the report page.
 - `2967901` Report › Daily task update (new module, right `dailyReport`): who planned and wrapped up (tiles,

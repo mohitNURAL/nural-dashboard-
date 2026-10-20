@@ -4,7 +4,7 @@ import { SortableGroup } from '../../components/layout/SortableGroup';
 import { InHandTile } from '../../components/InHandTile';
 import { StatTile } from '../../components/StatTile';
 import { useKpiControls } from '../filters/useFilters';
-import { useKpiSummary } from './api';
+import { useKpiParams, useKpiSummary } from './api';
 import { KPI_INFO } from './info';
 import { useKpiList, useOpenKpiList } from './kpiList';
 import { PERIOD_WORDS } from './format';
@@ -19,6 +19,7 @@ export function KpiTiles({
   onOverdue: () => boolean;
 }) {
   const { data: s } = useKpiSummary();
+  const kpiParams = useKpiParams();
   const { period } = useKpiControls();
   const open = useOpenKpiList();
   const shown = useKpiList((st) => st.list.label);
@@ -184,6 +185,14 @@ export function KpiTiles({
               info={KPI_INFO.inHand}
               active={!!shown?.startsWith('Tasks in hand')}
               onOpen={(w, label) => list(label, { kpi: 'open', due: w }, KPI_INFO.inHand)}
+              calendar={{
+                path: '/api/kpi/inhand/calendar',
+                params: kpiParams,
+                onOpen: (label, params, overdue) =>
+                  overdue
+                    ? list(label, { kpi: 'overdue', ...params }, KPI_INFO.overdue)
+                    : list(label, { kpi: 'open', ...params }, KPI_INFO.inHand),
+              }}
             />
           ),
         },

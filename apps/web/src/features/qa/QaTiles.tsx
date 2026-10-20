@@ -5,7 +5,7 @@ import { SortableGroup } from '../../components/layout/SortableGroup';
 import { InHandTile } from '../../components/InHandTile';
 import { StatTile } from '../../components/StatTile';
 import { useIssueList, useOpenIssues } from './issueList';
-import { useQaRetest, useQaSummary } from './api';
+import { useQaParams, useQaRetest, useQaSummary } from './api';
 import { FiledDialog } from './FiledDialog';
 import { useFiledPopup } from './filedPopup';
 import { lastFiledText } from './format';
@@ -25,6 +25,7 @@ const TYPE_LABEL = { bug: 'Bug', feedback: 'Feedback' } as const;
 
 export function QaTiles({ active, onSelect, onPart, onRetest }: Props) {
   const { data } = useQaSummary();
+  const qaParams = useQaParams();
   const { data: retest } = useQaRetest();
   const openList = useOpenIssues();
   const shown = useIssueList((st) => st.list.label);
@@ -64,6 +65,17 @@ export function QaTiles({ active, onSelect, onPart, onRetest }: Props) {
                 onOpen={(w, label) =>
                   openList({ kind: 'testing', preset: 'pending', label, params: { due: w } })
                 }
+                calendar={{
+                  path: '/api/qa/inhand/calendar',
+                  params: qaParams,
+                  onOpen: (label, params, overdue) =>
+                    openList({
+                      kind: 'testing',
+                      preset: overdue ? 'overdue' : 'pending',
+                      label,
+                      params,
+                    }),
+                }}
               />
             ),
           },

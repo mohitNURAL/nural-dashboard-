@@ -270,6 +270,28 @@ export interface DevMatrix {
 
 // ---------------------------------------------------------------- QA tab (routes/qa.ts)
 
+/** Tasks in hand as a planner (2026-10-20): one row per person or project, day / week / month columns. */
+export interface InHandCalendarCell {
+  count: number;
+  /** Projects for a person, people for a project. */
+  items: { id: number; name: string; count: number }[];
+}
+export interface InHandCalendar {
+  view: 'day' | 'week' | 'month';
+  groupBy: GroupBy;
+  /** YYYY-MM-DD (IST). */
+  today: string;
+  columns: { key: string; from: string; to: string | null }[];
+  rows: {
+    id: number;
+    name: string;
+    total: number;
+    overdue: InHandCalendarCell;
+    cells: Record<string, InHandCalendarCell>;
+  }[];
+  totals: { total: number; overdue: number; cells: Record<string, number> };
+}
+
 /** QA Last filed popup: issues filed on one day by project, creator and assignee. */
 export interface QaFiledCounts {
   filed: number;

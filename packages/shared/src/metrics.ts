@@ -1370,6 +1370,129 @@ export function inHandByGroup(
   return { rows, totals: tasksInHand(mine, ctx, () => true) };
 }
 
+// ------------------------------------------------- tasks in hand calendar (2026-10-20)
+
+export const CALENDAR_VIEWS = ['day', 'week', 'month'] as const;
+export type CalendarView = (typeof CALENDAR_VIEWS)[number];
+/** How many columns each view shows ahead, before "Later". */
+export const CALENDAR_SPAN: Record<CalendarView, number> = { day: 14, week: 8, month: 6 };
+
+/** One column of the planner: a day, a week (Monday to Sunday) or a month; "later" after them. */
+export interface CalendarColumn {
+  key: string;
+  /** First and last day (YYYY-MM-DD, inclusive); `to` null = open-ended (Later). */
+  from: string;
+  to: string | null;
+}
+/** A cell: how many tasks, and what they split into (projects for a person, people for a project). */
+export interface CalendarCell {
+  count: number;
+  items: { id: number; count: number }[];
+}
+export interface CalendarRow {
+  id: number;
+  /** Overdue + in hand. */
+  total: number;
+  overdue: CalendarCell;
+  cells: Record<string, CalendarCell>;
+}
+
+const monthKey = (key: string, plus: number) => {
+  const [y, m] = key.split('-').map(Number) as [number, number];
+  return new Date(Date.UTC(y, m - 1 + plus, 1)).toISOString().slice(0, 10);
+};
+const monthEnd = (first: string) => {
+  const [y, m] = first.split('-').map(Number) as [number, number];
+  return new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
+};
+
+/** The planner's columns from today: 14 days, 8 weeks (from this Monday) or 6 months, then Later. */
+export function calendarColumns(view: CalendarView, ctx: MetricContext): CalendarColumn[] {
+  const today = dayKey(ctx.now, ctx.tz);
+  const n = CALENDAR_SPAN[view];
+  const cols: CalendarColumn[] = [];
+  if (view === 'day') {
+    for (let i = 0; i < n; i++) {
+      const k = keyPlus(today, i);
+      cols.push({ key: k, from: k, to: k });
+    }
+  } else if (view === 'week') {
+    const isoDow = ((new Date(`${today}T00:00:00Z`).getUTCDay() + 6) % 7) + 1;
+    const monday = keyPlus(today, 1 - isoDow);
+    for (let i = 0; i < n; i++) {
+      const from = keyPlus(monday, 7 * i);
+      cols.push({ key: from, from, to: keyPlus(from, 6) });
+    }
+  } else {
+    for (let i = 0; i < n; i++) {
+      const from = monthKey(today, i);
+      cols.push({ key: from.slice(0, 7), from, to: monthEnd(from) });
+    }
+  }
+  cols.push({ key: 'later', from: keyPlus(cols[cols.length - 1]!.to!, 1), to: null });
+  return cols;
+}
+
+const cellOf = (l: readonly MetricTask[], key: (t: MetricTask) => number): CalendarCell => ({
+  count: l.length,
+  items: [...groupBy(l, key)]
+    .map(([id, g]) => ({ id, count: g.length }))
+    .sort((a, b) => b.count - a.count || a.id - b.id),
+});
+
+/**
+ * Tasks in hand as a planner (2026-10-20): one row per assignee (or project), one column per day,
+ * week or month from today (then Later), and an Overdue column first. Each cell counts the open
+ * tasks due in it and splits them the other way: by project for a person, by person for a
+ * project. Rows with anything overdue or in hand, most first. `open` and `overdue` are the tab's
+ * rules (default: pending, and pending past the deadline).
+ */
+export function inHandCalendar(
+  list: readonly MetricTask[],
+  ctx: MetricContext,
+  view: CalendarView,
+  by: GroupBy,
+  {
+    open = isPending,
+    overdue = (t: MetricTask) => isOverdue(t, ctx),
+  }: { open?: (t: MetricTask) => boolean; overdue?: (t: MetricTask) => boolean } = {},
+) {
+  const columns = calendarColumns(view, ctx);
+  const colOf = (t: MetricTask) => {
+    const k = dayKey(t.deadline!, ctx.tz);
+    return columns.find((c) => k >= c.from && (c.to === null || k <= c.to))?.key ?? null;
+  };
+  const late = list.filter((t) => open(t) && overdue(t));
+  const ahead = list.filter((t) => open(t) && !overdue(t) && isDueIn(t, ctx, 'ahead'));
+  const other = groupKey(by === 'project' ? 'assignee' : 'project');
+  const cells = (l: readonly MetricTask[]) => {
+    const byCol = groupBy(
+      l.filter((t) => colOf(t) !== null),
+      (t) => colOf(t)!,
+    );
+    return Object.fromEntries(columns.map((c) => [c.key, cellOf(byCol.get(c.key) ?? [], other)]));
+  };
+  const key = groupKey(by);
+  const lateBy = groupBy(late, key);
+  const aheadBy = groupBy(ahead, key);
+  const ids = [...new Set([...lateBy.keys(), ...aheadBy.keys()])];
+  const rows: CalendarRow[] = ids
+    .map((id) => {
+      const l = lateBy.get(id) ?? [];
+      const a = aheadBy.get(id) ?? [];
+      return { id, total: l.length + a.length, overdue: cellOf(l, other), cells: cells(a) };
+    })
+    .sort((x, y) => y.total - x.total || x.id - y.id);
+  const totals = {
+    total: late.length + ahead.length,
+    overdue: late.length,
+    cells: Object.fromEntries(
+      Object.entries(cells(ahead)).map(([k, c]) => [k, c.count]),
+    ) as Record<string, number>,
+  };
+  return { view, groupBy: by, today: dayKey(ctx.now, ctx.tz), columns, rows, totals };
+}
+
 // ---------------------------------------------------------------- projects at work (2026-10-13)
 
 /** A project is active with any task activity in this many days, else silent (2026-10-13). */

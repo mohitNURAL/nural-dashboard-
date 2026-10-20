@@ -12,6 +12,8 @@ import {
   projectWorkSummary,
   tasksInHand,
   inHandByGroup,
+  inHandCalendar,
+  CALENDAR_VIEWS,
   GROUP_BY,
   overdueBreakdown,
   peoplePerformance,
@@ -27,6 +29,7 @@ import type { Dataset } from '../data/dataset';
 import { kpiConfig } from '../data/kpiConfig';
 import {
   contextOf,
+  namedCalendar,
   person,
   project,
   unassignedOpen,
@@ -163,6 +166,29 @@ export function kpiRoutes(
       (t) => open.has(t.id),
     );
     return { groupBy: by, rows: withGroupNames(ds, r.rows, by), totals: r.totals };
+  });
+
+  // Tasks in hand as a planner (2026-10-20): KPI open tasks, KPI's own overdue rule.
+  app.get('/api/kpi/inhand/calendar', async (req) => {
+    const by = z
+      .enum(GROUP_BY)
+      .catch('assignee')
+      .parse((req.query as { groupBy?: unknown }).groupBy);
+    const view = z
+      .enum(CALENDAR_VIEWS)
+      .catch('week')
+      .parse((req.query as { view?: unknown }).view);
+    const { ds, scope } = await get(req);
+    const open = new Set(scope.all.filter((k) => k.open).map((k) => k.t.id));
+    const late = new Set(scope.all.filter((k) => k.overdue).map((k) => k.t.id));
+    const cal = inHandCalendar(
+      scope.all.map((k) => k.t),
+      contextOf(ds, opts),
+      view,
+      by,
+      { open: (t) => open.has(t.id), overdue: (t) => late.has(t.id) },
+    );
+    return namedCalendar(ds, cal);
   });
 
   app.get('/api/kpi/projects', async (req) => {

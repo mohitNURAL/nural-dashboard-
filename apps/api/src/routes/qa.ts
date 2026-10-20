@@ -22,6 +22,7 @@ import {
   STAGE_COLORS,
   tasksInHand,
   inHandByGroup,
+  inHandCalendar,
   testingTasks,
   testingWorkload,
   waitingForRetest,
@@ -32,6 +33,7 @@ import type { RequestDataset } from '../auth/roles';
 import {
   assignee,
   contextOf,
+  namedCalendar,
   person,
   project,
   unassignedOpen,
@@ -40,7 +42,7 @@ import {
   withPeople,
   type AppOptions,
 } from './context';
-import { groupByParam, parseQuery } from './params';
+import { calendarParam, groupByParam, parseQuery } from './params';
 
 export function qaRoutes(app: FastifyInstance, getDataset: RequestDataset, opts: AppOptions) {
   async function scope(req: FastifyRequest) {
@@ -103,6 +105,15 @@ export function qaRoutes(app: FastifyInstance, getDataset: RequestDataset, opts:
     const ctx = contextOf(ds, opts);
     const r = inHandByGroup(applyFilters(testingTasks(ds.tasks, ctx), filters, ctx.tz), ctx, by);
     return { groupBy: by, rows: withGroupNames(ds, r.rows, by), totals: r.totals };
+  });
+
+  // Tasks in hand as a planner (2026-10-20): the QA team's pending testing tasks.
+  app.get('/api/qa/inhand/calendar', async (req) => {
+    const { query, filters } = parseQuery(req.query, { ...groupByParam, ...calendarParam });
+    const ds = await getDataset(req);
+    const ctx = contextOf(ds, opts);
+    const list = applyFilters(testingTasks(ds.tasks, ctx), filters, ctx.tz);
+    return namedCalendar(ds, inHandCalendar(list, ctx, query.view, query.groupBy));
   });
 
   app.get('/api/qa/issues', async (req) => {

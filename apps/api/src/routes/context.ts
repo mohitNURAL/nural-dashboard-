@@ -12,6 +12,8 @@ import {
   type GroupBy,
   type MetricContext,
   type MetricTask,
+  type CalendarCell,
+  inHandCalendar,
   type StageTitle,
   type TaskStatus,
   hasRole,
@@ -84,6 +86,29 @@ export const assignee = (ds: Dataset, id: number): PersonRef =>
 
 export const project = (ds: Dataset, id: number) =>
   id ? { id, name: ds.projects.get(id)?.name ?? `Group ${id}` } : null;
+
+/**
+ * Names a Tasks in hand calendar (2026-10-20): each row (person or project) and, in every cell,
+ * what it splits into (projects for a person, people for a project).
+ */
+export function namedCalendar(ds: Dataset, c: ReturnType<typeof inHandCalendar>) {
+  const itemName =
+    c.groupBy === 'project'
+      ? (id: number) => assignee(ds, id).name
+      : (id: number) => project(ds, id)?.name ?? 'No project';
+  const named = (cell: CalendarCell) => ({
+    count: cell.count,
+    items: cell.items.map((i) => ({ ...i, name: itemName(i.id) })),
+  });
+  return {
+    ...c,
+    rows: withGroupNames(ds, c.rows, c.groupBy).map((r) => ({
+      ...r,
+      overdue: named(r.overdue),
+      cells: Object.fromEntries(Object.entries(r.cells).map(([k, v]) => [k, named(v)])),
+    })),
+  };
+}
 
 /** Adds `person` to rows keyed by a user `id`. */
 export const withPeople = <R extends { id: number }>(ds: Dataset, rows: R[]) =>
