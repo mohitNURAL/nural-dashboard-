@@ -26,7 +26,7 @@ export const WHATS_NEW: WhatsNew[] = [
       {
         target: slot('dev.tiles', 'inHand'),
         title: 'Plan the sprint',
-        text: 'Click Tasks in hand for a planner: one row per person or project, columns by day, week or month, overdue first in red. A person’s cell lists the projects they work on, a project’s cell who works on it; darker cells hold more. Any count opens its tasks. On KPI, Development and QA.',
+        text: 'Click Tasks in hand for a planner: one row per person or project, columns by day, week or month, overdue first in red. A person’s cell lists the projects they work on, a project’s cell who works on it; darker cells hold more. Any count opens its tasks, and Excel or PDF takes the planner with you. On KPI, Development and QA.',
       },
     ],
   },

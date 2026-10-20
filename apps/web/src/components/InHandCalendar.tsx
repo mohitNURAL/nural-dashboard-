@@ -8,8 +8,9 @@ import clsx from 'clsx';
 import { useMemo, useState, type CSSProperties } from 'react';
 import { useApi } from '../api/queries';
 import type { GroupBy, InHandCalendar, InHandCalendarCell } from '../api/types';
+import { heading, isWeekend } from './calendarHeading';
 import { GroupToggle, ViewToggle } from './Card';
-import { IconCalendar, IconClose } from './ui/icons';
+import { IconCalendar, IconClose, IconExcel, IconPdf } from './ui/icons';
 import { SearchInput } from './ui/SearchInput';
 
 type View = InHandCalendar['view'];
@@ -20,6 +21,8 @@ export interface InHandCalendarSource {
   path: string;
   /** The tab's filter params. */
   params: Record<string, string>;
+  /** What the filters cover, printed on the Excel and PDF. */
+  showing?: string;
   /** Opens the tab's list: due in a column (`overdue` false) or overdue, narrowed by `params`. */
   onOpen: (label: string, params: Record<string, string>, overdue: boolean) => void;
 }
@@ -30,31 +33,6 @@ const VIEWS: { value: View; label: string }[] = [
   { value: 'month', label: 'Month' },
 ];
 const ITEMS_SHOWN = 3;
-
-const utc = (k: string) => new Date(`${k}T00:00:00Z`);
-const fmt = (k: string, o: Intl.DateTimeFormatOptions) =>
-  utc(k).toLocaleDateString('en-IN', { timeZone: 'UTC', ...o });
-const isWeekend = (k: string) => [0, 6].includes(utc(k).getUTCDay());
-
-/** The column's two header lines: what it is, and its dates. */
-function heading(view: View, c: Column, i: number, today: string): [string, string] {
-  if (c.key === 'later')
-    return ['Later', `from ${fmt(c.from, { day: 'numeric', month: 'short' })}`];
-  if (view === 'day') {
-    const top =
-      c.from === today ? 'Today' : i === 1 ? 'Tomorrow' : fmt(c.from, { weekday: 'short' });
-    return [top, fmt(c.from, { day: 'numeric', month: 'short' })];
-  }
-  if (view === 'week') {
-    const top = i === 0 ? 'This week' : i === 1 ? 'Next week' : `Week ${i + 1}`;
-    return [
-      top,
-      `${fmt(c.from, { day: 'numeric' })}–${fmt(c.to!, { day: 'numeric', month: 'short' })}`,
-    ];
-  }
-  const top = i === 0 ? 'This month' : i === 1 ? 'Next month' : fmt(c.from, { year: 'numeric' });
-  return [top, fmt(c.from, { month: 'long' })];
-}
 
 /** The cell's tint: stronger the more is planned in it (relative to the busiest cell). */
 const heat = (n: number, max: number): CSSProperties | undefined =>
@@ -74,6 +52,7 @@ export function InHandCalendarDialog({
   const [view, setView] = useState<View>('week');
   const [by, setBy] = useState<GroupBy>('assignee');
   const [q, setQ] = useState('');
+  const [busy, setBusy] = useState<'xlsx' | 'pdf' | null>(null);
   const { data, isLoading } = useApi<InHandCalendar>(source.path, {
     ...source.params,
     view,
@@ -99,6 +78,24 @@ export function InHandCalendarDialog({
   const today = data?.today ?? '';
   const row = by === 'project' ? 'project' : 'assignee';
   const item = by === 'project' ? 'assignee' : 'project';
+
+  // Excel and PDF of every row shown (search applied), in the view and grouping chosen.
+  const exportAs = async (kind: 'xlsx' | 'pdf') => {
+    if (!data) return;
+    setBusy(kind);
+    try {
+      const m = await import('./inHandCalendarExport');
+      const title = `Tasks in hand planner · ${VIEWS.find((v) => v.value === view)!.label} · ${
+        by === 'project' ? 'Project' : 'Assignee'
+      }`;
+      const note = [source.showing, q.trim() && `search “${q.trim()}”`].filter(Boolean).join(' · ');
+      const table = m.plannerTable(data, rows);
+      if (kind === 'xlsx') await m.exportPlannerExcel(title, note || 'All tasks in hand', table);
+      else m.exportPlannerPdf(title, note || 'All tasks in hand', table);
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const open = (label: string, params: Record<string, string>, overdue: boolean) => {
     onClose();
@@ -210,6 +207,22 @@ export function InHandCalendarDialog({
               label="Search the planner"
               className="w-60"
             />
+            <button
+              type="button"
+              onClick={() => void exportAs('xlsx')}
+              disabled={!!busy || !rows.length}
+              className="inline-flex h-8 items-center gap-1.5 rounded-control border border-border bg-surface px-2.5 font-heading text-button text-text hover:border-primary hover:text-primary disabled:opacity-50"
+            >
+              <IconExcel size={14} /> {busy === 'xlsx' ? 'Exporting…' : 'Excel'}
+            </button>
+            <button
+              type="button"
+              onClick={() => void exportAs('pdf')}
+              disabled={!!busy || !rows.length}
+              className="inline-flex h-8 items-center gap-1.5 rounded-control border border-border bg-surface px-2.5 font-heading text-button text-text hover:border-primary hover:text-primary disabled:opacity-50"
+            >
+              <IconPdf size={14} /> {busy === 'pdf' ? 'Exporting…' : 'PDF'}
+            </button>
             <span className="flex-1" />
             <span className="flex flex-wrap items-center gap-3 text-[12px] text-text-muted">
               <span className="inline-flex items-center gap-1.5">

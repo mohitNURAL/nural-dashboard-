@@ -4,7 +4,7 @@ import type { DevPreset, SummaryPart } from '@nural/shared';
 import { SortableGroup } from '../../components/layout/SortableGroup';
 import { InHandTile } from '../../components/InHandTile';
 import { StatTile } from '../../components/StatTile';
-import { useDevScope } from '../filters/useFilters';
+import { useDevScope, useFilterSummary } from '../filters/useFilters';
 import { useDevParams, useDevProjects, useDevSummary } from './api';
 import { ProjectsDialog } from './ProjectsDialog';
 import { useProjectsPopup } from './projectsPopup';
@@ -42,6 +42,7 @@ export function SummaryTiles({ active, onSelect }: Props) {
   const [scope] = useDevScope();
   const drill = useDrillTo();
   const devParams = useDevParams();
+  const showing = useFilterSummary('dev');
   const shown = useDrillStore((st) => st.drill?.label);
   const split = data?.split;
   const { data: projects } = useDevProjects();
@@ -124,6 +125,7 @@ export function SummaryTiles({ active, onSelect }: Props) {
                 calendar={{
                   path: '/api/dev/inhand/calendar',
                   params: devParams,
+                  showing: showing ?? undefined,
                   onOpen: (label, params, overdue) =>
                     drill({ label, preset: overdue ? 'overdue' : 'pending', params }),
                 }}

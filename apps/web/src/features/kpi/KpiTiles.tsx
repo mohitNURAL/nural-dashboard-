@@ -3,7 +3,7 @@
 import { SortableGroup } from '../../components/layout/SortableGroup';
 import { InHandTile } from '../../components/InHandTile';
 import { StatTile } from '../../components/StatTile';
-import { useKpiControls } from '../filters/useFilters';
+import { useFilterSummary, useKpiControls } from '../filters/useFilters';
 import { useKpiParams, useKpiSummary } from './api';
 import { KPI_INFO } from './info';
 import { useKpiList, useOpenKpiList } from './kpiList';
@@ -20,6 +20,7 @@ export function KpiTiles({
 }) {
   const { data: s } = useKpiSummary();
   const kpiParams = useKpiParams();
+  const showing = useFilterSummary('kpi');
   const { period } = useKpiControls();
   const open = useOpenKpiList();
   const shown = useKpiList((st) => st.list.label);
@@ -188,6 +189,7 @@ export function KpiTiles({
               calendar={{
                 path: '/api/kpi/inhand/calendar',
                 params: kpiParams,
+                showing: showing ?? undefined,
                 onOpen: (label, params, overdue) =>
                   overdue
                     ? list(label, { kpi: 'overdue', ...params }, KPI_INFO.overdue)
