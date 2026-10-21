@@ -64,7 +64,7 @@ export const MODULES: ModuleDef[] = [
           {
             key: 'scope',
             label: 'Data',
-            hint: 'Every project and person, or only tasks assigned to or created by them (all task pages)',
+            hint: 'Every project and person, or only tasks assigned to them, testers also issues they filed (all task pages)',
             values: ['All data', 'Own tasks'],
           },
           {

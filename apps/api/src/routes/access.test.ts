@@ -182,8 +182,8 @@ describe('access permissions', () => {
     await server();
     await put(1, '/api/access/user/12', { kpi: false, scope: 'own' });
     expect((await get(12, '/api/kpi/summary')).statusCode).toBe(403);
-    // Own tasks only: the one assigned to them and those they created (not 52's).
-    expect(await taskCount(12)).toBe(3);
+    // Own tasks only: the one assigned to them (not those they created for others, nor 52's).
+    expect(await taskCount(12)).toBe(1);
   });
 
   it('department grants reach sub-departments; the deeper department and the person win', async () => {

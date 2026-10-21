@@ -555,9 +555,9 @@ SSE is chosen over WebSocket because the browser only receives; filters are sent
 **Access and scoping (NFR-4, 2026-10-11)**
 
 - **Roles** (`config/roles.json`, Bitrix24 user IDs): `admins` (Company Admin, directors), `pms`, `teamLeads`, `productOwners` (extra; every Bitrix24 workgroup owner is a product owner automatically). They have **full access**: all data and the KPI tab. Everyone else is a **member**.
-- **A member's scope** is the tasks assigned to them or created by them (a tester thus sees the issues they filed). Everything they get is computed from those tasks only: tiles, tables, charts, alerts, filter dropdown options, task lists, the Excel export, the task view (another person's task is "not found"), task actions (another person's task cannot be changed) and the QA retest counts.
+- **A member's scope** is the tasks assigned to them; a QA tester (QA Testing department) also keeps the issues (bug/feedback) they filed. Tasks a member created for other people are not in their scope, so no other person's name or numbers reach their screen (2026-10-21; before, every task they created counted). Everything they get is computed from those tasks only: tiles, tables, charts, alerts, filter dropdown options, task lists, the Excel export, the task view (another person's task is "not found"), task actions (another person's task cannot be changed) and the QA retest counts.
 - **Enforced on the server.** Routes get data only through one per-request provider (`requestDataset` in `auth/roles.ts`, `req` required); a member gets a scoped copy of the dataset, memoised per person and per data load and never shared between people. The KPI endpoints and KPI task lists answer 403 to members; the web app hides the KPI tab and opens members on Development.
-- **Live updates.** Each change message names the people it concerns (assignee, creator, previous assignee); a member's stream carries only changes naming them (`mayReceive`, fail closed). Full access receives all.
+- **Live updates.** Each change message names the people it concerns (assignee, creator, previous assignee); a member's stream carries only changes to their tasks (`assignees`), and a tester's also to issues they filed (`mayReceive`, fail closed). Full access receives all.
 - **Roles today (2026-10-11):** admins Company Admin (1), Bhanu SSavant (18), Deepak SShetty (40), Mohit Srivastava (14), Balram Jha (10); team leads Adnan Mubeen (12), Faiz Arsalan (44), Kuku Jat (50), Mishaal (54); `pms` empty (Balram is an admin).
 - **Support tab and feedback inbox** (section 14): the Support tab is shown to the Tech Support department (`config/departments.json` "support"), PM, team leads and admins; the feedback inbox to admins and the head of the top Tech Support department in Bitrix24 (today Kuku Jat). `/api/auth/me` also returns `support`, `admin` and `inbox`.
 - `/api/auth/me` returns `role` and `full`; the top bar shows the role (e.g. "Team lead", "My tasks"). With sign-in off (local copy) everyone has full access.
@@ -702,7 +702,7 @@ Two webhooks are created in the portal by an administrator: an **inbound** webho
 | NFR-1 | Freshness | A change in Bitrix24 shows on open dashboards within 5 seconds; worst case 10 minutes (reconcile) |
 | NFR-2 | Speed | First load under 2 seconds; filter change under 500 ms for up to 20,000 tasks |
 | NFR-3 | Security | Webhook secrets only in backend env; HTTPS only; outbound calls checked by application token; no Bitrix24 URL or token in browser code |
-| NFR-4 | Access | **Full access** (everything, KPI tab): admins and directors, PM, team leads and product owners (`config/roles.json`, plus every Bitrix24 workgroup owner). **Everyone else** sees only tasks assigned to them or created by them, on every number, list, dropdown, export, task view, task action and live update; the KPI tab is hidden and refused. The Support tab and feedback inbox have their own audiences (section 14). Enforced on the server (section 7, Access and scoping); 2026-10-11 |
+| NFR-4 | Access | **Full access** (everything, KPI tab): admins and directors, PM, team leads and product owners (`config/roles.json`, plus every Bitrix24 workgroup owner). **Everyone else** sees only tasks assigned to them (a QA tester also the issues they filed; 2026-10-21), on every number, list, dropdown, export, task view, task action and live update; the KPI tab is hidden and refused. The Support tab and feedback inbox have their own audiences (section 14). Enforced on the server (section 7, Access and scoping); 2026-10-11 |
 | NFR-5 | Rate limits | Never more than 2 Bitrix24 calls per second; batch where possible |
 | NFR-6 | Time zone | All "today" and "overdue" logic in Asia/Kolkata |
 | NFR-7 | Responsive | Desktop first (1440 px); usable at 1280 px and on tablet; tables scroll inside their card on phone |
@@ -1142,12 +1142,12 @@ After a deploy, everyone who has the dashboard open gets a toast: **"A new versi
 The dashboard shows each person around, in their own scope, and walks them through every new feature.
 
 **The tour of a tab** (`apps/web/src/features/tour`). Each step highlights one part of the page, with the rest dimmed and the part ringed in teal, and a bubble explains it: what the number counts (the same rules as the "i" icons) and how to use it (click a count to list its tasks, focus a card, drag ⠿, edit in place).
-- **Scope:** only parts on the person's screen are shown. A member never gets KPI steps, and the feedback inbox is shown only to its readers. Members get their own wording ("your tasks: assigned to you or created by you").
+- **Scope:** only parts on the person's screen are shown. A member never gets KPI steps, and the feedback inbox is shown only to its readers. Members get their own wording ("your tasks: assigned to you; testers also the issues they filed").
 - **Every tab they can open:** admins, PM, team leads and product owners get KPI, Development, QA (and Support); most members get Development and QA; the support team also gets Support. The last step of a tab offers "Next: <tab> tab →" until every tab has been shown on that sign-in.
 - **Role first.** The first tour of a sign-in opens with *Your role*:
   - their name and Bitrix24 designation (e.g. "Neha Gautam, Software Developer");
   - their role (Admin, Project Manager, Team lead, Product owner, team member);
-  - what they see: everything, or only tasks assigned to them or created by them;
+  - what they see: everything, or only tasks assigned to them (testers also the issues they filed);
   - what they can change: every field, or stage, status and tags;
   - for members, how their department uses the dashboard (developer, tester, support);
   - for inbox readers, the feedback inbox.

@@ -1,6 +1,6 @@
 // Roles and data scoping (SRS NFR-4). Admins and directors, PM, team leads and product owners
 // (config/roles.json, plus every Bitrix24 workgroup owner) see everything. Everyone else sees
-// only tasks assigned to them or created by them, on every endpoint and the live stream. Admins
+// only tasks assigned to them (a QA tester also the issues they filed), on every endpoint and the live stream. Admins
 // change these rights per department or person (rights.ts, Access permissions). Enforced on the
 // server: routes read data only through the per-request provider, which hands a scoped viewer a
 // scoped copy of the dataset.
@@ -36,6 +36,8 @@ export interface Viewer {
   role: Role;
   /** Data scope: every project and person (else only their own tasks). */
   full: boolean;
+  /** In the QA Testing department: also sees the issues they filed (inScope). */
+  tester: boolean;
   kpi: boolean;
   dev: boolean;
   qa: boolean;
@@ -82,7 +84,8 @@ export function loadRoles(): RolesConfig {
   };
 }
 
-type RoleData = Pick<Dataset, 'owners' | 'kpiDept' | 'supportLead' | 'users' | 'departments'>;
+type RoleData = Pick<Dataset, 'owners' | 'kpiDept' | 'supportLead' | 'users' | 'departments'> &
+  Partial<Pick<Dataset, 'testers'>>;
 
 /** The person's role from config/roles.json and Bitrix24 project ownership. */
 export function roleOf(id: number, ds: Pick<Dataset, 'owners'>, roles: RolesConfig): Role {
@@ -127,6 +130,7 @@ export const LOCAL_VIEWER: Viewer = {
   userId: 0,
   role: 'local',
   full: true,
+  tester: false,
   kpi: true,
   dev: true,
   qa: true,
@@ -165,6 +169,7 @@ export function viewerOf(
     userId: id,
     role,
     full: rights.scope === 'all',
+    tester: !!ds.testers?.has(id),
     kpi: rights.kpi,
     dev: rights.dev,
     qa: rights.qa,
@@ -189,9 +194,13 @@ export function viewerOf(
   };
 }
 
-/** A task is in a member's scope when it is assigned to them or they created it. */
-export const inScope = (t: MetricTask, userId: number) =>
-  t.responsibleId === userId || t.createdBy === userId;
+/**
+ * A task is in a member's scope when it is assigned to them. A QA tester also keeps the issues
+ * they filed (bug/feedback they created for developers). Others' tasks a member created are not
+ * theirs (2026-10-21: no other person's name or numbers on a member's screen).
+ */
+export const inScope = (t: MetricTask, userId: number, testers?: ReadonlySet<number>) =>
+  t.responsibleId === userId || (t.isIssue && t.createdBy === userId && !!testers?.has(userId));
 
 const memo = new WeakMap<Dataset, Map<number, Dataset>>();
 
@@ -205,7 +214,7 @@ export function scopeDataset(ds: Dataset, userId: number): Dataset {
   if (!byUser) memo.set(ds, (byUser = new Map()));
   const hit = byUser.get(userId);
   if (hit) return hit;
-  const tasks = ds.tasks.filter((t) => inScope(t, userId));
+  const tasks = ds.tasks.filter((t) => inScope(t, userId, ds.testers));
   const ids = new Set(tasks.map((t) => t.id));
   const scoped: Dataset = {
     ...ds,

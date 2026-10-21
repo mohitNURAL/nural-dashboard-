@@ -22,4 +22,9 @@ export interface TaskChanged {
    * previous assignee. Absent only on the nightly notice (taskId 0), which carries no task.
    */
   people?: number[];
+  /**
+   * Whose task it is (assignee and, after a reassignment, the previous assignee): a member gets
+   * the change only when named here, or as the tester who filed the issue (NFR-4, 2026-10-21).
+   */
+  assignees?: number[];
 }

@@ -201,6 +201,11 @@ export async function applyTasks(
           ),
         ),
       ],
+      assignees: [
+        ...new Set(
+          [row.responsibleId, stored.get(row.id)?.responsibleId].filter((id): id is number => !!id),
+        ),
+      ],
     });
   }
 
@@ -249,6 +254,7 @@ export async function markDeleted(ids: number[], source: ChangeSource, bus?: Eve
     source,
     at,
     people: [...new Set([r.responsibleId, r.createdBy])],
+    assignees: [r.responsibleId],
   }));
   if (bus) for (const c of changes) await bus.publish(c);
   return changes;

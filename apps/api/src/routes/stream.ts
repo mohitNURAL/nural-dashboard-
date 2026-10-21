@@ -7,12 +7,15 @@ import type { EventBus, TaskChanged } from '../events/bus';
 const HEARTBEAT_MS = 25_000;
 
 /**
- * NFR-4: a full viewer gets every change; a member only changes that name them (assignee,
- * creator, previous assignee). The nightly notice (taskId 0) carries no task and goes to all.
- * A change naming no one is not sent (fail closed).
+ * NFR-4: a full viewer gets every change; a member only changes to their own tasks (assignee or
+ * previous assignee), and a tester also those to issues they filed. The nightly notice (taskId 0)
+ * carries no task and goes to all. A change naming no one is not sent (fail closed).
  */
 export const mayReceive = (viewer: Viewer, change: TaskChanged) =>
-  viewer.full || change.taskId === 0 || (change.people ?? []).includes(viewer.userId);
+  viewer.full ||
+  change.taskId === 0 ||
+  (change.assignees ?? []).includes(viewer.userId) ||
+  (viewer.tester && change.isIssue && (change.people ?? []).includes(viewer.userId));
 
 export function streamRoutes(
   app: FastifyInstance,

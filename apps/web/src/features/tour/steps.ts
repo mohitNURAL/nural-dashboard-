@@ -102,7 +102,7 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
       target: slot('dev.tiles', 'total'),
       title: 'Total',
       text: `${INFO.total} Under the number: the split into Dev and Issues (or Bug and Feedback). ${CLICK_COUNT}`,
-      member: `Your tasks (assigned to you or created by you) for the switch. ${CLICK_COUNT}`,
+      member: `Your tasks (assigned to you; testers also the issues they filed) for the switch. ${CLICK_COUNT}`,
     },
     {
       target: slot('dev.tiles', 'pending'),
@@ -533,7 +533,7 @@ export function roleStep(me: Me, tabs: Tab[]): TourStep {
     if (tabs.includes('kpi')) parts.push('KPI is the management overview: start there.');
   } else {
     parts.push(
-      `You see your own work: tasks assigned to you or created by you. Every number counts only those. Your tabs: ${list}.`,
+      `You see your own work: tasks assigned to you (testers also the issues they filed). Every number counts only those. Your tabs: ${list}.`,
       'You can change the stage, status and tags of your tasks from here; other fields are for team leads and admins. Changes are made in Bitrix24 in your name.',
       DEPT_USE[me.dept ?? 'other'],
     );

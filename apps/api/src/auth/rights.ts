@@ -37,7 +37,7 @@ export const RIGHT_KEYS = [
 export type RightKey = (typeof RIGHT_KEYS)[number];
 
 export interface Rights {
-  /** all = every project and person; own = tasks assigned to or created by them. */
+  /** all = every project and person; own = tasks assigned to them (testers also the issues they filed). */
   scope: 'all' | 'own';
   /** all = every task field; limited = stage, status and tags. */
   edit: 'all' | 'limited';

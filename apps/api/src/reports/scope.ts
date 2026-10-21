@@ -49,7 +49,7 @@ export function reportScope(
   grants: Grants,
 ): RecipientScope {
   const r = resolveFor(id, ds, roles, grants);
-  const own = () => ds.tasks.filter((t) => inScope(t, id));
+  const own = () => ds.tasks.filter((t) => inScope(t, id, ds.testers));
   if (r.rights.scope !== 'all') return { userId: id, role: r.role, level: 'own', tasks: own() };
   if (r.role === 'admin' || r.role === 'pm')
     return { userId: id, role: r.role, level: 'company', tasks: [...ds.tasks] };
@@ -63,7 +63,7 @@ export function reportScope(
       role: r.role,
       level: 'team',
       tasks: ds.tasks.filter(
-        (t) => team.has(t.responsibleId) || projects.has(t.groupId) || inScope(t, id),
+        (t) => team.has(t.responsibleId) || projects.has(t.groupId) || inScope(t, id, ds.testers),
       ),
     };
   }
@@ -73,7 +73,7 @@ export function reportScope(
           userId: id,
           role: r.role,
           level: 'projects',
-          tasks: ds.tasks.filter((t) => projects.has(t.groupId) || inScope(t, id)),
+          tasks: ds.tasks.filter((t) => projects.has(t.groupId) || inScope(t, id, ds.testers)),
         }
       : { userId: id, role: r.role, level: 'own', tasks: own() };
   }

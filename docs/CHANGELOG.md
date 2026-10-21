@@ -20,7 +20,10 @@ and the next change fills its ID in.
 
 ## 2026-10-21
 
-- Kanban columns of private projects (170 Nural BA): a board refused to the webhook is read
+- Member scope (NFR-4): a member sees only tasks assigned to them; a QA tester also keeps the
+  issues they filed. Tasks a member created for other people no longer show (Harsh saw Umang,
+  Neha and Devesh). Live updates follow (`assignees` on task.changed); reports too.
+- `fd31b69` Kanban columns of private projects (170 Nural BA): a board refused to the webhook is read
   again as an admin (`readBoards`, task.stages.get with isAdmin, read only); the hourly directory
   sync also reads boards of projects known only from their tasks; a task's column title is taken
   from the stored board by its id when the sync had none.

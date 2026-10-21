@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-21-own-tasks',
+    date: '2026-10-21',
+    tab: 'dev',
+    title: 'Your numbers: only tasks assigned to you',
+    steps: [
+      {
+        target: slot('dev.tiles', 'pending'),
+        title: 'Only your own tasks',
+        text: 'Unless you manage projects or a team, every number, list and dropdown now counts only the tasks assigned to you. Tasks you created for someone else are theirs (QA testers still see the issues they filed).',
+      },
+    ],
+  },
+  {
     id: '2026-10-21-bulk-several',
     date: '2026-10-21',
     tab: 'dev',

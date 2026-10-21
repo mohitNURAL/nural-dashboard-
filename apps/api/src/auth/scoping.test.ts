@@ -59,9 +59,10 @@ const tasks: MetricTask[] = [
   t({ id: 7, responsibleId: 14, createdBy: 14, groupId: 0, stage: 'Done' }), // tester's own
   t({ id: 8, responsibleId: 28, groupId: 148, stage: 'On Hold' }), // 28's, on hold
 ];
+const TESTERS = new Set([14]);
 const visible = (uid: number) =>
   tasks
-    .filter((x) => inScope(x, uid))
+    .filter((x) => inScope(x, uid, TESTERS))
     .map((x) => x.id)
     .sort();
 
@@ -156,7 +157,7 @@ const PROJECT_NAMES = new Map([
   [160, 'Support Tool'],
 ]);
 function foreignNames(uid: number, body: string): string[] {
-  const mine = tasks.filter((x) => inScope(x, uid));
+  const mine = tasks.filter((x) => inScope(x, uid, TESTERS));
   const projects = new Set(mine.map((x) => x.groupId));
   // Their tasks' assignees and creators, and the owners of their projects (named on Insights).
   const people = new Set([
@@ -207,7 +208,7 @@ beforeAll(async () => {
     references.set(
       uid,
       await buildServer({
-        getDataset: async () => makeDataset(tasks.filter((x) => inScope(x, uid))),
+        getDataset: async () => makeDataset(tasks.filter((x) => inScope(x, uid, TESTERS))),
         now: () => NOW,
         logger: false,
         roles: ROLES,
@@ -234,14 +235,22 @@ describe('roles (NFR-4)', () => {
     expect(v(70)).toMatchObject({ role: 'productOwner', full: true }); // owns a workgroup
     expect(viewerOf(99, FULL_DS, { ...ROLES, productOwners: [99] }, true).full).toBe(true);
     for (const id of [30, 28, 14, 99]) expect(v(id)).toMatchObject({ role: 'member', full: false });
+    expect([v(14).tester, v(30).tester]).toEqual([true, false]); // QA Testing department
     expect(viewerOf(null, FULL_DS, ROLES, true).full).toBe(false); // no session: nothing
     expect(viewerOf(30, FULL_DS, ROLES, false)).toMatchObject({ role: 'local', full: true });
   });
 
-  it('a member’s scope is tasks assigned to them or created by them', () => {
-    expect(visible(30)).toEqual([1, 3, 5]);
+  it('a member’s scope is tasks assigned to them; a tester also keeps the issues they filed', () => {
+    // 30 created task 3 for 28: not theirs (no other person's name or numbers, 2026-10-21).
+    expect(visible(30)).toEqual([1, 5]);
     expect(visible(28)).toEqual([2, 3, 4, 8]);
     expect(visible(14)).toEqual([4, 5, 7]);
+    // Only issues: a tester's non-issue task for someone else is not theirs.
+    expect(inScope(t({ responsibleId: 28, createdBy: 14 }), 14, TESTERS)).toBe(false);
+    // Only testers: a developer who files a bug for someone else does not keep it.
+    expect(inScope(t({ responsibleId: 28, createdBy: 30, tags: ['bug'] }), 30, TESTERS)).toBe(
+      false,
+    );
     expect(visible(99)).toEqual([]);
     expect(scopeDataset(FULL_DS, 30).byId.has(2)).toBe(false);
     // Memoised per person and dataset, never shared between people.
@@ -290,10 +299,11 @@ describe('every endpoint answers a member exactly as if only their tasks existed
       (await get('/api/dev/projects', uid)).json().rows as { id: number; open: number }[];
     expect((await rows(28)).map((r) => r.id)).toEqual([148]);
     expect(await rows(99)).toEqual([]);
-    // 30's open tasks in 154: task 1 (theirs) and task 3 is in 148, so only task 1 counts here.
+    // 30's tasks are both in 154 (task 1 open, task 5 in QA); 148 (task 3, theirs only as
+    // creator) is not listed.
     const r30 = await rows(30);
-    expect(r30.map((r) => r.id).sort()).toEqual([148, 154]);
-    expect(r30.find((r) => r.id === 154)!.open).toBe(1);
+    expect(r30.map((r) => r.id)).toEqual([154]);
+    expect(r30[0]!.open).toBe(1);
   });
 
   it('the task edit dropdowns (every project and person) are for managers only', async () => {
@@ -335,18 +345,18 @@ describe('task view, actions and export follow the scope', () => {
     for (const uid of MEMBERS) {
       for (const x of tasks) {
         const res = await get(`/api/tasks/${x.id}`, uid);
-        expect(res.statusCode, `task ${x.id} as ${uid}`).toBe(inScope(x, uid) ? 200 : 404);
+        expect(res.statusCode, `task ${x.id} as ${uid}`).toBe(inScope(x, uid, TESTERS) ? 200 : 404);
       }
     }
   });
 
   it('linked tasks in the view are scoped too', async () => {
-    // Task 3 (28's, created by 30): 30 sees it, but not 28's other tasks through it.
-    const view = (await get('/api/tasks/3', 30)).json();
+    // Task 4 (28's bug filed by tester 14): 14 sees it, but not 28's other tasks through it.
+    const view = (await get('/api/tasks/4', 14)).json();
     const ids = [view.parent, ...view.linkedIssues, ...view.related]
       .filter(Boolean)
       .map((r: { id: number }) => r.id);
-    for (const id of ids) expect(visible(30)).toContain(id);
+    for (const id of ids) expect(visible(14)).toContain(id);
   });
 
   it('the Excel export holds only the member’s tasks', async () => {
@@ -409,7 +419,13 @@ describe('KPI tab: managers only', () => {
 });
 
 describe('live stream', () => {
-  const change = (people?: number[], taskId = 2): TaskChanged => ({
+  // people: assignee first, then creator; assignees: the assignee only, unless given.
+  const change = (
+    people?: number[],
+    taskId = 2,
+    assignees = people?.slice(0, 1),
+    isIssue = false,
+  ): TaskChanged => ({
     type: 'task.changed',
     taskId,
     title: 'Secret title',
@@ -417,13 +433,14 @@ describe('live stream', () => {
     stage: 'In QA',
     fromStage: 'QA Backlog',
     stageGroup: 'sentToQa',
-    isIssue: false,
+    isIssue,
     isNew: false,
     reopened: false,
     deleted: false,
     source: 'webhook',
     at: NOW.toISOString(),
     people,
+    assignees,
   });
   const member = (userId: number) => ({
     ...LOCAL_VIEWER,
@@ -443,6 +460,13 @@ describe('live stream', () => {
     expect(mayReceive(member(30), change([28, 10]))).toBe(false);
     expect(mayReceive(member(30), change(undefined))).toBe(false); // names no one: not sent
     expect(mayReceive(member(30), change(undefined, 0))).toBe(true); // nightly notice
+    // The creator of someone else's task is not sent it; a tester is, for an issue they filed.
+    expect(mayReceive(member(30), change([28, 30]))).toBe(false);
+    expect(mayReceive(member(30), change([28, 30], 2, [28, 30]))).toBe(true); // previous assignee
+    const tester = { ...member(14), tester: true };
+    expect(mayReceive(tester, change([28, 14], 4, [28], true))).toBe(true);
+    expect(mayReceive(tester, change([28, 14], 4, [28], false))).toBe(false);
+    expect(mayReceive(member(30), change([28, 30], 4, [28], true))).toBe(false);
     expect(
       mayReceive(
         {
