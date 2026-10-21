@@ -158,36 +158,42 @@ export async function loadDataset(): Promise<Dataset> {
     link(r.relatedId, r.taskId);
   }
 
-  const tasks: MetricTask[] = taskRows.map((t) => ({
-    id: t.id,
-    title: t.title,
-    groupId: t.groupId,
-    // Never moved on its board: the start stage; else its column under the current workflow;
-    // tasks outside any board keep the stage worked out from their status at sync.
-    stage:
-      t.groupId && t.stageId === DEFAULT_STAGE_ID
-        ? stageWithRole('start')
-        : (canonicalStage(t.stageTitle) ?? canonicalStage(t.stage)),
-    stageTitle: t.stageTitle,
-    status: t.status,
-    priority: t.priority,
-    responsibleId: t.responsibleId,
-    createdBy: t.createdBy,
-    createdAt: t.createdAt,
-    changedAt: t.changedAt,
-    deadline: t.deadline,
-    closedAt: t.closedAt,
-    parentId: t.parentId,
-    relatedIds: [...(related.get(t.id) ?? [])],
-    tags: t.tags,
-    isIssue: t.isIssue,
-    issueType: t.issueType as IssueType | null,
-    events: events.get(t.id) ?? [],
-    startDatePlan: t.startDatePlan,
-    dateStart: t.dateStart,
-    stageId: t.stageId,
-    ...(t.groupId > 0 && { qaFlow: qaFlowGroups.has(t.groupId) }),
-  }));
+  // A column read after its tasks were synced (e.g. a private project's board, 2026-10-21): its
+  // title comes from the stored board, by the task's column id.
+  const columnTitle = new Map(stageRows.map((st) => [String(st.id), st.title]));
+  const tasks: MetricTask[] = taskRows.map((t) => {
+    const stageTitle = t.stageTitle ?? columnTitle.get(t.stageId) ?? null;
+    return {
+      id: t.id,
+      title: t.title,
+      groupId: t.groupId,
+      // Never moved on its board: the start stage; else its column under the current workflow;
+      // tasks outside any board keep the stage worked out from their status at sync.
+      stage:
+        t.groupId && t.stageId === DEFAULT_STAGE_ID
+          ? stageWithRole('start')
+          : (canonicalStage(stageTitle) ?? canonicalStage(t.stage)),
+      stageTitle,
+      status: t.status,
+      priority: t.priority,
+      responsibleId: t.responsibleId,
+      createdBy: t.createdBy,
+      createdAt: t.createdAt,
+      changedAt: t.changedAt,
+      deadline: t.deadline,
+      closedAt: t.closedAt,
+      parentId: t.parentId,
+      relatedIds: [...(related.get(t.id) ?? [])],
+      tags: t.tags,
+      isIssue: t.isIssue,
+      issueType: t.issueType as IssueType | null,
+      events: events.get(t.id) ?? [],
+      startDatePlan: t.startDatePlan,
+      dateStart: t.dateStart,
+      stageId: t.stageId,
+      ...(t.groupId > 0 && { qaFlow: qaFlowGroups.has(t.groupId) }),
+    };
+  });
 
   const testingDepts = departmentTree(deptRows, TESTING_DEPT);
   // The top QA Testing department's head in the company structure.

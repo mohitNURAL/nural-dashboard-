@@ -20,7 +20,11 @@ and the next change fills its ID in.
 
 ## 2026-10-21
 
-- Bulk edit takes several changes at once (+ Add another change; `edits` on bulk check / apply,
+- Kanban columns of private projects (170 Nural BA): a board refused to the webhook is read
+  again as an admin (`readBoards`, task.stages.get with isAdmin, read only); the hourly directory
+  sync also reads boards of projects known only from their tasks; a task's column title is taken
+  from the stored board by its id when the sync had none.
+- `ad38637` Bulk edit takes several changes at once (+ Add another change; `edits` on bulk check / apply,
   each task's changes in order). Edit fields and bulk both checked in a browser end to end.
 - `c3f82f3` Fix the CI type check (a test built a BitrixError with the wrong arguments), so the Edit fields
   change deploys.

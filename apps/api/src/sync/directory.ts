@@ -120,10 +120,13 @@ export async function syncDirectory(call: Call): Promise<DirectorySummary> {
       );
   }
 
-  const stageRows = await syncGroupStages(
-    call,
-    groups.map((g) => Number(g.ID)),
-  );
+  // Boards of the listed projects, and of projects known only from their tasks (private ones the
+  // webhook user is not in, e.g. 168, 170).
+  const listed = new Set(groups.map((g) => Number(g.ID)));
+  const taskOnly = (await db.selectDistinct({ id: schema.tasks.groupId }).from(schema.tasks))
+    .map((r) => r.id)
+    .filter((id) => id > 0 && !listed.has(id));
+  const stageRows = await syncGroupStages(call, [...listed, ...taskOnly]);
 
   return {
     users: userRows.length,
@@ -136,21 +139,49 @@ export async function syncDirectory(call: Call): Promise<DirectorySummary> {
   };
 }
 
+type Board = Record<string, BitrixStage> | BitrixStage[];
+
+/**
+ * Reads the Kanban columns of the given workgroups: the boards read and the ids read. A private
+ * project the webhook user is not in (e.g. 170 Nural BA) answers ACCESS_DENIED: its board is read
+ * again as an admin (isAdmin, still a read; works when the webhook user is a portal admin,
+ * 2026-10-21). A board still refused is left out.
+ */
+export async function readBoards(call: Call, groupIds: number[]) {
+  const ask = (ids: number[], isAdmin: boolean) => {
+    const commands: Record<string, Command> = {};
+    for (const id of ids) {
+      commands[`g${id}`] = {
+        method: 'task.stages.get',
+        params: isAdmin ? { entityId: id, isAdmin: true } : { entityId: id },
+      };
+    }
+    return batch<Board>(call, commands, { allowErrors: true });
+  };
+  const boards = new Map<number, Board>();
+  if (!groupIds.length) return boards;
+  const first = await ask(groupIds, false);
+  const denied: number[] = [];
+  for (const id of groupIds) {
+    if (first.errors[`g${id}`]) denied.push(id);
+    else boards.set(id, first.result[`g${id}`] ?? {});
+  }
+  if (denied.length) {
+    const again = await ask(denied, true);
+    for (const id of denied)
+      if (!again.errors[`g${id}`]) boards.set(id, again.result[`g${id}`] ?? {});
+  }
+  return boards;
+}
+
 /** Reads the Kanban columns of the given workgroups and stores them (matched by title later). */
 export async function syncGroupStages(call: Call, groupIds: number[]) {
   if (!groupIds.length) return [];
-  const commands: Record<string, Command> = {};
-  for (const id of groupIds) {
-    commands[`g${id}`] = { method: 'task.stages.get', params: { entityId: id } };
-  }
-  // A board the webhook user may not open (ACCESS_DENIED, e.g. a private project) is skipped
-  // and keeps the stages stored for it, instead of failing the whole sync.
-  const res = await batch<Record<string, BitrixStage> | BitrixStage[]>(call, commands, {
-    allowErrors: true,
-  });
-  const readIds = groupIds.filter((id) => !res.errors[`g${id}`]);
+  // A board still refused is skipped and keeps the stages stored for it.
+  const boards = await readBoards(call, groupIds);
+  const readIds = [...boards.keys()];
   const stageRows = readIds.flatMap((groupId) =>
-    Object.values(res.result[`g${groupId}`] ?? {}).map((s) => ({
+    Object.values(boards.get(groupId) ?? {}).map((s) => ({
       id: Number(s.ID),
       groupId,
       title: s.TITLE.trim(),
