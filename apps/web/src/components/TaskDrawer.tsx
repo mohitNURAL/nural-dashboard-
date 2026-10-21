@@ -4,7 +4,7 @@
 import { STAGE_COLORS } from '@nural/shared';
 import * as Dialog from '@radix-ui/react-dialog';
 import clsx from 'clsx';
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { BoardStage, StageMove, TaskRow } from '../api/types';
 import { ageingText, bbcodeToText, fmtDate, fmtDateTime } from '../features/dev/format';
 import { useOpenTask, useTask } from '../features/tasks/api';
@@ -16,13 +16,19 @@ import {
   StageCell,
   StatusCell,
   TagsCell,
+  useCanEdit,
 } from '../features/tasks/TaskActions';
+import { TaskEditForm } from '../features/tasks/TaskEditForm';
 import { Avatar, StageChip } from './chips';
 
 export function TaskDrawer() {
   const [taskId, setTaskId] = useOpenTask();
   const { data, isLoading, isError, isPlaceholderData } = useTask(taskId);
   const t = data?.task;
+  // Edit several fields at once (2026-10-21); another task opens out of edit mode.
+  const canEdit = useCanEdit('stage');
+  const [editing, setEditing] = useState(false);
+  useEffect(() => setEditing(false), [taskId]);
 
   return (
     <Dialog.Root open={taskId !== null} onOpenChange={(o) => !o && void setTaskId(null)}>
@@ -60,7 +66,24 @@ export function TaskDrawer() {
             {isError && <p className="text-bad">This task is not in the dashboard’s data.</p>}
             {t && data && (
               <>
-                <Facts t={t} board={data.board} />
+                {editing ? (
+                  <TaskEditForm task={t} board={data.board} onDone={() => setEditing(false)} />
+                ) : (
+                  <>
+                    {canEdit && (
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => setEditing(true)}
+                          className="h-8 rounded-control border border-primary px-3 font-heading text-button text-primary hover:bg-primary/10"
+                        >
+                          Edit fields
+                        </button>
+                      </div>
+                    )}
+                    <Facts t={t} board={data.board} />
+                  </>
+                )}
                 <Section title="Description">
                   {data.description ? (
                     <p className="whitespace-pre-wrap break-words text-body">

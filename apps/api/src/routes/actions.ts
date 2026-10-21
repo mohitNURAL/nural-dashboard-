@@ -445,6 +445,48 @@ export function actionRoutes(app: FastifyInstance, getDataset: RequestDataset, d
     return single(req, reply, { kind: 'field', ...body });
   });
 
+  // Several fields of one task at once (task view, 2026-10-21): every change is checked first and
+  // nothing changes if one is refused; then they run in order (fields, column, status) and stop at
+  // the first Bitrix24 refusal, saying what was already done. A new project brings a new board, so
+  // a column cannot be picked in the same save.
+  const ORDER = { field: 0, stage: 1, status: 2 } as const;
+  app.post('/api/tasks/:id/edit', async (req, reply) => {
+    const { id } = idParam.parse(req.params);
+    const { edits } = z.object({ edits: z.array(editSchema).min(1).max(10) }).parse(req.body);
+    const ds = await getDataset(req);
+    const t = ds.byId.get(id);
+    if (!t) return reply.code(404).send({ error: 'Task not found' });
+    const changesProject = edits.some((e) => e.kind === 'field' && e.field === 'project');
+    if (changesProject && edits.some((e) => e.kind === 'stage'))
+      return reply.code(400).send({ error: 'Save the new project first, then pick its column.' });
+    const kinds = edits.map((e) => (e.kind === 'field' ? `field:${e.field}` : e.kind));
+    if (new Set(kinds).size !== kinds.length)
+      return reply.code(400).send({ error: 'Each field can be changed once per save.' });
+    const full = await isFull(req);
+    const now = deps.now?.() ?? new Date();
+    const prepared = [...edits]
+      .sort((a, b) => ORDER[a.kind] - ORDER[b.kind])
+      .map((e) => prepare(ds, full, t, e, now));
+    const refused = prepared.find((p) => p.state === 'error');
+    if (refused?.state === 'error') return reply.code(refused.status).send({ error: refused.reason });
+    const todo = prepared.filter((p): p is Extract<Prepared, { state: 'ok' }> => p.state === 'ok');
+    if (!todo.length) return { ok: true, done: [], unchanged: true };
+    const who = await actor(req);
+    if ('error' in who) return reply.code(403).send({ error: who.error });
+    const done: string[] = [];
+    for (const p of todo) {
+      const r = await run(who, id, p);
+      if (!r.ok) {
+        return reply.code(r.status).send({
+          error: done.length ? `${r.message} (already saved: ${done.join(', ')})` : r.message,
+          done,
+        });
+      }
+      done.push(p.label);
+    }
+    return { ok: true, done };
+  });
+
   // ---------------------------------------------------------------- bulk
 
   const bulkBody = z.object({

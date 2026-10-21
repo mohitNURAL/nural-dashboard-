@@ -23,13 +23,13 @@ export type EditField =
 const MEMBER_EDITS: readonly EditField[] = ['stage', 'status', 'tags'];
 
 /** Whether the signed-in person may change this field (sign-in on, and their role allows it). */
-function useCanEdit(field: EditField): boolean {
+export function useCanEdit(field: EditField): boolean {
   const { data: me } = useMe();
   if (!me || me.auth !== 'bitrix') return false;
   return (me.editAll ?? me.full) || MEMBER_EDITS.includes(field);
 }
 
-const STATUS_LABEL: Record<BitrixStatus, string> = {
+export const STATUS_LABEL: Record<BitrixStatus, string> = {
   pending: 'Pending',
   inProgress: 'In progress',
   deferred: 'Deferred',
@@ -37,8 +37,8 @@ const STATUS_LABEL: Record<BitrixStatus, string> = {
   supposedlyCompleted: 'Awaiting approval',
   declined: 'Declined',
 };
-const STATUS_CHOICES: BitrixStatus[] = ['pending', 'inProgress', 'deferred', 'completed'];
-const PRIORITIES: Priority[] = ['low', 'normal', 'high'];
+export const STATUS_CHOICES: BitrixStatus[] = ['pending', 'inProgress', 'deferred', 'completed'];
+export const PRIORITIES: Priority[] = ['low', 'normal', 'high'];
 
 function useSave(taskId: number) {
   const queryClient = useQueryClient();
@@ -159,7 +159,7 @@ function SelectEditor<V extends string | number>({
 // ---------------------------------------------------------------- cells
 
 /** The task's board column; "never moved" (0) is the board's first To do column. */
-function currentColumn(t: TaskRow, board: BoardStage[]): number {
+export function currentColumn(t: TaskRow, board: BoardStage[]): number {
   if (t.stageId) return t.stageId;
   return (board.find((s) => hasRole(s.stage, 'start')) ?? board[0])?.id ?? 0;
 }
@@ -263,7 +263,7 @@ interface EditOptions {
 }
 
 /** Project and people choices, loaded only for full access (members cannot change them). */
-function useEditOptions(enabled: boolean) {
+export function useEditOptions(enabled: boolean) {
   return useApi<EditOptions>('/api/tasks/edit-options', {}, { enabled });
 }
 
@@ -462,10 +462,10 @@ export function DeadlineCell({ task }: { task: TaskRow }) {
 }
 
 /** YYYY-MM-DD in IST. */
-const istDate = (d: Date) => new Date(d.getTime() + 330 * 60_000).toISOString().slice(0, 10);
+export const istDate = (d: Date) => new Date(d.getTime() + 330 * 60_000).toISOString().slice(0, 10);
 
 /** Today, while 18:30 IST is still ahead; otherwise tomorrow. */
-function firstAllowedDay(): string {
+export function firstAllowedDay(): string {
   const now = new Date();
   const today = istDate(now);
   return new Date(`${today}T18:30:00+05:30`) > now

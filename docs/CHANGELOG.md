@@ -20,7 +20,10 @@ and the next change fills its ID in.
 
 ## 2026-10-21
 
-- Scoping check widened (auth/scoping.test.ts): Tasks in hand, Projects at work, Daily update
+- Task view: Edit fields changes stage, status, tags (full access also project, assignee,
+  priority, deadline) together with one Save (`POST /api/tasks/:id/edit`, checked first, all or
+  nothing before Bitrix24; fields, then column, then status).
+- `40c1b72` Scoping check widened (auth/scoping.test.ts): Tasks in hand, Projects at work, Daily update
   projects, the Daily task update report and workflow projects; no endpoint may name a project
   or person outside a member's own tasks; the task edit dropdowns stay managers only. No leak found.
 - `f73f935` Project names from the task data when the webhook cannot list the project (private projects

@@ -18,6 +18,21 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-21-task-edit-fields',
+    date: '2026-10-21',
+    tab: 'dev',
+    title: 'Task view: change several fields at once',
+    steps: [
+      {
+        target: slot('dev.sections', 'all'),
+        title: 'Edit fields, then save once',
+        text: 'Open a task and click Edit fields: change the stage, status, project, assignee, priority, deadline and tags together, check the list of changes and save them in one go. If Bitrix24 would refuse any of them, nothing is changed.',
+        member:
+          'Open one of your tasks and click Edit fields: change its stage, status and tags together, check the list of changes and save them in one go. If Bitrix24 would refuse any of them, nothing is changed.',
+      },
+    ],
+  },
+  {
     id: '2026-10-21-daily-no-deadline',
     date: '2026-10-21',
     tab: 'daily',

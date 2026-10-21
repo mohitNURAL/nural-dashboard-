@@ -142,6 +142,63 @@ describe('task actions (SRS 7)', () => {
     expect(s.enqueued).toEqual([{ taskId: 41, event: 'ONTASKUPDATE' }]);
   });
 
+  it('task view: saves several fields at once, fields first, then column, then status', async () => {
+    const s = await server();
+    const res = await post('/api/tasks/41/edit', {
+      edits: [
+        { kind: 'status', status: 'completed' },
+        { kind: 'stage', stageId: 1002 },
+        { kind: 'field', field: 'tags', value: 'bug, ui' },
+      ],
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().done).toHaveLength(3);
+    expect(s.calls.map((c) => c.method)).toEqual([
+      'tasks.task.update',
+      'task.stages.movetask',
+      'tasks.task.complete',
+    ]);
+    expect(s.recorded).toHaveLength(3);
+  });
+
+  it('task view: one refused change stops the whole save before anything changes', async () => {
+    const s = await server();
+    // A member may not change the priority; the column change must not run either.
+    const res = await post('/api/tasks/41/edit', {
+      edits: [
+        { kind: 'stage', stageId: 1002 },
+        { kind: 'field', field: 'priority', value: 'high' },
+      ],
+    });
+    expect(res.statusCode).toBe(403);
+    expect(s.calls).toEqual([]);
+    // A new project and a column of the old board cannot go together.
+    const both = await post('/api/tasks/41/edit', {
+      edits: [
+        { kind: 'field', field: 'project', value: 148 },
+        { kind: 'stage', stageId: 1002 },
+      ],
+    });
+    expect(both.statusCode).toBe(400);
+    // Someone else's task does not exist for her.
+    expect(
+      (await post('/api/tasks/42/edit', { edits: [{ kind: 'status', status: 'completed' }] }))
+        .statusCode,
+    ).toBe(404);
+  });
+
+  it('task view: stops at the first Bitrix24 refusal', async () => {
+    const s = await server({ fail: new BitrixError('ACCESS_DENIED', 'No access', 403) });
+    const res = await post('/api/tasks/41/edit', {
+      edits: [
+        { kind: 'stage', stageId: 1002 },
+        { kind: 'status', status: 'completed' },
+      ],
+    });
+    expect(res.statusCode).toBeGreaterThanOrEqual(400);
+    expect(s.recorded).toHaveLength(1);
+  });
+
   it('changes the status with Bitrix24’s own actions', async () => {
     const s = await server();
     expect((await post('/api/tasks/41/status', { status: 'completed' })).statusCode).toBe(200);
