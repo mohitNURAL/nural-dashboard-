@@ -23,7 +23,9 @@ and the next change fills its ID in.
 
 ## 2026-10-21
 
-- Report › Daily task update and the check-ins: nine people are not expected to post
+- Check-ins to the directors switched on, to Deepak (40) only: 11:30 who has not planned, 19:00
+  who has not wrapped up (`config/daily-checkins.json`).
+- `bc43867` Report › Daily task update and the check-ins: nine people are not expected to post
   (`config/daily-exclude.json`: users 1, 18, 22, 40, 42, 54, 66, 68, 166).
 - `08fac20` Daily update: the plan lists open tasks with no deadline (`dailyNoDeadline`); posting the plan
   sets a planned task's missing deadline to today (end of the working day, or 23:59 after it,

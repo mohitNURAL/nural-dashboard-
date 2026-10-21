@@ -1,5 +1,5 @@
 // Daily update check-ins to the directors (2026-10-17, SRS 24): a Slack direct message to each
-// recipient in config/daily-checkins.json (Deepak, Bhanu, Balram) at 11:30, who has and has not
+// recipient in config/daily-checkins.json (Deepak only since 2026-10-21) at 11:30, who has and has not
 // planned their day, and at 19:00, who has and has not wrapped up. Working days only; one send per
 // day and kind (recorded in app_settings), so a restart never sends twice. Scheduled only where the
 // sync worker runs (the server) and only while the file says enabled. Admins can send themselves a
