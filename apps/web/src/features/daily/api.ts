@@ -33,6 +33,8 @@ export interface DailyToday {
   suggestions: DailyItem[];
   /** Open tasks due after today, soonest first (to take on early or report done ahead). */
   upcoming: DailyItem[];
+  /** Open tasks with no deadline; posting the plan sets theirs to today (2026-10-21). */
+  noDeadline: DailyItem[];
   wrapItems: WrapItem[];
   /** Every listed task as the task lists show it (edited in place), by id. */
   rows: Record<string, TaskRow>;

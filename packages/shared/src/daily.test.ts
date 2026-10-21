@@ -9,6 +9,8 @@ import {
   wrapState,
   dailyState,
   dailyUpcoming,
+  dailyNoDeadline,
+  dailyDeadline,
   dailyCompliance,
   slackCheckIn,
 } from './daily';
@@ -141,6 +143,27 @@ describe('carry-over and upcoming', () => {
     expect(dailyUpcoming([later, sooner, today], 7, ctx, project).map((i) => i.taskId)).toEqual([
       602, 601,
     ]);
+  });
+  it('no deadline: open tasks without one, most recently changed first', () => {
+    const old = task({ id: 701, changedAt: ist('2026-10-01T10:00') });
+    const fresh = task({ id: 702 });
+    const dated = task({ id: 703, deadline: ist('2026-10-20T18:00') });
+    const done = task({ id: 704, stage: 'QA Backlog' });
+    const notMine = task({ id: 705, responsibleId: 8 });
+    expect(
+      dailyNoDeadline([old, fresh, dated, done, notMine], 7, ctx, project).map((i) => [
+        i.taskId,
+        i.why,
+      ]),
+    ).toEqual([
+      [702, 'noDeadline'],
+      [701, 'noDeadline'],
+    ]);
+  });
+  it('the deadline it gets: the end of the working day, or 23:59 once that has passed', () => {
+    const cal = workCalendar({ days: [1, 2, 3, 4, 5, 6], end: '18:30', holidays: [] });
+    expect(dailyDeadline(NOW, cal)).toEqual(ist('2026-10-14T18:30'));
+    expect(dailyDeadline(ist('2026-10-14T19:00'), cal)).toEqual(ist('2026-10-14T23:59'));
   });
 });
 

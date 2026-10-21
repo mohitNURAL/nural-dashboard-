@@ -1,6 +1,7 @@
 // The Daily update dialog (2026-10-14, SRS 23). Plan: what is carried over from the last plan
-// (still pending or WIP), the person's overdue and due-today tasks, and upcoming ones to take on
-// early; kept, removed or added to, with a note, posted to the Slack daily work update group.
+// (still pending or WIP), the person's overdue and due-today tasks, upcoming ones to take on
+// early and those with no deadline (posting sets it to today, 2026-10-21); kept, removed or added
+// to, with a note, posted to the Slack daily work update group.
 // Wrap-up: the plan with each task's state (Pending, WIP, Done, On hold; Done completes it in
 // Bitrix24), tasks finished ahead, and work done outside the plan. Every task row is edited in
 // place like the task lists (2026-10-17). Opens from the dock icon, the Daily update page or before
@@ -34,6 +35,7 @@ const WHY: Record<DailyItem['why'], { label: string; cls: string }> = {
   overdue: { label: 'Overdue', cls: 'bg-bad/15 text-bad' },
   today: { label: 'Due today', cls: 'bg-warn/15 text-warn' },
   upcoming: { label: 'Taken early', cls: 'bg-primary/10 text-primary' },
+  noDeadline: { label: 'No deadline → today', cls: 'bg-warn/15 text-warn' },
   added: { label: 'Added', cls: 'bg-primary/10 text-primary' },
 };
 
@@ -75,7 +77,7 @@ export function DailyDialog() {
               <p className="mt-0.5 text-table text-text-muted">
                 {mode === 'wrap'
                   ? 'Mark what is done, add anything else you did, then post it to the team.'
-                  : 'What carries over, what is overdue or due today, and upcoming tasks to take on early. Edit any task in place, keep, remove or add, then post it to the team.'}
+                  : 'What carries over, what is overdue or due today, upcoming tasks to take on early and tasks with no deadline (planned, they are due today). Edit any task in place, keep, remove or add, then post it to the team.'}
               </p>
             </div>
             <Dialog.Close
@@ -238,10 +240,16 @@ function PlanView({ today, onLater }: { today: DailyToday; onLater: () => void }
     setKeep((k) => new Set(k).add(item.taskId));
   };
   const add = (id: number) => {
-    const up = today.upcoming.find((u) => u.taskId === id);
+    const up = [...today.upcoming, ...(today.noDeadline ?? [])].find((u) => u.taskId === id);
     if (up) return addItem(up);
     const t = mine?.tasks.find((x) => x.id === id);
-    if (t) addItem({ taskId: t.id, title: t.title, project: t.project, why: 'added' });
+    if (t)
+      addItem({
+        taskId: t.id,
+        title: t.title,
+        project: t.project,
+        why: t.deadline ? 'added' : 'noDeadline',
+      });
   };
   const toggle = (id: number) =>
     setKeep((k) => {
@@ -283,6 +291,12 @@ function PlanView({ today, onLater }: { today: DailyToday; onLater: () => void }
   const upcoming: PlanRow[] = (today.upcoming ?? [])
     .filter((u) => !keep.has(u.taskId))
     .map((u) => ({ ...u, keep: false, ...live(u) }));
+  const noDeadline: PlanRow[] = (today.noDeadline ?? [])
+    .filter((u) => !keep.has(u.taskId))
+    .map((u) => ({ ...u, keep: false, ...live(u) }));
+  const undatedPlanned = items.filter(
+    (i) => keep.has(i.taskId) && today.rows?.[i.taskId] && !today.rows[i.taskId]!.deadline,
+  ).length;
   const upCols = useMemo(
     () => [
       ...fieldColumns(planCol),
@@ -383,6 +397,33 @@ function PlanView({ today, onLater }: { today: DailyToday; onLater: () => void }
               maxHeight={240}
             />
           </div>
+        )}
+        {noDeadline.length > 0 && (
+          <div className="rounded-xl border border-border p-3">
+            <p className="pb-2 font-heading text-label font-bold uppercase tracking-wide text-primary">
+              No deadline ({noDeadline.length})
+              <span className="ml-2 font-body text-[12px] font-normal normal-case tracking-normal text-text-muted">
+                Added to the plan, its deadline is set to today when you post.
+              </span>
+            </p>
+            <DataTable
+              tableId="daily-no-deadline"
+              columns={upCols}
+              data={noDeadline}
+              rowKey={(r) => r.taskId}
+              dense
+              maxHeight={240}
+            />
+          </div>
+        )}
+        {undatedPlanned > 0 && (
+          <p className="text-table text-warn">
+            {undatedPlanned === 1
+              ? '1 planned task has no deadline: '
+              : `${undatedPlanned} planned tasks have no deadline: `}
+            posting sets it to today (
+            {today.canWrite ? 'in Bitrix24, as you' : 'once you sign in again with Bitrix24'}).
+          </p>
         )}
         <textarea
           value={note}

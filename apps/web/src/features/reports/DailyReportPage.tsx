@@ -43,6 +43,7 @@ const WHY: Record<string, string> = {
   overdue: 'Overdue',
   today: 'Due today',
   upcoming: 'Taken early',
+  noDeadline: 'No deadline (set to today)',
   added: 'Added',
 };
 

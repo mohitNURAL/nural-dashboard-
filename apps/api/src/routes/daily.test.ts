@@ -36,7 +36,8 @@ const overdue = { ...base, id: 41, title: 'Payment bug', deadline: ist('2026-10-
 const other = { ...base, id: 42, title: 'Not hers', responsibleId: 30, deadline: NOW };
 const today = { ...base, id: 43, title: 'Login fix', deadline: ist('2026-10-14T18:00') };
 const later = { ...base, id: 44, title: 'API docs', deadline: ist('2026-10-20T18:00') };
-const tasks = [overdue, other, today, later];
+const undated = { ...base, id: 45, title: 'Cache clean-up', deadline: null };
+const tasks = [overdue, other, today, later, undated];
 const dataset = (async () => ({
   tasks,
   byId: new Map(tasks.map((t) => [t.id, t])),
@@ -203,6 +204,31 @@ describe('daily update (SRS 23)', () => {
     expect(s.updates).toEqual([expect.objectContaining({ ts: 'ts1' })]);
     const today = (await get('/api/daily/today')).json();
     expect(today.plan.items).toHaveLength(1);
+  });
+
+  it('lists tasks with no deadline, and posting one on the plan sets its deadline to today', async () => {
+    const s = await server();
+    const t = (await get('/api/daily/today')).json();
+    expect(t.noDeadline.map((i: { taskId: number }) => i.taskId)).toEqual([45]);
+    expect(t.rows['45']).toBeTruthy();
+    const res = await post('/api/daily/plan', { taskIds: [41, 45], note: '' });
+    expect(res.json()).toMatchObject({ ok: true, failures: [] });
+    expect(s.calls).toEqual([
+      {
+        method: 'tasks.task.update',
+        params: { taskId: 45, fields: { DEADLINE: ist('2026-10-14T18:30').toISOString() } },
+      },
+    ]);
+    expect(s.recorded[0]).toMatchObject({ taskId: 45, action: 'field:deadline', ok: true });
+    expect(JSON.stringify(s.posts[0]!.m)).toContain('due today (deadline set)');
+  });
+
+  it('without a Bitrix24 sign-in the plan still posts, listing the deadline not set', async () => {
+    const s = await server({ token: false });
+    const res = await post('/api/daily/plan', { taskIds: [45], note: '' });
+    expect(res.json().posted).toBe(true);
+    expect(res.json().failures[0].title).toBe('Cache clean-up');
+    expect(s.calls).toEqual([]);
   });
 
   it('refuses someone else’s task on the plan', async () => {

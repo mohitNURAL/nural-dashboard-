@@ -23,7 +23,11 @@ and the next change fills its ID in.
 
 ## 2026-10-21
 
-- QA Open / pending tile: opens a popup like Projects at work, by project, then creator, then
+- Daily update: the plan lists open tasks with no deadline (`dailyNoDeadline`); posting the plan
+  sets a planned task's missing deadline to today (end of the working day, or 23:59 after it,
+  `dailyDeadline`) with the person's own login, members included (CLAUDE.md, SRS 23). PDF guides
+  rebuilt.
+- `ea94021` QA Open / pending tile: opens a popup like Projects at work, by project, then creator, then
   assignee, with Pending and Overdue at every level (most overdue first); a count opens those
   issues; Excel and PDF (`openByCreator` in metrics.ts, `/api/qa/open`). Last filed now shares
   its table (IssueTreeDialog). PDF guides rebuilt.

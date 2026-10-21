@@ -11,9 +11,10 @@ const DAY_MS = 86_400_000;
 
 /**
  * Why a task is on the plan: carried over from the last plan (still pending or WIP), overdue, due
- * today, upcoming (deadline after today, taken early), or added by the person.
+ * today, upcoming (deadline after today, taken early), no deadline (2026-10-21: posting the plan
+ * sets its deadline to today), or added by the person.
  */
-export type DailyWhy = 'carried' | 'overdue' | 'today' | 'upcoming' | 'added';
+export type DailyWhy = 'carried' | 'overdue' | 'today' | 'upcoming' | 'noDeadline' | 'added';
 
 /**
  * Where a task stands for the Daily update and its Slack posts (2026-10-17), by workflow role:
@@ -165,6 +166,35 @@ export function dailyUpcoming(
     .map((t) => ({ taskId: t.id, title: t.title, project: project(t.groupId), why: 'upcoming' }));
 }
 
+/**
+ * No deadline (2026-10-21): the person's open tasks with no deadline set, most recently changed
+ * first. Put on the plan, posting it sets their deadline to today (dailyDeadline).
+ */
+export function dailyNoDeadline(
+  tasks: readonly MetricTask[],
+  userId: number,
+  ctx: Ctx,
+  project: (groupId: number) => string,
+  limit = 40,
+): DailyItem[] {
+  return tasks
+    .filter((t) => isPlannable(t, userId, ctx.testers) && !t.deadline)
+    .sort((a, b) => b.changedAt.getTime() - a.changedAt.getTime())
+    .slice(0, limit)
+    .map((t) => ({ taskId: t.id, title: t.title, project: project(t.groupId), why: 'noDeadline' }));
+}
+
+/**
+ * The deadline a planned task with none gets (2026-10-21): the end of the working day (calendar
+ * `end`), or 23:59 when that has already passed.
+ */
+export function dailyDeadline(now: Date, cal: WorkCalendar): Date {
+  const local = now.getTime() + cal.offsetMin * 60_000;
+  const midnight = Math.floor(local / DAY_MS) * DAY_MS - cal.offsetMin * 60_000;
+  const end = new Date(midnight + cal.endMin * 60_000);
+  return end > now ? end : new Date(midnight + (24 * 60 - 1) * 60_000);
+}
+
 /** The evening state of a task: dailyState (done, WIP, pending or on hold). */
 export const wrapState = (
   t: MetricTask | undefined,
@@ -206,7 +236,7 @@ export function slackPlan(
   taskUrl?: (id: number) => string,
 ): SlackText {
   const overdue = items.filter((i) => i.why === 'overdue').length;
-  const today = items.filter((i) => i.why === 'today').length;
+  const today = items.filter((i) => i.why === 'today' || i.why === 'noDeadline').length;
   const counts = [
     `${items.length} task${items.length === 1 ? '' : 's'}`,
     overdue ? `${overdue} overdue` : null,
@@ -224,7 +254,9 @@ export function slackPlan(
             ? ':repeat: carried over'
             : i.why === 'upcoming'
               ? ':calendar: taken early'
-              : ':large_blue_circle: planned';
+              : i.why === 'noDeadline'
+                ? ':large_orange_circle: due today (deadline set)'
+                : ':large_blue_circle: planned';
     return `• ${link(i, taskUrl)} — ${i.project} · ${tag}`;
   });
   const title = `${head(who)} · :sunrise: Plan for ${dayLabel}`;

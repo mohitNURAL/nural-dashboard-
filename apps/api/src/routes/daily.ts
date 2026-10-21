@@ -1,12 +1,15 @@
 // Daily update (2026-10-14, SRS 23): each person's morning plan and evening wrap-up, posted to the
 // Slack daily work update group by the Nural Pulse bot, naming and mentioning the person.
-// Morning: their overdue and due-today tasks, which they keep, remove or add to. Evening: each
+// Morning: their overdue and due-today tasks, which they keep, remove or add to; a planned task
+// with no deadline gets today's when the plan is posted (2026-10-21, their own login). Evening: each
 // planned task done or WIP (from Bitrix24; ticking Done completes it there with their own login),
 // plus unplanned work, created in Bitrix24 as a task assigned to themselves (bitrix/methods.ts
 // CREATE_FIELDS). Data only through getDataset(req), and only the person's own tasks.
 import {
   dailyClock,
   dailyDay,
+  dailyDeadline,
+  dailyNoDeadline,
   dailyState,
   dailySuggestions,
   dailyUpcoming,
@@ -284,6 +287,7 @@ export function dailyRoutes(
       await lastPlanned(v.userId, day),
     );
     const upcoming = dailyUpcoming(ds.tasks, v.userId, ctx, project);
+    const noDeadline = dailyNoDeadline(ds.tasks, v.userId, ctx, project);
     const extra = (row?.wrap?.items ?? []).map((i) => i.taskId);
     const live = rowsOf(
       ds,
@@ -291,6 +295,7 @@ export function dailyRoutes(
         ...(row?.plan?.items ?? []).map((i) => i.taskId),
         ...suggestions.map((i) => i.taskId),
         ...upcoming.map((i) => i.taskId),
+        ...noDeadline.map((i) => i.taskId),
         ...extra,
       ],
       at,
@@ -307,6 +312,8 @@ export function dailyRoutes(
       posted: !!row?.slackTs,
       suggestions,
       upcoming,
+      /** Open tasks with no deadline: posting the plan sets it to today. */
+      noDeadline,
       wrapItems,
       /** Each listed task as the task lists show it, its Daily state, and its board's columns. */
       ...live,
@@ -374,6 +381,7 @@ export function dailyRoutes(
       [
         ...dailySuggestions(ds.tasks, v.userId, pctx, project, await lastPlanned(v.userId, day)),
         ...dailyUpcoming(ds.tasks, v.userId, pctx, project, 500),
+        ...dailyNoDeadline(ds.tasks, v.userId, pctx, project, 500),
       ].map((s) => [s.taskId, s]),
     );
     const items: DailyItem[] = [];
@@ -392,6 +400,35 @@ export function dailyRoutes(
         },
       );
     }
+    // A planned task with no deadline is due today (2026-10-21): set in Bitrix24 with the
+    // person's own login (their own task, DEADLINE only), else listed as not saved.
+    const failures: { title: string; message: string }[] = [];
+    const undated = items.filter((i) => {
+      const t = ds.byId.get(i.taskId);
+      return !!t && !t.deadline;
+    });
+    if (undated.length) {
+      const who = await deps.writer.actor(req);
+      const due = dailyDeadline(at, deps.calendar).toISOString();
+      for (const i of undated) {
+        const t = ds.byId.get(i.taskId)!;
+        const p = prepare(ds, true, t, { kind: 'field', field: 'deadline', value: due }, at);
+        const r =
+          'error' in who
+            ? { ok: false as const, message: who.error }
+            : p.state === 'ok'
+              ? await deps.writer.run(who, t.id, p)
+              : p.state === 'skip'
+                ? { ok: true as const }
+                : { ok: false as const, message: p.reason };
+        // Carried over stays so; picked from the search it shows as no deadline set to today.
+        if (r.ok) i.why = i.why === 'added' ? 'noDeadline' : i.why;
+        else {
+          if (i.why === 'noDeadline') i.why = 'added';
+          failures.push({ title: i.title, message: `Deadline not set: ${r.message}` });
+        }
+      }
+    }
     const row = (await deps.store.get(v.userId, day)) ?? empty(v.userId, day);
     row.plan = { items, note: parsed.data.note };
     row.plannedAt = at;
@@ -409,7 +446,7 @@ export function dailyRoutes(
         : deps.slack.toChannel(channel, msg),
     );
     await deps.store.save(row);
-    return { ok: true, ...result };
+    return { ok: true, ...result, failures };
   });
 
   app.post('/api/daily/wrap', async (req, reply) => {

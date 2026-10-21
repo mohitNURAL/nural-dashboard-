@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-21-daily-no-deadline',
+    date: '2026-10-21',
+    tab: 'daily',
+    title: 'Daily update: tasks with no deadline',
+    steps: [
+      {
+        target: '[data-tour="daily-plan"]',
+        title: 'Tasks with no deadline',
+        text: 'Your plan now also lists your open tasks with no deadline. Add one to your plan and, when you post it, its deadline is set to today (the end of the working day) in Bitrix24, as you.',
+      },
+    ],
+  },
+  {
     id: '2026-10-21-qa-open',
     date: '2026-10-21',
     tab: 'qa',

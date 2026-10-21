@@ -18,6 +18,7 @@ const WHY: Record<string, string> = {
   overdue: 'Overdue',
   today: 'Due today',
   upcoming: 'Taken early',
+  noDeadline: 'No deadline (set to today)',
   added: 'Added',
 };
 const DEPT = { dev: 'Development', qa: 'QA', support: 'Support', other: 'Other' } as const;
