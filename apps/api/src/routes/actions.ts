@@ -122,6 +122,8 @@ export type Prepared =
       audit: { action: string; fromValue: string | null; toValue: string };
       /** e.g. "moved to QA Backlog". */
       label: string;
+      /** What to tell the person when Bitrix24 answers ACCESS_DENIED (instead of its bare text). */
+      denied?: string;
     }
   | { state: 'skip'; reason: string }
   | { state: 'error'; reason: string; status: number };
@@ -169,6 +171,9 @@ export function prepare(
         calls: [{ method: 'task.stages.movetask', params: { id: t.id, stageId: to.id } }],
         audit: { action: 'move', fromValue: t.stageTitle, toValue: to.title },
         label: `moved to ${to.title}`,
+        // Bitrix24 lets only the project's members (with the right to sort tasks) move cards on
+        // its Kanban, even the task's own assignee (e.g. Devesh on 98 AKI Global, 2026-10-21).
+        denied: `Bitrix24 refused the column move: only members of ${projectName(t.groupId)} in Bitrix24 can move cards on its Kanban. Ask the project owner to add you to the project, or a manager to move it.`,
       };
     }
     case 'status': {
@@ -292,7 +297,7 @@ export interface ActionDeps {
 const idParam = z.object({ id: z.coerce.number().int().positive() });
 
 /** A Bitrix24 error as a short message for the person; permission problems read as such. */
-function explain(e: unknown): { status: number; message: string } {
+function explain(e: unknown, denied?: string): { status: number; message: string } {
   if (e instanceof BitrixError && /insufficient_scope/i.test(`${e.code} ${e.description}`)) {
     return {
       status: 403,
@@ -301,7 +306,16 @@ function explain(e: unknown): { status: number; message: string } {
     };
   }
   if (e instanceof BitrixError) {
-    if (/ACCESS_DENIED|NO_AUTH|expired_token|invalid_token/i.test(`${e.code} ${e.description}`)) {
+    if (denied && /ACCESS_DENIED/i.test(`${e.code} ${e.description}`)) {
+      return { status: 403, message: denied };
+    }
+    if (/NO_AUTH|expired_token|invalid_token/i.test(`${e.code} ${e.description}`)) {
+      return {
+        status: 403,
+        message: 'Your Bitrix24 sign-in has expired. Sign out and sign in again.',
+      };
+    }
+    if (/ACCESS_DENIED/i.test(`${e.code} ${e.description}`)) {
       return { status: 403, message: `Bitrix24 refused: ${e.description || e.code}` };
     }
     return { status: 400, message: `Bitrix24: ${e.description || e.code}` };
@@ -341,7 +355,7 @@ export function taskWriter(deps: ActionDeps) {
     try {
       for (const c of p.calls) await deps.userCall!(c.method, c.params, who.token);
     } catch (e) {
-      const { status, message } = explain(e);
+      const { status, message } = explain(e, p.denied);
       await deps.record?.({ ...a, ok: false, error: message }).catch(() => undefined);
       return { ok: false, status, message };
     }

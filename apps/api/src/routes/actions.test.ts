@@ -294,6 +294,16 @@ describe('task actions (SRS 7)', () => {
     expect(s.recorded[0]).toMatchObject({ ok: false, error: 'Bitrix24 refused: Access denied' });
   });
 
+  it('explains a refused column move: only the project’s members can move its cards', async () => {
+    const s = await server({
+      fail: new BitrixError('task.stages.movetask', 'ACCESS_DENIED', 'Access denied', false),
+    });
+    const res = await post('/api/tasks/41/stage', { stageId: 1002 });
+    expect(res.statusCode).toBe(403);
+    expect(res.json().error).toMatch(/only members of .+ can move cards/);
+    expect(s.recorded[0]).toMatchObject({ ok: false, action: 'move' });
+  });
+
   it('keeps the webhook read-only and task actions to their allowlist', async () => {
     const webhook = createRawCaller({ baseUrl: 'https://portal.example/rest/1/x/' });
     await expect(webhook('task.stages.movetask', {})).rejects.toThrow(/read-only/);
