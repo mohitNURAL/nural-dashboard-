@@ -136,7 +136,39 @@ const ENDPOINTS = [
   '/api/tasks?kind=all&ids=1,2,3,4,5,6,7,8&pageSize=200',
   '/api/insights',
   '/api/insights?window=30',
+  // Added 2026-10-21: Tasks in hand (table and planner, by assignee and by project).
+  '/api/dev/inhand',
+  '/api/dev/inhand?groupBy=project',
+  '/api/dev/inhand/calendar?view=week',
+  '/api/qa/inhand',
+  '/api/qa/inhand?groupBy=project',
+  '/api/qa/inhand/calendar?view=week&groupBy=project',
 ];
+
+/**
+ * Names a member may see (2026-10-21): the projects, assignees and creators of their own tasks,
+ * and themselves. Projects and people stay in a member's dataset (so their tasks read correctly),
+ * so the equivalence check alone would not notice a list built from every project or person.
+ */
+const PROJECT_NAMES = new Map([
+  [154, 'Moto India'],
+  [148, 'Nural Edge'],
+  [160, 'Support Tool'],
+]);
+function foreignNames(uid: number, body: string): string[] {
+  const mine = tasks.filter((x) => inScope(x, uid));
+  const projects = new Set(mine.map((x) => x.groupId));
+  // Their tasks' assignees and creators, and the owners of their projects (named on Insights).
+  const people = new Set([
+    uid,
+    ...mine.flatMap((x) => [x.responsibleId, x.createdBy]),
+    ...[...projects].flatMap((g) => FULL_DS.owners?.get(g) ?? []),
+  ]);
+  return [
+    ...[...PROJECT_NAMES].filter(([id]) => !projects.has(id)).map(([, n]) => n),
+    ...[40, 10, 12, 70, 30, 28, 14, 99].filter((id) => !people.has(id)).map((id) => `Person ${id}`),
+  ].filter((n) => body.includes(`"${n}"`));
+}
 
 /** Drops the request clock, which differs between two otherwise identical answers. */
 const stable = (v: unknown): unknown =>
@@ -235,6 +267,40 @@ describe('every endpoint answers a member exactly as if only their tasks existed
       }
     });
   }
+
+  it('no endpoint names a project or person outside a member’s own tasks', async () => {
+    const extra = [
+      '/api/dev/projects',
+      '/api/dev/projects?period=month',
+      '/api/daily/projects',
+      '/api/report/daily',
+      '/api/workflow/projects',
+    ];
+    for (const uid of MEMBERS) {
+      for (const url of [...ENDPOINTS, ...extra]) {
+        const got = await get(url, uid);
+        if (got.statusCode !== 200) continue;
+        expect(foreignNames(uid, got.body), `${url} as ${uid}`).toEqual([]);
+      }
+    }
+  });
+
+  it('Projects at work lists only the projects of a member’s own tasks, counting only them', async () => {
+    const rows = async (uid: number) =>
+      (await get('/api/dev/projects', uid)).json().rows as { id: number; open: number }[];
+    expect((await rows(28)).map((r) => r.id)).toEqual([148]);
+    expect(await rows(99)).toEqual([]);
+    // 30's open tasks in 154: task 1 (theirs) and task 3 is in 148, so only task 1 counts here.
+    const r30 = await rows(30);
+    expect(r30.map((r) => r.id).sort()).toEqual([148, 154]);
+    expect(r30.find((r) => r.id === 154)!.open).toBe(1);
+  });
+
+  it('the task edit dropdowns (every project and person) are for managers only', async () => {
+    for (const uid of MEMBERS)
+      expect((await get('/api/tasks/edit-options', uid)).statusCode).toBe(403);
+    expect((await get('/api/tasks/edit-options', 12)).statusCode).toBe(200);
+  });
 
   it('people are served one after another without mixing (no shared cache)', async () => {
     const ids = async (uid: number) =>

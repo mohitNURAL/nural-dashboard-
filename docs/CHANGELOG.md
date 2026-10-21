@@ -20,7 +20,10 @@ and the next change fills its ID in.
 
 ## 2026-10-21
 
-- Project names from the task data when the webhook cannot list the project (private projects
+- Scoping check widened (auth/scoping.test.ts): Tasks in hand, Projects at work, Daily update
+  projects, the Daily task update report and workflow projects; no endpoint may name a project
+  or person outside a member's own tasks; the task edit dropdowns stay managers only. No leak found.
+- `f73f935` Project names from the task data when the webhook cannot list the project (private projects
   the webhook user is not in: 168 Nural Sales International, 170 Nural BA) instead of "Group 168"
   (`projectsOf` in data/dataset.ts).
 - `8e2b426` Check-ins to the directors switched on, to Deepak (40) only: 11:30 who has not planned, 19:00
