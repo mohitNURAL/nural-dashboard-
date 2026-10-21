@@ -188,7 +188,9 @@ describe('task actions (SRS 7)', () => {
   });
 
   it('task view: stops at the first Bitrix24 refusal', async () => {
-    const s = await server({ fail: new BitrixError('ACCESS_DENIED', 'No access', 403) });
+    const s = await server({
+      fail: new BitrixError('task.stages.movetask', 'ACCESS_DENIED', 'No access', false),
+    });
     const res = await post('/api/tasks/41/edit', {
       edits: [
         { kind: 'stage', stageId: 1002 },
@@ -196,7 +198,9 @@ describe('task actions (SRS 7)', () => {
       ],
     });
     expect(res.statusCode).toBeGreaterThanOrEqual(400);
+    // The column move was tried and refused; the status change never ran.
     expect(s.recorded).toHaveLength(1);
+    expect(s.recorded[0]).toMatchObject({ action: 'move', ok: false });
   });
 
   it('changes the status with Bitrix24’s own actions', async () => {

@@ -20,7 +20,9 @@ and the next change fills its ID in.
 
 ## 2026-10-21
 
-- Task view: Edit fields changes stage, status, tags (full access also project, assignee,
+- Fix the CI type check (a test built a BitrixError with the wrong arguments), so the Edit fields
+  change deploys.
+- `116adea` Task view: Edit fields changes stage, status, tags (full access also project, assignee,
   priority, deadline) together with one Save (`POST /api/tasks/:id/edit`, checked first, all or
   nothing before Bitrix24; fields, then column, then status).
 - `40c1b72` Scoping check widened (auth/scoping.test.ts): Tasks in hand, Projects at work, Daily update

@@ -468,7 +468,8 @@ export function actionRoutes(app: FastifyInstance, getDataset: RequestDataset, d
       .sort((a, b) => ORDER[a.kind] - ORDER[b.kind])
       .map((e) => prepare(ds, full, t, e, now));
     const refused = prepared.find((p) => p.state === 'error');
-    if (refused?.state === 'error') return reply.code(refused.status).send({ error: refused.reason });
+    if (refused?.state === 'error')
+      return reply.code(refused.status).send({ error: refused.reason });
     const todo = prepared.filter((p): p is Extract<Prepared, { state: 'ok' }> => p.state === 'ok');
     if (!todo.length) return { ok: true, done: [], unchanged: true };
     const who = await actor(req);
