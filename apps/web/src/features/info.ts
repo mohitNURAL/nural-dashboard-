@@ -54,7 +54,7 @@ export const INFO = {
   // QA tiles (QA-01)
   qaTotal: 'Every task tagged bug or feedback in the filters, whoever it is assigned to.',
   qaOpen:
-    'Open = pending: any stage behind QA Backlog except On Hold (Issue Raised included). Resolved = QA Backlog, In QA, Done or LIVE. On Hold is its own tile. The ring shows the resolved %. Unassigned: those of them nobody has picked up yet (the placeholder assignee); click to list them.',
+    'Open = pending: any stage behind QA Backlog except On Hold (Issue Raised included). Resolved = QA Backlog, In QA, Done or LIVE. On Hold is its own tile. The ring shows the resolved %. Unassigned: those of them nobody has picked up yet (the placeholder assignee); click to list them. Click the tile for the open issues by project: open a project for who filed them, and a creator for who has them, each with Pending and Overdue.',
   qaLastFiled:
     'Latest day an issue was created, and how many that day. Click for that day by project: open a project for who filed its issues (bug and feedback), and a creator for who they went to.',
   qaLastResolved:

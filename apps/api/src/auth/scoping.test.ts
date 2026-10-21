@@ -121,6 +121,7 @@ const ENDPOINTS = [
   '/api/qa/issues?groupBy=project',
   '/api/qa/testing',
   '/api/qa/filed',
+  '/api/qa/open',
   '/api/qa/inhand/calendar?view=day',
   '/api/dev/inhand/calendar?view=month&groupBy=project',
   '/api/qa/retest',

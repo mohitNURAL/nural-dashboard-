@@ -724,6 +724,55 @@ export function filedOnDay(
     .sort(mostFiled);
 }
 
+/** Open issues and how many of them are overdue. */
+export interface OpenCounts {
+  pending: number;
+  overdue: number;
+}
+export interface OpenAssignee extends OpenCounts {
+  id: number;
+}
+export interface OpenCreator extends OpenCounts {
+  id: number;
+  /** Who the creator's open issues are with. */
+  assignees: OpenAssignee[];
+}
+export interface OpenProject extends OpenCounts {
+  /** Workgroup id; 0 = no project. */
+  id: number;
+  creators: OpenCreator[];
+}
+
+/**
+ * QA "Open / pending" popup (2026-10-21): the open (pending) issues per project, then per creator
+ * (who filed them), then per assignee (who has them), each with how many are overdue. Most
+ * overdue first at every level, then most pending.
+ */
+export function openByCreator(list: readonly MetricTask[], ctx: MetricContext): OpenProject[] {
+  const counts = (l: readonly MetricTask[]): OpenCounts => ({
+    pending: l.length,
+    overdue: l.filter((t) => isOverdue(t, ctx)).length,
+  });
+  const most = (a: OpenCounts & { id: number }, b: OpenCounts & { id: number }) =>
+    b.overdue - a.overdue || b.pending - a.pending || a.id - b.id;
+  const open = list.filter(isOpenIssue);
+  return [...groupBy(open, (t) => t.groupId)]
+    .map(([id, pl]) => ({
+      id,
+      ...counts(pl),
+      creators: [...groupBy(pl, (t) => t.createdBy)]
+        .map(([cid, cl]) => ({
+          id: cid,
+          ...counts(cl),
+          assignees: [...groupBy(cl, (t) => t.responsibleId)]
+            .map(([aid, al]) => ({ id: aid, ...counts(al) }))
+            .sort(most),
+        }))
+        .sort(most),
+    }))
+    .sort(most);
+}
+
 /**
  * The issue trend lines, one value per day: bugs and feedback filed (created) that day, and bugs
  * and feedback resolved that day (pushed to QA Backlog, as Last resolved; once per issue per day).

@@ -38,6 +38,7 @@ import {
   isCompletedYesterday,
   lastResolved,
   filedOnDay,
+  openByCreator,
   lastFiled,
   presetPredicate,
   qaSummary,
@@ -612,6 +613,32 @@ describe('QA tab', () => {
     ]);
     expect([other!.id, other!.filed]).toEqual([16, 1]);
     expect(filedOnDay(filed, ctx, '2026-10-08')).toEqual([]);
+  });
+
+  it('lists open issues by project, creator and assignee with the overdue ones', () => {
+    const late = new Date(NOW.getTime() - 86_400_000);
+    const open = [
+      task({ groupId: 148, createdBy: 14, responsibleId: 30, tags: ['bug'], deadline: late }),
+      task({ groupId: 148, createdBy: 14, responsibleId: 30, tags: ['bug'] }),
+      task({ groupId: 148, createdBy: 14, responsibleId: 31, tags: ['feedback'] }),
+      task({ groupId: 148, createdBy: 16, responsibleId: 30, tags: ['bug'], deadline: late }),
+      task({ groupId: 154, createdBy: 16, responsibleId: 32, tags: ['feedback'] }),
+      // Resolved or on hold: not open.
+      task({ groupId: 154, createdBy: 16, responsibleId: 32, tags: ['bug'], stage: 'QA Backlog' }),
+      task({ groupId: 154, createdBy: 16, responsibleId: 32, tags: ['bug'], stage: 'On Hold' }),
+    ];
+    const rows = openByCreator(open, ctx);
+    expect(rows.map((r) => [r.id, r.pending, r.overdue])).toEqual([
+      [148, 4, 2],
+      [154, 1, 0],
+    ]);
+    const [tester, other] = rows[0]!.creators;
+    expect([tester!.id, tester!.pending, tester!.overdue]).toEqual([14, 3, 1]);
+    expect(tester!.assignees.map((a) => [a.id, a.pending, a.overdue])).toEqual([
+      [30, 2, 1],
+      [31, 1, 0],
+    ]);
+    expect([other!.id, other!.pending, other!.overdue]).toEqual([16, 1, 1]);
   });
 
   it('breaks issues down by assignee, stage, age and rework', () => {

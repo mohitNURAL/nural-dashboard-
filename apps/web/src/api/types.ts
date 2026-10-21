@@ -313,6 +313,23 @@ export interface QaFiled {
   })[];
 }
 
+export interface QaOpenCounts {
+  pending: number;
+  overdue: number;
+}
+/** The Open / pending popup: open issues per project, creator and assignee (2026-10-21). */
+export interface QaOpen {
+  rows: (QaOpenCounts & {
+    id: number;
+    name: string;
+    creators: (QaOpenCounts & {
+      id: number;
+      person: Person;
+      assignees: (QaOpenCounts & { id: number; person: Person })[];
+    })[];
+  })[];
+}
+
 export interface QaSummary {
   /** Open tasks nobody has picked up (placeholder assignee) and those assignee ids (2026-10-16). */
   unassigned: Unassigned;

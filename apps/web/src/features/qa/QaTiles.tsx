@@ -9,6 +9,8 @@ import { useIssueList, useOpenIssues } from './issueList';
 import { useQaParams, useQaRetest, useQaSummary } from './api';
 import { FiledDialog } from './FiledDialog';
 import { useFiledPopup } from './filedPopup';
+import { OpenDialog } from './OpenDialog';
+import { useOpenPopup } from './openPopup';
 import { lastFiledText } from './format';
 import { INFO } from '../info';
 
@@ -33,6 +35,7 @@ export function QaTiles({ active, onSelect, onPart, onRetest }: Props) {
   const shown = useIssueList((st) => st.list.label);
   const last = data?.lastFiled;
   const showFiled = useFiledPopup((st) => st.show);
+  const showOpen = useOpenPopup((st) => st.show);
   /** The Bug | Feedback parts of one tile. */
   const parts = (
     tile: string,
@@ -123,7 +126,8 @@ export function QaTiles({ active, onSelect, onPart, onRetest }: Props) {
                     : undefined
                 }
                 active={active === 'open'}
-                onClick={() => onSelect('open')}
+                // The open issues by project, creator and assignee, with the overdue (2026-10-21).
+                onClick={showOpen}
                 aside={data && <Ring resolvedPct={data.resolvedPct} />}
               />
             ),
@@ -220,6 +224,7 @@ export function QaTiles({ active, onSelect, onPart, onRetest }: Props) {
         ]}
       />
       <FiledDialog onOpen={(label, params) => onPart('all', label, params)} />
+      <OpenDialog onOpen={(label, params) => onPart('open', label, params)} />
     </>
   );
 }

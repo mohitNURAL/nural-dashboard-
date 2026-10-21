@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-21-qa-open',
+    date: '2026-10-21',
+    tab: 'qa',
+    title: 'QA: Open / pending by project, creator and assignee',
+    steps: [
+      {
+        target: slot('qa.tiles', 'qaOpen'),
+        title: 'Open / pending, like Projects at work',
+        text: 'Click the Open / pending tile for the open issues by project, most overdue first. Open a project for who filed them, and a creator for who has them; each line shows Pending and Overdue. Click a count for those issues, or export it to Excel or PDF.',
+      },
+    ],
+  },
+  {
     id: '2026-10-20-planner-back',
     date: '2026-10-20',
     tab: 'dev',

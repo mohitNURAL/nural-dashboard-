@@ -21,9 +21,16 @@ and the next change fills its ID in.
 - Five tables (Alert details, Projects at work, Stage matrix, Ranking, Insights list) still use
   their own markup instead of the shared table.
 
+## 2026-10-21
+
+- QA Open / pending tile: opens a popup like Projects at work, by project, then creator, then
+  assignee, with Pending and Overdue at every level (most overdue first); a count opens those
+  issues; Excel and PDF (`openByCreator` in metrics.ts, `/api/qa/open`). Last filed now shares
+  its table (IssueTreeDialog). PDF guides rebuilt.
+
 ## 2026-10-20
 
-- Tasks in hand planner: a count opens its tasks with "‹ Back to planner", which reopens the
+- `73c347b` Tasks in hand planner: a count opens its tasks with "‹ Back to planner", which reopens the
   planner as it was left (view, grouping, search), on KPI, Development and QA.
 - `1deecad` Tasks in hand planner: Excel and PDF (a line per person or project, then what it splits into,
   every column, a totals line); PDF guides rebuilt from the current tour texts.

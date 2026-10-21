@@ -12,6 +12,7 @@ import {
   isOpenIssue,
   issuesByAssignee,
   issuesByStage,
+  openByCreator,
   issueStageTable,
   issueTrend,
   qaSummary,
@@ -86,6 +87,24 @@ export function qaRoutes(app: FastifyInstance, getDataset: RequestDataset, opts:
       day,
       isToday: day === dayKey(ctx.now, ctx.tz),
       rows: rows.map((r) => ({
+        ...r,
+        name: project(ds, r.id)?.name ?? 'No project',
+        creators: r.creators.map((c) => ({
+          ...c,
+          person: person(ds, c.id),
+          assignees: c.assignees.map((a) => ({ ...a, person: assignee(ds, a.id) })),
+        })),
+      })),
+    };
+  });
+
+  // Open / pending popup (2026-10-21): the open issues per project, then per creator, then per
+  // assignee, each with how many are overdue.
+  app.get('/api/qa/open', async (req) => {
+    const { filters, ds, ctx } = await scope(req);
+    const list = applyFilters(issues(ds.tasks), filters, ctx.tz);
+    return {
+      rows: openByCreator(list, ctx).map((r) => ({
         ...r,
         name: project(ds, r.id)?.name ?? 'No project',
         creators: r.creators.map((c) => ({
