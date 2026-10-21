@@ -72,6 +72,19 @@ export const UNASSIGNED: ReadonlySet<number> = (() => {
 })();
 
 /**
+ * Not expected to post a Daily update (config/daily-exclude.json, 2026-10-21): left out of
+ * Report › Daily task update and the check-ins to the directors.
+ */
+export const DAILY_EXCLUDED: ReadonlySet<number> = (() => {
+  const file = fileURLToPath(new URL('../../../../config/daily-exclude.json', import.meta.url));
+  if (!existsSync(file)) return new Set<number>();
+  const raw = JSON.parse(readFileSync(file, 'utf8')) as { userIds?: unknown };
+  return new Set(
+    Array.isArray(raw.userIds) ? raw.userIds.map(Number).filter(Number.isInteger) : [],
+  );
+})();
+
+/**
  * The Unassigned data point on the Pending / Open tiles: how many of these open tasks sit with a
  * placeholder assignee, and their ids (a click lists them with the Assignee filter).
  */

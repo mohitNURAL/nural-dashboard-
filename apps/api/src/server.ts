@@ -31,7 +31,7 @@ import {
   type CheckInConfig,
   type CheckInKind,
 } from './routes/dailyCheckins';
-import { UNASSIGNED } from './routes/context';
+import { DAILY_EXCLUDED, UNASSIGNED } from './routes/context';
 import { kpiConfig } from './data/kpiConfig';
 import { feedbackRoutes, memoryFeedbackStore, type FeedbackStore } from './routes/feedback';
 import { helpRoutes, memoryHelpStore, type HelpStore } from './routes/help';
@@ -432,13 +432,15 @@ export async function buildServer({
     },
     now,
   });
-  // Report › Daily task update (SRS 24): expected = active people with the Daily update right.
+  // Report › Daily task update (SRS 24): expected = active people with the Daily update right,
+  // not a placeholder and not left out in config/daily-exclude.json.
   const expectedToPost = (d: Dataset) =>
     [...d.users.values()]
       .filter(
         (u) =>
           u.active &&
           !UNASSIGNED.has(u.id) &&
+          !DAILY_EXCLUDED.has(u.id) &&
           resolveFor(u.id, d, rolesCfg, grants).rights.dailyUpdate,
       )
       .map((u) => u.id);

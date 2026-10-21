@@ -1376,7 +1376,7 @@ For people with the **employees** right (by default admins, PM and team leads). 
 
 **Who.** Right `dailyReport` (menu **Report › Daily task update**), on for everyone by default; switched off per department or person on Access permissions. Data follows the data scope (NFR-4): **full** (admins, PM, team leads) see everyone expected to post; anyone else only their own days. Guarded by `PAGE_GUARD` (`/api/report/daily`).
 
-**Expected to post.** Every active person whose Daily update right is on (`resolveFor(...).rights.dailyUpdate`), not a placeholder assignee (`config/unassigned.json`). Only working days count (company working days and the KPI holidays).
+**Expected to post.** Every active person whose Daily update right is on (`resolveFor(...).rights.dailyUpdate`), not a placeholder assignee (`config/unassigned.json`), and not left out in `config/daily-exclude.json` (2026-10-21: the directors, the company admin account, the cancelled account and others not on the Daily update; they appear in neither the report nor the check-ins). Only working days count (company working days and the KPI holidays).
 
 **Page.** Filters: From and To (default today, at most two months), Department, Assignee. Tiles for the last working day in the range: **Expected**, **Planned their day**, **Not planned** (names), **Wrapped up**, **Not wrapped up** (names); Not planned and Not wrapped up filter the table. Cards:
 - **Who planned and wrapped up** (shared table, columns chosen and ordered by the reader): one line per person and working day: planned at, planned tasks, wrapped up at, Done, WIP, Pending, On hold (as reported in the wrap-up, else as now), Added; Not planned and Not wrapped up in red; All / Not planned / Not wrapped up switch.
