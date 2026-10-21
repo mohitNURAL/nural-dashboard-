@@ -1,5 +1,6 @@
 // Bulk edit (SRS 7, Task actions). Tick rows (the header box selects or clears the whole page,
-// ticks are kept across pages up to 100), pick an item and a value, Check, then Apply. The server
+// ticks are kept across pages up to 100), pick an item and a value (+ Add another change for
+// several at once, 2026-10-21), Check, then Apply. The server
 // checks every task first: rows that cannot take the change are highlighted red with the reason,
 // rows already so are greyed and skipped, and only the valid ones are sent to Bitrix24.
 import { STAGE_TITLES } from '@nural/shared';
@@ -117,6 +118,8 @@ export function BulkBar({ bulk, boards }: { bulk: Bulk; boards: Record<string, B
   const [tagsMode, setTagsMode] = useState<'add' | 'replace'>('add');
   const [busy, setBusy] = useState(false);
   const [checked, setChecked] = useState(false);
+  // Changes kept with "+ Add another change"; the one in the pickers is added on Check.
+  const [queued, setQueued] = useState<{ item: Item; edit: object; text: string }[]>([]);
   const { data: options } = useApi<{
     projects: { id: number; name: string }[];
     people: { id: number; name: string }[];
@@ -132,7 +135,7 @@ export function BulkBar({ bulk, boards }: { bulk: Bulk; boards: Record<string, B
     setValue('');
     setChecked(false);
   }, [item]);
-  useEffect(() => setChecked(false), [value, tagsMode, bulk.selected]);
+  useEffect(() => setChecked(false), [value, tagsMode, bulk.selected, queued]);
 
   const edit = useMemo(() => {
     if (!value) return null;
@@ -147,17 +150,47 @@ export function BulkBar({ bulk, boards }: { bulk: Bulk; boards: Record<string, B
 
   if (!bulk.selected.size) return null;
 
-  const send = async (path: 'check' | 'apply') => {
+  // The change in the pickers, as text for the confirmation and the kept list.
+  const shown = (sel: string) =>
+    document.querySelector<HTMLSelectElement>(sel)?.selectedOptions[0]?.text;
+  const describe = () =>
+    `${ITEMS.find((i) => i.value === item)?.label}: ${
+      item === 'tags'
+        ? `${tagsMode === 'add' ? 'add' : 'replace with'} ${value}`
+        : item === 'deadline'
+          ? value
+          : (shown('select[aria-label^="New "]') ?? value)
+    }`;
+  const all = [
+    ...queued.filter((q) => q.item !== item || !edit),
+    ...(edit ? [{ item, edit, text: describe() }] : []),
+  ];
+  // A new project has its own board: its stage is changed afterwards.
+  const blocked = (i: Item) =>
+    queued.some((q) => q.item === i) ||
+    (i === 'stage' && queued.some((q) => q.item === 'project')) ||
+    (i === 'project' && queued.some((q) => q.item === 'stage'));
+  const keep = () => {
     if (!edit) return;
+    setQueued((q) => [...q.filter((x) => x.item !== item), { item, edit, text: describe() }]);
+    const next = ITEMS.find((i) => i.value !== item && (!i.managers || full) && !blocked(i.value));
+    if (next) setItem(next.value);
+  };
+
+  const send = async (path: 'check' | 'apply') => {
+    if (!all.length) return;
     setBusy(true);
     try {
       const { results } = await apiPost<{ results: BulkResult[] }>(`/api/tasks/bulk/${path}`, {
         ids: rows.map((r) => r.id),
-        edit,
+        edits: all.map((a) => a.edit),
       });
       const n = (s: BulkState) => results.filter((r) => r.state === s).length;
-      if (path === 'apply') bulk.afterApply(results);
-      else bulk.setResults(new Map(results.map((r) => [r.id, r])));
+      if (path === 'apply') {
+        bulk.afterApply(results);
+        setQueued([]);
+        setValue('');
+      } else bulk.setResults(new Map(results.map((r) => [r.id, r])));
       if (path === 'check') {
         setChecked(true);
         if (n('error'))
@@ -198,7 +231,9 @@ export function BulkBar({ bulk, boards }: { bulk: Bulk; boards: Record<string, B
               value={item}
               onChange={(e) => setItem(e.target.value as Item)}
             >
-              {ITEMS.filter((i) => !i.managers || full).map((i) => (
+              {ITEMS.filter(
+                (i) => (!i.managers || full) && (i.value === item || !blocked(i.value)),
+              ).map((i) => (
                 <option key={i.value} value={i.value}>
                   {i.label}
                 </option>
@@ -324,6 +359,15 @@ export function BulkBar({ bulk, boards }: { bulk: Bulk; boards: Record<string, B
             <button
               type="button"
               disabled={!edit || busy}
+              onClick={keep}
+              title="Keep this change and pick another field"
+              className="h-8 rounded-control border border-dashed border-primary px-3 font-heading text-button text-primary hover:bg-surface disabled:opacity-50"
+            >
+              + Add another change
+            </button>
+            <button
+              type="button"
+              disabled={!all.length || busy}
               onClick={() => void send('check')}
               className="h-8 rounded-control border border-primary px-3 font-heading text-button text-primary hover:bg-surface disabled:opacity-50"
             >
@@ -331,7 +375,7 @@ export function BulkBar({ bulk, boards }: { bulk: Bulk; boards: Record<string, B
             </button>
             <button
               type="button"
-              disabled={!edit || busy || !checked || ready === 0}
+              disabled={!all.length || busy || !checked || ready === 0}
               title={
                 !checked
                   ? 'Check first'
@@ -340,26 +384,13 @@ export function BulkBar({ bulk, boards }: { bulk: Bulk; boards: Record<string, B
                     : `Change ${ready} tasks in Bitrix24`
               }
               onClick={async () => {
-                // The chosen item and value as shown in the bar's own pickers.
-                const shown = (sel: string) =>
-                  document.querySelector<HTMLSelectElement>(sel)?.selectedOptions[0]?.text;
                 const ok = await confirm({
                   title: `Change ${ready} task${ready === 1 ? '' : 's'}?`,
-                  message:
-                    'The change is made in Bitrix24, in your name. Rows marked red are skipped.',
-                  details: [
-                    {
-                      label: 'Change',
-                      value: shown('select[aria-label="Item to change"]') ?? item,
-                    },
-                    {
-                      label: 'To',
-                      value:
-                        item === 'tags'
-                          ? `${tagsMode === 'add' ? 'Add' : 'Replace with'}: ${value}`
-                          : (shown('select[aria-label^="New "]') ?? value),
-                    },
-                  ],
+                  message: `${all.length === 1 ? 'The change is' : 'The changes are'} made in Bitrix24, in your name. Rows marked red are skipped.`,
+                  details: all.map((a, i) => ({
+                    label: all.length === 1 ? 'Change' : `Change ${i + 1}`,
+                    value: a.text,
+                  })),
                   confirmLabel: `Apply to ${ready}`,
                   tone: 'warn',
                 });
@@ -381,6 +412,29 @@ export function BulkBar({ bulk, boards }: { bulk: Bulk; boards: Record<string, B
           Clear selection
         </button>
       </div>
+      {queued.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 text-table">
+          <span className="text-text-muted">Also changing:</span>
+          {queued
+            .filter((q) => q.item !== item || !edit)
+            .map((q) => (
+              <span
+                key={q.item}
+                className="inline-flex items-center gap-1 rounded-full bg-surface px-2 py-0.5 text-primary-dark ring-1 ring-primary/30"
+              >
+                {q.text}
+                <button
+                  type="button"
+                  aria-label={`Remove ${q.text}`}
+                  onClick={() => setQueued((x) => x.filter((y) => y.item !== q.item))}
+                  className="text-text-muted hover:text-bad"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+        </div>
+      )}
       {problems.length > 0 && (
         <ul className="max-h-32 space-y-0.5 overflow-y-auto text-table">
           {problems.map((p) => (

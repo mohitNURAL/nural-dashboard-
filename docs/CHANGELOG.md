@@ -20,7 +20,9 @@ and the next change fills its ID in.
 
 ## 2026-10-21
 
-- Fix the CI type check (a test built a BitrixError with the wrong arguments), so the Edit fields
+- Bulk edit takes several changes at once (+ Add another change; `edits` on bulk check / apply,
+  each task's changes in order). Edit fields and bulk both checked in a browser end to end.
+- `c3f82f3` Fix the CI type check (a test built a BitrixError with the wrong arguments), so the Edit fields
   change deploys.
 - `116adea` Task view: Edit fields changes stage, status, tags (full access also project, assignee,
   priority, deadline) together with one Save (`POST /api/tasks/:id/edit`, checked first, all or

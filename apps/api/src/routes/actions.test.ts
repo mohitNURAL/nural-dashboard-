@@ -203,6 +203,45 @@ describe('task actions (SRS 7)', () => {
     expect(s.recorded[0]).toMatchObject({ action: 'move', ok: false });
   });
 
+  it('bulk: several changes at once, checked then applied per task in order', async () => {
+    const s = await server();
+    const body = {
+      ids: [41],
+      edits: [
+        { kind: 'status', status: 'inProgress' },
+        { kind: 'stage', stageId: 1002 },
+        { kind: 'field', field: 'tags', value: 'ui', tagsMode: 'add' },
+      ],
+    };
+    const checked = (await post('/api/tasks/bulk/check', body)).json();
+    expect(checked.results).toEqual([
+      { id: 41, state: 'ok', reason: 'tags saved, moved to In progress, In progress' },
+    ]);
+    expect(s.calls).toEqual([]);
+    const applied = (await post('/api/tasks/bulk/apply', body)).json();
+    expect(applied.results[0].state).toBe('done');
+    expect(s.calls.map((c) => c.method)).toEqual([
+      'tasks.task.update',
+      'task.stages.movetask',
+      'tasks.task.start',
+    ]);
+    // One change a member may not make refuses the task; the old single `edit` still works.
+    const refused = (
+      await post('/api/tasks/bulk/check', {
+        ids: [41],
+        edits: [
+          { kind: 'stage', stageId: 1002 },
+          { kind: 'field', field: 'priority', value: 'high' },
+        ],
+      })
+    ).json();
+    expect(refused.results[0].state).toBe('error');
+    const single = (
+      await post('/api/tasks/bulk/check', { ids: [41], edit: { kind: 'stage', stageId: 1002 } })
+    ).json();
+    expect(single.results[0].state).toBe('ok');
+  });
+
   it('changes the status with Bitrix24’s own actions', async () => {
     const s = await server();
     expect((await post('/api/tasks/41/status', { status: 'completed' })).statusCode).toBe(200);

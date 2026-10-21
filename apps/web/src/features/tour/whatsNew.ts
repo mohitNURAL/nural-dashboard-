@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-21-bulk-several',
+    date: '2026-10-21',
+    tab: 'dev',
+    title: 'Bulk edit: several changes at once',
+    steps: [
+      {
+        target: slot('dev.sections', 'all'),
+        title: 'More than one change in one go',
+        text: 'Tick tasks in a list, pick a change (for example Stage), click + Add another change and pick the next (for example Status), then Check and Apply: every ticked task gets all of them, in order. In a task’s own view, Edit fields does the same for that task.',
+      },
+    ],
+  },
+  {
     id: '2026-10-21-task-edit-fields',
     date: '2026-10-21',
     tab: 'dev',

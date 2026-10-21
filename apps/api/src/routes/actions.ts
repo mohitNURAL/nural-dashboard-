@@ -490,49 +490,98 @@ export function actionRoutes(app: FastifyInstance, getDataset: RequestDataset, d
 
   // ---------------------------------------------------------------- bulk
 
-  const bulkBody = z.object({
-    ids: z.array(z.coerce.number().int().positive()).min(1).max(BULK_MAX),
-    edit: editSchema,
-  });
+  // Several changes at once (2026-10-21): `edits`, each field once, applied per task in the same
+  // order as the task view; `edit` (one change) still works.
+  const bulkBody = z
+    .object({
+      ids: z.array(z.coerce.number().int().positive()).min(1).max(BULK_MAX),
+      edit: editSchema.optional(),
+      edits: z.array(editSchema).min(1).max(10).optional(),
+    })
+    .refine((b) => b.edit || b.edits, 'Choose a change.');
+
+  type Ok = Extract<Prepared, { state: 'ok' }>;
+  /** One task with every change: refused if any is, skipped if none would change anything. */
+  type Checked =
+    | { id: number; state: 'ok'; preps: Ok[]; label: string }
+    | { id: number; state: 'skip' | 'error'; reason: string };
 
   /** Every selected task checked, without changing anything: ok, skip or error with a reason. */
-  async function check(req: FastifyRequest) {
-    const { ids, edit } = bulkBody.parse(req.body);
+  async function check(req: FastifyRequest, reply: FastifyReply): Promise<Checked[] | null> {
+    const body = bulkBody.parse(req.body);
+    const edits = [...(body.edits ?? [body.edit!])].sort((a, b) => ORDER[a.kind] - ORDER[b.kind]);
+    const kinds = edits.map((e) => (e.kind === 'field' ? `field:${e.field}` : e.kind));
+    if (new Set(kinds).size !== kinds.length) {
+      reply.code(400).send({ error: 'Each field can be changed once.' });
+      return null;
+    }
+    if (kinds.includes('field:project') && kinds.includes('stage')) {
+      reply.code(400).send({ error: 'Change the project first, then the stage on its new board.' });
+      return null;
+    }
     const ds = await getDataset(req);
     const full = await isFull(req);
     const now = deps.now?.() ?? new Date();
-    return [...new Set(ids)].map((id) => {
+    return [...new Set(body.ids)].map((id): Checked => {
       const t = ds.byId.get(id);
-      const p: Prepared = t
-        ? prepare(ds, full, t, edit, now)
-        : err('Not found, or outside your scope.', 404);
-      return { id, p };
+      if (!t) return { id, state: 'error', reason: 'Not found, or outside your scope.' };
+      const preps = edits.map((e) => prepare(ds, full, t, e, now));
+      const bad = preps.filter((p) => p.state === 'error');
+      if (bad.length) return { id, state: 'error', reason: bad.map((p) => p.reason).join(' ') };
+      const ok = preps.filter((p): p is Ok => p.state === 'ok');
+      if (!ok.length)
+        return {
+          id,
+          state: 'skip',
+          reason: preps
+            .map((p) => (p.state === 'skip' ? p.reason : ''))
+            .join(' ')
+            .trim(),
+        };
+      return { id, state: 'ok', preps: ok, label: ok.map((p) => p.label).join(', ') };
     });
   }
 
-  const view = (r: { id: number; p: Prepared }) =>
-    r.p.state === 'ok'
-      ? { id: r.id, state: 'ok' as const, reason: r.p.label }
-      : { id: r.id, state: r.p.state, reason: r.p.reason };
+  const view = (r: Checked) => ({
+    id: r.id,
+    state: r.state,
+    reason: r.state === 'ok' ? r.label : r.reason,
+  });
 
-  app.post('/api/tasks/bulk/check', async (req) => ({ results: (await check(req)).map(view) }));
+  app.post('/api/tasks/bulk/check', async (req, reply) => {
+    const results = await check(req, reply);
+    return results && { results: results.map(view) };
+  });
 
-  // Applies the edit to the tasks that pass the check, one after another; the others are reported.
+  // Applies the changes to the tasks that pass the check, one task after another (each task's
+  // changes in order, stopping at its first refusal); the others are reported.
   app.post('/api/tasks/bulk/apply', async (req, reply) => {
-    const results = await check(req);
+    const results = await check(req, reply);
+    if (!results) return;
     const who = await actor(req);
     if ('error' in who) return reply.code(403).send({ error: who.error });
     const out = [];
     for (const r of results) {
-      if (r.p.state !== 'ok') {
+      if (r.state !== 'ok') {
         out.push(view(r));
         continue;
       }
-      const done = await run(who, r.id, r.p);
+      const done: string[] = [];
+      let failed: string | null = null;
+      for (const p of r.preps) {
+        const res = await run(who, r.id, p);
+        if (!res.ok) {
+          failed = done.length
+            ? `${res.message} (already changed: ${done.join(', ')})`
+            : res.message;
+          break;
+        }
+        done.push(p.label);
+      }
       out.push(
-        done.ok
-          ? { id: r.id, state: 'done' as const, reason: r.p.label }
-          : { id: r.id, state: 'failed' as const, reason: done.message },
+        failed
+          ? { id: r.id, state: 'failed' as const, reason: failed }
+          : { id: r.id, state: 'done' as const, reason: r.label },
       );
     }
     return { results: out };
