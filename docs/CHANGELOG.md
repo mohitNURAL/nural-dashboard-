@@ -7,9 +7,6 @@ and the next change fills its ID in.
 
 ## Open questions
 
-- Workgroup 168 shows as "Group 168": Bitrix24 never returns it to the webhook account (private,
-  a Collab, or deleted). Check `<portal>/workgroups/group/168/`; add the webhook user to it, or
-  move its tasks. Option offered: take the project name from the task data instead.
 - Shalini's account (user 126) shows no data: she is a member (own tasks only) with no tasks of
   her own. Her saved access grant on the live database was not checked (read not allowed).
 - KPI Project health: Status (red / amber / green) still uses KPI's own "silent" rule (10+
@@ -23,7 +20,10 @@ and the next change fills its ID in.
 
 ## 2026-10-21
 
-- Check-ins to the directors switched on, to Deepak (40) only: 11:30 who has not planned, 19:00
+- Project names from the task data when the webhook cannot list the project (private projects
+  the webhook user is not in: 168 Nural Sales International, 170 Nural BA) instead of "Group 168"
+  (`projectsOf` in data/dataset.ts).
+- `8e2b426` Check-ins to the directors switched on, to Deepak (40) only: 11:30 who has not planned, 19:00
   who has not wrapped up (`config/daily-checkins.json`).
 - `bc43867` Report › Daily task update and the check-ins: nine people are not expected to post
   (`config/daily-exclude.json`: users 1, 18, 22, 40, 42, 54, 66, 68, 166).

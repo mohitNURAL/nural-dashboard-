@@ -226,9 +226,7 @@ export async function loadDataset(): Promise<Dataset> {
     qaLead,
     stageIds,
     users,
-    projects: new Map(
-      groupRows.map((g) => [g.id, { id: g.id, name: g.name, active: g.active && g.isDevProject }]),
-    ),
+    projects: projectsOf(groupRows, taskRows),
     boards: boardsOf(stageRows),
     kpiDept: kpiDepartments(userRows, deptRows),
     supportLead: supportLead(deptRows),
@@ -248,6 +246,33 @@ export async function loadDataset(): Promise<Dataset> {
     portalOrigin: new URL(config.BITRIX_INBOUND_URL).origin,
     loadedAt: new Date(),
   };
+}
+
+/**
+ * The projects by id (2026-10-21): the workgroups the webhook lists, then any project only its
+ * tasks name. A private project the webhook user is not in (e.g. 168, 170) is never returned by
+ * sonet_group.get, but every task carries its project as `group: { id, name }`. Those count as
+ * active (they have tasks) unless DEV_GROUP_IDS narrows the scope.
+ */
+export function projectsOf(
+  groupRows: readonly { id: number; name: string; active: boolean; isDevProject: boolean }[],
+  taskRows: readonly { groupId: number; raw?: unknown }[],
+): Dataset['projects'] {
+  const projects: Dataset['projects'] = new Map(
+    groupRows.map((g) => [g.id, { id: g.id, name: g.name, active: g.active && g.isDevProject }]),
+  );
+  const scope = new Set(config.DEV_GROUP_IDS);
+  for (const t of taskRows) {
+    if (!t.groupId || projects.has(t.groupId)) continue;
+    const name = (t.raw as { group?: { name?: unknown } } | null)?.group?.name;
+    if (typeof name !== 'string' || !name.trim()) continue;
+    projects.set(t.groupId, {
+      id: t.groupId,
+      name: name.trim(),
+      active: scope.size === 0 || scope.has(t.groupId),
+    });
+  }
+  return projects;
 }
 
 /** Each workgroup's columns, in board order. */
