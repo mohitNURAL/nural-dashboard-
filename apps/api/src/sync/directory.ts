@@ -1,6 +1,6 @@
 // Directory sync (SRS 7, module 4): users, departments, workgroups and each workgroup's stages.
 import { canonicalStage } from '@nural/shared';
-import { and, inArray, notInArray } from 'drizzle-orm';
+import { and, eq, inArray, notInArray } from 'drizzle-orm';
 import { batch, listAll, type Call, type Command } from '../bitrix';
 import { config } from '../config';
 import { db, schema } from '../db/client';
@@ -126,6 +126,12 @@ export async function syncDirectory(call: Call): Promise<DirectorySummary> {
       );
   }
 
+  // Who is in each project, so a member can add a task to a new one (2026-10-22).
+  await syncGroupMembers(
+    call,
+    groups.map((g) => Number(g.ID)),
+  );
+
   // Boards of the listed projects, and of projects known only from their tasks (private ones the
   // webhook user is not in, e.g. 168, 170).
   const listed = new Set(groups.map((g) => Number(g.ID)));
@@ -143,6 +149,46 @@ export async function syncDirectory(call: Call): Promise<DirectorySummary> {
       .filter((s) => s.canonical === null)
       .map((s) => ({ groupId: s.groupId, title: s.title })),
   };
+}
+
+interface BitrixMember {
+  USER_ID: string | number;
+  /** A owner, E moderator, K member, Z asked to join (not a member yet). */
+  ROLE?: string;
+}
+
+/**
+ * Each project's members (sonet_group.user.get, a read): owner, moderators and members, not
+ * pending requests. A project whose list is refused is left out.
+ */
+export async function readMembers(call: Call, groupIds: number[]) {
+  const members = new Map<number, number[]>();
+  if (!groupIds.length) return members;
+  const commands: Record<string, Command> = {};
+  for (const id of groupIds)
+    commands[`g${id}`] = { method: 'sonet_group.user.get', params: { ID: id } };
+  const res = await batch<BitrixMember[]>(call, commands, { allowErrors: true });
+  for (const id of groupIds) {
+    if (res.errors[`g${id}`]) continue;
+    const list = Object.values(res.result[`g${id}`] ?? {}) as BitrixMember[];
+    members.set(id, [
+      ...new Set(
+        list
+          .filter((m) => m.ROLE !== 'Z')
+          .map((m) => Number(m.USER_ID))
+          .filter((u) => u > 0),
+      ),
+    ]);
+  }
+  return members;
+}
+
+/** Stores each project's members on its workgroup; a refused list keeps what was stored. */
+export async function syncGroupMembers(call: Call, groupIds: number[]) {
+  const members = await readMembers(call, groupIds);
+  for (const [id, memberIds] of members)
+    await db.update(schema.workgroups).set({ memberIds }).where(eq(schema.workgroups.id, id));
+  return members;
 }
 
 type Board = Record<string, BitrixStage> | BitrixStage[];

@@ -122,6 +122,11 @@ export const workgroups = pgTable('workgroups', {
   ownerId: integer('owner_id'),
   /** Still listed in Bitrix24 (archived or deleted projects drop out; KPI Active projects). */
   active: boolean('active').notNull().default(true),
+  /** Its members in Bitrix24 (owner, moderators, members; not pending requests), 2026-10-22. */
+  memberIds: integer('member_ids')
+    .array()
+    .notNull()
+    .default(sql`'{}'::integer[]`),
 });
 
 export const stages = pgTable(

@@ -20,7 +20,11 @@ and the next change fills its ID in.
 
 ## 2026-10-22
 
-- Every project, private ones too: the directory sync reads workgroups as admin (sonet_group.get
+- Daily update Add task: a member also gets the projects they are in on Bitrix24 (new ones too;
+  `sonet_group.user.get`, read, stored as workgroups.member_ids, migration 0013). Checked live:
+  sonet_group.get with IS_ADMIN lists 40 projects (37 without), 168 and 170 included. The
+  refused column move now names the project's sort right (Devesh is a member of 98).
+- `44070c5` Every project, private ones too: the directory sync reads workgroups as admin (sonet_group.get
   IS_ADMIN, a read), so new projects (e.g. Nural Sales International) show before their first
   task. Daily update Add task: full access (PM, team leads, admins) can pick any active project,
   their own first; members still only their own.

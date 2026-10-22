@@ -1,0 +1,1 @@
+ALTER TABLE "workgroups" ADD COLUMN "member_ids" integer[] DEFAULT '{}'::integer[] NOT NULL;

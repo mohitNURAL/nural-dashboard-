@@ -49,6 +49,12 @@ const dataset = (async () => ({
   projects: new Map([
     [154, { id: 154, name: 'Moto India', active: true }],
     [170, { id: 170, name: 'Nural BA', active: true }],
+    [168, { id: 168, name: 'Nural Sales International', active: true }],
+  ]),
+  // Neha is in 168 (new, no tasks yet), not in 170.
+  members: new Map([
+    [168, new Set([7, 30])],
+    [170, new Set([30])],
   ]),
   boards: new Map(),
   portalOrigin: PORTAL,
@@ -274,14 +280,15 @@ describe('daily update (SRS 23)', () => {
     expect(t.plan.items[1].addedAt).toBe(at.toISOString());
   });
 
-  it('Add task projects: her own first; full access (PM) also every other active project', async () => {
+  it('Add task projects: hers, then those she is a member of; full access every active one', async () => {
     await server();
     const names = async () =>
       (await get('/api/daily/projects')).json().projects.map((p: { name: string }) => p.name);
-    expect(await names()).toEqual(['Moto India']);
+    // A member: projects with her tasks, then a new one she is in (never Nural BA, not hers).
+    expect(await names()).toEqual(['Moto India', 'Nural Sales International']);
     await app!.close();
     await server({ admins: [7] });
-    expect(await names()).toEqual(['Moto India', 'Nural BA']);
+    expect(await names()).toEqual(['Moto India', 'Nural BA', 'Nural Sales International']);
   });
 
   it('refuses someone else’s task on the plan', async () => {

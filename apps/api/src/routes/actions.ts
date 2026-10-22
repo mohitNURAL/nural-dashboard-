@@ -171,9 +171,9 @@ export function prepare(
         calls: [{ method: 'task.stages.movetask', params: { id: t.id, stageId: to.id } }],
         audit: { action: 'move', fromValue: t.stageTitle, toValue: to.title },
         label: `moved to ${to.title}`,
-        // Bitrix24 lets only the project's members (with the right to sort tasks) move cards on
-        // its Kanban, even the task's own assignee (e.g. Devesh on 98 AKI Global, 2026-10-21).
-        denied: `Bitrix24 refused the column move: only members of ${projectName(t.groupId)} in Bitrix24 can move cards on its Kanban. Ask the project owner to add you to the project, or a manager to move it.`,
+        // Bitrix24 lets only those with the project's right to sort tasks move cards on its Kanban,
+        // even the task's own assignee (Devesh, a member of 98 AKI Global, was refused 2026-10-21).
+        denied: `Bitrix24 refused the column move: you may not move cards on the ${projectName(t.groupId)} Kanban. In Bitrix24 that takes being in the project with its right to move tasks between stages; ask the project owner, or a manager to move it.`,
       };
     }
     case 'status': {

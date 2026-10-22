@@ -9,6 +9,8 @@ export const READ_METHODS = new Set([
   'user.get',
   'department.get',
   'sonet_group.get',
+  // Who is in each project (Daily update Add task offers a member their projects, 2026-10-22).
+  'sonet_group.user.get',
 ]);
 
 /**

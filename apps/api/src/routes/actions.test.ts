@@ -300,7 +300,7 @@ describe('task actions (SRS 7)', () => {
     });
     const res = await post('/api/tasks/41/stage', { stageId: 1002 });
     expect(res.statusCode).toBe(403);
-    expect(res.json().error).toMatch(/only members of .+ can move cards/);
+    expect(res.json().error).toMatch(/may not move cards on the .+ Kanban/);
     expect(s.recorded[0]).toMatchObject({ ok: false, action: 'move' });
   });
 

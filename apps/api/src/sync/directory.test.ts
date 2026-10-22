@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Call } from '../bitrix';
-import { readBoards } from './directory';
+import { readBoards, readMembers } from './directory';
 
 /** Fake Bitrix24: board 170 is private (ACCESS_DENIED unless asked as an admin); 180 always refused. */
 function fakeCall() {
@@ -42,5 +42,30 @@ describe('reading Kanban boards (2026-10-21)', () => {
       asked.filter((q) => q.includes('isAdmin')).map((q) => q.match(/entityId=(\d+)/)?.[1]),
     ).toEqual(['170', '180']);
     expect(asked.every((q) => q.startsWith('task.stages.get?'))).toBe(true);
+  });
+});
+
+describe('reading project members (2026-10-22)', () => {
+  it('keeps owner, moderators and members, not join requests; a refused list is left out', async () => {
+    const call = vi.fn(async (_method: string, params?: Record<string, unknown>) => {
+      const cmd = params!.cmd as Record<string, string>;
+      expect(Object.values(cmd).every((q) => q.startsWith('sonet_group.user.get?'))).toBe(true);
+      return {
+        result: {
+          result: {
+            g168: [
+              { USER_ID: '1', ROLE: 'A' },
+              { USER_ID: '20', ROLE: 'K' },
+              { USER_ID: '46', ROLE: 'Z' },
+            ],
+          },
+          result_error: { g98: { error: 'ACCESS_DENIED', error_description: 'No access' } },
+          result_total: [],
+          result_next: [],
+        },
+      };
+    });
+    const members = await readMembers(call as unknown as Call, [168, 98]);
+    expect([...members]).toEqual([[168, [1, 20]]]);
   });
 });

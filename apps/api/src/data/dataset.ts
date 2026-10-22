@@ -53,6 +53,8 @@ export interface Dataset {
   /** KPI tab (SRS 13): department per user, project owner per workgroup, recent comments. */
   kpiDept?: Map<number, Dept>;
   owners?: Map<number, number>;
+  /** Members of each project in Bitrix24 (Daily update Add task; never shown as a list). */
+  members?: Map<number, Set<number>>;
   /** The company structure: departments with parent and head (Employee module, access). */
   departments?: { id: number; name: string; parentId: number | null; headId: number | null }[];
   /** Head of the top Tech Support department (reads the Support tab feedback inbox). */
@@ -242,6 +244,7 @@ export async function loadDataset(): Promise<Dataset> {
       parentId: d.parentId,
       headId: d.headId,
     })),
+    members: new Map(groupRows.map((g) => [g.id, new Set(g.memberIds ?? [])])),
     owners: new Map(
       groupRows.flatMap((g) => {
         const owner = kpiConfig().owners.get(g.id) ?? g.ownerId;

@@ -363,9 +363,10 @@ export function dailyRoutes(
     };
   });
 
-  // Projects for unplanned work: those the person has tasks in, most used first. Full access (PM,
-  // team leads, admins) then every other active project, new ones too (2026-10-22); a member only
-  // their own (NFR-4: no other project's name).
+  // Projects for unplanned work: those the person has tasks in, most used first, then the active
+  // projects they are a member of in Bitrix24 (new ones too); full access (PM, team leads, admins)
+  // every other active project as well (2026-10-22). A member never gets a project they are not
+  // in (NFR-4: no other project's name).
   app.get('/api/daily/projects', async (req) => {
     const v = await viewer(req);
     const ds = await getDataset(req);
@@ -379,12 +380,11 @@ export function dailyRoutes(
       .filter(([g]) => ds.projects.get(g)?.active !== false)
       .sort((a, b) => b[1] - a[1])
       .map(([id]) => ({ id, name: name(id) }));
-    const others = v.full
-      ? [...ds.projects.values()]
-          .filter((p) => p.active && !count.has(p.id))
-          .map((p) => ({ id: p.id, name: p.name }))
-          .sort((a, b) => a.name.localeCompare(b.name))
-      : [];
+    const isMember = (id: number) => !!ds.members?.get(id)?.has(v.userId);
+    const others = [...ds.projects.values()]
+      .filter((p) => p.active && !count.has(p.id) && (v.full || isMember(p.id)))
+      .map((p) => ({ id: p.id, name: p.name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
     return { projects: [...mine, ...others] };
   });
 
