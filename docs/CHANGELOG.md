@@ -20,7 +20,13 @@ and the next change fills its ID in.
 
 ## 2026-10-22
 
-- KPI Open tasks tile also shows BA (Business Analysis): tasks assigned to Yajur (user 20), set
+- Daily update: a posted plan opens as its own view (time posted, Late planned tag, tasks with
+  their state and Added hh:mm, note) with + Add more tasks for the rest of the day (added to the
+  plan, the Slack message updated, a reply in its thread; `POST /api/daily/plan/add`); the first
+  posting time stays when the plan changes. At 11:30 the not-planned list also goes to the daily
+  work update group, each person mentioned; a plan first posted after 11:30 is Late planned
+  (Slack, the page, Report › Daily task update, the 19:00 check-in).
+- `3530e78` KPI Open tasks tile also shows BA (Business Analysis): tasks assigned to Yajur (user 20), set
   per person in config/departments.json `people`; BA is in the KPI department filter and the
   Daily report department dropdown too.
 

@@ -23,6 +23,8 @@ export interface ReportLine {
   dept: 'dev' | 'qa' | 'support' | 'ba' | 'other';
   day: string;
   plannedAt: string | null;
+  /** First posted after the check-in time (11:30): Late planned (2026-10-22). */
+  late?: boolean;
   wrappedAt: string | null;
   planned: number;
   added: number;
@@ -36,6 +38,8 @@ export interface ReportLine {
 }
 
 export interface DailyReport {
+  /** "HH:MM": a plan first posted after it is Late planned. */
+  planBy?: string;
   from: string;
   to: string;
   days: string[];

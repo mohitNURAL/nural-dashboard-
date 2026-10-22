@@ -27,7 +27,7 @@ import {
 } from './api';
 import { AddTaskDialog } from './AddTaskDialog';
 import { useDailyDialog } from './store';
-import { StateChip, TaskField, TaskTitle } from './taskColumns';
+import { LateChip, StateChip, TaskField, TaskTitle } from './taskColumns';
 import { BoardsContext } from '../tasks/boards';
 
 const WHY: Record<DailyItem['why'], { label: string; cls: string }> = {
@@ -71,13 +71,19 @@ export function DailyDialog() {
             </span>
             <div className="min-w-0 flex-1">
               <Dialog.Title className="font-heading text-h2 text-primary-dark">
-                {mode === 'wrap' ? 'Wrap up your day' : 'Plan your day'}
+                {mode === 'wrap'
+                  ? 'Wrap up your day'
+                  : today?.plan
+                    ? 'Your plan for today'
+                    : 'Plan your day'}
                 {today && <span className="text-text-muted"> · {today.dayLabel}</span>}
               </Dialog.Title>
               <p className="mt-0.5 text-table text-text-muted">
                 {mode === 'wrap'
                   ? 'Mark what is done, add anything else you did, then post it to the team.'
-                  : 'What carries over, what is overdue or due today, upcoming tasks to take on early and tasks with no deadline (planned, they are due today). Edit any task in place, keep, remove or add, then post it to the team.'}
+                  : today?.plan
+                    ? 'What you posted to the team this morning. Add more tasks as the day goes, change the plan, or wrap up.'
+                    : 'What carries over, what is overdue or due today, upcoming tasks to take on early and tasks with no deadline (planned, they are due today). Edit any task in place, keep, remove or add, then post it to the team.'}
               </p>
             </div>
             <Dialog.Close
@@ -95,7 +101,12 @@ export function DailyDialog() {
               {mode === 'wrap' ? (
                 <WrapView today={today} onLater={later} />
               ) : (
-                <PlanView today={today} onLater={later} />
+                <PlanView
+                  key={today.day}
+                  today={today}
+                  onLater={later}
+                  startAdding={mode === 'add'}
+                />
               )}
             </BoardsContext.Provider>
           )}
@@ -212,7 +223,242 @@ const whyChip = (why: DailyItem['why'], days?: number) => {
   );
 };
 
-function PlanView({ today, onLater }: { today: DailyToday; onLater: () => void }) {
+const timeOf = (iso: string) =>
+  new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+/**
+ * Once posted, the plan opens as what was posted (2026-10-22), not the planner: the tasks with
+ * their state now, Add more tasks for the rest of the day, Edit plan for the full planner.
+ */
+function PlanView({
+  today,
+  onLater,
+  startAdding,
+}: {
+  today: DailyToday;
+  onLater: () => void;
+  startAdding: boolean;
+}) {
+  const [editing, setEditing] = useState(false);
+  if (today.plan && !editing)
+    return (
+      <PostedPlan
+        today={today}
+        onLater={onLater}
+        onEdit={() => setEditing(true)}
+        startAdding={startAdding}
+      />
+    );
+  return <PlanEditor today={today} onLater={onLater} />;
+}
+
+function PostedPlan({
+  today,
+  onLater,
+  onEdit,
+  startAdding,
+}: {
+  today: DailyToday;
+  onLater: () => void;
+  onEdit: () => void;
+  startAdding: boolean;
+}) {
+  const postDaily = useDailyPost();
+  const { open } = useDailyDialog();
+  const [adding, setAdding] = useState(startAdding);
+  const [creating, setCreating] = useState(false);
+  const [picked, setPicked] = useState<DailyItem[]>([]);
+  const [busy, setBusy] = useState(false);
+  const { data: mine } = useMyOpenTasks('', adding);
+  const plan = today.plan!;
+  const onPlan = new Set(plan.items.map((i) => i.taskId));
+
+  const columns = useMemo(
+    () => [
+      ...fieldColumns(planCol),
+      planCol.accessor('why', {
+        header: 'Why',
+        cell: (c) => (
+          <span className="flex flex-wrap gap-1">
+            {whyChip(c.getValue(), c.row.original.daysOverdue)}
+            {c.row.original.addedAt && (
+              <span className="whitespace-nowrap rounded-full bg-primary/10 px-2 py-0.5 text-[12px] font-semibold text-primary">
+                Added {timeOf(c.row.original.addedAt)}
+              </span>
+            )}
+          </span>
+        ),
+      }),
+    ],
+    [],
+  );
+  const rows: PlanRow[] = plan.items.map((i) => ({
+    ...i,
+    keep: true,
+    row: today.rows?.[i.taskId],
+    state: today.states?.[i.taskId],
+  }));
+
+  // Any of their open tasks not on the plan yet: upcoming, no deadline, or found by search.
+  const choices = new Map<number, DailyItem>();
+  for (const u of [...(today.upcoming ?? []), ...(today.noDeadline ?? [])])
+    choices.set(u.taskId, u);
+  for (const t of mine?.tasks ?? [])
+    if (!choices.has(t.id))
+      choices.set(t.id, {
+        taskId: t.id,
+        title: t.title,
+        project: t.project,
+        why: t.deadline ? 'added' : 'noDeadline',
+      });
+  const pick = (item: DailyItem) =>
+    setPicked((xs) => (xs.some((x) => x.taskId === item.taskId) ? xs : [...xs, item]));
+
+  const addToPlan = async () => {
+    setBusy(true);
+    try {
+      const r = await postDaily('add', { taskIds: picked.map((p) => p.taskId) });
+      if (r.posted) toast.success('Added to your plan and posted to the team');
+      else toast.warning('Added to your plan, not posted', { description: r.reason });
+      for (const f of r.failures ?? [])
+        toast.error(`Not saved in Bitrix24: ${f.title}`, {
+          description: f.message,
+          duration: 10_000,
+        });
+      setPicked([]);
+      setAdding(false);
+    } catch (e) {
+      toast.error('Could not add to your plan', {
+        description: e instanceof Error ? e.message : '',
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 pb-3">
+        <p className="flex flex-wrap items-center gap-2 rounded-control bg-good/10 px-3 py-2 text-table font-medium text-good">
+          Posted{today.plannedAt ? ` at ${timeOf(today.plannedAt)}` : ''} · {plan.items.length}{' '}
+          {plan.items.length === 1 ? 'task' : 'tasks'}
+          {today.late && <LateChip by={today.planBy} />}
+        </p>
+        <DataTable
+          tableId="daily-posted"
+          columns={columns}
+          data={rows}
+          rowKey={(r) => r.taskId}
+          dense
+          maxHeight={360}
+          emptyText="No tasks on your plan. Add the tasks you will work on."
+        />
+        {plan.note && (
+          <p className="rounded-control border border-border px-3 py-2 text-body text-text">
+            {plan.note}
+          </p>
+        )}
+        {adding && (
+          <div className="space-y-2 rounded-xl border border-primary/40 p-3">
+            <p className="font-heading text-label font-bold uppercase tracking-wide text-primary">
+              Add more tasks
+              <span className="ml-2 font-body text-[12px] font-normal normal-case tracking-normal text-text-muted">
+                Added to today’s plan and posted in its thread; a task with no deadline gets
+                today’s.
+              </span>
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <SearchCombobox
+                label="Add one of my tasks"
+                single
+                className="min-w-[16rem] flex-1"
+                loading={!mine}
+                options={[...choices.values()]
+                  .filter(
+                    (c) => !onPlan.has(c.taskId) && !picked.some((p) => p.taskId === c.taskId),
+                  )
+                  .map((c) => ({
+                    value: String(c.taskId),
+                    label: `#${c.taskId} ${c.title} · ${c.project}`,
+                  }))}
+                selected={[]}
+                onChange={(v) => {
+                  const c = v[0] ? choices.get(Number(v[0])) : undefined;
+                  if (c) pick(c);
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setCreating(true)}
+                disabled={!today.canWrite}
+                title={today.canWrite ? undefined : 'Sign in again with Bitrix24 to create tasks'}
+                className="h-9 rounded-control bg-primary px-3 font-heading text-button text-white hover:brightness-110 disabled:opacity-50"
+              >
+                + Add task
+              </button>
+            </div>
+            {picked.length > 0 && (
+              <ul className="flex flex-wrap gap-1.5">
+                {picked.map((p) => (
+                  <li
+                    key={p.taskId}
+                    className="flex items-center gap-1 rounded-full bg-primary/10 py-0.5 pl-2.5 pr-1 text-table text-primary"
+                  >
+                    #{p.taskId} {p.title}
+                    <button
+                      type="button"
+                      aria-label={`Remove ${p.title}`}
+                      onClick={() => setPicked((xs) => xs.filter((x) => x.taskId !== p.taskId))}
+                      className="grid h-5 w-5 place-items-center rounded-full hover:bg-primary/20"
+                    >
+                      <IconClose size={12} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <AddTaskDialog
+              open={creating}
+              forWrap={false}
+              onClose={() => setCreating(false)}
+              onCreated={(t) =>
+                pick({ taskId: t.taskId, title: t.title, project: t.project, why: 'added' })
+              }
+            />
+          </div>
+        )}
+        <Destination today={today} />
+      </div>
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-border px-5 py-3">
+        <button type="button" className={clsx(btn, 'mr-auto')} onClick={onEdit}>
+          Edit plan
+        </button>
+        <button type="button" className={btn} onClick={onLater}>
+          Close
+        </button>
+        <button type="button" className={btn} onClick={() => open('wrap')}>
+          Wrap up now
+        </button>
+        {adding ? (
+          <button
+            type="button"
+            className={mainBtn}
+            disabled={busy || !picked.length}
+            onClick={() => void addToPlan()}
+          >
+            {busy ? 'Adding…' : `Add to my plan${picked.length ? ` (${picked.length})` : ''}`}
+          </button>
+        ) : (
+          <button type="button" className={mainBtn} onClick={() => setAdding(true)}>
+            + Add more tasks
+          </button>
+        )}
+      </div>
+    </>
+  );
+}
+
+function PlanEditor({ today, onLater }: { today: DailyToday; onLater: () => void }) {
   const postDaily = useDailyPost();
   const done = useAfterPost();
   const { open } = useDailyDialog();

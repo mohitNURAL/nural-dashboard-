@@ -63,8 +63,13 @@ export function DailyUpdatePage() {
         icon={<IconDaily size={24} />}
       >
         <button type="button" className={btn} data-tour="daily-plan" onClick={() => open('plan')}>
-          {today?.plan ? 'Change my plan' : 'Plan my day'}
+          {today?.plan ? 'My plan' : 'Plan my day'}
         </button>
+        {today?.plan && (
+          <button type="button" className={btn} data-tour="daily-add" onClick={() => open('add')}>
+            + Add more tasks
+          </button>
+        )}
         <button
           type="button"
           className={mainBtn}
@@ -86,7 +91,14 @@ export function DailyUpdatePage() {
                 label="Planned today"
                 info="Tasks on the plan you posted this morning."
                 value={today ? c.planned : undefined}
-                sub={today?.plan ? 'Posted' : 'Not posted yet'}
+                sub={
+                  today?.plan
+                    ? today.late
+                      ? `Late planned (after ${today.planBy})`
+                      : 'Posted'
+                    : 'Not posted yet'
+                }
+                onClick={today?.plan ? () => open('plan') : undefined}
               />
             ),
           },

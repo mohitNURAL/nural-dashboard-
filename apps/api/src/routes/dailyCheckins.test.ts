@@ -20,9 +20,12 @@ const ds = { users } as unknown as Dataset;
 
 function setup(now: Date, enabled = true) {
   const sent: { email: string; m: SlackMessage }[] = [];
+  const group: { channel: string; m: SlackMessage }[] = [];
   const slack = {
     connected: true,
     toPerson: async (email: string, m: SlackMessage) => void sent.push({ email, m }),
+    toChannel: async (channel: string, m: SlackMessage) => void group.push({ channel, m }),
+    mention: async (email: string) => (email === 'vijay@nural.test' ? '<@UVIJAY>' : null),
   } as unknown as Slack;
   const store = memoryDailyStore();
   const deps: CheckInDeps = {
@@ -32,12 +35,13 @@ function setup(now: Date, enabled = true) {
     slack,
     calendar: workCalendar({ days: [1, 2, 3, 4, 5] }),
     tz: 'Asia/Kolkata',
-    config: { enabled, recipients: [40, 18], plan: '11:30', wrap: '19:00' },
+    config: { enabled, recipients: [40, 18], plan: '11:30', wrap: '19:00', channel: true },
     expected: () => [7, 30],
     reportUrl: 'https://pulse/?tab=dailyreport',
+    channel: async () => 'CDAILY',
     now: () => now,
   };
-  return { sent, store, deps };
+  return { sent, group, store, deps };
 }
 
 describe('check-ins to the directors (SRS 24)', () => {
@@ -62,6 +66,36 @@ describe('check-ins to the directors (SRS 24)', () => {
     expect(sent).toHaveLength(2);
     // The wrap-up check-in is its own send.
     expect(await runCheckIn('wrap', deps)).toMatchObject({ sent: 2 });
+  });
+
+  it('at 11:30 the group gets who has not planned, mentioned; 19:00 names late planners', async () => {
+    const { group, store, deps } = setup(FRI);
+    const row = (userId: number, plannedAt: Date | null) => ({
+      userId,
+      day: '2026-10-16',
+      plan: plannedAt ? { items: [], note: '' } : null,
+      plannedAt,
+      wrap: null,
+      wrappedAt: null,
+      slackChannel: null,
+      slackTs: null,
+    });
+    await store.save(row(7, ist('2026-10-16T10:00')));
+    expect(await runCheckIn('plan', deps)).toMatchObject({ channel: 'CDAILY' });
+    expect(group).toHaveLength(1);
+    const text = JSON.stringify(group[0]!.m.blocks);
+    expect(text).toContain('<@UVIJAY>');
+    expect(text).not.toContain('Neha');
+    // Vijay plans at 12:10: Late planned in the evening check-in (DM only, not the group).
+    await store.save(row(30, ist('2026-10-16T12:10')));
+    const evening = setup(ist('2026-10-16T19:00'));
+    await evening.store.save(row(7, ist('2026-10-16T10:00')));
+    await evening.store.save(row(30, ist('2026-10-16T12:10')));
+    await runCheckIn('wrap', evening.deps);
+    expect(evening.group).toHaveLength(0);
+    const dm = JSON.stringify(evening.sent[0]!.m.blocks);
+    expect(dm).toContain('Planned late (1)');
+    expect(dm).toContain('Vijay');
   });
 
   it('sends nothing while disabled or on a day off', async () => {

@@ -1,14 +1,18 @@
 // Daily update check-ins to the directors (2026-10-17, SRS 24): a Slack direct message to each
 // recipient in config/daily-checkins.json (Deepak only since 2026-10-21) at 11:30, who has and has not
-// planned their day, and at 19:00, who has and has not wrapped up. Working days only; one send per
+// planned their day, and at 19:00, who has and has not wrapped up (and who planned late). At 11:30
+// the not-planned list also goes to the daily work update group, each person mentioned
+// (2026-10-22, "channel": true). Working days only; one send per
 // day and kind (recorded in app_settings), so a restart never sends twice. Scheduled only where the
 // sync worker runs (the server) and only while the file says enabled. Admins can send themselves a
 // preview from the report page.
 import {
   dailyCompliance,
   dailyDay,
+  isLatePlan,
   isWorkingDay,
   slackCheckIn,
+  slackNotPlanned,
   type WorkCalendar,
 } from '@nural/shared';
 import { Queue, Worker } from 'bullmq';
@@ -29,12 +33,20 @@ export interface CheckInConfig {
   recipients: number[];
   plan: string;
   wrap: string;
+  /** At the plan time, also post who has not planned to the daily work update group. */
+  channel: boolean;
 }
 
 /** config/daily-checkins.json; off when missing. */
 export function loadCheckInConfig(): CheckInConfig {
   const file = fileURLToPath(new URL('../../../../config/daily-checkins.json', import.meta.url));
-  const off: CheckInConfig = { enabled: false, recipients: [], plan: '11:30', wrap: '19:00' };
+  const off: CheckInConfig = {
+    enabled: false,
+    recipients: [],
+    plan: '11:30',
+    wrap: '19:00',
+    channel: false,
+  };
   if (!existsSync(file)) return off;
   const raw = JSON.parse(readFileSync(file, 'utf8')) as Partial<CheckInConfig>;
   const hhmm = (v: unknown, d: string) =>
@@ -46,6 +58,7 @@ export function loadCheckInConfig(): CheckInConfig {
       : [],
     plan: hhmm(raw.plan, off.plan),
     wrap: hhmm(raw.wrap, off.wrap),
+    channel: raw.channel === true,
   };
 }
 
@@ -58,6 +71,8 @@ export interface CheckInDeps {
   tz: string;
   config: CheckInConfig;
   expected: (ds: Dataset) => number[];
+  /** The daily work update group (Integration › Connections), for the not-planned list. */
+  channel?: () => Promise<string | null>;
   reportUrl?: string;
   now?: () => Date;
 }
@@ -83,9 +98,15 @@ export async function checkInMessage(kind: CheckInKind, deps: CheckInDeps) {
   );
   const name = (id: number) => ds.users.get(id)?.name ?? `User ${id}`;
   const names = (ids: number[]) => ids.map(name).sort((a, b) => a.localeCompare(b));
+  const late = rows
+    .filter((r) => expected.includes(r.userId))
+    .filter((r) => isLatePlan(r.plannedAt, deps.config.plan, deps.calendar))
+    .map((r) => r.userId);
   return {
     day,
     ds,
+    notPlanned: c.notPlanned,
+    expectedCount: c.expected.length,
     message: slackCheckIn(
       kind,
       dayLabelOf(at, deps.tz),
@@ -96,6 +117,7 @@ export async function checkInMessage(kind: CheckInKind, deps: CheckInDeps) {
         wrapped: names(c.wrapped),
         notWrapped: names(c.notWrapped),
         plannedNotWrapped: names(c.plannedNotWrapped),
+        latePlanned: names(late),
       },
       deps.reportUrl,
     ),
@@ -110,9 +132,30 @@ export async function runCheckIn(kind: CheckInKind, deps: CheckInDeps) {
   if (!isWorkingDay(Math.floor(local / 86_400_000), deps.calendar))
     return { sent: 0, skipped: 'not a working day' };
   if (!deps.slack.connected) return { sent: 0, skipped: 'Slack not connected' };
-  const { day, ds, message } = await checkInMessage(kind, deps);
+  const { day, ds, message, notPlanned, expectedCount } = await checkInMessage(kind, deps);
   const key = `dailyCheckin.${day}.${kind}`;
   if (await deps.settings.get(key)) return { sent: 0, skipped: 'already sent' };
+  // The group: who has not planned yet, mentioned so Slack tells them (names when not found).
+  let channel: string | null = null;
+  const group = kind === 'plan' && deps.config.channel ? await deps.channel?.() : null;
+  if (group) {
+    const people = await Promise.all(
+      notPlanned.map(async (id) => {
+        const u = ds.users.get(id);
+        const mention = u?.email ? await deps.slack.mention(u.email).catch(() => null) : null;
+        return mention ?? u?.name ?? `User ${id}`;
+      }),
+    );
+    try {
+      await deps.slack.toChannel(
+        group,
+        slackNotPlanned(dayLabelOf(at, deps.tz), people, expectedCount, deps.config.plan),
+      );
+      channel = group;
+    } catch {
+      channel = null;
+    }
+  }
   let sent = 0;
   const failed: number[] = [];
   for (const id of deps.config.recipients) {
@@ -128,8 +171,8 @@ export async function runCheckIn(kind: CheckInKind, deps: CheckInDeps) {
       failed.push(id);
     }
   }
-  await deps.settings.set(key, { at: at.toISOString(), sent, failed }, 0);
-  return { sent, failed };
+  await deps.settings.set(key, { at: at.toISOString(), sent, failed, channel }, 0);
+  return { sent, failed, channel };
 }
 
 /** Two timed jobs (BullMQ job schedulers, cron in IST): the plan and the wrap-up check-ins. */

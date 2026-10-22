@@ -58,7 +58,9 @@ afterEach(async () => {
   app = undefined;
 });
 
-async function server(opts: { channel?: string | null; token?: boolean; admins?: number[] } = {}) {
+async function server(
+  opts: { channel?: string | null; token?: boolean; admins?: number[]; now?: () => Date } = {},
+) {
   const calls: { method: string; params: Params }[] = [];
   const recorded: unknown[] = [];
   const posts: { channel: string; m: SlackMessage; threadTs?: string }[] = [];
@@ -88,7 +90,7 @@ async function server(opts: { channel?: string | null; token?: boolean; admins?:
   app = await buildServer({
     getDataset: dataset,
     logger: false,
-    now: () => NOW,
+    now: opts.now ?? (() => NOW),
     roles: { admins: opts.admins ?? [], pms: [], teamLeads: [], productOwners: [] },
     auth: {
       mode: 'bitrix',
@@ -229,6 +231,44 @@ describe('daily update (SRS 23)', () => {
     expect(res.json().posted).toBe(true);
     expect(res.json().failures[0].title).toBe('Cache clean-up');
     expect(s.calls).toEqual([]);
+  });
+
+  it('adds more tasks to a posted plan in the day: message updated, a reply in its thread', async () => {
+    let at = NOW;
+    const s = await server({ now: () => at });
+    await post('/api/daily/plan', { taskIds: [41], note: '' });
+    expect((await get('/api/daily/today')).json().late).toBe(false); // 10:30, before 11:30
+    at = ist('2026-10-14T14:05');
+    const res = await post('/api/daily/plan/add', { taskIds: [44, 45, 41] });
+    expect(res.json()).toMatchObject({ ok: true, posted: true, added: 2, failures: [] });
+    // The undated one gets today's deadline, with her own login.
+    expect(s.calls.map((c) => c.method)).toEqual(['tasks.task.update']);
+    expect(s.updates).toEqual([expect.objectContaining({ ts: 'ts1' })]);
+    expect(JSON.stringify(s.updates[0]!.m)).toContain('added 14:05');
+    expect(s.posts[1]).toMatchObject({ threadTs: 'ts1' });
+    expect(JSON.stringify(s.posts[1]!.m)).toContain('Added to the plan at 14:05');
+    const t = (await get('/api/daily/today')).json();
+    expect(t.plan.items.map((i: { taskId: number }) => i.taskId)).toEqual([41, 44, 45]);
+    expect(t.plan.items[1].addedAt).toBe(at.toISOString());
+    expect(t.plannedAt).toBe(NOW.toISOString()); // the first posting time stays
+    // Only on a posted plan, only new tasks of her own.
+    expect((await post('/api/daily/plan/add', { taskIds: [41] })).statusCode).toBe(400);
+    expect((await post('/api/daily/plan/add', { taskIds: [42] })).statusCode).toBe(400);
+  });
+
+  it('a plan first posted after 11:30 is Late planned, on the page and in Slack', async () => {
+    let at = ist('2026-10-14T12:10');
+    const s = await server({ now: () => at });
+    expect((await post('/api/daily/plan/add', { taskIds: [41] })).statusCode).toBe(400); // no plan
+    await post('/api/daily/plan', { taskIds: [41], note: '' });
+    expect((await get('/api/daily/today')).json()).toMatchObject({ late: true, planBy: '11:30' });
+    expect(JSON.stringify(s.posts[0]!.m)).toContain('Late planned* (12:10)');
+    // Changing it later does not move the time it was first posted.
+    at = ist('2026-10-14T15:00');
+    await post('/api/daily/plan', { taskIds: [41, 43], note: '' });
+    const t = (await get('/api/daily/today')).json();
+    expect(t.plannedAt).toBe(ist('2026-10-14T12:10').toISOString());
+    expect(t.plan.items[1].addedAt).toBe(at.toISOString());
   });
 
   it('refuses someone else’s task on the plan', async () => {

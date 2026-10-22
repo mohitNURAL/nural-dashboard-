@@ -18,6 +18,24 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-22-daily-posted',
+    date: '2026-10-22',
+    tab: 'daily',
+    title: 'Daily update: your posted plan, add more tasks, Late planned',
+    steps: [
+      {
+        target: '[data-tour="daily-plan"]',
+        title: 'Your posted plan',
+        text: 'After you post, My plan shows what you posted: when, each task with its state now, and anything added later. Edit plan still changes it. A plan first posted after 11:30 is tagged Late planned, and at 11:30 the daily work update group sees who has not planned yet.',
+      },
+      {
+        target: '[data-tour="daily-add"]',
+        title: 'Add more tasks in the day',
+        text: 'Picked up something new? + Add more tasks puts it on today’s plan and posts it in your plan’s Slack thread.',
+      },
+    ],
+  },
+  {
     id: '2026-10-22-kpi-ba',
     date: '2026-10-22',
     tab: 'kpi',

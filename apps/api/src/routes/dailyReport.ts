@@ -7,6 +7,7 @@ import {
   dailyCompliance,
   dailyState,
   dayKey,
+  isLatePlan,
   isWorkingDay,
   type DailyState,
   type WorkCalendar,
@@ -23,6 +24,8 @@ export interface DailyReportDeps {
   tz: string;
   /** Everyone expected to post (active, Daily update right on, not a placeholder). */
   expected: (ds: Dataset) => number[];
+  /** "HH:MM": a plan first posted after it is Late planned (default 11:30). */
+  planBy?: string;
   now?: () => Date;
 }
 
@@ -167,6 +170,8 @@ export function dailyReportRoutes(
           dept: ds.kpiDept?.get(userId) ?? 'other',
           day,
           plannedAt: r?.plannedAt ?? null,
+          /** First posted after planBy (11:30), 2026-10-22. */
+          late: isLatePlan(r?.plannedAt ?? null, deps.planBy ?? '11:30', deps.calendar),
           wrappedAt: r?.wrappedAt ?? null,
           planned: tasks.filter((t) => t.planned).length,
           added: tasks.filter((t) => !t.planned).length,
@@ -191,6 +196,7 @@ export function dailyReportRoutes(
     );
     const named = (list: number[]) => list.map((id) => ({ id, name: name(id) }));
     return {
+      planBy: deps.planBy ?? '11:30',
       from,
       to,
       days,

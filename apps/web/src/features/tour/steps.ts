@@ -385,7 +385,12 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
     {
       target: tour('daily-plan'),
       title: 'Plan your day',
-      text: 'Open it from the Daily update icon in the dock: what carries over from your last plan (still pending or WIP), your overdue and due-today tasks, upcoming ones you can take on early, and those with no deadline (plan one and its deadline is set to today when you post). Change any task right in its row (stage, status, tags…), keep, remove or add, write a note and post it to the daily work update group on Slack. You can open it all day to see and change your plan.',
+      text: 'Open it from the Daily update icon in the dock: what carries over from your last plan (still pending or WIP), your overdue and due-today tasks, upcoming ones you can take on early, and those with no deadline (plan one and its deadline is set to today when you post). Change any task right in its row (stage, status, tags…), keep, remove or add, write a note and post it to the daily work update group on Slack. Post it by 11:30: after that it is tagged Late planned. Once posted it opens as your posted plan, where Edit plan changes it.',
+    },
+    {
+      target: tour('daily-add'),
+      title: 'Add more tasks in the day',
+      text: 'Picked up something new after posting? + Add more tasks puts any of your open tasks (or a new one) on today’s plan and tells the team in your plan’s Slack thread.',
     },
     {
       target: tour('daily-wrap'),

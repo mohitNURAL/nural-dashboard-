@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { workCalendar } from './calendar';
 import {
+  clockLabel,
+  isLatePlan,
   dailyClock,
   dailySuggestions,
   isPlannable,
@@ -241,5 +243,16 @@ describe('check-in to the directors', () => {
     const m = slackCheckIn('wrap', 'Fri 16 Oct', c);
     expect(m.text).toBe('Day wrap-ups Fri 16 Oct: 0 of 3 wrapped up, 3 not yet');
     expect(JSON.stringify(m.blocks)).toContain('Of them, planned this morning: Neha');
+  });
+});
+
+describe('late planned (2026-10-22)', () => {
+  const cal = workCalendar({ days: [1, 2, 3, 4, 5] });
+  const ist = (local: string) => new Date(`${local}+05:30`);
+  it('is a plan first posted after the check-in time, by the local clock', () => {
+    expect(isLatePlan(ist('2026-10-22T11:30'), '11:30', cal)).toBe(false);
+    expect(isLatePlan(ist('2026-10-22T11:31'), '11:30', cal)).toBe(true);
+    expect(isLatePlan(null, '11:30', cal)).toBe(false);
+    expect(clockLabel(ist('2026-10-22T09:05'), cal)).toBe('09:05');
   });
 });

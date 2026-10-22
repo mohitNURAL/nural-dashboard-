@@ -27,6 +27,9 @@ export interface DailyToday {
   wrapFromMin: number;
   plan: DailyPlan | null;
   plannedAt: string | null;
+  /** The plan was first posted after planBy ("11:30"): Late planned (2026-10-22). */
+  late: boolean;
+  planBy: string;
   wrap: DailyWrap | null;
   wrappedAt: string | null;
   posted: boolean;
@@ -81,11 +84,17 @@ export const useDailyHistory = () =>
 export const useDailyChannel = (enabled = true) =>
   useApi<{ channel: string | null }>('/api/integrations/daily-channel', {}, { enabled });
 
-/** Posts and refreshes every daily view (and the task pages, as tasks may have changed). */
+/**
+ * Posts and refreshes every daily view (and the task pages, as tasks may have changed). "add"
+ * adds tasks to the plan posted earlier today (2026-10-22).
+ */
 export function useDailyPost() {
   const qc = useQueryClient();
-  return async (kind: 'plan' | 'wrap', body: unknown) => {
-    const r = await apiPost<PostResult>(`/api/daily/${kind}`, body);
+  return async (kind: 'plan' | 'wrap' | 'add', body: unknown) => {
+    const r = await apiPost<PostResult>(
+      kind === 'add' ? '/api/daily/plan/add' : `/api/daily/${kind}`,
+      body,
+    );
     await qc.invalidateQueries({ queryKey: [API_KEY] });
     return r;
   };

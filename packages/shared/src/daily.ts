@@ -53,6 +53,8 @@ export interface DailyItem {
   why: DailyWhy;
   /** Overdue: whole days past the deadline (at least 1). */
   daysOverdue?: number;
+  /** Added after the plan was posted (ISO time), e.g. in the middle of the day (2026-10-22). */
+  addedAt?: string;
 }
 
 export interface WrapItem {
@@ -83,6 +85,27 @@ export function dailyClock(now: Date, cal: WorkCalendar) {
     nowMin: Math.floor((local - day * DAY_MS) / 60_000),
     wrapFromMin: cal.endMin,
   };
+}
+
+/** Minutes after local midnight of "HH:MM". */
+const hhmmMin = (hhmm: string) => {
+  const [h, m] = hhmm.split(':').map(Number);
+  return (h ?? 0) * 60 + (m ?? 0);
+};
+
+/**
+ * Late planned (2026-10-22): the plan was first posted after the check-in time (11:30, config/
+ * daily-checkins.json "plan"), by the clock of the day it was posted.
+ */
+export function isLatePlan(plannedAt: Date | string | null, by: string, cal: WorkCalendar) {
+  if (!plannedAt) return false;
+  return dailyClock(new Date(plannedAt), cal).nowMin > hhmmMin(by);
+}
+
+/** "14:05" in the calendar's time zone. */
+export function clockLabel(at: Date | string, cal: WorkCalendar) {
+  const min = dailyClock(new Date(at), cal).nowMin;
+  return `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
 }
 
 /**
@@ -234,6 +257,8 @@ export function slackPlan(
   items: readonly DailyItem[],
   note?: string,
   taskUrl?: (id: number) => string,
+  /** Late planned: the time it was first posted ("12:10"); added-later tasks show their time. */
+  opts: { late?: string; addedLabel?: (iso: string) => string } = {},
 ): SlackText {
   const overdue = items.filter((i) => i.why === 'overdue').length;
   const today = items.filter((i) => i.why === 'today' || i.why === 'noDeadline').length;
@@ -257,9 +282,13 @@ export function slackPlan(
               : i.why === 'noDeadline'
                 ? ':large_orange_circle: due today (deadline set)'
                 : ':large_blue_circle: planned';
-    return `• ${link(i, taskUrl)} — ${i.project} · ${tag}`;
+    const later = i.addedAt
+      ? ` · :heavy_plus_sign: added ${opts.addedLabel?.(i.addedAt) ?? 'later'}`
+      : '';
+    return `• ${link(i, taskUrl)} — ${i.project} · ${tag}${later}`;
   });
-  const title = `${head(who)} · :sunrise: Plan for ${dayLabel}`;
+  const late = opts.late ? ` · :hourglass_flowing_sand: *Late planned* (${opts.late})` : '';
+  const title = `${head(who)} · :sunrise: Plan for ${dayLabel}${late}`;
   const note$ = noteLine(note);
   return {
     text: `${who.name}: plan for ${dayLabel} (${counts})`,
@@ -268,6 +297,45 @@ export function slackPlan(
       section(lines.length ? lines.join('\n') : '_No tasks planned._'),
       ...(note$ ? [section(note$)] : []),
       context(`${counts} · posted from Nural Pulse`),
+    ],
+  };
+}
+
+/** Tasks added to a posted plan during the day: a reply in the plan's thread (2026-10-22). */
+export function slackPlanAdded(
+  who: Who,
+  time: string,
+  items: readonly DailyItem[],
+  taskUrl?: (id: number) => string,
+): SlackText {
+  const n = `${items.length} task${items.length === 1 ? '' : 's'}`;
+  return {
+    text: `${who.name} added ${n} to the plan at ${time}`,
+    blocks: [
+      section(`${head(who)} · :heavy_plus_sign: Added to the plan at ${time}`),
+      section(items.map((i) => `• ${link(i, taskUrl)} — ${i.project}`).join('\n')),
+    ],
+  };
+}
+
+/**
+ * The 11:30 nudge in the daily work update group (2026-10-22): who has not planned yet,
+ * mentioned so Slack notifies them; anyone posting after it is tagged Late planned.
+ */
+export function slackNotPlanned(
+  dayLabel: string,
+  people: readonly string[],
+  expected: number,
+  by: string,
+): SlackText {
+  return {
+    text: `Not planned yet ${dayLabel}: ${people.length} of ${expected}`,
+    blocks: [
+      section(
+        `:alarm_clock: *Not planned yet · ${dayLabel}* (${people.length} of ${expected})\n` +
+          (people.length ? people.map((p) => `• ${p}`).join('\n') : '_Everyone has planned._'),
+      ),
+      context(`A plan posted after ${by} is tagged Late planned · Nural Pulse`),
     ],
   };
 }
@@ -356,6 +424,8 @@ export function slackCheckIn(
     wrapped: readonly string[];
     notWrapped: readonly string[];
     plannedNotWrapped: readonly string[];
+    /** Planned after the check-in time (Late planned, 2026-10-22), for the evening message. */
+    latePlanned?: readonly string[];
   },
   reportUrl?: string,
 ): SlackText {
@@ -387,6 +457,9 @@ export function slackCheckIn(
       ),
       section(`*Wrapped up (${c.wrapped.length})*\n${list(c.wrapped)}`),
       section(`*Did not plan today (${c.notPlanned.length})*\n${list(c.notPlanned)}`),
+      ...(c.latePlanned?.length
+        ? [section(`*Planned late (${c.latePlanned.length})*\n${list(c.latePlanned)}`)]
+        : []),
       context(`Sent by Nural Pulse at 19:00${link}`),
     ],
   };

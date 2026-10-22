@@ -1,7 +1,8 @@
 {
-  "_note": "Daily update check-ins (SRS 24): a Slack direct message to each recipient (Bitrix24 user IDs, found in Slack by work e-mail) at 11:30 (who has / has not planned) and 19:00 (who has / has not wrapped up), working days only. Sent only by the server with the sync worker, and only while enabled is true.",
+  "_note": "Daily update check-ins (SRS 24): a Slack direct message to each recipient (Bitrix24 user IDs, found in Slack by work e-mail) at 11:30 (who has / has not planned) and 19:00 (who has / has not wrapped up), working days only. channel true also posts the not-planned list to the daily work update group at the plan time, each person mentioned; a plan first posted after the plan time is tagged Late planned. Sent only by the server with the sync worker, and only while enabled is true.",
   "enabled": true,
   "recipients": [40],
   "plan": "11:30",
-  "wrap": "19:00"
+  "wrap": "19:00",
+  "channel": true
 }

@@ -16,9 +16,11 @@ import { startReportScheduler, type ReportScheduler } from './reports/schedule';
 import { memoryReportStore, type ReportStore } from './reports/store';
 import { actionRoutes, taskWriter, type ActionDeps } from './routes/actions';
 import {
+  DAILY_SETTING,
   dailyRoutes,
   memoryDailyStore,
   memorySettingsStore,
+  type DailySetting,
   type DailyStore,
   type SettingsStore,
 } from './routes/daily';
@@ -416,6 +418,7 @@ export async function buildServer({
     ),
   };
   const dailySettings = daily?.settings ?? memorySettingsStore();
+  const checkInConfig = loadCheckInConfig();
   dailyRoutes(app, scoping.dataset, scoping.viewer, {
     store: dailyStore,
     settings: dailySettings,
@@ -430,6 +433,7 @@ export async function buildServer({
           .filter(Boolean),
       ),
     },
+    planBy: checkInConfig.plan,
     now,
   });
   // Report › Daily task update (SRS 24): expected = active people with the Daily update right,
@@ -448,6 +452,7 @@ export async function buildServer({
     store: dailyStore,
     calendar: dailyCalendar,
     tz: config.APP_TIMEZONE,
+    planBy: checkInConfig.plan,
     now,
     expected: expectedToPost,
   });
@@ -459,8 +464,9 @@ export async function buildServer({
     slack: engine.slack,
     calendar: dailyCalendar,
     tz: config.APP_TIMEZONE,
-    config: loadCheckInConfig(),
+    config: checkInConfig,
     expected: expectedToPost,
+    channel: async () => (await dailySettings.get<DailySetting>(DAILY_SETTING))?.channel ?? null,
     reportUrl: `${config.PUBLIC_BASE_URL ?? config.WEB_ORIGIN ?? ''}/?tab=dailyreport`,
     now,
   };

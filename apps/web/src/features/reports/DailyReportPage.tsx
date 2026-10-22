@@ -16,7 +16,7 @@ import { StatTile } from '../../components/StatTile';
 import { IconDaily, IconExcel, IconPdf } from '../../components/ui/icons';
 import { PageHead } from '../../components/ui/PageHead';
 import { Select } from '../../components/ui/Select';
-import { StateChip } from '../daily/taskColumns';
+import { LateChip, StateChip } from '../daily/taskColumns';
 import { CheckInsCard } from './CheckInsCard';
 import { DEPT_LABEL } from '../kpi/format';
 import { reportTables } from './dailyReportTable';
@@ -70,6 +70,7 @@ export function DailyReportPage() {
     return p;
   }, [from, to, dept, assignee]);
   const { data, isLoading } = useApi<DailyReport>('/api/report/daily', params);
+  const planBy = data?.planBy ?? '11:30';
   const { data: me } = useMe();
 
   const lines = useMemo(
@@ -116,7 +117,12 @@ export function DailyReportPage() {
         header: 'Planned at',
         cell: (c) =>
           c.row.original.plannedAt ? (
-            <span className="font-medium text-good">{time(c.row.original.plannedAt)}</span>
+            <span className="flex items-center gap-1.5">
+              <span className={clsx('font-medium', c.row.original.late ? 'text-bad' : 'text-good')}>
+                {time(c.row.original.plannedAt)}
+              </span>
+              {c.row.original.late && <LateChip by={planBy} />}
+            </span>
           ) : (
             <span className="font-bold text-bad">Not planned</span>
           ),
@@ -138,7 +144,7 @@ export function DailyReportPage() {
       col.accessor('hold', { header: 'On hold', meta: { align: 'center' } }),
       col.accessor('added', { header: 'Added', meta: { align: 'center' } }),
     ],
-    [],
+    [planBy],
   );
 
   const tile = (
@@ -382,8 +388,8 @@ function DayAccordion({
         <span className="font-heading font-bold text-primary-dark">{l.name}</span>
         <span className="text-table font-medium text-text">{dayText(l.day)}</span>
         <span className="text-table text-text">
-          Plan {l.plannedAt ? time(l.plannedAt) : '—'} · Wrap-up{' '}
-          {l.wrappedAt ? time(l.wrappedAt) : '—'}
+          Plan {l.plannedAt ? time(l.plannedAt) : '—'}
+          {l.late ? ' (late)' : ''} · Wrap-up {l.wrappedAt ? time(l.wrappedAt) : '—'}
         </span>
         <span className="ml-auto flex flex-wrap items-center gap-2 text-table">
           <span className="font-medium text-text">{l.planned} planned</span>

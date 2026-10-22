@@ -6,6 +6,7 @@
 // plus unplanned work, created in Bitrix24 as a task assigned to themselves (bitrix/methods.ts
 // CREATE_FIELDS). Data only through getDataset(req), and only the person's own tasks.
 import {
+  clockLabel,
   dailyClock,
   dailyDay,
   dailyDeadline,
@@ -13,9 +14,11 @@ import {
   dailyState,
   dailySuggestions,
   dailyUpcoming,
+  isLatePlan,
   isPlannable,
   type DailyState,
   slackPlan,
+  slackPlanAdded,
   slackWrap,
   wrapState,
   type DailyItem,
@@ -110,12 +113,18 @@ export interface DailyDeps {
   writer: ReturnType<typeof taskWriter>;
   tz: string;
   calendar: WorkCalendar;
+  /** "HH:MM": a plan first posted after it is Late planned (check-in time, default 11:30). */
+  planBy?: string;
   now?: () => Date;
 }
 
 const planBody = z.object({
   taskIds: z.array(z.coerce.number().int().positive()).max(50),
   note: z.string().trim().max(1000).default(''),
+});
+
+const addBody = z.object({
+  taskIds: z.array(z.coerce.number().int().positive()).min(1).max(20),
 });
 
 const wrapBody = z.object({
@@ -182,6 +191,7 @@ export function dailyRoutes(
     const t = ds.byId.get(id);
     return t ? taskUrl(ds, t) : `${ds.portalOrigin}/company/personal/tasks/task/view/${id}/`;
   };
+  const planBy = deps.planBy ?? '11:30';
   const channelOf = async () =>
     (await deps.settings.get<DailySetting>(DAILY_SETTING))?.channel ?? null;
 
@@ -307,6 +317,9 @@ export function dailyRoutes(
       ...dailyClock(at, deps.calendar),
       plan: row?.plan ?? null,
       plannedAt: row?.plannedAt ?? null,
+      /** First posted after planBy (11:30): Late planned. */
+      late: isLatePlan(row?.plannedAt ?? null, planBy, deps.calendar),
+      planBy,
       wrap: row?.wrap ?? null,
       wrappedAt: row?.wrappedAt ?? null,
       posted: !!row?.slackTs,
@@ -367,30 +380,33 @@ export function dailyRoutes(
     };
   });
 
-  app.post('/api/daily/plan', async (req, reply) => {
-    const parsed = planBody.safeParse(req.body);
-    if (!parsed.success)
-      return reply.code(400).send({ error: parsed.error.issues[0]?.message ?? 'Invalid plan.' });
-    const v = await viewer(req);
-    const ds = await getDataset(req);
-    const at = now();
+  /**
+   * The plan items for these task ids (each must be the person's own), with a deadline of today
+   * set in Bitrix24 on those without one (2026-10-21, their own login); what could not be saved.
+   */
+  async function planItems(
+    req: FastifyRequest,
+    ds: Dataset,
+    userId: number,
+    ids: number[],
+    at: Date,
+  ): Promise<{ items: DailyItem[]; failures: { title: string; message: string }[] } | string> {
     const day = dailyDay(at, deps.tz);
     const project = projectOf(ds);
     const pctx = { now: at, tz: deps.tz, testers: ds.testers };
     const suggested = new Map(
       [
-        ...dailySuggestions(ds.tasks, v.userId, pctx, project, await lastPlanned(v.userId, day)),
-        ...dailyUpcoming(ds.tasks, v.userId, pctx, project, 500),
-        ...dailyNoDeadline(ds.tasks, v.userId, pctx, project, 500),
+        ...dailySuggestions(ds.tasks, userId, pctx, project, await lastPlanned(userId, day)),
+        ...dailyUpcoming(ds.tasks, userId, pctx, project, 500),
+        ...dailyNoDeadline(ds.tasks, userId, pctx, project, 500),
       ].map((s) => [s.taskId, s]),
     );
     const items: DailyItem[] = [];
-    for (const id of [...new Set(parsed.data.taskIds)]) {
+    for (const id of [...new Set(ids)]) {
       const t = ds.byId.get(id);
-      const fresh = createdBy(v.userId).get(id);
-      if ((!t || t.responsibleId !== v.userId) && !fresh) {
-        return reply.code(400).send({ error: `Task ${id} is not one of your tasks.` });
-      }
+      const fresh = createdBy(userId).get(id);
+      if ((!t || t.responsibleId !== userId) && !fresh)
+        return `Task ${id} is not one of your tasks.`;
       items.push(
         suggested.get(id) ?? {
           taskId: id,
@@ -429,16 +445,51 @@ export function dailyRoutes(
         }
       }
     }
-    const row = (await deps.store.get(v.userId, day)) ?? empty(v.userId, day);
-    row.plan = { items, note: parsed.data.note };
-    row.plannedAt = at;
-    const msg = slackPlan(
-      await whoOf(req, ds, v.userId),
+    return { items, failures };
+  }
+
+  /** The plan's Slack message: Late planned when first posted after planBy, added-later times. */
+  const planMessage = async (req: FastifyRequest, ds: Dataset, row: DailyRow, at: Date) =>
+    slackPlan(
+      await whoOf(req, ds, row.userId),
       dayLabelOf(at, deps.tz),
-      items,
-      parsed.data.note,
+      row.plan?.items ?? [],
+      row.plan?.note,
       urlOf(ds),
+      {
+        late:
+          row.plannedAt && isLatePlan(row.plannedAt, planBy, deps.calendar)
+            ? clockLabel(row.plannedAt, deps.calendar)
+            : undefined,
+        addedLabel: (iso) => clockLabel(iso, deps.calendar),
+      },
     );
+
+  app.post('/api/daily/plan', async (req, reply) => {
+    const parsed = planBody.safeParse(req.body);
+    if (!parsed.success)
+      return reply.code(400).send({ error: parsed.error.issues[0]?.message ?? 'Invalid plan.' });
+    const v = await viewer(req);
+    const ds = await getDataset(req);
+    const at = now();
+    const day = dailyDay(at, deps.tz);
+    const built = await planItems(req, ds, v.userId, parsed.data.taskIds, at);
+    if (typeof built === 'string') return reply.code(400).send({ error: built });
+    const { items, failures } = built;
+    const row = (await deps.store.get(v.userId, day)) ?? empty(v.userId, day);
+    // Changed later the same day: a task already on it keeps when it was added; a new one is
+    // added now (2026-10-22). The first posting time stays (Late planned is judged on it).
+    if (row.plan) {
+      const before = new Map(row.plan.items.map((i) => [i.taskId, i]));
+      for (const i of items) {
+        const was = before.get(i.taskId);
+        if (!was) i.addedAt = at.toISOString();
+        else if (was.addedAt) i.addedAt = was.addedAt;
+      }
+    }
+    row.plan = { items, note: parsed.data.note };
+    row.plannedAt ??= at;
+    const msg = await planMessage(req, ds, row, at);
     // Posted again the same day: the earlier message is changed, not repeated.
     const result = await post(row, (channel) =>
       row.slackTs && row.slackChannel
@@ -447,6 +498,42 @@ export function dailyRoutes(
     );
     await deps.store.save(row);
     return { ok: true, ...result, failures };
+  });
+
+  // More tasks on a posted plan in the middle of the day (2026-10-22): added to the plan, the
+  // morning message updated, and a reply in its thread listing what was added and when.
+  app.post('/api/daily/plan/add', async (req, reply) => {
+    const parsed = addBody.safeParse(req.body);
+    if (!parsed.success)
+      return reply.code(400).send({ error: parsed.error.issues[0]?.message ?? 'Pick a task.' });
+    const v = await viewer(req);
+    const ds = await getDataset(req);
+    const at = now();
+    const day = dailyDay(at, deps.tz);
+    const row = await deps.store.get(v.userId, day);
+    if (!row?.plan) return reply.code(400).send({ error: 'Post your plan for today first.' });
+    const plan = row.plan;
+    const ids = parsed.data.taskIds.filter((id) => !plan.items.some((i) => i.taskId === id));
+    if (!ids.length)
+      return reply.code(400).send({ error: 'Those tasks are already on your plan.' });
+    const built = await planItems(req, ds, v.userId, ids, at);
+    if (typeof built === 'string') return reply.code(400).send({ error: built });
+    for (const i of built.items) i.addedAt = at.toISOString();
+    plan.items.push(...built.items);
+    const msg = await planMessage(req, ds, row, at);
+    const added = slackPlanAdded(
+      await whoOf(req, ds, v.userId),
+      clockLabel(at, deps.calendar),
+      built.items,
+      urlOf(ds),
+    );
+    const result = await post(row, async (channel) => {
+      if (!row.slackTs || !row.slackChannel) return deps.slack.toChannel(channel, msg);
+      await deps.slack.update(row.slackChannel, row.slackTs, msg);
+      await deps.slack.toChannel(row.slackChannel, added, { threadTs: row.slackTs });
+    });
+    await deps.store.save(row);
+    return { ok: true, ...result, failures: built.failures, added: built.items.length };
   });
 
   app.post('/api/daily/wrap', async (req, reply) => {

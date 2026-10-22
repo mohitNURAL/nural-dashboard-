@@ -82,3 +82,15 @@ export function TaskTitle({ id, title, url }: { id: number; title: string; url?:
     </span>
   );
 }
+
+/** Late planned: first posted after the check-in time (2026-10-22). */
+export function LateChip({ by }: { by: string }) {
+  return (
+    <span
+      className="whitespace-nowrap rounded-full bg-bad/15 px-2 py-0.5 text-[12px] font-semibold text-bad"
+      title={`The plan was first posted after ${by}`}
+    >
+      Late planned
+    </span>
+  );
+}

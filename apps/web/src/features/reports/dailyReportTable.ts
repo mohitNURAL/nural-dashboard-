@@ -62,7 +62,9 @@ export function reportTables(lines: ReportLine[]): { full: Value[][]; pdf: Value
     ],
   ];
   for (const l of lines) {
-    const plan = l.plannedAt ? time(l.plannedAt) : 'Not planned';
+    const plan = l.plannedAt
+      ? `${time(l.plannedAt)}${l.late ? ' (late planned)' : ''}`
+      : 'Not planned';
     const wrap = l.wrappedAt ? time(l.wrappedAt) : 'Not wrapped up';
     const summary = `${l.planned} planned · ${l.done} done · ${l.wip} WIP · ${l.pending} pending`;
     full.push([
