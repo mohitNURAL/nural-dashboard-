@@ -49,7 +49,7 @@ const listParams = {
   issue: z.enum(['true', 'false']).optional(),
   // KPI tab (SRS 13): every task in every workgroup, picked by the KPI rules.
   kpi: z.enum(KPI_LIST_PRESETS).optional(),
-  dept: z.enum(['all', 'dev', 'qa', 'support']).optional(),
+  dept: z.enum(['all', 'dev', 'qa', 'support', 'ba']).optional(),
   period: z.enum(['day', 'week', 'month']).optional(),
   kpiAgeing: z.enum(OVERDUE_BUCKETS).optional(),
   noProject: z.enum(['true']).optional(),

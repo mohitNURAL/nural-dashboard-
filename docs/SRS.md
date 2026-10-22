@@ -1007,7 +1007,7 @@ Hours return when section 12's stage clocks measure real working time.
 
 | Term | Rule |
 | --- | --- |
-| Department of a task | The assignee's department, from `config/departments.json`: Development (Software Development and its sub-departments), QA (QA Testing), Support (Tech Support), else Other |
+| Department of a task | The assignee's department, from `config/departments.json`: Development (Software Development and its sub-departments), QA (QA Testing), Support (Tech Support), BA (Business Analysis: set per person in `people`, today Yajur, user 20; 2026-10-22), else Other. The Open tasks tile splits into Dev, QA, Support and BA |
 | Closed | Completed by the rule of every tab: in QA Backlog, In QA, Done or LIVE (on a board without QA stages, closed in Bitrix24). Dated by its last move from a pending stage into a completed one; without such a move, the Bitrix24 closed date |
 | Open | Pending: any stage behind QA Backlog except On Hold, Issue Raised included, even after an earlier completion |
 | On hold | In On Hold: neither open nor closed; its own tile (On hold) |

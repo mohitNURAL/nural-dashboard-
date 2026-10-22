@@ -11,6 +11,7 @@ const DEPT_OPTIONS: { value: Exclude<KpiDept, 'all'>; label: string }[] = [
   { value: 'dev', label: 'Development' },
   { value: 'qa', label: 'QA' },
   { value: 'support', label: 'Support' },
+  { value: 'ba', label: 'BA' },
 ];
 
 export function FilterBar({ tab }: { tab: Tab }) {

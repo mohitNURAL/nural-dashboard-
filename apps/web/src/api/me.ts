@@ -43,7 +43,7 @@ export interface Me {
   /** Report › Daily task update (SRS 24). */
   dailyReport?: boolean;
   /** Department (dev, qa, support, other) and Bitrix24 designation, for the guided tour. */
-  dept?: 'dev' | 'qa' | 'support' | 'other';
+  dept?: 'dev' | 'qa' | 'support' | 'ba' | 'other';
   position?: string | null;
 }
 

@@ -1,6 +1,8 @@
 {
-  "_note": "KPI department of a person (SRS 13.3): Bitrix24 department names; their sub-departments are included. Anyone else is Other.",
+  "_note": "KPI department of a person (SRS 13.3): Bitrix24 department names; their sub-departments are included. ba (Business Analysis) has no Bitrix24 department: people sets it per user ID (20 Yajur), over their department. Anyone else is Other.",
   "dev": ["Software Development"],
   "qa": ["QA Testing"],
-  "support": ["Tech Support"]
+  "support": ["Tech Support"],
+  "ba": [],
+  "people": { "20": "ba" }
 }

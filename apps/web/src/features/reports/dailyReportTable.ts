@@ -2,6 +2,7 @@
 // and day (their summary), then one per task: planned or added, reported, now, stage, status,
 // priority, tags, deadline and the Kanban moves that day.
 import type { Value } from '../../components/layout/excelTheme';
+import { DEPT_LABEL } from '../kpi/format';
 import type { ReportLine } from './dailyReportTypes';
 
 const time = (iso: string | null) =>
@@ -21,7 +22,7 @@ const WHY: Record<string, string> = {
   noDeadline: 'No deadline (set to today)',
   added: 'Added',
 };
-const DEPT = { dev: 'Development', qa: 'QA', support: 'Support', other: 'Other' } as const;
+const DEPT = DEPT_LABEL;
 
 export function reportTables(lines: ReportLine[]): { full: Value[][]; pdf: Value[][] } {
   const full: Value[][] = [

@@ -515,6 +515,7 @@ const DEPT_USE: Record<NonNullable<Me['dept']>, string> = {
   qa: 'As a tester, the QA tab shows the issues you filed, what is waiting for retest and your testing tasks; Development shows what is coming to QA.',
   support:
     'As part of Tech Support, the Support tab is where you tell us what you need; Development and QA show the work on the issues you raise.',
+  ba: 'As a business analyst, Development shows the work on the projects you analyse and QA shows the bugs and feedback raised on it.',
   other:
     'Development shows development work and its progress; QA shows bugs, feedback and testing.',
 };

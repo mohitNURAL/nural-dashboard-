@@ -20,7 +20,7 @@ export interface ReportTask {
 export interface ReportLine {
   userId: number;
   name: string;
-  dept: 'dev' | 'qa' | 'support' | 'other';
+  dept: 'dev' | 'qa' | 'support' | 'ba' | 'other';
   day: string;
   plannedAt: string | null;
   wrappedAt: string | null;

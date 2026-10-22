@@ -93,6 +93,7 @@ const DEPT_LABEL: Record<string, string> = {
   dev: 'Development',
   qa: 'QA',
   support: 'Support',
+  ba: 'BA',
   other: 'Other',
 };
 

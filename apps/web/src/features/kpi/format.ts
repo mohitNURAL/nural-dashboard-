@@ -22,5 +22,6 @@ export const DEPT_LABEL = {
   dev: 'Development',
   qa: 'QA',
   support: 'Support',
+  ba: 'BA',
   other: 'Other',
 } as const;

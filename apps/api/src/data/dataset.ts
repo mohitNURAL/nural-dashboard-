@@ -318,19 +318,20 @@ function kpiDepartments(
   users: { id: number; departmentIds: number[] }[],
   depts: Department[],
 ): Map<number, Dept> {
-  const names = kpiConfig().departments;
+  const { departments: names, people } = kpiConfig();
   // Exact department names (case and spaces ignored); departmentTree adds sub-departments.
   const exact = (list: string[]) => {
     const wanted = new Set(list.map((n) => n.trim().toLowerCase()));
     return (name: string) => wanted.has(name.trim().toLowerCase());
   };
-  const trees = (['dev', 'qa', 'support'] as const).map(
+  const trees = (['dev', 'qa', 'support', 'ba'] as const).map(
     (d) => [d, departmentTree(depts, exact(names[d]))] as const,
   );
   const out = new Map<number, Dept>();
   for (const u of users) {
     const hit = trees.find(([, ids]) => u.departmentIds.some((id) => ids.has(id)));
-    out.set(u.id, hit?.[0] ?? 'other');
+    // A person named in "people" (e.g. Yajur → ba) wins over their Bitrix24 department.
+    out.set(u.id, people.get(u.id) ?? hit?.[0] ?? 'other');
   }
   return out;
 }

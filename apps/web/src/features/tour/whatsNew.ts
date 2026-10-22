@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-22-kpi-ba',
+    date: '2026-10-22',
+    tab: 'kpi',
+    title: 'Open tasks: BA count',
+    steps: [
+      {
+        target: slot('kpi.tiles', 'open'),
+        title: 'BA next to Dev, QA and Support',
+        text: 'Open tasks now also counts Business Analysis (BA): the open tasks assigned to Yajur. Click BA to list them; the department filter has BA too.',
+      },
+    ],
+  },
+  {
     id: '2026-10-21-own-tasks',
     date: '2026-10-21',
     tab: 'dev',

@@ -467,7 +467,7 @@ export interface AlertsResponse {
 
 // ---------------------------------------------------------------- KPI tab (SRS 13)
 
-export type KpiDeptKey = 'dev' | 'qa' | 'support' | 'other';
+export type KpiDeptKey = 'dev' | 'qa' | 'support' | 'ba' | 'other';
 export type Health = 'red' | 'amber' | 'green';
 export type OverdueBucket = '1-2' | '3-7' | '8-30' | '30+';
 

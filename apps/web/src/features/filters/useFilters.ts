@@ -103,11 +103,11 @@ export function useDevScope() {
   return [scope, (s: DevScope) => void setScope(s === 'all' ? null : s)] as const;
 }
 
-const deptParser = parseAsStringLiteral(['all', 'dev', 'qa', 'support'] as const).withDefault(
+const deptParser = parseAsStringLiteral(['all', 'dev', 'qa', 'support', 'ba'] as const).withDefault(
   'all',
 );
 const periodParser = parseAsStringLiteral(['day', 'week', 'month'] as const).withDefault('week');
-export type KpiDept = 'all' | 'dev' | 'qa' | 'support';
+export type KpiDept = 'all' | 'dev' | 'qa' | 'support' | 'ba';
 export type KpiPeriod = 'day' | 'week' | 'month';
 
 /** KPI tab: Department and Day / Week / Month, in the URL; defaults (all, week) left out. */

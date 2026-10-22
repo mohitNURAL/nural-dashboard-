@@ -102,6 +102,11 @@ export function KpiTiles({
                     onClick: () =>
                       list('Open · Support', { kpi: 'open', dept: 'support' }, KPI_INFO.open),
                   },
+                  {
+                    label: 'BA',
+                    value: s.openByDept.ba,
+                    onClick: () => list('Open · BA', { kpi: 'open', dept: 'ba' }, KPI_INFO.open),
+                  },
                 ]
               }
             />

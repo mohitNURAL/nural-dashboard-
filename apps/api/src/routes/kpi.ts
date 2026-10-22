@@ -41,7 +41,7 @@ import { parseQuery } from './params';
 
 export const kpiParams = {
   period: z.enum(['day', 'week', 'month']).default('week'),
-  dept: z.enum(['all', 'dev', 'qa', 'support']).default('all'),
+  dept: z.enum(['all', 'dev', 'qa', 'support', 'ba']).default('all'),
 };
 
 export function kpiContext(ds: Dataset, now: Date, tz: string): KpiContext {

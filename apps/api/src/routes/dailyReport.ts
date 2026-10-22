@@ -45,7 +45,7 @@ const query = z.object({
   from: dayParam,
   to: dayParam,
   assignee: ids,
-  dept: z.enum(['all', 'dev', 'qa', 'support', 'other']).default('all'),
+  dept: z.enum(['all', 'dev', 'qa', 'support', 'ba', 'other']).default('all'),
 });
 
 /** A task in a person's day, view only: what was planned, what was reported, what it is now. */

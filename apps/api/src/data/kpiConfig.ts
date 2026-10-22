@@ -18,6 +18,8 @@ export interface KpiConfig {
   owners: Map<number, number>;
   /** Bitrix24 department names per KPI department. */
   departments: Record<Exclude<Dept, 'other'>, string[]>;
+  /** User ID → KPI department, over their Bitrix24 department (e.g. Yajur → ba). */
+  people: Map<number, Dept>;
 }
 
 let cached: KpiConfig | undefined;
@@ -26,7 +28,10 @@ export function kpiConfig(): KpiConfig {
   if (cached) return cached;
   const cal = read<CalendarConfig & { workDays?: number[] }>('holidays.json', {});
   const owners = read<{ owners?: Record<string, number> }>('project-owners.json', {});
-  const depts = read<Partial<KpiConfig['departments']>>('departments.json', {});
+  const depts = read<Partial<KpiConfig['departments']> & { people?: Record<string, Dept> }>(
+    'departments.json',
+    {},
+  );
   cached = {
     calendar: workCalendar({ ...cal, days: cal.workDays ?? cal.days }),
     owners: new Map(Object.entries(owners.owners ?? {}).map(([g, u]) => [Number(g), Number(u)])),
@@ -34,7 +39,9 @@ export function kpiConfig(): KpiConfig {
       dev: depts.dev ?? ['Software Development'],
       qa: depts.qa ?? ['QA Testing'],
       support: depts.support ?? ['Tech Support'],
+      ba: depts.ba ?? [],
     },
+    people: new Map(Object.entries(depts.people ?? {}).map(([u, d]) => [Number(u), d])),
   };
   return cached;
 }

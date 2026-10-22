@@ -30,7 +30,7 @@ const ctx: KpiContext = {
   now: NOW,
   tz: 'Asia/Kolkata',
   cal,
-  deptOf: (id) => (id >= 100 ? 'qa' : id >= 50 ? 'support' : 'dev'),
+  deptOf: (id) => (id === 20 ? 'ba' : id >= 100 ? 'qa' : id >= 50 ? 'support' : 'dev'),
 };
 
 let nextId = 1;
@@ -308,6 +308,18 @@ describe('summary, insights, drill-down lists', () => {
     task({ responsibleId: 1, groupId: 0 }), // no project
   ];
 
+  it('open tasks of a BA (Yajur, set per person) count as BA', () => {
+    const scope = kpiScope([...list, task({ responsibleId: 20 })], ctx);
+    const s = kpiSummary(
+      scope,
+      ctx,
+      'week',
+      projectHealth(scope, ctx, 'week', () => null),
+    );
+    expect(s.openByDept).toEqual({ dev: 3, qa: 0, support: 1, ba: 1, other: 0 });
+    expect(kpiScope([...list, task({ responsibleId: 20 })], ctx, 'ba').all).toHaveLength(1);
+  });
+
   it('summary tiles add up', () => {
     const scope = kpiScope(list, ctx);
     const s = kpiSummary(
@@ -318,7 +330,7 @@ describe('summary, insights, drill-down lists', () => {
     );
     expect(s).toMatchObject({
       open: 4,
-      openByDept: { dev: 3, qa: 0, support: 1, other: 0 },
+      openByDept: { dev: 3, qa: 0, support: 1, ba: 0, other: 0 },
       overdue: 1,
       overduePct: 25,
       overdueOver30: 1,

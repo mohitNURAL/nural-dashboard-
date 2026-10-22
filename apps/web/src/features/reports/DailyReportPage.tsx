@@ -18,6 +18,7 @@ import { PageHead } from '../../components/ui/PageHead';
 import { Select } from '../../components/ui/Select';
 import { StateChip } from '../daily/taskColumns';
 import { CheckInsCard } from './CheckInsCard';
+import { DEPT_LABEL } from '../kpi/format';
 import { reportTables } from './dailyReportTable';
 import type { DailyReport, ReportLine } from './dailyReportTypes';
 
@@ -37,7 +38,7 @@ const dayText = (d: string) =>
     day: 'numeric',
     month: 'short',
   });
-const DEPT = { dev: 'Development', qa: 'QA', support: 'Support', other: 'Other' } as const;
+const DEPT = DEPT_LABEL;
 const WHY: Record<string, string> = {
   carried: 'Carried over',
   overdue: 'Overdue',
@@ -226,6 +227,7 @@ export function DailyReportPage() {
             <option value="dev">Development</option>
             <option value="qa">QA</option>
             <option value="support">Support</option>
+            <option value="ba">BA</option>
             <option value="other">Other</option>
           </Select>
         </div>

@@ -7,8 +7,9 @@ import { COMPLETED_STAGES, hasRole, isReworkMove, type StageTitle } from './stag
 import { dayKey, daysBetween } from './time';
 import type { MetricTask } from './types';
 
-export type Dept = 'dev' | 'qa' | 'support' | 'other';
-export const DEPTS: readonly Dept[] = ['dev', 'qa', 'support', 'other'];
+/** ba = Business Analysis: set per person (config/departments.json "people"), e.g. Yajur. */
+export type Dept = 'dev' | 'qa' | 'support' | 'ba' | 'other';
+export const DEPTS: readonly Dept[] = ['dev', 'qa', 'support', 'ba', 'other'];
 export type Period = 'day' | 'week' | 'month';
 
 export interface KpiContext {

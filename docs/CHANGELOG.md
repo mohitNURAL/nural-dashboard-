@@ -18,9 +18,15 @@ and the next change fills its ID in.
 - Five tables (Alert details, Projects at work, Stage matrix, Ranking, Insights list) still use
   their own markup instead of the shared table.
 
+## 2026-10-22
+
+- KPI Open tasks tile also shows BA (Business Analysis): tasks assigned to Yajur (user 20), set
+  per person in config/departments.json `people`; BA is in the KPI department filter and the
+  Daily report department dropdown too.
+
 ## 2026-10-21
 
-- A refused column move says why: Bitrix24 lets only a project's members move cards on its Kanban
+- `45b434d` A refused column move says why: Bitrix24 lets only a project's members move cards on its Kanban
   (Devesh, task 42274 in 98 AKI Global); an expired sign-in asks to sign in again.
 - `35870be` Member scope (NFR-4): a member sees only tasks assigned to them; a QA tester also keeps the
   issues they filed. Tasks a member created for other people no longer show (Harsh saw Umang,
