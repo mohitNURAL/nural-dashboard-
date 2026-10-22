@@ -46,7 +46,10 @@ const dataset = (async () => ({
     [7, { id: 7, name: 'Neha', email: 'neha@nural.test', active: true, deptGroup: 'Development' }],
     [30, { id: 30, name: 'Vijay', active: true, deptGroup: 'Development' }],
   ]),
-  projects: new Map([[154, { id: 154, name: 'Moto India' }]]),
+  projects: new Map([
+    [154, { id: 154, name: 'Moto India', active: true }],
+    [170, { id: 170, name: 'Nural BA', active: true }],
+  ]),
   boards: new Map(),
   portalOrigin: PORTAL,
   loadedAt: new Date(),
@@ -269,6 +272,16 @@ describe('daily update (SRS 23)', () => {
     const t = (await get('/api/daily/today')).json();
     expect(t.plannedAt).toBe(ist('2026-10-14T12:10').toISOString());
     expect(t.plan.items[1].addedAt).toBe(at.toISOString());
+  });
+
+  it('Add task projects: her own first; full access (PM) also every other active project', async () => {
+    await server();
+    const names = async () =>
+      (await get('/api/daily/projects')).json().projects.map((p: { name: string }) => p.name);
+    expect(await names()).toEqual(['Moto India']);
+    await app!.close();
+    await server({ admins: [7] });
+    expect(await names()).toEqual(['Moto India', 'Nural BA']);
   });
 
   it('refuses someone else’s task on the plan', async () => {

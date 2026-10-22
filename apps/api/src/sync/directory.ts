@@ -88,7 +88,13 @@ export async function syncDirectory(call: Call): Promise<DirectorySummary> {
       });
   }
 
-  const groups = await listAll<BitrixGroup>(call, 'sonet_group.get', { ORDER: { NAME: 'ASC' } });
+  // IS_ADMIN: every workgroup, private ones the webhook user is not in too (e.g. new Nural Sales
+  // International projects before their first task), since the webhook user is a portal admin
+  // (2026-10-22). Still a read; a non-admin simply gets their own groups.
+  const groups = await listAll<BitrixGroup>(call, 'sonet_group.get', {
+    ORDER: { NAME: 'ASC' },
+    IS_ADMIN: 'Y',
+  });
   const scope = new Set(config.DEV_GROUP_IDS);
   if (groups.length) {
     await db

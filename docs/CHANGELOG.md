@@ -20,7 +20,11 @@ and the next change fills its ID in.
 
 ## 2026-10-22
 
-- Daily update: a posted plan opens as its own view (time posted, Late planned tag, tasks with
+- Every project, private ones too: the directory sync reads workgroups as admin (sonet_group.get
+  IS_ADMIN, a read), so new projects (e.g. Nural Sales International) show before their first
+  task. Daily update Add task: full access (PM, team leads, admins) can pick any active project,
+  their own first; members still only their own.
+- `771575a` Daily update: a posted plan opens as its own view (time posted, Late planned tag, tasks with
   their state and Added hh:mm, note) with + Add more tasks for the rest of the day (added to the
   plan, the Slack message updated, a reply in its thread; `POST /api/daily/plan/add`); the first
   posting time stays when the plan changes. At 11:30 the not-planned list also goes to the daily
