@@ -45,6 +45,7 @@ export interface DirectorySummary {
   users: number;
   departments: number;
   groups: number;
+  memberLists: number;
   stages: number;
   unmappedStages: { groupId: number; title: string }[];
 }
@@ -111,7 +112,8 @@ export async function syncDirectory(call: Call): Promise<DirectorySummary> {
       )
       .onConflictDoUpdate({
         target: schema.workgroups.id,
-        set: excludedSet(schema.workgroups, ['id']),
+        // Members are written below; a project whose list is refused keeps the stored one.
+        set: excludedSet(schema.workgroups, ['id', 'memberIds']),
       });
     // A project no longer listed (archived or deleted in Bitrix24) is kept for its tasks but
     // stops counting as active.
@@ -127,7 +129,7 @@ export async function syncDirectory(call: Call): Promise<DirectorySummary> {
   }
 
   // Who is in each project, so a member can add a task to a new one (2026-10-22).
-  await syncGroupMembers(
+  const members = await syncGroupMembers(
     call,
     groups.map((g) => Number(g.ID)),
   );
@@ -144,6 +146,8 @@ export async function syncDirectory(call: Call): Promise<DirectorySummary> {
     users: userRows.length,
     departments: depts.length,
     groups: groups.length,
+    /** Projects whose member list was read (the rest were refused and keep the stored one). */
+    memberLists: members.size,
     stages: stageRows.length,
     unmappedStages: stageRows
       .filter((s) => s.canonical === null)

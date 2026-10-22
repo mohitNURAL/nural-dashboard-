@@ -99,7 +99,10 @@ export async function startSchedules({
         log.info({ ...r, ms: Date.now() - started }, 'reconcile done');
       } else if (job.name === 'directory') {
         const d = await syncDirectory(call);
-        log.info({ users: d.users, groups: d.groups, stages: d.stages }, 'directory sync done');
+        log.info(
+          { users: d.users, groups: d.groups, memberLists: d.memberLists, stages: d.stages },
+          'directory sync done',
+        );
       } else if (job.name === 'nightly') {
         const load = await initialLoad(call);
         const removed = await db

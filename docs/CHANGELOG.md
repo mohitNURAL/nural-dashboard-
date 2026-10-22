@@ -20,7 +20,11 @@ and the next change fills its ID in.
 
 ## 2026-10-22
 
-- Daily update Add task: a member also gets the projects they are in on Bitrix24 (new ones too;
+- Directory sync: the hourly workgroup upsert no longer resets each project's members to empty
+  before reading them again (a refused list now really keeps the stored one), and the log line
+  counts the member lists read (`memberLists`). Vishal (158) is a member of 84 Motorola
+  Indonesia Support on Bitrix24 but Add task listed only 82 for him.
+- `63524eb` Daily update Add task: a member also gets the projects they are in on Bitrix24 (new ones too;
   `sonet_group.user.get`, read, stored as workgroups.member_ids, migration 0013). Checked live:
   sonet_group.get with IS_ADMIN lists 40 projects (37 without), 168 and 170 included. The
   refused column move now names the project's sort right (Devesh is a member of 98).
