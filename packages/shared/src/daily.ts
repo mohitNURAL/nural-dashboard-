@@ -242,6 +242,25 @@ function link(item: { taskId: number; title: string }, taskUrl?: (id: number) =>
 }
 
 const section = (text: string) => ({ type: 'section', text: { type: 'mrkdwn', text } });
+/** Slack refuses a section over 3000 characters (invalid_blocks, 2026-10-23). */
+const SECTION_MAX = 2900;
+/**
+ * Lines as few sections as fit Slack's limit, a long list split over several (at most 45, so the
+ * message stays under Slack's 50 blocks); `first` heads the first one.
+ */
+export function slackSections(lines: readonly string[], first?: string) {
+  const out: string[] = [];
+  let cur = first ?? '';
+  for (const raw of lines) {
+    const line = raw.length > SECTION_MAX ? `${raw.slice(0, SECTION_MAX - 1)}…` : raw;
+    if (cur && cur.length + 1 + line.length > SECTION_MAX) {
+      out.push(cur);
+      cur = line;
+    } else cur = cur ? `${cur}\n${line}` : line;
+  }
+  if (cur) out.push(cur);
+  return out.slice(0, 45).map(section);
+}
 const context = (text: string) => ({
   type: 'context',
   elements: [{ type: 'mrkdwn', text }],
@@ -294,7 +313,7 @@ export function slackPlan(
     text: `${who.name}: plan for ${dayLabel} (${counts})`,
     blocks: [
       section(title),
-      section(lines.length ? lines.join('\n') : '_No tasks planned._'),
+      ...(lines.length ? slackSections(lines) : [section('_No tasks planned._')]),
       ...(note$ ? [section(note$)] : []),
       context(`${counts} · posted from Nural Pulse`),
     ],
@@ -313,7 +332,7 @@ export function slackPlanAdded(
     text: `${who.name} added ${n} to the plan at ${time}`,
     blocks: [
       section(`${head(who)} · :heavy_plus_sign: Added to the plan at ${time}`),
-      section(items.map((i) => `• ${link(i, taskUrl)} — ${i.project}`).join('\n')),
+      ...slackSections(items.map((i) => `• ${link(i, taskUrl)} — ${i.project}`)),
     ],
   };
 }
@@ -331,9 +350,9 @@ export function slackNotPlanned(
   return {
     text: `Not planned yet ${dayLabel}: ${people.length} of ${expected}`,
     blocks: [
-      section(
-        `:alarm_clock: *Not planned yet · ${dayLabel}* (${people.length} of ${expected})\n` +
-          (people.length ? people.map((p) => `• ${p}`).join('\n') : '_Everyone has planned._'),
+      ...slackSections(
+        people.length ? people.map((p) => `• ${p}`) : ['_Everyone has planned._'],
+        `:alarm_clock: *Not planned yet · ${dayLabel}* (${people.length} of ${expected})`,
       ),
       context(`A plan posted after ${by} is tagged Late planned · Nural Pulse`),
     ],
@@ -373,8 +392,8 @@ export function slackWrap(
     text: `${who.name}: day wrap-up for ${dayLabel} (${counts})`,
     blocks: [
       section(`${head(who)} · :city_sunset: Wrap-up for ${dayLabel}`),
-      section(planned.length ? planned.map(line).join('\n') : '_Nothing was planned._'),
-      ...(extra.length ? [section(`*Also did*\n${extra.map(line).join('\n')}`)] : []),
+      ...(planned.length ? slackSections(planned.map(line)) : [section('_Nothing was planned._')]),
+      ...(extra.length ? slackSections(extra.map(line), '*Also did*') : []),
       ...(note$ ? [section(note$)] : []),
       context(`${counts} · posted from Nural Pulse`),
     ],

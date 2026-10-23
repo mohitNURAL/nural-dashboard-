@@ -20,7 +20,10 @@ and the next change fills its ID in.
 
 ## 2026-10-23
 
-- Daily update Add task: quick entry in rows (title, tags, project, priority, deadline per row;
+- Slack: long lists (plan, added tasks, wrap-up, not planned) split over several sections of at
+  most 2900 characters (`slackSections`); Slack refused Umang's (34) long plan with invalid_blocks
+  (a section over 3000 characters), so it was saved but not posted.
+- `b4d900e` Daily update Add task: quick entry in rows (title, tags, project, priority, deadline per row;
   description by clicking the task's number; a new row as the last is typed in, up to 20;
   Create N tasks, refused ones stay with the reason).
 - `b6b8a8d` Daily update: a plan saved but not posted to Slack shows so, with Post to Slack now and Reset

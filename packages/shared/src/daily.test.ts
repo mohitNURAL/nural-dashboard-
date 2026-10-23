@@ -15,6 +15,7 @@ import {
   dailyDeadline,
   dailyCompliance,
   slackCheckIn,
+  slackSections,
 } from './daily';
 import type { MetricTask } from './types';
 
@@ -172,6 +173,23 @@ describe('carry-over and upcoming', () => {
 describe('slack messages', () => {
   const who = { name: 'Ram Kumar', mention: '<@U1>' };
   const url = (n: number) => `https://portal/task/${n}/`;
+
+  it('a long plan is split over several sections, each within Slack’s 3000 characters', () => {
+    const items = Array.from({ length: 40 }, (_, k) => ({
+      taskId: 1000 + k,
+      title: `A rather long task title about the Motorola Indonesia support work number ${k}`,
+      project: 'Motorola Indonesia Support',
+      why: 'carried' as const,
+    }));
+    const m = slackPlan(who, 'Fri 23 Oct', items, undefined, url);
+    const texts = (m.blocks as { type: string; text?: { text: string } }[])
+      .filter((b) => b.type === 'section')
+      .map((b) => b.text!.text);
+    expect(texts.length).toBeGreaterThan(2);
+    expect(texts.every((t) => t.length <= 3000)).toBe(true);
+    expect(texts.join(' ')).toContain('number 39');
+    expect(slackSections(['x'.repeat(5000)])).toHaveLength(1);
+  });
 
   it('plan: names the person, links each task and counts overdue and due today', () => {
     const m = slackPlan(
