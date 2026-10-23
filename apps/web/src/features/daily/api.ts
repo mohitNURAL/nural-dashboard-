@@ -33,6 +33,8 @@ export interface DailyToday {
   wrap: DailyWrap | null;
   wrappedAt: string | null;
   posted: boolean;
+  /** The previous planned day was not wrapped up (2026-10-23): an alert, planning goes on. */
+  missedWrap: { day: string; dayLabel: string; planned: number } | null;
   suggestions: DailyItem[];
   /** Open tasks due after today, soonest first (to take on early or report done ahead). */
   upcoming: DailyItem[];
@@ -65,8 +67,9 @@ export interface PostResult {
   failures?: { title: string; message: string }[];
 }
 
+/** Polled and refreshed on focus, so a tab left open overnight moves to the new day (2026-10-23). */
 export const useDailyToday = (enabled = true) =>
-  useApi<DailyToday>('/api/daily/today', {}, { enabled });
+  useApi<DailyToday>('/api/daily/today', {}, { enabled, refetchInterval: 5 * 60_000 });
 export const useMyOpenTasks = (q: string, enabled = true) =>
   useApi<{ tasks: MyTask[] }>('/api/daily/mine', { q }, { enabled });
 export const useMyProjects = (enabled = true) =>

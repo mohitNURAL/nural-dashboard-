@@ -94,3 +94,25 @@ export function LateChip({ by }: { by: string }) {
     </span>
   );
 }
+
+/**
+ * The previous planned day was never wrapped up (2026-10-23): an alert only; the new day is
+ * planned as usual and its open tasks carry over.
+ */
+export function MissedWrapAlert({
+  missed,
+}: {
+  missed: { dayLabel: string; planned: number } | null | undefined;
+}) {
+  if (!missed) return null;
+  return (
+    <p
+      role="alert"
+      className="rounded-control border border-warn/40 bg-warn/15 px-3 py-2 text-table font-medium text-[#92400E]"
+    >
+      You did not wrap up {missed.dayLabel} ({missed.planned}{' '}
+      {missed.planned === 1 ? 'task' : 'tasks'} planned). Plan today as usual: its open tasks are
+      carried over.
+    </p>
+  );
+}

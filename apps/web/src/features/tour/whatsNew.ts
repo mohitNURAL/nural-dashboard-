@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-23-daily-missed-wrap',
+    date: '2026-10-23',
+    tab: 'daily',
+    title: 'Daily update: a new day starts with planning',
+    steps: [
+      {
+        target: '[data-tour="daily-plan"]',
+        title: 'Plan first, even after a missed wrap-up',
+        text: 'Each morning opens on planning. If you did not wrap up your last planned day, an alert says so; plan today as usual and its open tasks carry over.',
+      },
+    ],
+  },
+  {
     id: '2026-10-23-daily-add-rows',
     date: '2026-10-23',
     tab: 'daily',

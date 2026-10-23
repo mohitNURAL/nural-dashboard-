@@ -10,6 +10,7 @@ import { IconDaily } from '../../components/ui/icons';
 import { PageHead } from '../../components/ui/PageHead';
 import { useDailyHistory, useDailyToday, type DailyPlan, type DailyWrap } from './api';
 import { useDailyDialog } from './store';
+import { MissedWrapAlert } from './taskColumns';
 
 interface HistoryRow {
   day: string;
@@ -62,7 +63,13 @@ export function DailyUpdatePage() {
         sub="Plan your day in the morning, wrap it up in the evening; both go to the team on Slack"
         icon={<IconDaily size={24} />}
       >
-        <button type="button" className={btn} data-tour="daily-plan" onClick={() => open('plan')}>
+        {/* Before today's plan, planning comes first (2026-10-23); the wrap-up after it. */}
+        <button
+          type="button"
+          className={today && !today.plan ? mainBtn : btn}
+          data-tour="daily-plan"
+          onClick={() => open('plan')}
+        >
           {today?.plan ? 'My plan' : 'Plan my day'}
         </button>
         {today?.plan && (
@@ -72,13 +79,14 @@ export function DailyUpdatePage() {
         )}
         <button
           type="button"
-          className={mainBtn}
+          className={today && !today.plan ? btn : mainBtn}
           data-tour="daily-wrap"
           onClick={() => open('wrap')}
         >
           {today?.wrap ? 'Change my wrap-up' : 'Wrap up my day'}
         </button>
       </PageHead>
+      <MissedWrapAlert missed={today?.missedWrap} />
       <SortableGroup
         group="daily.tiles"
         noun="tile"

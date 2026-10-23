@@ -20,7 +20,11 @@ and the next change fills its ID in.
 
 ## 2026-10-23
 
-- Slack: long lists (plan, added tasks, wrap-up, not planned) split over several sections of at
+- Daily update: a missed wrap-up of the last planned day is an alert (`missedWrap`) in the planner,
+  posted plan and page; planning the new day is never held up. Plan my day is the main button
+  until today's plan; today's data polls every 5 minutes and on focus (a tab left open
+  overnight moves to the new day).
+- `e08d54d` Slack: long lists (plan, added tasks, wrap-up, not planned) split over several sections of at
   most 2900 characters (`slackSections`); Slack refused Umang's (34) long plan with invalid_blocks
   (a section over 3000 characters), so it was saved but not posted.
 - `b4d900e` Daily update Add task: quick entry in rows (title, tags, project, priority, deadline per row;

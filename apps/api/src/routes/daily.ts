@@ -240,6 +240,23 @@ export function dailyRoutes(
   }
 
   /**
+   * The last day before today with a plan, when it was never wrapped up (2026-10-23): the new day
+   * is planned as usual, with an alert. Within the past week only.
+   */
+  async function missedWrap(userId: number, day: string, at: Date) {
+    const rows = await deps.store.history(userId, 10);
+    const last = rows.find((r) => r.day < day && r.plan);
+    if (!last || last.wrap) return null;
+    const when = new Date(`${last.day}T12:00:00Z`);
+    if (at.getTime() - when.getTime() > 7 * 86_400_000) return null;
+    return {
+      day: last.day,
+      dayLabel: dayLabelOf(when, deps.tz),
+      planned: last.plan!.items.length,
+    };
+  }
+
+  /**
    * Full task rows (as the task lists show them, so the dialog edits them in place), each one's
    * Daily state, and the Kanban columns of their projects.
    */
@@ -327,6 +344,8 @@ export function dailyRoutes(
       wrap: row?.wrap ?? null,
       wrappedAt: row?.wrappedAt ?? null,
       posted: !!row?.slackTs,
+      /** The previous planned day was not wrapped up: shown as an alert, planning goes on. */
+      missedWrap: await missedWrap(v.userId, day, at),
       suggestions,
       upcoming,
       /** Open tasks with no deadline: posting the plan sets it to today. */

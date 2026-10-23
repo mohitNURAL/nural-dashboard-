@@ -265,6 +265,24 @@ describe('daily update (SRS 23)', () => {
     expect((await post('/api/daily/plan/add', { taskIds: [42] })).statusCode).toBe(400);
   });
 
+  it('the day after a plan with no wrap-up: plans as usual, with an alert', async () => {
+    let at = ist('2026-10-13T10:30');
+    await server({ now: () => at });
+    await post('/api/daily/plan', { taskIds: [41, 43], note: '' });
+    at = NOW;
+    const t = (await get('/api/daily/today')).json();
+    expect(t).toMatchObject({
+      day: '2026-10-14',
+      plan: null,
+      missedWrap: { day: '2026-10-13', dayLabel: 'Tue 13 Oct', planned: 2 },
+    });
+    expect((await post('/api/daily/plan', { taskIds: [41] })).statusCode).toBe(200);
+    // Wrapped up: no alert the next day.
+    await post('/api/daily/wrap', { items: [{ taskId: 41, done: false }], note: '' });
+    at = ist('2026-10-15T10:30');
+    expect((await get('/api/daily/today')).json().missedWrap).toBeNull();
+  });
+
   it('a plan first posted after 11:30 is Late planned, on the page and in Slack', async () => {
     let at = ist('2026-10-14T12:10');
     const s = await server({ now: () => at });

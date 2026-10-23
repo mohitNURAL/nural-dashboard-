@@ -28,7 +28,7 @@ import {
 } from './api';
 import { AddTaskDialog } from './AddTaskDialog';
 import { useDailyDialog } from './store';
-import { LateChip, StateChip, TaskField, TaskTitle } from './taskColumns';
+import { LateChip, MissedWrapAlert, StateChip, TaskField, TaskTitle } from './taskColumns';
 import { BoardsContext } from '../tasks/boards';
 
 const WHY: Record<DailyItem['why'], { label: string; cls: string }> = {
@@ -377,6 +377,7 @@ function PostedPlan({
   return (
     <>
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 pb-3">
+        <MissedWrapAlert missed={today.missedWrap} />
         <p
           className={clsx(
             'flex flex-wrap items-center gap-2 rounded-control px-3 py-2 text-table font-medium',
@@ -667,6 +668,7 @@ function PlanEditor({ today, onLater }: { today: DailyToday; onLater: () => void
   return (
     <>
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 pb-3">
+        <MissedWrapAlert missed={today.missedWrap} />
         {today.plan && (
           <p
             className={clsx(
