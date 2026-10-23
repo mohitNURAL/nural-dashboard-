@@ -86,13 +86,14 @@ export const useDailyChannel = (enabled = true) =>
 
 /**
  * Posts and refreshes every daily view (and the task pages, as tasks may have changed). "add"
- * adds tasks to the plan posted earlier today (2026-10-22).
+ * adds tasks to the plan posted earlier today (2026-10-22); "reset" clears a plan saved but not
+ * posted to Slack, to plan again (2026-10-23).
  */
 export function useDailyPost() {
   const qc = useQueryClient();
-  return async (kind: 'plan' | 'wrap' | 'add', body: unknown) => {
+  return async (kind: 'plan' | 'wrap' | 'add' | 'reset', body: unknown) => {
     const r = await apiPost<PostResult>(
-      kind === 'add' ? '/api/daily/plan/add' : `/api/daily/${kind}`,
+      kind === 'add' || kind === 'reset' ? `/api/daily/plan/${kind}` : `/api/daily/${kind}`,
       body,
     );
     await qc.invalidateQueries({ queryKey: [API_KEY] });

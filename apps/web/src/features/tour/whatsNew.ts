@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-23-daily-reset',
+    date: '2026-10-23',
+    tab: 'daily',
+    title: 'Daily update: select all, and plan again when Slack missed it',
+    steps: [
+      {
+        target: '[data-tour="daily-plan"]',
+        title: 'Select all, unselect all',
+        text: 'In the planner, the box in the Plan column header ticks or clears every task at once. If your plan was saved but not posted to Slack, My plan says so: Post to Slack now sends it again, or Reset and plan again clears it so you plan afresh.',
+      },
+    ],
+  },
+  {
     id: '2026-10-22-daily-posted',
     date: '2026-10-22',
     tab: 'daily',

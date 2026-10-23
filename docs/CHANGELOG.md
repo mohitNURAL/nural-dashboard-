@@ -18,9 +18,15 @@ and the next change fills its ID in.
 - Five tables (Alert details, Projects at work, Stage matrix, Ranking, Insights list) still use
   their own markup instead of the shared table.
 
+## 2026-10-23
+
+- Daily update: a plan saved but not posted to Slack shows so, with Post to Slack now and Reset
+  and plan again (`POST /api/daily/plan/reset`, only before Slack and the wrap-up); the failed
+  post is logged with its reason. Planner: select all / unselect all box in the Plan header.
+
 ## 2026-10-22
 
-- Directory sync: the hourly workgroup upsert no longer resets each project's members to empty
+- `52977b0` Directory sync: the hourly workgroup upsert no longer resets each project's members to empty
   before reading them again (a refused list now really keeps the stored one), and the log line
   counts the member lists read (`memberLists`). Vishal (158) is a member of 84 Motorola
   Indonesia Support on Bitrix24 but Add task listed only 82 for him.

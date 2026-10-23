@@ -345,6 +345,19 @@ describe('daily update (SRS 23)', () => {
     expect((await get('/api/daily/today')).json().plan.items).toHaveLength(1);
   });
 
+  it('resets a plan saved but not posted, so she plans again; never a posted one', async () => {
+    await server({ channel: null });
+    expect((await post('/api/daily/plan/reset', {})).statusCode).toBe(400); // nothing saved
+    await post('/api/daily/plan', { taskIds: [41] });
+    expect((await post('/api/daily/plan/reset', {})).json()).toEqual({ ok: true });
+    const t = (await get('/api/daily/today')).json();
+    expect(t).toMatchObject({ plan: null, posted: false, plannedAt: NOW.toISOString() });
+    await app!.close();
+    await server();
+    await post('/api/daily/plan', { taskIds: [41] });
+    expect((await post('/api/daily/plan/reset', {})).statusCode).toBe(400); // posted
+  });
+
   it('lets only Connections change the channel', async () => {
     await server();
     const res = await app!.inject({

@@ -221,6 +221,10 @@ export function dailyRoutes(
       }
       return { posted: true };
     } catch (e) {
+      app.log.warn(
+        { userId: row.userId, day: row.day, reason: e instanceof Error ? e.message : String(e) },
+        'daily update not posted to Slack',
+      );
       return { posted: false, reason: e instanceof Error ? e.message : 'Slack failed.' };
     }
   }
@@ -542,6 +546,22 @@ export function dailyRoutes(
     });
     await deps.store.save(row);
     return { ok: true, ...result, failures: built.failures, added: built.items.length };
+  });
+
+  // A plan saved but never posted to Slack (2026-10-23): cleared so the person plans again.
+  // Only before it reaches Slack and before the wrap-up; when it was first saved stays (Late
+  // planned is judged on it, the failed post was not theirs).
+  app.post('/api/daily/plan/reset', async (req, reply) => {
+    const v = await viewer(req);
+    const day = dailyDay(now(), deps.tz);
+    const row = await deps.store.get(v.userId, day);
+    if (!row?.plan) return reply.code(400).send({ error: 'There is no plan saved for today.' });
+    if (row.slackTs)
+      return reply.code(400).send({ error: 'Your plan is already posted: edit it instead.' });
+    if (row.wrap) return reply.code(400).send({ error: 'You have already wrapped up today.' });
+    row.plan = null;
+    await deps.store.save(row);
+    return { ok: true };
   });
 
   app.post('/api/daily/wrap', async (req, reply) => {

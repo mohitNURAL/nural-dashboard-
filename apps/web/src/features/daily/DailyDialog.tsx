@@ -15,6 +15,7 @@ import type { DailyState } from '@nural/shared';
 import type { TaskRow } from '../../api/types';
 import { DataTable } from '../../components/DataTable';
 import { SearchCombobox } from '../../components/SearchCombobox';
+import { confirm } from '../../components/ui/ConfirmDialog';
 import { IconClose, IconDaily } from '../../components/ui/icons';
 import { Select } from '../../components/ui/Select';
 import {
@@ -336,13 +337,67 @@ function PostedPlan({
     }
   };
 
+  const resend = async () => {
+    setBusy(true);
+    try {
+      const r = await postDaily('plan', {
+        taskIds: plan.items.map((i) => i.taskId),
+        note: plan.note,
+      });
+      if (r.posted) toast.success('Your plan was posted to the team');
+      else toast.warning('Still not posted', { description: r.reason });
+    } catch (e) {
+      toast.error('Could not post your plan', { description: e instanceof Error ? e.message : '' });
+    } finally {
+      setBusy(false);
+    }
+  };
+  const reset = async () => {
+    const ok = await confirm({
+      title: 'Reset your plan for today?',
+      message:
+        'Your saved plan was not posted to Slack. It is cleared so you can plan your day again; nothing changes in Bitrix24.',
+      confirmLabel: 'Reset and plan again',
+      tone: 'warn',
+    });
+    if (!ok) return;
+    setBusy(true);
+    try {
+      await postDaily('reset', {});
+      toast.success('Saved plan cleared: plan your day again');
+    } catch (e) {
+      toast.error('Could not reset your plan', {
+        description: e instanceof Error ? e.message : '',
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <>
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 pb-3">
-        <p className="flex flex-wrap items-center gap-2 rounded-control bg-good/10 px-3 py-2 text-table font-medium text-good">
-          Posted{today.plannedAt ? ` at ${timeOf(today.plannedAt)}` : ''} · {plan.items.length}{' '}
+        <p
+          className={clsx(
+            'flex flex-wrap items-center gap-2 rounded-control px-3 py-2 text-table font-medium',
+            today.posted ? 'bg-good/10 text-good' : 'bg-warn/15 text-[#92400E]',
+          )}
+        >
+          {today.posted ? 'Posted' : 'Saved, not posted to Slack'}
+          {today.plannedAt ? ` at ${timeOf(today.plannedAt)}` : ''} · {plan.items.length}{' '}
           {plan.items.length === 1 ? 'task' : 'tasks'}
           {today.late && <LateChip by={today.planBy} />}
+          {/* Saved but Slack refused it (2026-10-23): send it again, or clear it and plan again. */}
+          {!today.posted && !today.wrap && (
+            <span className="ml-auto flex flex-wrap gap-2">
+              <button type="button" className={btn} disabled={busy} onClick={() => void resend()}>
+                Post to Slack now
+              </button>
+              <button type="button" className={btn} disabled={busy} onClick={() => void reset()}>
+                Reset and plan again
+              </button>
+            </span>
+          )}
         </p>
         <DataTable
           tableId="daily-posted"
@@ -505,10 +560,41 @@ function PlanEditor({ today, onLater }: { today: DailyToday; onLater: () => void
       return n;
     });
 
+  // Header box (2026-10-23): ticks or clears every listed task at once; some ticked shows a dash.
+  const ticked = items.filter((i) => keep.has(i.taskId)).length;
   const columns = useMemo(
     () => [
       planCol.accessor('keep', {
-        header: 'Plan',
+        header: () => (
+          <span className="inline-flex items-center gap-1.5">
+            <input
+              type="checkbox"
+              aria-label={
+                items.length && ticked === items.length ? 'Unselect all tasks' : 'Select all tasks'
+              }
+              title={items.length && ticked === items.length ? 'Unselect all' : 'Select all'}
+              disabled={!items.length}
+              checked={items.length > 0 && ticked === items.length}
+              ref={(el) => {
+                if (el) el.indeterminate = ticked > 0 && ticked < items.length;
+              }}
+              onChange={(e) =>
+                setKeep((k) => {
+                  const n = new Set(k);
+                  for (const i of items) {
+                    if (e.target.checked) n.add(i.taskId);
+                    else n.delete(i.taskId);
+                  }
+                  return n;
+                })
+              }
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="h-4 w-4 accent-[var(--primary)]"
+            />
+            Plan
+          </span>
+        ),
         enableSorting: false,
         cell: (c) => (
           <input
@@ -526,7 +612,7 @@ function PlanEditor({ today, onLater }: { today: DailyToday; onLater: () => void
         cell: (c) => whyChip(c.getValue(), c.row.original.daysOverdue),
       }),
     ],
-    [],
+    [items, ticked],
   );
 
   const live = (i: DailyItem) => ({
@@ -582,8 +668,13 @@ function PlanEditor({ today, onLater }: { today: DailyToday; onLater: () => void
     <>
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 pb-3">
         {today.plan && (
-          <p className="rounded-control bg-good/10 px-3 py-2 text-table font-medium text-good">
-            Your plan for today was posted
+          <p
+            className={clsx(
+              'rounded-control px-3 py-2 text-table font-medium',
+              today.posted ? 'bg-good/10 text-good' : 'bg-warn/15 text-[#92400E]',
+            )}
+          >
+            Your plan for today was {today.posted ? 'posted' : 'saved (not posted to Slack)'}
             {today.plannedAt
               ? ` at ${new Date(today.plannedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`
               : ''}
