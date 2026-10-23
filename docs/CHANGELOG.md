@@ -20,7 +20,10 @@ and the next change fills its ID in.
 
 ## 2026-10-23
 
-- Daily update: a plan saved but not posted to Slack shows so, with Post to Slack now and Reset
+- Daily update Add task: quick entry in rows (title, tags, project, priority, deadline per row;
+  description by clicking the task's number; a new row as the last is typed in, up to 20;
+  Create N tasks, refused ones stay with the reason).
+- `b6b8a8d` Daily update: a plan saved but not posted to Slack shows so, with Post to Slack now and Reset
   and plan again (`POST /api/daily/plan/reset`, only before Slack and the wrap-up); the failed
   post is logged with its reason. Planner: select all / unselect all box in the Plan header.
 

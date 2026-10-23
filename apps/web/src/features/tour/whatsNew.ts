@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-23-daily-add-rows',
+    date: '2026-10-23',
+    tab: 'daily',
+    title: 'Daily update: add several tasks at once, in rows',
+    steps: [
+      {
+        target: '[data-tour="daily-plan"]',
+        title: 'Add tasks in rows',
+        text: '+ Add task now opens a table: one task per row with its title, tags, project, priority and deadline. A new row appears as you type, so you can add several in one go; click a task’s number to write its description. Create tasks makes them all in Bitrix24.',
+      },
+    ],
+  },
+  {
     id: '2026-10-23-daily-reset',
     date: '2026-10-23',
     tab: 'daily',
