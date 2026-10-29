@@ -20,7 +20,10 @@ and the next change fills its ID in.
 
 ## 2026-10-30
 
-- Speed of task edits: the in-memory dataset is patched with only the changed tasks instead of
+- Saving shows at once: a changed field (grids, task view, Daily update) shows its new value
+  with a spinner until the data has it, instead of the old value with no sign of saving
+  (`pending.ts`, shared `Spinner`).
+- `e5bf748` Speed of task edits: the in-memory dataset is patched with only the changed tasks instead of
   reloading all 9k after every change and every 30 s (full reload every 10 min; task rows read
   without the stored Bitrix24 copy); a person's own edit is read back after 0.3 s (was 2 s);
   reconcile, directory and nightly reads queue behind people's edits (limiter background lane);

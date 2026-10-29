@@ -2,15 +2,20 @@
 // who may edit; project, assignee, priority and deadline for full access (as the inline cells).
 // Saved together (POST /api/tasks/:id/edit): checked first, nothing changes if one is refused,
 // then run in Bitrix24 as the signed-in person. A new project has another board, so its column
-// is picked after saving it.
+// is picked after saving it. Back in the view, each saved field shows its new value with a spinner
+// until the data has it (pending.ts, 2026-10-30).
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { apiPost } from '../../api/client';
 import { API_KEY } from '../../api/queries';
 import type { BitrixStatus, BoardStage, Priority, TaskRow } from '../../api/types';
+import { PriorityBadge, StageChip, TagChips } from '../../components/chips';
 import { confirm } from '../../components/ui/ConfirmDialog';
 import { Select } from '../../components/ui/Select';
+import { Spinner } from '../../components/ui/Spinner';
+import { fmtDate } from '../dev/format';
+import { usePendingStore } from './pending';
 import {
   currentColumn,
   firstAllowedDay,
@@ -20,6 +25,7 @@ import {
   STATUS_LABEL,
   useCanEdit,
   useEditOptions,
+  type EditField,
 } from './TaskActions';
 
 type Edit =
@@ -57,16 +63,19 @@ export function TaskEditForm({
   const [priority, setPriority] = useState<Priority>(task.priority);
   const [day, setDay] = useState(startDay);
   const [busy, setBusy] = useState(false);
+  const startPending = usePendingStore((s) => s.start);
 
   const projectChanged = project !== (task.project?.id ?? 0);
   const columnName = (id: number) => board.find((s) => s.id === id)?.title ?? '';
-  // What will change, in the order it runs, with a line for the confirmation.
-  const changes: { edit: Edit; line: [string, string] }[] = [];
+  // What will change, in the order it runs, with a line for the confirmation and the new value the
+  // view shows (with a spinner) until the data has it.
+  const changes: { edit: Edit; line: [string, string]; shows: [EditField, ReactNode] }[] = [];
   const field = (
     f: Extract<Edit, { kind: 'field' }>['field'],
     value: string | number,
     line: [string, string],
-  ) => changes.push({ edit: { kind: 'field', field: f, value }, line });
+    show: ReactNode = line[1].split(' → ').pop(),
+  ) => changes.push({ edit: { kind: 'field', field: f, value }, line, shows: [f, show] });
   if (full && projectChanged)
     field('project', project, [
       'Project',
@@ -78,19 +87,52 @@ export function TaskEditForm({
       `${task.assignee.name} → ${options?.people.find((p) => p.id === assignee)?.name ?? assignee}`,
     ]);
   if (full && priority !== task.priority)
-    field('priority', priority, ['Priority', `${task.priority} → ${priority}`]);
+    field(
+      'priority',
+      priority,
+      ['Priority', `${task.priority} → ${priority}`],
+      <PriorityBadge priority={priority} />,
+    );
   if (full && day && day !== startDay)
-    field('deadline', `${day}T18:30:00+05:30`, ['Deadline', `${startDay || '-'} → ${day}`]);
-  if (tags.trim() !== startTags.trim()) field('tags', tags, ['Tags', tags.trim() || '(none)']);
-  if (!projectChanged && board.length && stageId !== startColumn)
+    field(
+      'deadline',
+      `${day}T18:30:00+05:30`,
+      ['Deadline', `${startDay || '-'} → ${day}`],
+      fmtDate(`${day}T18:30:00+05:30`),
+    );
+  if (tags.trim() !== startTags.trim()) {
+    const list = tags
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+    field(
+      'tags',
+      tags,
+      ['Tags', tags.trim() || '(none)'],
+      list.length ? <TagChips tags={list} max={20} /> : 'No tags',
+    );
+  }
+  if (!projectChanged && board.length && stageId !== startColumn) {
+    const to = board.find((s) => s.id === stageId);
     changes.push({
       edit: { kind: 'stage', stageId },
       line: ['Stage', `${columnName(startColumn)} → ${columnName(stageId)}`],
+      shows: ['stage', <StageChip key="s" title={to?.title ?? null} color={to?.color ?? null} />],
     });
+  }
   if (status !== task.bitrixStatus)
     changes.push({
       edit: { kind: 'status', status },
       line: ['Status', `${STATUS_LABEL[task.bitrixStatus]} → ${STATUS_LABEL[status]}`],
+      shows: [
+        'status',
+        <span
+          key="st"
+          className="whitespace-nowrap rounded bg-primary-soft-100 px-1.5 py-0.5 text-table text-primary-dark"
+        >
+          {STATUS_LABEL[status]}
+        </span>,
+      ],
     });
 
   const save = async () => {
@@ -114,9 +156,11 @@ export function TaskEditForm({
       toast.success(
         `Task ${task.id}: ${changes.length} change${changes.length === 1 ? '' : 's'} saved`,
         {
-          description: 'Bitrix24 updated. The dashboard refreshes in a few seconds.',
+          description: 'Saved in Bitrix24. It shows here in a moment.',
         },
       );
+      // Before the view comes back: it shows each new value with a spinner until the data has it.
+      for (const c of changes) startPending(task, c.shows[0], c.shows[1]);
       setTimeout(() => void queryClient.invalidateQueries({ queryKey: [API_KEY] }), 2000);
       onDone();
     } catch (err) {
@@ -289,6 +333,7 @@ export function TaskEditForm({
           }
           className="btn btn-card h-8 px-3 disabled:opacity-50"
         >
+          {busy && <Spinner />}
           {busy ? 'Saving…' : 'Save changes'}
         </button>
       </div>

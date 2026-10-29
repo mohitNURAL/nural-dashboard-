@@ -1,7 +1,8 @@
 // Inline task editing (SRS 7, Task actions). Each cell shows a label; clicking an editable cell
 // turns it into a dropdown, text box or date picker, and it turns back into a label after a
 // change or a click elsewhere. Changes run in Bitrix24 as the signed-in person and show here
-// when they sync back. Full access may change every field; members only stage, status and tags.
+// when they sync back; until then the cell shows the new value with a spinner (pending.ts,
+// 2026-10-30). Full access may change every field; members only stage, status and tags.
 import { hasRole } from '@nural/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
@@ -13,8 +14,10 @@ import { API_KEY, useApi } from '../../api/queries';
 import type { BitrixStatus, BoardStage, Priority, TaskRow } from '../../api/types';
 import { PriorityBadge, StageChip, StatusChip, TagChips } from '../../components/chips';
 import { confirm } from '../../components/ui/ConfirmDialog';
+import { Spinner } from '../../components/ui/Spinner';
 import { fmtDate } from '../dev/format';
 import { BoardsContext } from './boards';
+import { usePending, usePendingStore, type Pending } from './pending';
 import { Select } from '../../components/ui/Select';
 
 export type EditField =
@@ -40,27 +43,45 @@ export const STATUS_LABEL: Record<BitrixStatus, string> = {
 export const STATUS_CHOICES: BitrixStatus[] = ['pending', 'inProgress', 'deferred', 'completed'];
 export const PRIORITIES: Priority[] = ['low', 'normal', 'high'];
 
-function useSave(taskId: number) {
+/**
+ * Saves one field. From the click until the data shows the change, the field shows `show` (the new
+ * value) with a spinner; a refusal puts the old value back at once.
+ */
+function useSave(task: TaskRow, field: EditField) {
   const queryClient = useQueryClient();
-  const [busy, setBusy] = useState(false);
-  const save = async (path: string, body: unknown, done: string) => {
-    setBusy(true);
+  const start = usePendingStore((s) => s.start);
+  const clear = usePendingStore((s) => s.clear);
+  const pending = usePending(task, field);
+  const save = async (path: string, body: unknown, done: string, show: ReactNode) => {
+    start(task, field, show);
     try {
-      await apiPost(`/api/tasks/${taskId}/${path}`, body);
-      toast.success(done, {
-        description: 'Bitrix24 updated. The dashboard refreshes in a few seconds.',
-      });
+      await apiPost(`/api/tasks/${task.id}/${path}`, body);
+      toast.success(done, { description: 'Saved in Bitrix24. It shows here in a moment.' });
       // The change syncs back through Bitrix24; refresh when it has (live updates also do).
       setTimeout(() => void queryClient.invalidateQueries({ queryKey: [API_KEY] }), 2000);
     } catch (err) {
-      toast.error(`Task ${taskId}: not changed`, {
+      clear(task.id, field);
+      toast.error(`Task ${task.id}: not changed`, {
         description: err instanceof Error ? err.message : 'Bitrix24 refused the change.',
       });
-    } finally {
-      setBusy(false);
     }
   };
-  return { busy, save };
+  return { busy: !!pending, pending, save };
+}
+
+/** A change on its way: the new value, faded, with the spinner. */
+export function PendingValue({ show }: { show: ReactNode }) {
+  return (
+    <span
+      role="status"
+      aria-busy="true"
+      title="Saving in Bitrix24. It shows here as soon as it syncs back."
+      className="inline-flex items-center gap-1.5 text-primary"
+    >
+      <Spinner />
+      <span className="opacity-60">{show}</span>
+    </span>
+  );
 }
 
 /**
@@ -72,12 +93,15 @@ function InlineEdit({
   canEdit,
   editor,
   title,
+  pending,
 }: {
   label: ReactNode;
   canEdit: boolean;
   /** The editor; call `close` once it has saved or been left. */
   editor: (close: () => void) => ReactNode;
   title: string;
+  /** A change on its way: shown instead of the label, not editable meanwhile. */
+  pending?: Pending;
 }) {
   const [editing, setEditing] = useState(false);
   const box = useRef<HTMLSpanElement>(null);
@@ -90,6 +114,7 @@ function InlineEdit({
     document.addEventListener('mousedown', away);
     return () => document.removeEventListener('mousedown', away);
   }, [editing]);
+  if (pending) return <PendingValue show={pending.show} />;
   if (editing && canEdit) {
     return (
       <span ref={box} onClick={(e) => e.stopPropagation()} className="inline-block">
@@ -168,9 +193,10 @@ export function StageCell({ task, board }: { task: TaskRow; board?: BoardStage[]
   const boards = useContext(BoardsContext);
   const columns = board ?? (task.project ? boards[String(task.project.id)] : undefined) ?? [];
   const canEdit = useCanEdit('stage') && columns.length > 0;
-  const { busy, save } = useSave(task.id);
+  const { busy, pending, save } = useSave(task, 'stage');
   return (
     <InlineEdit
+      pending={pending}
       title="Click to move to another column"
       canEdit={canEdit}
       label={
@@ -187,13 +213,15 @@ export function StageCell({ task, board }: { task: TaskRow; board?: BoardStage[]
           options={columns.map((s) => ({ value: s.id, label: s.title }))}
           busy={busy}
           close={close}
-          onPick={(id) =>
-            save(
+          onPick={(id) => {
+            const to = columns.find((s) => s.id === id);
+            return save(
               'stage',
               { stageId: id },
-              `Task ${task.id} moved to ${columns.find((s) => s.id === id)?.title}`,
-            )
-          }
+              `Task ${task.id} moved to ${to?.title}`,
+              <StageChip title={to?.title ?? null} color={to?.color ?? null} />,
+            );
+          }}
         />
       )}
     />
@@ -202,14 +230,16 @@ export function StageCell({ task, board }: { task: TaskRow; board?: BoardStage[]
 
 export function StatusCell({ task }: { task: TaskRow }) {
   const canEdit = useCanEdit('status');
-  const { busy, save } = useSave(task.id);
-  const label = (
+  const { busy, pending, save } = useSave(task, 'status');
+  const chip = (s: BitrixStatus) => (
     <span className="whitespace-nowrap rounded bg-primary-soft-100 px-1.5 py-0.5 text-table text-primary-dark">
-      {STATUS_LABEL[task.bitrixStatus]}
+      {STATUS_LABEL[s]}
     </span>
   );
+  const label = chip(task.bitrixStatus);
   return (
     <InlineEdit
+      pending={pending}
       title="Click to change the status"
       canEdit={canEdit}
       label={label}
@@ -249,7 +279,7 @@ export function StatusCell({ task }: { task: TaskRow }) {
               }))
             )
               return;
-            return save('status', { status: s }, `Task ${task.id}: ${STATUS_LABEL[s]}`);
+            return save('status', { status: s }, `Task ${task.id}: ${STATUS_LABEL[s]}`, chip(s));
           }}
         />
       )}
@@ -270,9 +300,10 @@ export function useEditOptions(enabled: boolean) {
 export function ProjectCell({ task }: { task: TaskRow }) {
   const canEdit = useCanEdit('project');
   const { data } = useEditOptions(canEdit);
-  const { busy, save } = useSave(task.id);
+  const { busy, pending, save } = useSave(task, 'project');
   return (
     <InlineEdit
+      pending={pending}
       title="Click to move to another project"
       canEdit={canEdit}
       label={task.project?.name ?? '-'}
@@ -286,13 +317,15 @@ export function ProjectCell({ task }: { task: TaskRow }) {
           ]}
           busy={busy}
           close={close}
-          onPick={(id) =>
-            save(
+          onPick={(id) => {
+            const name = data?.projects.find((p) => p.id === id)?.name;
+            return save(
               'field',
               { field: 'project', value: id },
-              `Task ${task.id} moved to ${data?.projects.find((p) => p.id === id)?.name}`,
-            )
-          }
+              `Task ${task.id} moved to ${name}`,
+              name,
+            );
+          }}
         />
       )}
     />
@@ -302,9 +335,10 @@ export function ProjectCell({ task }: { task: TaskRow }) {
 export function AssigneeCell({ task }: { task: TaskRow }) {
   const canEdit = useCanEdit('assignee');
   const { data } = useEditOptions(canEdit);
-  const { busy, save } = useSave(task.id);
+  const { busy, pending, save } = useSave(task, 'assignee');
   return (
     <InlineEdit
+      pending={pending}
       title="Click to assign to someone else"
       canEdit={canEdit}
       label={task.assignee.name}
@@ -320,13 +354,15 @@ export function AssigneeCell({ task }: { task: TaskRow }) {
           )}
           busy={busy}
           close={close}
-          onPick={(id) =>
-            save(
+          onPick={(id) => {
+            const name = data?.people.find((p) => p.id === id)?.name;
+            return save(
               'field',
               { field: 'assignee', value: id },
-              `Task ${task.id} assigned to ${data?.people.find((p) => p.id === id)?.name}`,
-            )
-          }
+              `Task ${task.id} assigned to ${name}`,
+              name,
+            );
+          }}
         />
       )}
     />
@@ -335,9 +371,10 @@ export function AssigneeCell({ task }: { task: TaskRow }) {
 
 export function PriorityCell({ task }: { task: TaskRow }) {
   const canEdit = useCanEdit('priority');
-  const { busy, save } = useSave(task.id);
+  const { busy, pending, save } = useSave(task, 'priority');
   return (
     <InlineEdit
+      pending={pending}
       title="Click to change the priority"
       canEdit={canEdit}
       label={<PriorityBadge priority={task.priority} />}
@@ -349,7 +386,12 @@ export function PriorityCell({ task }: { task: TaskRow }) {
           busy={busy}
           close={close}
           onPick={(p) =>
-            save('field', { field: 'priority', value: p }, `Task ${task.id}: priority ${p}`)
+            save(
+              'field',
+              { field: 'priority', value: p },
+              `Task ${task.id}: priority ${p}`,
+              <PriorityBadge priority={p} />,
+            )
           }
         />
       )}
@@ -360,9 +402,10 @@ export function PriorityCell({ task }: { task: TaskRow }) {
 /** Several tags, comma-separated; saving replaces the list (new tags are created by Bitrix24). */
 export function TagsCell({ task, max = 2 }: { task: TaskRow; max?: number }) {
   const canEdit = useCanEdit('tags');
-  const { busy, save } = useSave(task.id);
+  const { busy, pending, save } = useSave(task, 'tags');
   return (
     <InlineEdit
+      pending={pending}
       title="Click to edit the tags (comma-separated)"
       canEdit={canEdit}
       label={
@@ -377,9 +420,18 @@ export function TagsCell({ task, max = 2 }: { task: TaskRow; max?: number }) {
           initial={task.tags.join(', ')}
           busy={busy}
           close={close}
-          onSave={(text) =>
-            save('field', { field: 'tags', value: text }, `Task ${task.id}: tags saved`)
-          }
+          onSave={(text) => {
+            const tags = text
+              .split(',')
+              .map((t) => t.trim())
+              .filter(Boolean);
+            return save(
+              'field',
+              { field: 'tags', value: text },
+              `Task ${task.id}: tags saved`,
+              tags.length ? <TagChips tags={tags} max={max} /> : 'No tags',
+            );
+          }}
         />
       )}
     />
@@ -423,7 +475,7 @@ function TagsEditor({
 /** Deadline: a future date only; the time is the end of the working day (18:30 IST). */
 export function DeadlineCell({ task }: { task: TaskRow }) {
   const canEdit = useCanEdit('deadline');
-  const { busy, save } = useSave(task.id);
+  const { busy, pending, save } = useSave(task, 'deadline');
   const label = (
     <span className={clsx('whitespace-nowrap', task.overdue && 'text-bad')}>
       {fmtDate(task.deadline)}
@@ -431,6 +483,7 @@ export function DeadlineCell({ task }: { task: TaskRow }) {
   );
   return (
     <InlineEdit
+      pending={pending}
       title="Click to change the deadline (future dates only)"
       canEdit={canEdit}
       label={label}
@@ -452,6 +505,7 @@ export function DeadlineCell({ task }: { task: TaskRow }) {
               'field',
               { field: 'deadline', value: `${day}T18:30:00+05:30` },
               `Task ${task.id}: deadline ${fmtDate(`${day}T18:30:00+05:30`)}`,
+              fmtDate(`${day}T18:30:00+05:30`),
             );
           }}
           onKeyDown={(e) => e.key === 'Escape' && close()}

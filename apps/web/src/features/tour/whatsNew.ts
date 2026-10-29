@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-30-saving-shows',
+    date: '2026-10-30',
+    tab: 'dev',
+    title: 'You can see a change being saved',
+    steps: [
+      {
+        target: 'header',
+        title: 'Saving, then saved',
+        text: 'When you change a status, column or any other field, it shows the new value with a small spinner until Bitrix24 has it everywhere. If Bitrix24 refuses, the old value comes back with the reason.',
+      },
+    ],
+  },
+  {
     id: '2026-10-30-faster-edits',
     date: '2026-10-30',
     tab: 'dev',
