@@ -52,7 +52,7 @@ export const STATUS: Record<SignInStatus, { label: string; cls: string }> = {
 
 /** "just now", "5 min ago", "3 h ago", "2 days ago", or the date. */
 export function timeAgo(iso: string | null, now = Date.now()): string {
-  if (!iso) return '—';
+  if (!iso) return '-';
   const s = Math.max(0, (now - new Date(iso).getTime()) / 1000);
   if (s < 60) return 'just now';
   if (s < 3600) return `${Math.floor(s / 60)} min ago`;

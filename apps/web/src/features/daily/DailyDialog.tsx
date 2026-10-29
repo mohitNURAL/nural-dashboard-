@@ -55,7 +55,7 @@ export function DailyDialog() {
     <Dialog.Root open={!!mode} onOpenChange={(o) => !o && later()}>
       <Dialog.Portal>
         <Dialog.Overlay
-          className="fixed inset-0 z-[58] bg-black/45 backdrop-blur-sm"
+          className="fixed inset-0 z-[58] overlay"
           style={{ animation: 'fade-in 160ms ease-out' }}
         />
         <Dialog.Content
@@ -951,7 +951,7 @@ function WrapView({ today, onLater }: { today: DailyToday; onLater: () => void }
                   <button
                     type="button"
                     onClick={() => addNew([n])}
-                    className="rounded-control px-2 py-0.5 font-heading text-button text-primary hover:bg-primary/10"
+                    className="btn btn-link px-2 py-0.5"
                   >
                     Add
                   </button>

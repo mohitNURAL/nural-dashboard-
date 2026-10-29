@@ -174,9 +174,9 @@ export function KpiTiles({
           node: (
             <StatTile
               label="On-time"
-              value={s && (s.onTimePct === null ? '—' : `${s.onTimePct} %`)}
+              value={s && (s.onTimePct === null ? '-' : `${s.onTimePct} %`)}
               info={KPI_INFO.onTime}
-              sub={s && `${words.prev}: ${s.onTimePrevPct === null ? '—' : `${s.onTimePrevPct} %`}`}
+              sub={s && `${words.prev}: ${s.onTimePrevPct === null ? '-' : `${s.onTimePrevPct} %`}`}
               onClick={() =>
                 list(`Closed ${words.now.toLowerCase()}`, { kpi: 'closed' }, KPI_INFO.onTime)
               }

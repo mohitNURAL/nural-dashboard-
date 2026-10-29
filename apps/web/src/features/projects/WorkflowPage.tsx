@@ -99,7 +99,7 @@ export function WorkflowPage() {
                 value={wf?.stages.filter((s) => s.category === 'completed').length}
                 sub={
                   wf
-                    ? `From ${wf.stages.find((s) => s.roles.includes('qaEntry'))?.title ?? '—'}`
+                    ? `From ${wf.stages.find((s) => s.roles.includes('qaEntry'))?.title ?? '-'}`
                     : undefined
                 }
               />
@@ -167,12 +167,12 @@ export function WorkflowPage() {
                         </span>
                       ))}
                     </p>
-                    <p className="text-body text-text">{stage.description || '—'}</p>
+                    <p className="text-body text-text">{stage.description || '-'}</p>
                     <div>
                       <p className="font-heading text-label uppercase text-text-muted">
                         Moves on to
                       </p>
-                      <p>{stage.next.join(', ') || '— (the end of the flow)'}</p>
+                      <p>{stage.next.join(', ') || 'None (the end of the flow)'}</p>
                     </div>
                     {stage.aliases.length > 0 && (
                       <div>

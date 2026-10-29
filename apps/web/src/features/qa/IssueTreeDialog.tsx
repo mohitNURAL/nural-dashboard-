@@ -140,7 +140,7 @@ export function IssueTreeDialog<C extends Record<keyof C, number>>({
           onCount(label, c, { ...params, ...c.params });
         }}
         className={clsx(
-          'inline-flex min-w-[2.25rem] justify-center rounded-full px-2 py-0.5 font-heading font-bold tabular-nums transition hover:scale-105 hover:shadow-sm',
+          'inline-flex min-w-[2.25rem] justify-center rounded-full px-2 py-0.5 font-heading font-bold tabular-nums transition-colors',
           c.bad
             ? 'bg-bad/10 text-bad hover:bg-bad/20'
             : strong
@@ -168,7 +168,7 @@ export function IssueTreeDialog<C extends Record<keyof C, number>>({
   return (
     <Dialog.Root open onOpenChange={(o) => !o && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px]" />
+        <Dialog.Overlay className="fixed inset-0 z-50 overlay" />
         <Dialog.Content className="fixed inset-y-4 left-1/2 z-50 flex w-[min(1040px,97vw)] -translate-x-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop outline-none">
           <div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-4">
             <span className="grid h-10 w-10 place-items-center text-primary">

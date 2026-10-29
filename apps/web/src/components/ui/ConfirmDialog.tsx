@@ -73,7 +73,7 @@ export function ConfirmHost() {
     <Dialog.Root open={!!current} onOpenChange={(o) => !o && answer(false)}>
       <Dialog.Portal>
         <Dialog.Overlay
-          className="fixed inset-0 z-[60] bg-black/45 backdrop-blur-sm"
+          className="fixed inset-0 z-[60] overlay"
           style={{ animation: 'fade-in 160ms ease-out' }}
         />
         <Dialog.Content

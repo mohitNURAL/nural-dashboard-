@@ -92,7 +92,7 @@ export function FilterBar({ tab }: { tab: Tab }) {
             if (tab === 'kpi') kpi.setDept('all');
           }}
           disabled={!hasFilters(tab, filters) && !(tab === 'kpi' && kpi.dept !== 'all')}
-          className="col-span-2 h-10 rounded-control px-3 font-heading text-button text-primary hover:bg-primary-soft-100 disabled:text-text-muted disabled:hover:bg-transparent lg:col-span-1"
+          className="btn btn-link col-span-2 h-10 px-3 lg:col-span-1"
         >
           Reset filters
         </button>

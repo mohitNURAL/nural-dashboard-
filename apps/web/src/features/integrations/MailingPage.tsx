@@ -333,7 +333,7 @@ function ReportCard({
         )}
         <button
           type="button"
-          className="ml-auto rounded-control px-2.5 py-1 font-heading text-button text-bad hover:bg-bad/10"
+          className="btn btn-link ml-auto px-2.5 py-1 text-bad"
           onClick={async () => {
             const ok = await confirm({
               title: `Delete "${r.name}"?`,
@@ -465,7 +465,7 @@ function Editor({ report, onClose }: { report: Report | null; onClose: () => voi
   return (
     <Dialog.Root open onOpenChange={(o) => !o && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
+        <Dialog.Overlay className="fixed inset-0 z-50 overlay" />
         <Dialog.Content className="fixed inset-y-4 left-1/2 z-50 flex w-[min(760px,94vw)] -translate-x-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop">
           <div className="flex items-center justify-between border-b border-border px-5 py-4">
             <Dialog.Title className="font-heading text-h1 text-primary-dark">
@@ -865,7 +865,7 @@ function PreviewDialog({ report, onClose }: { report: Report; onClose: () => voi
   return (
     <Dialog.Root open onOpenChange={(o) => !o && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
+        <Dialog.Overlay className="fixed inset-0 z-50 overlay" />
         <Dialog.Content className="fixed inset-y-4 left-1/2 z-50 flex w-[min(820px,94vw)] -translate-x-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop">
           <div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-3">
             <Dialog.Title className="font-heading text-h1 text-primary-dark">

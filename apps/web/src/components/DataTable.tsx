@@ -420,7 +420,7 @@ function Pager({
       )}
       <div className="flex items-center gap-2">
         <span className="text-text-muted">
-          {((page - 1) * pageSize + 1).toLocaleString('en-IN')}–
+          {((page - 1) * pageSize + 1).toLocaleString('en-IN')}-
           {Math.min(page * pageSize, total).toLocaleString('en-IN')} of{' '}
           {total.toLocaleString('en-IN')}
         </span>

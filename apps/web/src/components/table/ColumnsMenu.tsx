@@ -104,7 +104,7 @@ export function ColumnsMenu({
           <button
             type="button"
             onClick={onReset}
-            className="mt-1 w-full rounded-control px-2 py-1.5 text-left font-heading text-button text-primary hover:bg-primary-soft-100"
+            className="btn btn-link mt-1 w-full justify-start px-2 py-1.5"
           >
             Reset columns
           </button>

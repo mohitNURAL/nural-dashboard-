@@ -2,7 +2,7 @@
 
 /** "just now", "3 h ago", "5 days ago" (calendar time). */
 export function ago(iso: string | null, now = Date.now()): string {
-  if (!iso) return '—';
+  if (!iso) return '-';
   const min = Math.max(0, Math.round((now - new Date(iso).getTime()) / 60_000));
   if (min < 2) return 'just now';
   if (min < 60) return `${min} min ago`;

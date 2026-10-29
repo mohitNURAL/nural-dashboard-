@@ -123,7 +123,7 @@ export function InHandCalendarDialog({
           title={`${label}: click for the tasks`}
           onClick={() => open(label, params, overdue)}
           className={clsx(
-            'self-start rounded-full px-2 py-0.5 font-heading text-[12px] font-bold tabular-nums transition hover:scale-105',
+            'self-start rounded-full px-2 py-0.5 font-heading text-[12px] font-bold tabular-nums transition-colors',
             overdue ? 'bg-bad text-white' : 'bg-primary text-white',
           )}
         >
@@ -163,7 +163,7 @@ export function InHandCalendarDialog({
   return (
     <Dialog.Root open onOpenChange={(o) => !o && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px]" />
+        <Dialog.Overlay className="fixed inset-0 z-50 overlay" />
         <Dialog.Content className="fixed inset-y-4 left-1/2 z-50 flex w-[min(1480px,98vw)] -translate-x-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop outline-none">
           <div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-4">
             <span className="grid h-10 w-10 place-items-center text-primary">

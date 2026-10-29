@@ -79,7 +79,7 @@ const baseColumns = [
             {c.getValue()}
           </span>
           <span className="block truncate text-table text-text-muted">
-            {c.row.original.position ?? '—'}
+            {c.row.original.position ?? '-'}
             {!c.row.original.active && ' · inactive in Bitrix24'}
           </span>
         </span>

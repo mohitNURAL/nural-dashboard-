@@ -121,7 +121,7 @@ export function runTour(
       btn.type = 'button';
       btn.className = 'nural-tour-voice';
       const paint = () => {
-        btn.textContent = voice ? '🔊 Voice on' : '🔈 Voice off';
+        btn.textContent = voice ? 'Voice on' : 'Voice off';
         btn.setAttribute('aria-pressed', String(voice));
         btn.title = voice ? 'Stop reading aloud' : 'Read each step aloud';
       };

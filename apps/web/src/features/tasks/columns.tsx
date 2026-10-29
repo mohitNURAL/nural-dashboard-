@@ -67,7 +67,7 @@ export function taskColumns({ withCreator = false } = {}): Columns<TaskRow> {
           }),
         ]
       : []),
-    col.accessor((r) => r.project?.name ?? '—', {
+    col.accessor((r) => r.project?.name ?? '-', {
       id: 'project',
       header: 'Project',
       enableSorting: false,

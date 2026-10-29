@@ -27,7 +27,7 @@ export const Accordion = forwardRef<HTMLElement, Props>(function Accordion(
       ref={ref}
       data-tour={tour}
       className={clsx(
-        'scroll-mt-32 overflow-hidden rounded-card border bg-surface transition-shadow duration-200 hover:shadow-pop',
+        'scroll-mt-32 overflow-hidden rounded-card border bg-surface transition-shadow duration-200',
         tone === 'bad' ? 'border-bad' : 'border-border',
       )}
     >

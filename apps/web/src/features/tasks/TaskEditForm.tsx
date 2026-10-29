@@ -70,7 +70,7 @@ export function TaskEditForm({
   if (full && projectChanged)
     field('project', project, [
       'Project',
-      `${task.project?.name ?? '—'} → ${options?.projects.find((p) => p.id === project)?.name ?? project}`,
+      `${task.project?.name ?? '-'} → ${options?.projects.find((p) => p.id === project)?.name ?? project}`,
     ]);
   if (full && assignee !== task.assignee.id)
     field('assignee', assignee, [
@@ -80,7 +80,7 @@ export function TaskEditForm({
   if (full && priority !== task.priority)
     field('priority', priority, ['Priority', `${task.priority} → ${priority}`]);
   if (full && day && day !== startDay)
-    field('deadline', `${day}T18:30:00+05:30`, ['Deadline', `${startDay || '—'} → ${day}`]);
+    field('deadline', `${day}T18:30:00+05:30`, ['Deadline', `${startDay || '-'} → ${day}`]);
   if (tags.trim() !== startTags.trim()) field('tags', tags, ['Tags', tags.trim() || '(none)']);
   if (!projectChanged && board.length && stageId !== startColumn)
     changes.push({
@@ -196,7 +196,7 @@ export function TaskEditForm({
               disabled={busy || !options}
               onChange={(e) => setProject(Number(e.target.value))}
             >
-              {!task.project && <option value={0}>—</option>}
+              {!task.project && <option value={0}>-</option>}
               {task.project && !options && (
                 <option value={task.project.id}>{task.project.name}</option>
               )}

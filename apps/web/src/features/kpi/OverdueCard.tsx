@@ -11,9 +11,9 @@ import { KPI_INFO } from './info';
 import { useOpenKpiList } from './kpiList';
 
 const BUCKETS: { key: OverdueBucket; label: string; cls: string }[] = [
-  { key: '1-2', label: '1–2 d', cls: 'bg-bad-soft text-bad-dark' },
-  { key: '3-7', label: '3–7 d', cls: 'bg-bad-soft text-bad-dark' },
-  { key: '8-30', label: '8–30 d', cls: 'bg-bad text-white' },
+  { key: '1-2', label: '1-2 d', cls: 'bg-bad-soft text-bad-dark' },
+  { key: '3-7', label: '3-7 d', cls: 'bg-bad-soft text-bad-dark' },
+  { key: '8-30', label: '8-30 d', cls: 'bg-bad text-white' },
   { key: '30+', label: '30+ d', cls: 'bg-bad-dark text-white' },
 ];
 const TOP = 8;

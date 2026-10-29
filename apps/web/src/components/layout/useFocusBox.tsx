@@ -119,7 +119,7 @@ export function useFocusBox<T extends HTMLElement>() {
         <div
           aria-hidden
           onClick={close}
-          className="fixed inset-0 z-40 bg-black/35 backdrop-blur-sm"
+          className="fixed inset-0 z-40 overlay"
           style={reduceMotion() ? undefined : { animation: 'fade-in 200ms ease-out' }}
         />,
         document.body,

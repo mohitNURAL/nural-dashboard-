@@ -25,6 +25,6 @@ describe('lastFiledText', () => {
   it('says Today or the Kolkata date', () => {
     expect(lastFiledText({ date: '2026-10-10', isToday: true })).toBe('Today');
     expect(lastFiledText({ date: '2026-10-09', isToday: false })).toBe('9 Oct 2026');
-    expect(lastFiledText(null)).toBe('—');
+    expect(lastFiledText(null)).toBe('-');
   });
 });

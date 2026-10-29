@@ -22,7 +22,7 @@ const STATE_STYLE: Record<DailyState, { label: string; cls: string }> = {
 };
 
 export function StateChip({ state }: { state: DailyState | undefined }) {
-  if (!state) return <span className="text-text-muted">—</span>;
+  if (!state) return <span className="text-text-muted">-</span>;
   const s = STATE_STYLE[state];
   return (
     <span
@@ -37,7 +37,7 @@ export function StateChip({ state }: { state: DailyState | undefined }) {
 export function TaskField({
   kind,
   row,
-  fallback = '—',
+  fallback = '-',
 }: {
   kind: 'project' | 'stage' | 'status' | 'priority' | 'tags' | 'deadline';
   row: TaskRow | undefined;

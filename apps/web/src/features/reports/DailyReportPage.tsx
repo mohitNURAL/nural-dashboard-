@@ -387,8 +387,8 @@ function DayAccordion({
         <span className="font-heading font-bold text-primary-dark">{l.name}</span>
         <span className="text-table font-medium text-text">{dayText(l.day)}</span>
         <span className="text-table text-text">
-          Plan {l.plannedAt ? time(l.plannedAt) : '—'}
-          {l.late ? ' (late)' : ''} · Wrap-up {l.wrappedAt ? time(l.wrappedAt) : '—'}
+          Plan {l.plannedAt ? time(l.plannedAt) : '-'}
+          {l.late ? ' (late)' : ''} · Wrap-up {l.wrappedAt ? time(l.wrappedAt) : '-'}
         </span>
         <span className="ml-auto flex flex-wrap items-center gap-2 text-table">
           <span className="font-medium text-text">{l.planned} planned</span>
@@ -463,26 +463,26 @@ function DayAccordion({
                       {t.reported ? (
                         <StateChip state={t.reported} />
                       ) : (
-                        <span className="text-text">—</span>
+                        <span className="text-text">-</span>
                       )}
                     </td>
                     <td className="border-b border-border px-2.5 py-2">
                       <StateChip state={t.now ?? undefined} />
                     </td>
                     <td className="border-b border-border px-2.5 py-2 text-text">
-                      {t.stage ?? '—'}
+                      {t.stage ?? '-'}
                     </td>
                     <td className="border-b border-border px-2.5 py-2 text-text">
-                      {t.status ?? '—'}
+                      {t.status ?? '-'}
                     </td>
                     <td className="border-b border-border px-2.5 py-2 text-text">
-                      {t.priority ?? '—'}
+                      {t.priority ?? '-'}
                     </td>
                     <td className="border-b border-border px-2.5 py-2 text-text">
-                      {t.tags.join(', ') || '—'}
+                      {t.tags.join(', ') || '-'}
                     </td>
                     <td className="whitespace-nowrap border-b border-border px-2.5 py-2 text-text">
-                      {t.deadline ? dayText(t.deadline.slice(0, 10)) : '—'}
+                      {t.deadline ? dayText(t.deadline.slice(0, 10)) : '-'}
                     </td>
                     <td className="border-b border-border px-2.5 py-2">
                       {t.moves.length ? (
@@ -492,12 +492,12 @@ function DayAccordion({
                               key={k}
                               className="whitespace-nowrap rounded-full bg-primary/10 px-2 py-0.5 text-[12px] font-medium text-primary-dark"
                             >
-                              {m.from ?? '—'} → {m.to ?? '—'} · {time(m.at)}
+                              {m.from ?? '-'} → {m.to ?? '-'} · {time(m.at)}
                             </span>
                           ))}
                         </span>
                       ) : (
-                        <span className="text-text">—</span>
+                        <span className="text-text">-</span>
                       )}
                     </td>
                   </tr>

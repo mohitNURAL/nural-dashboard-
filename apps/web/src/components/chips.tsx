@@ -5,7 +5,7 @@ import type { Priority } from '../api/types';
 import { initials } from '../features/dev/format';
 
 export function StageChip({ title, color }: { title: string | null; color: string | null }) {
-  if (!title) return <span className="text-text-muted">—</span>;
+  if (!title) return <span className="text-text-muted">-</span>;
   return (
     <span className="inline-flex max-w-full items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-surface px-2 py-0.5 font-heading text-label text-text">
       <span

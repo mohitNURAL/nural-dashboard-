@@ -35,7 +35,7 @@ function rangeLabel(r: Range): string {
   if (r.from && r.to)
     return r.from === r.to
       ? `${field}: ${short(r.from)}`
-      : `${field}: ${short(r.from)} – ${short(r.to)}`;
+      : `${field}: ${short(r.from)} to ${short(r.to)}`;
   return r.from ? `${field}: from ${short(r.from)}` : `${field}: until ${short(r.to!)}`;
 }
 

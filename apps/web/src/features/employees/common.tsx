@@ -29,16 +29,10 @@ export function StatusPill({ status }: { status: SignInStatus }) {
   return (
     <span
       className={clsx(
-        'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 font-heading text-label font-bold ring-1',
+        'inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 font-heading text-label font-bold ring-1',
         s.cls,
       )}
     >
-      <span
-        className={clsx(
-          'h-1.5 w-1.5 rounded-full bg-current',
-          status === 'active' && 'animate-pulse',
-        )}
-      />
       {s.label}
     </span>
   );

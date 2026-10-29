@@ -56,7 +56,7 @@ export function DocsPage() {
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="group flex items-start gap-3 rounded-card border border-border bg-surface p-3 transition hover:-translate-y-0.5 hover:border-primary hover:shadow-pop"
+      className="group flex items-start gap-3 rounded-card border border-border bg-surface p-3 transition hover:border-primary"
     >
       <span
         className={`grid shrink-0 place-items-center text-primary ${big ? 'h-12 w-12' : 'h-10 w-10'}`}

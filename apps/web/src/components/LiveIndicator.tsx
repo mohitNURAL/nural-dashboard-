@@ -21,9 +21,6 @@ export function LiveIndicator() {
       title={lastChangeAt ? `Last change from Bitrix24 at ${time(lastChangeAt)}` : undefined}
     >
       <span className="relative flex h-2.5 w-2.5">
-        {status === 'live' && (
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60" />
-        )}
         <span
           className={clsx(
             'relative inline-flex h-2.5 w-2.5 rounded-full',

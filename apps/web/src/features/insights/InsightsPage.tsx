@@ -273,7 +273,7 @@ function HoldingCard({ data, loading, className }: CardProps) {
               <button
                 type="button"
                 onClick={() => open(p.text, p.taskIds)}
-                className="flex w-full items-start gap-3 rounded-card border border-border p-3 text-left transition hover:-translate-y-0.5 hover:border-primary hover:shadow-pop"
+                className="flex w-full items-start gap-3 rounded-card border border-border p-3 text-left transition hover:border-primary"
               >
                 <span className="btn btn-card grid h-7 w-7 shrink-0 place-items-center">
                   {i + 1}
@@ -350,7 +350,7 @@ function ProjectsCard({ data, loading, className }: CardProps) {
             },
             yAxis: {
               type: 'category',
-              data: rows.map((r) => (r.lagging ? `⚠ ${r.name}` : r.name)),
+              data: rows.map((r) => (r.lagging ? `${r.name} (lagging)` : r.name)),
               axisTick: { show: false },
               axisLabel: { width: 150, overflow: 'truncate' },
               axisLine: { lineStyle: { color: token('--border') } },
@@ -602,7 +602,7 @@ function ReleasesCard({ data, loading, className }: CardProps) {
                   <td className="py-2 pr-2">{r.project}</td>
                   <td className="py-2 pr-2">{r.assignee}</td>
                   <td className="py-2 pr-2 tabular-nums">{fmtDate(r.deadline)}</td>
-                  <td className="py-2 pr-2">{r.stage ?? '—'}</td>
+                  <td className="py-2 pr-2">{r.stage ?? '-'}</td>
                   <td className="py-2" title={r.reason}>
                     <span
                       className={clsx(

@@ -35,7 +35,7 @@ describe('Tasks in hand planner export', () => {
       totals: { total: 4, overdue: 1, cells: { '2026-10-19': 3, later: 0 } },
     };
     expect(plannerTable(data, data.rows)).toEqual([
-      ['Assignee', 'Project', 'Total', 'Overdue', '19–25 Oct', 'Later (from 26 Oct)'],
+      ['Assignee', 'Project', 'Total', 'Overdue', '19-25 Oct', 'Later (from 26 Oct)'],
       ['Dev A', 'All', 4, 1, 3, 0],
       ['Dev A', 'Moto', 2, 1, 1, 0],
       ['Dev A', 'Pulse', 2, 0, 2, 0],

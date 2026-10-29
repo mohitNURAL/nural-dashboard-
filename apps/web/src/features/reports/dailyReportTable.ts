@@ -92,7 +92,7 @@ export function reportTables(lines: ReportLine[]): { full: Value[][]; pdf: Value
       const reported = t.reported ? STATE[t.reported] : '';
       const now = t.now ? STATE[t.now] : '';
       const moves = t.moves
-        .map((m) => `${m.from ?? '—'} → ${m.to ?? '—'} ${time(m.at)}`)
+        .map((m) => `${m.from ?? '-'} → ${m.to ?? '-'} ${time(m.at)}`)
         .join('; ');
       full.push([
         l.name,

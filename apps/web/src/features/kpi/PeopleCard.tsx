@@ -76,7 +76,7 @@ export function PeopleCard({ className }: { className?: string }) {
         meta: { align: 'center', info: KPI_INFO.onTime },
         cell: (c) => {
           const v = c.row.original.rates.onTimePct;
-          return v === null ? <span className="text-text-muted">—</span> : `${v} %`;
+          return v === null ? <span className="text-text-muted">-</span> : `${v} %`;
         },
       }),
       col.accessor((p) => p.rates.open, {

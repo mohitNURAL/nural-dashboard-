@@ -361,7 +361,7 @@ export function BulkBar({ bulk, boards }: { bulk: Bulk; boards: Record<string, B
               disabled={!edit || busy}
               onClick={keep}
               title="Keep this change and pick another field"
-              className="h-8 rounded-control border border-dashed border-primary px-3 font-heading text-button text-primary hover:bg-surface disabled:opacity-50"
+              className="btn btn-stroke h-8 border-dashed px-3"
             >
               + Add another change
             </button>

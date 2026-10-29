@@ -25,7 +25,7 @@ export function shadeSteps(colors: string[]): string[] {
 
 /** QA-01 Last filed tile: "Today" when issues were filed today, else the date. */
 export function lastFiledText(last: { date: string; isToday: boolean } | null): string {
-  if (!last) return '—';
+  if (!last) return '-';
   return last.isToday ? 'Today' : fmtDate(`${last.date}T12:00:00+05:30`);
 }
 

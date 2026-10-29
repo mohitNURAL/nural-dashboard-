@@ -28,6 +28,11 @@ h3 {
    *   btn-stroke  cancel and other paths: outlined pill, Primary 700 label
    *   btn-link    low-emphasis actions: text only, Primary 500
    */
+  /* Dialog and drawer backdrop: flat Primary 800, no blur (Nural brand). */
+  .overlay {
+    @apply bg-navy-deep/60;
+  }
+
   .btn {
     @apply inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full font-heading text-button uppercase transition-colors disabled:cursor-not-allowed disabled:opacity-50;
   }

@@ -229,7 +229,7 @@ function Timeline({
               aria-hidden
             />
             <p>
-              {m.from ?? '—'} → <span className="font-bold">{m.to ?? '—'}</span>
+              {m.from ?? '-'} → <span className="font-bold">{m.to ?? '-'}</span>
               {reopen && (
                 <span className="ml-2 rounded bg-bad-soft px-1.5 font-heading text-label font-bold text-bad-dark">
                   REOPENED

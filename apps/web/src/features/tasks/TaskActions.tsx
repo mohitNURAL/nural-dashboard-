@@ -275,13 +275,13 @@ export function ProjectCell({ task }: { task: TaskRow }) {
     <InlineEdit
       title="Click to move to another project"
       canEdit={canEdit}
-      label={task.project?.name ?? '—'}
+      label={task.project?.name ?? '-'}
       editor={(close) => (
         <SelectEditor
           label={`Project of task ${task.id}`}
           value={task.project?.id ?? 0}
           options={[
-            ...(task.project ? [] : [{ value: 0, label: '—', disabled: true }]),
+            ...(task.project ? [] : [{ value: 0, label: '-', disabled: true }]),
             ...(data?.projects ?? []).map((p) => ({ value: p.id, label: p.name })),
           ]}
           busy={busy}

@@ -247,7 +247,7 @@ function Node({
       {depth > 0 && <span className="absolute -left-6 top-7 h-0.5 w-5 bg-border" aria-hidden />}
       <div
         className={clsx(
-          'group flex items-center gap-3 rounded-card border bg-surface p-3 pr-4 transition hover:shadow-pop',
+          'group flex items-center gap-3 rounded-card border bg-surface p-3 pr-4 transition',
           hit ? 'border-accent ring-2 ring-accent/30' : 'border-border',
         )}
       >
@@ -317,7 +317,7 @@ function Node({
                       )}
                     </span>
                     <span className="block truncate text-table text-text-muted">
-                      {m.position ?? '—'}
+                      {m.position ?? '-'}
                     </span>
                   </span>
                 </li>

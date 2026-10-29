@@ -20,7 +20,11 @@ and the next change fills its ID in.
 
 ## 2026-10-29
 
-- Nural brand (Product UI track): the supplied Nural Pulse logo (SVG) in the top bar and footer, the
+- Nural brand, page pass: one shared `overlay` backdrop (flat Primary 800, no blur); no zoom or
+  lift on hover, no pinging Live dot or decorative status dots; the last text buttons on
+  `btn-link`; no emoji (tour voice button, Insights lagging mark now says "(lagging)"); no em
+  or en dashes on screen (empty values show -, date ranges "from to").
+- `00e561e` Nural brand (Product UI track): the supplied Nural Pulse logo (SVG) in the top bar and footer, the
   symbol as favicon; flat fills only (no gradients, glows, shadows, blur); Primary 500 top bar and
   menu with underlined selection; shared pill buttons (`btn-page`, `btn-card`, `btn-stroke`,
   `btn-link` in index.css); weights 400/700, letter-spacing 0, brand type sizes and no shadows

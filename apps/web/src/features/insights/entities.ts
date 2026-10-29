@@ -3,7 +3,7 @@
 // one's tasks. Pure, from the /api/insights response.
 import type { Entity, EntityList, Insights, TileKey } from './api';
 
-const pct = (n: number | null) => (n == null ? '—' : `${Math.round(n)} %`);
+const pct = (n: number | null) => (n == null ? '-' : `${Math.round(n)} %`);
 const byWeight = (a: Entity, b: Entity) => (b.stats[0]?.[1] ?? 0) - (a.stats[0]?.[1] ?? 0);
 
 export function tileEntities(key: TileKey, d: Insights, label: string): EntityList {

@@ -119,7 +119,7 @@ export function SideDrawer({
         <div
           aria-hidden
           onClick={() => setMobileOpen(false)}
-          className="fixed inset-0 top-14 z-40 bg-black/40 backdrop-blur-[2px] md:hidden"
+          className="fixed inset-0 top-14 z-40 overlay md:hidden"
         />
       )}
       <aside

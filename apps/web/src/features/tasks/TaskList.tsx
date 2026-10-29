@@ -184,7 +184,7 @@ export function TaskList({
           {COLUMN_FILTERS.map(([key, label]) => {
             const options = (data?.facets?.[key] ?? []).map((o) => ({
               value: o.value,
-              label: o.label || '—',
+              label: o.label || '-',
               count: o.count,
             }));
             // A column with one value and nothing picked has nothing to filter.
@@ -204,7 +204,7 @@ export function TaskList({
             <button
               type="button"
               onClick={() => setColFilters({})}
-              className="h-8 rounded-control px-2.5 font-heading text-button text-primary hover:bg-primary-soft-100"
+              className="btn btn-link h-8 px-2.5"
             >
               Clear column filters
             </button>

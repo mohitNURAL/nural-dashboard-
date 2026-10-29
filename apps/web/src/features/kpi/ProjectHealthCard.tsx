@@ -104,7 +104,7 @@ export const ProjectHealthCard = forwardRef<HTMLDivElement, { className?: string
                 {c.getValue()} d
               </span>
             ) : (
-              <span className="text-text-muted">—</span>
+              <span className="text-text-muted">-</span>
             ),
         }),
         col.accessor('noDeadline', {
@@ -143,7 +143,7 @@ export const ProjectHealthCard = forwardRef<HTMLDivElement, { className?: string
           meta: { align: 'center', info: KPI_INFO.onTime },
           cell: (c) => {
             const v = c.row.original.rates.onTimePct;
-            return v === null ? <span className="text-text-muted">—</span> : `${v} %`;
+            return v === null ? <span className="text-text-muted">-</span> : `${v} %`;
           },
         }),
         col.accessor('completionPct', {

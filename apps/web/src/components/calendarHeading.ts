@@ -22,7 +22,7 @@ export function heading(view: View, c: Column, i: number, today: string): [strin
     const top = i === 0 ? 'This week' : i === 1 ? 'Next week' : `Week ${i + 1}`;
     return [
       top,
-      `${fmt(c.from, { day: 'numeric' })}–${fmt(c.to!, { day: 'numeric', month: 'short' })}`,
+      `${fmt(c.from, { day: 'numeric' })}-${fmt(c.to!, { day: 'numeric', month: 'short' })}`,
     ];
   }
   const top = i === 0 ? 'This month' : i === 1 ? 'Next month' : fmt(c.from, { year: 'numeric' });

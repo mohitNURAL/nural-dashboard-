@@ -63,7 +63,7 @@ export function EditPerson({ person, onClose }: { person: Employee; onClose: () 
         ? [
             {
               label: 'Designation',
-              value: `${person.position ?? '—'} → ${position.trim() || '—'} (Bitrix24)`,
+              value: `${person.position ?? '-'} → ${position.trim() || '-'} (Bitrix24)`,
             },
           ]
         : []),
@@ -71,7 +71,7 @@ export function EditPerson({ person, onClose }: { person: Employee; onClose: () 
         ? [
             {
               label: 'Departments',
-              value: `${person.departmentIds.map(name).join(', ') || '—'} → ${depts.map(name).join(', ')} (Bitrix24)`,
+              value: `${person.departmentIds.map(name).join(', ') || '-'} → ${depts.map(name).join(', ')} (Bitrix24)`,
             },
           ]
         : []),
@@ -118,7 +118,7 @@ export function EditPerson({ person, onClose }: { person: Employee; onClose: () 
   return (
     <Dialog.Root open onOpenChange={(o) => !o && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]" />
+        <Dialog.Overlay className="fixed inset-0 z-50 overlay" />
         <Dialog.Content className="fixed inset-y-0 right-0 z-50 flex w-[min(460px,100vw)] flex-col bg-surface shadow-pop outline-none">
           <div className="flex items-center gap-3 border-b border-border px-5 py-4">
             <Avatar id={person.id} name={person.name} size={40} />

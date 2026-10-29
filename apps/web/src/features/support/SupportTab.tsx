@@ -73,7 +73,7 @@ interface Entry {
 }
 
 const label = <T extends { value: string; label: string }>(list: readonly T[], v?: string) =>
-  list.find((x) => x.value === v)?.label ?? v ?? '—';
+  list.find((x) => x.value === v)?.label ?? v ?? '-';
 
 export function SupportTab() {
   const { data: me } = useMe();
@@ -515,17 +515,17 @@ function Inbox() {
                 <Detail k="How often" v={label(FREQUENCY, r.frequency)} />
                 <Detail
                   k="Wants to see"
-                  v={r.needs.length ? r.needs.map((n) => label(NEEDS, n)).join(' · ') : '—'}
+                  v={r.needs.length ? r.needs.map((n) => label(NEEDS, n)).join(' · ') : '-'}
                   wide
                 />
                 <Detail k="Biggest problem" v={r.problem} wide />
-                <Detail k="Reports made by hand" v={r.manualReports ?? '—'} wide />
-                <Detail k="Decision it would help" v={r.decision ?? '—'} wide />
+                <Detail k="Reports made by hand" v={r.manualReports ?? '-'} wide />
+                <Detail k="Decision it would help" v={r.decision ?? '-'} wide />
                 <Detail
                   k="Rating"
-                  v={r.rating ? '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating) : '—'}
+                  v={r.rating ? '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating) : '-'}
                 />
-                <Detail k="Anything else" v={r.details ?? '—'} />
+                <Detail k="Anything else" v={r.details ?? '-'} />
                 <div className="space-y-2 md:col-span-2">
                   <textarea
                     className={clsx(input, 'min-h-16')}

@@ -68,7 +68,7 @@ const dateTimeFmt = new Intl.DateTimeFormat('en-GB', {
   timeZone: APP_TIMEZONE,
 });
 
-export const fmtDate = (iso: string | null) => (iso ? dateFmt.format(new Date(iso)) : '—');
+export const fmtDate = (iso: string | null) => (iso ? dateFmt.format(new Date(iso)) : '-');
 export const fmtDateTime = (iso: string) => dateTimeFmt.format(new Date(iso));
 
 export const initials = (name: string) =>

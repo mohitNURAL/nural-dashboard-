@@ -26,7 +26,7 @@ function useTreeOptions(exclude?: number) {
         .filter((x) => x.parentId === p)
         .sort((a, b) => a.name.localeCompare(b.name))) {
         if (d.id === exclude) continue; // not under itself (nor its sub-departments)
-        out.push({ id: d.id, label: `${'— '.repeat(depth)}${d.name}` });
+        out.push({ id: d.id, label: `${'- '.repeat(depth)}${d.name}` });
         walk(d.id, depth + 1);
       }
     };
@@ -54,7 +54,7 @@ export function DepartmentForm({ onDone }: { onDone: (id: number | null) => void
         {
           label: 'Under',
           value:
-            parents.find((p) => String(p.id) === parent)?.label.replace(/^(— )+/, '') ?? parent,
+            parents.find((p) => String(p.id) === parent)?.label.replace(/^(- )+/, '') ?? parent,
         },
         ...(head
           ? [
@@ -158,7 +158,7 @@ function DeptRow({ d, depth }: { d: DeptNode; depth: number }) {
       change.parentId = Number(parent);
       details.push({
         label: 'Under',
-        value: parents.find((p) => String(p.id) === parent)?.label.replace(/^(— )+/, '') ?? parent,
+        value: parents.find((p) => String(p.id) === parent)?.label.replace(/^(- )+/, '') ?? parent,
       });
     }
     const headNow = d.head ? String(d.head.id) : '';
@@ -166,7 +166,7 @@ function DeptRow({ d, depth }: { d: DeptNode; depth: number }) {
       change.headId = head ? Number(head) : null;
       details.push({
         label: 'Head',
-        value: `${d.head?.name ?? '—'} → ${people?.rows.find((p) => String(p.id) === head)?.name ?? '—'}`,
+        value: `${d.head?.name ?? '-'} → ${people?.rows.find((p) => String(p.id) === head)?.name ?? '-'}`,
       });
     }
     if (!details.length) return setEditing(false);
@@ -285,7 +285,7 @@ export function DepartmentsDialog({ onClose }: { onClose: () => void }) {
   return (
     <Dialog.Root open onOpenChange={(o) => !o && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]" />
+        <Dialog.Overlay className="fixed inset-0 z-50 overlay" />
         <Dialog.Content className="fixed inset-y-4 left-1/2 z-50 flex w-[min(760px,94vw)] -translate-x-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop outline-none">
           <div className="flex items-center gap-3 border-b border-border px-5 py-4">
             <span className="grid h-10 w-10 place-items-center text-primary">

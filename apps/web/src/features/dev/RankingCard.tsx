@@ -68,7 +68,7 @@ export function RankingCard({ className }: { className?: string }) {
                       {r.rank}
                     </span>
                   ) : (
-                    <span className="pl-1.5 font-heading font-bold">{r.rank ?? '—'}</span>
+                    <span className="pl-1.5 font-heading font-bold">{r.rank ?? '-'}</span>
                   )}
                 </td>
                 <td className="border-b border-primary-soft-100 px-2 py-1.5">

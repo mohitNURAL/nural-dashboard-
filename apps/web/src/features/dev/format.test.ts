@@ -69,7 +69,7 @@ describe('dates and names', () => {
   it('formats in Asia/Kolkata', () => {
     // 20:00 UTC on 9 Oct is 01:30 on 10 Oct in Kolkata.
     expect(fmtDate('2026-10-09T20:00:00.000Z')).toBe('10 Oct 2026');
-    expect(fmtDate(null)).toBe('—');
+    expect(fmtDate(null)).toBe('-');
   });
 
   it('makes initials', () => {

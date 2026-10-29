@@ -288,7 +288,7 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
     {
       target: slot('insights.cards', 'projects'),
       title: 'Projects',
-      text: 'Open tasks per project with the overdue part; ⚠ marks a lagging project. Hover for why; click for the tasks.',
+      text: 'Open tasks per project with the overdue part; a lagging project says (lagging). Hover for why; click for the tasks.',
     },
     {
       target: slot('insights.cards', 'load'),

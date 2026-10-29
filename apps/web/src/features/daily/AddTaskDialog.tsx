@@ -168,7 +168,7 @@ export function AddTaskDialog({
   return (
     <Dialog.Root open={open} onOpenChange={(o) => !o && !busy && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[62] bg-black/30" />
+        <Dialog.Overlay className="fixed inset-0 z-[62] overlay" />
         <Dialog.Content
           aria-describedby={undefined}
           className="fixed left-1/2 top-1/2 z-[62] flex max-h-[90vh] w-[min(1120px,96vw)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop"
