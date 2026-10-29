@@ -536,6 +536,9 @@ async function main() {
           secret: config.SESSION_SECRET!,
           clientId: config.BITRIX_CLIENT_ID!,
           clientSecret: config.BITRIX_CLIENT_SECRET!,
+          // Why Add task and task edits are greyed out for someone: they must sign in again.
+          onRefreshFail: (userId, reason) =>
+            app.log.warn({ userId, reason }, 'Bitrix24 sign-in could not be renewed'),
         })
       : undefined;
   const app = await buildServer({

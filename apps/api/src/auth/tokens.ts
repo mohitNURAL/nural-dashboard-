@@ -68,6 +68,8 @@ export async function dbTokenStore(opts: {
   secret: string;
   clientId: string;
   clientSecret: string;
+  /** A renewal Bitrix24 refused (its error code only, never a token). */
+  onRefreshFail?: (userId: number, reason: string) => void;
 }): Promise<TokenStore> {
   const { db, schema } = await import('../db/client');
   const box = sealer(opts.secret);
@@ -87,30 +89,59 @@ export async function dbTokenStore(opts: {
       .onConflictDoUpdate({ target: schema.userTokens.userId, set: row });
   }
 
+  async function read(userId: number): Promise<StoredToken | null> {
+    const [row] = await db
+      .select()
+      .from(schema.userTokens)
+      .where(eq(schema.userTokens.userId, userId));
+    return row
+      ? {
+          accessToken: box.open(row.accessToken),
+          refreshToken: box.open(row.refreshToken),
+          expiresAt: row.expiresAt,
+          scope: row.scope,
+        }
+      : null;
+  }
+
+  // One renewal at a time per person (2026-10-29): Bitrix24's refresh token works once, so two
+  // requests renewing together spent it twice and could leave a dead one stored (Add task greyed
+  // out until signing in again).
+  const renewing = new Map<number, Promise<StoredToken | null>>();
+  async function renew(userId: number, current: StoredToken) {
+    // Never the error's message: the request URL carries the secret and the refresh token.
+    const r: TokenResponse = await refreshToken(
+      current.refreshToken,
+      opts.clientId,
+      opts.clientSecret,
+    ).catch(() => ({ error: 'network error' }));
+    const renewed = toStored(r);
+    if (renewed) {
+      await write(userId, renewed);
+      return renewed;
+    }
+    // Renewed meanwhile (e.g. by a sign-in): use that one.
+    const again = await read(userId);
+    if (again && again.expiresAt > new Date()) return again;
+    opts.onRefreshFail?.(userId, r.error ?? 'no token returned');
+    return null;
+  }
+
   return {
     async save(userId, t) {
       const s = toStored(t);
       if (s) await write(userId, s);
     },
     async get(userId) {
-      const [row] = await db
-        .select()
-        .from(schema.userTokens)
-        .where(eq(schema.userTokens.userId, userId));
-      if (!row) return null;
-      const current: StoredToken = {
-        accessToken: box.open(row.accessToken),
-        refreshToken: box.open(row.refreshToken),
-        expiresAt: row.expiresAt,
-        scope: row.scope,
-      };
+      const current = await read(userId);
+      if (!current) return null;
       if (current.expiresAt > new Date()) return current;
-      const renewed = toStored(
-        await refreshToken(current.refreshToken, opts.clientId, opts.clientSecret),
-      );
-      if (!renewed) return null;
-      await write(userId, renewed);
-      return renewed;
+      let p = renewing.get(userId);
+      if (!p) {
+        p = renew(userId, current).finally(() => renewing.delete(userId));
+        renewing.set(userId, p);
+      }
+      return p;
     },
   };
 }

@@ -18,9 +18,17 @@ and the next change fills its ID in.
 - Five tables (Alert details, Projects at work, Stage matrix, Ranking, Insights list) still use
   their own markup instead of the shared table.
 
+## 2026-10-29
+
+- Bitrix24 sign-in renewal: one at a time per person (two requests renewing together spent the
+  one-use refresh token twice and could store a dead one, leaving Add task greyed out until
+  signing in again); a refused renewal is logged with Bitrix24's code (never a token); the
+  planner and posted plan say in plain view when + Add task is off. Vishal (158) reported Add
+  task stuck; the server showed no failed or slow daily requests.
+
 ## 2026-10-23
 
-- Daily update: a missed wrap-up of the last planned day is an alert (`missedWrap`) in the planner,
+- `d2969ae` Daily update: a missed wrap-up of the last planned day is an alert (`missedWrap`) in the planner,
   posted plan and page; planning the new day is never held up. Plan my day is the main button
   until today's plan; today's data polls every 5 minutes and on focus (a tab left open
   overnight moves to the new day).

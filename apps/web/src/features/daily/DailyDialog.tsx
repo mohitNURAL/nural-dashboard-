@@ -133,6 +133,20 @@ function Destination({ today }: { today: DailyToday }) {
   );
 }
 
+/**
+ * Shown under + Add task when it is off (2026-10-29): the Bitrix24 sign-in could not be renewed,
+ * which a greyed-out button alone did not say.
+ */
+function SignInAgain({ today }: { today: DailyToday }) {
+  if (today.canWrite) return null;
+  return (
+    <p className="text-table text-warn">
+      Your Bitrix24 sign-in has expired, so + Add task is off: sign out and sign in again with
+      Bitrix24 to create tasks.
+    </p>
+  );
+}
+
 function useAfterPost() {
   const { after, close } = useDailyDialog();
   return (
@@ -453,6 +467,7 @@ function PostedPlan({
                 + Add task
               </button>
             </div>
+            <SignInAgain today={today} />
             {picked.length > 0 && (
               <ul className="flex flex-wrap gap-1.5">
                 {picked.map((p) => (
@@ -714,6 +729,7 @@ function PlanEditor({ today, onLater }: { today: DailyToday; onLater: () => void
             + Add task
           </button>
         </div>
+        <SignInAgain today={today} />
         <AddTaskDialog
           open={adding}
           forWrap={false}

@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-29-sign-in-renewal',
+    date: '2026-10-29',
+    tab: 'daily',
+    title: 'Daily update: + Add task says when your sign-in has expired',
+    steps: [
+      {
+        target: '[data-tour="daily-plan"]',
+        title: 'If + Add task is greyed out',
+        text: 'Your Bitrix24 sign-in renews by itself; if it ever cannot, the planner now says so under + Add task. Sign out and sign in again with Bitrix24 to create tasks.',
+      },
+    ],
+  },
+  {
     id: '2026-10-23-daily-missed-wrap',
     date: '2026-10-23',
     tab: 'daily',
