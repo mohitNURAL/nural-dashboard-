@@ -51,7 +51,7 @@ function useSave(taskId: number) {
         description: 'Bitrix24 updated. The dashboard refreshes in a few seconds.',
       });
       // The change syncs back through Bitrix24; refresh when it has (live updates also do).
-      setTimeout(() => void queryClient.invalidateQueries({ queryKey: [API_KEY] }), 3500);
+      setTimeout(() => void queryClient.invalidateQueries({ queryKey: [API_KEY] }), 2000);
     } catch (err) {
       toast.error(`Task ${taskId}: not changed`, {
         description: err instanceof Error ? err.message : 'Bitrix24 refused the change.',

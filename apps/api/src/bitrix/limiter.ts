@@ -7,6 +7,12 @@ import { assertPeopleAction, assertReadOnly, assertUserAction } from './methods'
 
 export const QUEUE_NAME = 'bitrix-calls';
 export const CALLS_PER_SECOND = 2;
+/**
+ * Queue order (2026-10-30). BullMQ runs jobs without a priority before prioritised ones, so the
+ * person's own task edits and the live re-read of a changed task never wait behind the background
+ * reads (reconcile, directory, history backfill), which take what is left of the 2 calls/s.
+ */
+export const BACKGROUND_PRIORITY = 10;
 
 interface CallJob {
   method: string;
@@ -19,6 +25,8 @@ export type Call = <T = unknown>(method: string, params?: Params) => Promise<Bit
 
 export interface BitrixLimiter {
   call: Call;
+  /** The same read-only calls, queued behind everything a person is waiting for. */
+  background: Call;
   /**
    * A task action (move, complete) as the signed-in person, with their OAuth token. Same queue
    * and rate limit as every other call.
@@ -123,6 +131,11 @@ export function createBitrixLimiter({
     return run<T>({ method, params });
   }
 
+  async function background<T>(method: string, params: Params = {}): Promise<BitrixResponse<T>> {
+    assertReadOnly(method);
+    return run<T>({ method, params }, false, BACKGROUND_PRIORITY);
+  }
+
   async function userCall<T>(method: string, params: Params, token: string) {
     assertUserAction(method);
     // The token must not outlive the call in Redis, failed or not.
@@ -134,13 +147,16 @@ export function createBitrixLimiter({
     return run<T>({ method, params: { ...params, auth: token }, user: true }, true);
   }
 
-  async function run<T>(data: CallJob, forget = false): Promise<BitrixResponse<T>> {
+  async function run<T>(
+    data: CallJob,
+    forget = false,
+    priority?: number,
+  ): Promise<BitrixResponse<T>> {
     await ready;
-    const job = await queue.add(
-      data.method,
-      data,
-      forget ? { removeOnComplete: true, removeOnFail: true } : undefined,
-    );
+    const job = await queue.add(data.method, data, {
+      ...(forget && { removeOnComplete: true, removeOnFail: true }),
+      ...(priority && { priority }),
+    });
     try {
       const out = (await job.waitUntilFinished(events, callTimeoutMs)) as BitrixResponse<T>;
       callCount++;
@@ -155,6 +171,7 @@ export function createBitrixLimiter({
 
   return {
     call,
+    background,
     userCall,
     peopleCall,
     get callCount() {

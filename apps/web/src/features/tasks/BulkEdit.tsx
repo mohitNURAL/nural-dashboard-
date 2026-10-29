@@ -202,7 +202,7 @@ export function BulkBar({ bulk, boards }: { bulk: Bulk; boards: Record<string, B
           `${n('done')} changed · ${n('skip')} already so · ${n('error') + n('failed')} not changed`,
           { description: 'The dashboard refreshes in a few seconds.' },
         );
-        setTimeout(() => void queryClient.invalidateQueries({ queryKey: [API_KEY] }), 3500);
+        setTimeout(() => void queryClient.invalidateQueries({ queryKey: [API_KEY] }), 2000);
       }
     } catch (e) {
       toast.error('Bulk edit not done', { description: e instanceof Error ? e.message : '' });

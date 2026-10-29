@@ -10,6 +10,11 @@ import { TASK_SELECT, type BitrixTask } from './mapTask';
 
 export const TASK_QUEUE = 'task-events';
 export const DEBOUNCE_MS = 2000;
+/**
+ * After a person's own edit (2026-10-30): Bitrix24 has already answered, so the task is read back
+ * almost at once instead of after the 2 s that merges bursts of webhook events.
+ */
+export const SOON_MS = 300;
 const GATHER_MS = 250;
 
 interface TaskJob {
@@ -17,25 +22,32 @@ interface TaskJob {
   event: TaskEvent;
 }
 
-export type Enqueue = (job: TaskJob) => Promise<void>;
+export type Enqueue = (job: TaskJob, opts?: { soon?: boolean }) => Promise<void>;
 
 const connect = (url: string) => new Redis(url, { maxRetriesPerRequest: null });
 
 /**
  * Producer side. One job per task (jobId = task-<id>), delayed 2 s: further events for the
- * same task while it waits are absorbed, which merges bursts of edits into one fetch.
+ * same task while it waits are absorbed, which merges bursts of edits into one fetch. `soon` (a
+ * person's own edit) reads it back after 0.3 s, bringing a waiting job forward.
  */
 export function createTaskQueue(redisUrl: string) {
   const queue = new Queue<TaskJob>(TASK_QUEUE, { connection: connect(redisUrl) });
-  const enqueue: Enqueue = async (job) => {
-    await queue.add(job.event, job, {
+  const enqueue: Enqueue = async (job, opts) => {
+    const delay = opts?.soon ? SOON_MS : DEBOUNCE_MS;
+    const added = await queue.add(job.event, job, {
       jobId: `task-${job.taskId}`,
-      delay: DEBOUNCE_MS,
+      delay,
       attempts: 3,
       backoff: { type: 'exponential', delay: 2000 },
       removeOnComplete: true,
       removeOnFail: { age: 86_400 },
     });
+    // The same task already waiting (a webhook event came first): bring it forward. It may start
+    // meanwhile, which is fine.
+    if (opts?.soon && (await added.isDelayed().catch(() => false))) {
+      await added.changeDelay(SOON_MS).catch(() => undefined);
+    }
   };
   return { enqueue, close: () => queue.close() };
 }

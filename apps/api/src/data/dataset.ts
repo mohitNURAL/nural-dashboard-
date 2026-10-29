@@ -1,5 +1,6 @@
-// Loads everything the metrics need from Postgres into memory (about 9k tasks), cached
-// briefly so every filter change is computed in-process (NFR-2: under 500 ms).
+// Loads everything the metrics need from Postgres into memory (about 9k tasks), cached so every
+// filter change is computed in-process (NFR-2: under 500 ms). A changed task is patched in by
+// re-reading only its rows (2026-10-30); everything is reloaded every 10 minutes.
 import {
   canonicalStage,
   indexTasks,
@@ -12,7 +13,7 @@ import {
   DEFAULT_STAGE_ID,
   stageWithRole,
 } from '@nural/shared';
-import { and, asc, eq, gte } from 'drizzle-orm';
+import { and, asc, eq, getTableColumns, gte, inArray, or, sql } from 'drizzle-orm';
 import { config } from '../config';
 import { db, schema } from '../db/client';
 import { kpiConfig } from './kpiConfig';
@@ -93,16 +94,100 @@ export function departmentTree(
 export const TESTING_DEPT = /\bqa\b|testing/i;
 export const DEVELOPMENT_DEPT = /software development/i;
 
+// Task rows without the stored Bitrix24 copy (`raw`) except its project ({ group }), the only part
+// the dataset reads (projectsOf): most of the bytes of a full load.
+const { raw, ...taskColumns } = getTableColumns(schema.tasks);
+const taskSelect = {
+  ...taskColumns,
+  raw: sql<unknown>`jsonb_build_object('group', ${raw}->'group')`,
+};
+const selectTasks = () => db.select(taskSelect).from(schema.tasks);
+const selectEvents = () =>
+  db
+    .select()
+    .from(schema.taskStageEvents)
+    .orderBy(asc(schema.taskStageEvents.taskId), asc(schema.taskStageEvents.movedAt));
+const relatedOnly = () => eq(schema.taskRelations.kind, 'related');
+
+/** Everything the dataset is built from, as read from Postgres. */
+export interface DatasetRows {
+  taskRows: Awaited<ReturnType<typeof selectTasks>>;
+  eventRows: (typeof schema.taskStageEvents.$inferSelect)[];
+  relationRows: (typeof schema.taskRelations.$inferSelect)[];
+  userRows: (typeof schema.users.$inferSelect)[];
+  deptRows: (typeof schema.departments.$inferSelect)[];
+  groupRows: (typeof schema.workgroups.$inferSelect)[];
+  stageRows: (typeof schema.stages.$inferSelect)[];
+  commentRows: { taskId: number | null; at: Date }[];
+}
+
+/**
+ * The rows with these tasks read again (row, stage history, related links); a deleted task drops
+ * out. People, projects, boards and comments stay until the next full load.
+ */
+export async function patchRows(rows: DatasetRows, ids: readonly number[]): Promise<DatasetRows> {
+  const list = [...new Set(ids)];
+  const [tasks, events, relations] = await Promise.all([
+    selectTasks().where(inArray(schema.tasks.id, list)),
+    selectEvents().where(inArray(schema.taskStageEvents.taskId, list)),
+    db
+      .select()
+      .from(schema.taskRelations)
+      .where(
+        and(
+          relatedOnly(),
+          or(
+            inArray(schema.taskRelations.taskId, list),
+            inArray(schema.taskRelations.relatedId, list),
+          ),
+        ),
+      ),
+  ]);
+  return mergeRows(rows, list, { tasks, events, relations });
+}
+
+/** The pure part of patchRows: the given tasks' rows swapped for fresh ones, order kept. */
+export function mergeRows<R extends Pick<DatasetRows, 'taskRows' | 'eventRows' | 'relationRows'>>(
+  rows: R,
+  ids: readonly number[],
+  fresh: {
+    tasks: R['taskRows'];
+    events: R['eventRows'];
+    relations: R['relationRows'];
+  },
+): R {
+  const set = new Set(ids);
+  const byId = new Map(fresh.tasks.filter((t) => !t.deleted).map((t) => [t.id, t]));
+  const taskRows = rows.taskRows.flatMap((t) => {
+    if (!set.has(t.id)) return [t];
+    const next = byId.get(t.id);
+    byId.delete(t.id);
+    return next ? [next] : [];
+  });
+  // New tasks go at the end.
+  taskRows.push(...byId.values());
+  return {
+    ...rows,
+    taskRows,
+    eventRows: [...rows.eventRows.filter((e) => !set.has(e.taskId)), ...fresh.events],
+    relationRows: [
+      ...rows.relationRows.filter((r) => !set.has(r.taskId) && !set.has(r.relatedId)),
+      ...fresh.relations,
+    ],
+  };
+}
+
 export async function loadDataset(): Promise<Dataset> {
+  return buildDataset(await loadRows());
+}
+
+export async function loadRows(): Promise<DatasetRows> {
   const commentsSince = new Date(Date.now() - 15 * 86_400_000);
   const [taskRows, eventRows, relationRows, userRows, deptRows, groupRows, stageRows, commentRows] =
     await Promise.all([
-      db.select().from(schema.tasks).where(eq(schema.tasks.deleted, false)),
-      db
-        .select()
-        .from(schema.taskStageEvents)
-        .orderBy(asc(schema.taskStageEvents.taskId), asc(schema.taskStageEvents.movedAt)),
-      db.select().from(schema.taskRelations).where(eq(schema.taskRelations.kind, 'related')),
+      selectTasks().where(eq(schema.tasks.deleted, false)),
+      selectEvents(),
+      db.select().from(schema.taskRelations).where(relatedOnly()),
       db.select().from(schema.users),
       db.select().from(schema.departments),
       db.select().from(schema.workgroups),
@@ -117,6 +202,30 @@ export async function loadDataset(): Promise<Dataset> {
           ),
         ),
     ]);
+  return {
+    taskRows,
+    eventRows,
+    relationRows,
+    userRows,
+    deptRows,
+    groupRows,
+    stageRows,
+    commentRows,
+  };
+}
+
+/** The dataset from its rows: pure, so patched rows rebuild without going back to Postgres. */
+export function buildDataset(rows: DatasetRows): Dataset {
+  const {
+    taskRows,
+    eventRows,
+    relationRows,
+    userRows,
+    deptRows,
+    groupRows,
+    stageRows,
+    commentRows,
+  } = rows;
 
   // Several Bitrix24 columns can share one dashboard stage (e.g. Figma Review and To Do).
   const stageIds = new Map<number, Map<StageTitle, number[]>>();
@@ -341,22 +450,85 @@ function kpiDepartments(
 
 export type DatasetProvider = () => Promise<Dataset>;
 
-/** Caches the dataset for `ttlMs`; concurrent callers share one load. */
-export function cachedDataset(load: DatasetProvider = loadDataset, ttlMs = 30_000) {
-  let current: { at: number; value: Promise<Dataset> } | undefined;
+/** Most tasks patched in one go; a bigger burst (a reconcile catch-up) reloads everything. */
+export const PATCH_MAX = 300;
+/** Full reload, which also picks up people, projects, boards and comments (2026-10-30). */
+export const FULL_RELOAD_MS = 10 * 60_000;
+
+export interface RowSource<R> {
+  load: () => Promise<R>;
+  patch: (rows: R, ids: readonly number[]) => Promise<R>;
+  build: (rows: R) => Dataset;
+}
+
+const dbSource: RowSource<DatasetRows> = { load: loadRows, patch: patchRows, build: buildDataset };
+
+/**
+ * The dataset in memory (2026-10-30). A changed task is marked, and the next read patches only the
+ * marked tasks in (their rows from Postgres, then an in-memory rebuild) instead of reloading all 9k
+ * tasks every time, which held up every request on the one-CPU server. Everything is reloaded
+ * every `ttlMs`, after `invalidate()`, after a bigger burst, or when a patch fails. Concurrent
+ * callers share one load.
+ */
+export function cachedDataset<R = DatasetRows>(
+  source: RowSource<R> = dbSource as unknown as RowSource<R>,
+  ttlMs = FULL_RELOAD_MS,
+  log?: (o: { kind: 'full' | 'patch'; tasks: number; ms: number }) => void,
+) {
+  let rows: Promise<R> | undefined;
+  let value: Promise<Dataset> | undefined;
+  let loadedAt = 0;
+  const dirty = new Set<number>();
+
+  const timed = <T>(kind: 'full' | 'patch', tasks: number, p: Promise<T>) => {
+    const started = Date.now();
+    return p.then((out) => {
+      log?.({ kind, tasks, ms: Date.now() - started });
+      return out;
+    });
+  };
+
   const get: DatasetProvider = () => {
-    if (!current || Date.now() - current.at > ttlMs) {
-      const value = load();
-      current = { at: Date.now(), value };
-      value.catch(() => {
-        if (current?.value === value) current = undefined;
+    if (!rows || Date.now() - loadedAt > ttlMs || dirty.size > PATCH_MAX) {
+      dirty.clear();
+      loadedAt = Date.now();
+      rows = timed('full', 0, source.load());
+    } else if (dirty.size) {
+      const ids = [...dirty];
+      dirty.clear();
+      rows = timed(
+        'patch',
+        ids.length,
+        rows.then((r) => source.patch(r, ids)),
+      ).catch(() => {
+        // Never serve a half-patched set: start again from Postgres.
+        loadedAt = Date.now();
+        return source.load();
       });
-    }
-    return current.value;
+    } else if (value) return value;
+    const current = rows;
+    const built = current.then((r) => source.build(r));
+    value = built;
+    built.catch(() => {
+      if (rows === current) {
+        rows = undefined;
+        value = undefined;
+      }
+    });
+    return built;
   };
-  /** Milestone 5: called when a live update changes a task. */
-  const invalidate = () => {
-    current = undefined;
+
+  return {
+    get,
+    /** These tasks changed: the next read patches them in. */
+    changed(ids: readonly number[]) {
+      for (const id of ids) if (id > 0) dirty.add(id);
+    },
+    /** Everything is reloaded on the next read (workflow change, people, projects). */
+    invalidate() {
+      rows = undefined;
+      value = undefined;
+      dirty.clear();
+    },
   };
-  return { get, invalidate };
 }

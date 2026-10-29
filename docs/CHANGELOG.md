@@ -18,9 +18,17 @@ and the next change fills its ID in.
 - Five tables (Alert details, Projects at work, Stage matrix, Ranking, Insights list) still use
   their own markup instead of the shared table.
 
+## 2026-10-30
+
+- Speed of task edits: the in-memory dataset is patched with only the changed tasks instead of
+  reloading all 9k after every change and every 30 s (full reload every 10 min; task rows read
+  without the stored Bitrix24 copy); a person's own edit is read back after 0.3 s (was 2 s);
+  reconcile, directory and nightly reads queue behind people's edits (limiter background lane);
+  load and patch times logged.
+
 ## 2026-10-29
 
-- Nural brand, page pass: one shared `overlay` backdrop (flat Primary 800, no blur); no zoom or
+- `0eecae5` Nural brand, page pass: one shared `overlay` backdrop (flat Primary 800, no blur); no zoom or
   lift on hover, no pinging Live dot or decorative status dots; the last text buttons on
   `btn-link`; no emoji (tour voice button, Insights lagging mark now says "(lagging)"); no em
   or en dashes on screen (empty values show -, date ranges "from to").

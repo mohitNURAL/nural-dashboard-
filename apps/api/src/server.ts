@@ -47,7 +47,7 @@ import { peopleRoutes, type PeopleDeps } from './routes/people';
 import { memoryPrefsStore, prefsRoutes, type PrefsStore } from './routes/prefs';
 import type { Call } from './bitrix/limiter';
 import { config } from './config';
-import { cachedDataset, loadDataset, type Dataset, type DatasetProvider } from './data/dataset';
+import { cachedDataset, type Dataset, type DatasetProvider } from './data/dataset';
 import { createMemoryBus, type EventBus } from './events/bus';
 import { healthStatus, workTime } from './health';
 import { hookRoutes, type ReceiverDeps } from './hooks/receiver';
@@ -210,9 +210,14 @@ export async function buildServer({
   let dataset = getDataset;
   let invalidateDataset = () => {};
   if (!dataset) {
-    const cache = cachedDataset(loadDataset);
-    // A change anywhere invalidates the in-memory dataset; the next query reloads it.
-    bus.subscribe(() => cache.invalidate());
+    const cache = cachedDataset(undefined, undefined, (o) =>
+      app.log.info(o, o.kind === 'full' ? 'dataset loaded' : 'dataset patched'),
+    );
+    // A changed task is patched in on the next query (2026-10-30); a workflow change or a notice
+    // without a task reloads everything.
+    bus.subscribe((c) =>
+      c.taskId > 0 && c.source !== 'workflow' ? cache.changed([c.taskId]) : cache.invalidate(),
+    );
     dataset = cache.get;
     invalidateDataset = cache.invalidate;
   }
@@ -607,10 +612,14 @@ async function main() {
 
   const closers: (() => Promise<unknown>)[] = [];
   if (workerOn) {
-    const { call } = bitrix.getBitrix();
+    const { call, background } = bitrix.getBitrix();
     const deps = { redisUrl: config.REDIS_URL, call, bus, log: app.log };
     closers.push(startTaskWorker(deps).close);
-    closers.push((await reconciler.startSchedules({ ...deps, tz: config.APP_TIMEZONE })).close);
+    // Reconcile, directory and nightly reads queue behind people's edits (2026-10-30).
+    closers.push(
+      (await reconciler.startSchedules({ ...deps, call: background, tz: config.APP_TIMEZONE }))
+        .close,
+    );
   }
 
   const shutdown = async () => {

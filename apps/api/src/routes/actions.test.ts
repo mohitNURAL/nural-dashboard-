@@ -97,7 +97,7 @@ async function server(
         calls.push({ method, params, token });
         return { result: true as T };
       },
-      enqueue: async (j) => void enqueued.push(j),
+      enqueue: async (j, o) => void enqueued.push({ ...j, ...o }),
       record: async (a) => void recorded.push(a),
     },
   });
@@ -139,7 +139,8 @@ describe('task actions (SRS 7)', () => {
       toValue: 'In progress',
       ok: true,
     });
-    expect(s.enqueued).toEqual([{ taskId: 41, event: 'ONTASKUPDATE' }]);
+    // Read back at once (0.3 s), not after the 2 s webhook debounce (2026-10-30).
+    expect(s.enqueued).toEqual([{ taskId: 41, event: 'ONTASKUPDATE', soon: true }]);
   });
 
   it('task view: saves several fields at once, fields first, then column, then status', async () => {

@@ -361,7 +361,7 @@ export function taskWriter(deps: ActionDeps) {
     }
     await deps.record?.({ ...a, ok: true, error: null }).catch(() => undefined);
     // Bitrix24 can answer true without moving; the re-sync shows what really happened.
-    await deps.enqueue?.({ taskId, event: 'ONTASKUPDATE' }).catch(() => undefined);
+    await deps.enqueue?.({ taskId, event: 'ONTASKUPDATE' }, { soon: true }).catch(() => undefined);
     return { ok: true };
   }
 
@@ -405,7 +405,7 @@ export function taskWriter(deps: ActionDeps) {
       const taskId = Number(res.result.task?.id);
       if (!taskId) throw new Error('Bitrix24 did not return the new task.');
       await deps.record?.({ ...a, taskId, ok: true, error: null }).catch(() => undefined);
-      await deps.enqueue?.({ taskId, event: 'ONTASKADD' }).catch(() => undefined);
+      await deps.enqueue?.({ taskId, event: 'ONTASKADD' }, { soon: true }).catch(() => undefined);
       return { ok: true, taskId };
     } catch (e) {
       const { status, message } =

@@ -117,7 +117,7 @@ export function TaskEditForm({
           description: 'Bitrix24 updated. The dashboard refreshes in a few seconds.',
         },
       );
-      setTimeout(() => void queryClient.invalidateQueries({ queryKey: [API_KEY] }), 3500);
+      setTimeout(() => void queryClient.invalidateQueries({ queryKey: [API_KEY] }), 2000);
       onDone();
     } catch (err) {
       toast.error(`Task ${task.id}: not saved`, {

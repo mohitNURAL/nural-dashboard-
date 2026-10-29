@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-30-faster-edits',
+    date: '2026-10-30',
+    tab: 'dev',
+    title: 'Task changes show up faster',
+    steps: [
+      {
+        target: 'header',
+        title: 'Faster updates',
+        text: 'A status, column or field you change here now shows on every page sooner, and pages stay quick while tasks change in Bitrix24.',
+      },
+    ],
+  },
+  {
     id: '2026-10-29-nural-brand',
     date: '2026-10-29',
     tab: 'dev',
