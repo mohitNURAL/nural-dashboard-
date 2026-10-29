@@ -10,6 +10,7 @@ import {
   dailyClock,
   dailyDay,
   dailyDeadline,
+  dailyNewSince,
   dailyNoDeadline,
   dailyState,
   dailySuggestions,
@@ -319,6 +320,18 @@ export function dailyRoutes(
     );
     const upcoming = dailyUpcoming(ds.tasks, v.userId, ctx, project);
     const noDeadline = dailyNoDeadline(ds.tasks, v.userId, ctx, project);
+    // Assigned (or changed) after the plan and not on it (2026-10-29): offered in the wrap-up.
+    const newSince =
+      row?.plan && row.plannedAt && !row.wrap
+        ? dailyNewSince(
+            ds.tasks,
+            v.userId,
+            row.plannedAt,
+            new Set(row.plan.items.map((i) => i.taskId)),
+            ctx,
+            project,
+          )
+        : [];
     const extra = (row?.wrap?.items ?? []).map((i) => i.taskId);
     const live = rowsOf(
       ds,
@@ -327,6 +340,7 @@ export function dailyRoutes(
         ...suggestions.map((i) => i.taskId),
         ...upcoming.map((i) => i.taskId),
         ...noDeadline.map((i) => i.taskId),
+        ...newSince.map((i) => i.taskId),
         ...extra,
       ],
       at,
@@ -351,6 +365,8 @@ export function dailyRoutes(
       /** Open tasks with no deadline: posting the plan sets it to today. */
       noDeadline,
       wrapItems,
+      /** Their tasks assigned or changed after the plan, not on it: added in the wrap-up. */
+      newSince,
       /** Each listed task as the task lists show it, its Daily state, and its board's columns. */
       ...live,
       channel: await channelOf(),

@@ -872,6 +872,18 @@ function WrapView({ today, onLater }: { today: DailyToday; onLater: () => void }
     row: today.rows?.[i.taskId],
     now: today.states?.[i.taskId],
   }));
+  // Assigned after the plan (2026-10-29): added as they stand now (Report as can change it).
+  const newSince = today.wrap
+    ? []
+    : (today.newSince ?? []).filter((n) => !planned.some((i) => i.taskId === n.taskId));
+  const addNew = (items: WrapItem[]) => {
+    setAdded((xs) => [...xs, ...items]);
+    setDone((m) => {
+      const next = new Map(m);
+      for (const i of items) next.set(i.taskId, i.state === 'done');
+      return next;
+    });
+  };
   const addDone = (id: number) => {
     if (planned.some((i) => i.taskId === id)) return;
     const up = today.upcoming.find((u) => u.taskId === id);
@@ -917,6 +929,40 @@ function WrapView({ today, onLater }: { today: DailyToday; onLater: () => void }
           maxHeight={280}
           emptyText="No plan was posted this morning. Add what you did below."
         />
+        {newSince.length > 0 && (
+          <div className="space-y-2 rounded-xl border border-primary/30 bg-primary/5 p-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="mr-auto text-table font-medium text-text">
+                Assigned to you after your plan ({newSince.length}): add the ones you worked on.
+              </span>
+              <button
+                type="button"
+                onClick={() => addNew(newSince)}
+                className="rounded-control border border-primary px-2.5 py-1 font-heading text-button text-primary hover:bg-primary/10"
+              >
+                Add all
+              </button>
+            </div>
+            <ul className="space-y-1">
+              {newSince.map((n) => (
+                <li key={n.taskId} className="flex items-center gap-2 text-table">
+                  <span className="min-w-0 flex-1 truncate text-text">
+                    #{n.taskId} {n.title}
+                    <span className="text-text-muted"> · {n.project}</span>
+                  </span>
+                  <StateChip state={n.state} />
+                  <button
+                    type="button"
+                    onClick={() => addNew([n])}
+                    className="rounded-control px-2 py-0.5 font-heading text-button text-primary hover:bg-primary/10"
+                  >
+                    Add
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <SearchCombobox
           label="Add a task I finished ahead (upcoming or any of my tasks)"
           single

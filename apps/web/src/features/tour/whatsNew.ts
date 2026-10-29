@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-29-wrap-assigned',
+    date: '2026-10-29',
+    tab: 'daily',
+    title: 'Daily update: add tasks assigned to you after your plan in the wrap-up',
+    steps: [
+      {
+        target: '[data-tour="daily-plan"]',
+        title: 'Assigned after your plan',
+        text: 'A task given to you after you planned now shows in the wrap-up under "Assigned to you after your plan": click Add (or Add all) to report it with the rest of your day.',
+      },
+    ],
+  },
+  {
     id: '2026-10-29-sign-in-renewal',
     date: '2026-10-29',
     tab: 'daily',

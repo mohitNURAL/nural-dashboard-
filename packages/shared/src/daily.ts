@@ -208,6 +208,42 @@ export function dailyNoDeadline(
 }
 
 /**
+ * New since the plan (2026-10-29): the person's tasks created or changed after they planned (a
+ * task assigned to them in the day; Bitrix24 keeps no assignment time, so the change time stands
+ * in), not on the plan, still open or completed since; newest first. The wrap-up offers them to
+ * add, each reported as it stands now.
+ */
+export function dailyNewSince(
+  tasks: readonly MetricTask[],
+  userId: number,
+  since: Date,
+  planned: ReadonlySet<number>,
+  ctx: Ctx,
+  project: (groupId: number) => string,
+  limit = 40,
+): WrapItem[] {
+  const at = since.getTime();
+  const after = (d: Date | null) => !!d && d.getTime() >= at;
+  return tasks
+    .filter(
+      (t) =>
+        t.responsibleId === userId &&
+        !planned.has(t.id) &&
+        (after(t.createdAt) || after(t.changedAt)) &&
+        (isPlannable(t, userId, ctx.testers) ||
+          (dailyState(t, ctx.testers) === 'done' && (after(t.closedAt) || after(t.createdAt)))),
+    )
+    .sort((a, b) => b.changedAt.getTime() - a.changedAt.getTime())
+    .slice(0, limit)
+    .map((t) => ({
+      taskId: t.id,
+      title: t.title,
+      project: project(t.groupId),
+      state: dailyState(t, ctx.testers),
+    }));
+}
+
+/**
  * The deadline a planned task with none gets (2026-10-21): the end of the working day (calendar
  * `end`), or 23:59 when that has already passed.
  */

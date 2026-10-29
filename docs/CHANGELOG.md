@@ -20,7 +20,9 @@ and the next change fills its ID in.
 
 ## 2026-10-29
 
-- Bitrix24 sign-in renewal: one at a time per person (two requests renewing together spent the
+- Daily update wrap-up: tasks assigned (or changed) after the plan and not on it are listed with
+  Add and Add all, each added as it stands now (`dailyNewSince`).
+- `4deaeab` Bitrix24 sign-in renewal: one at a time per person (two requests renewing together spent the
   one-use refresh token twice and could store a dead one, leaving Add task greyed out until
   signing in again); a refused renewal is logged with Bitrix24's code (never a token); the
   planner and posted plan say in plain view when + Add task is off. Vishal (158) reported Add

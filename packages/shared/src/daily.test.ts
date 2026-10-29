@@ -11,6 +11,7 @@ import {
   wrapState,
   dailyState,
   dailyUpcoming,
+  dailyNewSince,
   dailyNoDeadline,
   dailyDeadline,
   dailyCompliance,
@@ -161,6 +162,24 @@ describe('carry-over and upcoming', () => {
     ).toEqual([
       [702, 'noDeadline'],
       [701, 'noDeadline'],
+    ]);
+  });
+  it('new since the plan: assigned or changed after it, not on it, open or completed since', () => {
+    const since = ist('2026-10-14T09:30');
+    const assigned = task({ id: 801, changedAt: ist('2026-10-14T10:00'), stage: 'In progress' });
+    const created = task({ id: 802, createdAt: ist('2026-10-14T09:45'), changedAt: since });
+    const before = task({ id: 803, changedAt: ist('2026-10-14T09:00') });
+    const planned = task({ id: 804 });
+    const closed = task({ id: 805, status: 5, closedAt: ist('2026-10-14T10:10') });
+    const doneLongAgo = task({ id: 806, stage: 'QA Backlog' });
+    const notMine = task({ id: 807, responsibleId: 8 });
+    const tasks = [assigned, created, before, planned, closed, doneLongAgo, notMine];
+    expect(
+      dailyNewSince(tasks, 7, since, new Set([804]), ctx, project).map((i) => [i.taskId, i.state]),
+    ).toEqual([
+      [805, 'done'],
+      [801, 'wip'],
+      [802, 'pending'],
     ]);
   });
   it('the deadline it gets: the end of the working day, or 23:59 once that has passed', () => {

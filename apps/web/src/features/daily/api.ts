@@ -41,6 +41,8 @@ export interface DailyToday {
   /** Open tasks with no deadline; posting the plan sets theirs to today (2026-10-21). */
   noDeadline: DailyItem[];
   wrapItems: WrapItem[];
+  /** Their tasks assigned or changed after the plan, not on it (2026-10-29): add in the wrap-up. */
+  newSince: WrapItem[];
   /** Every listed task as the task lists show it (edited in place), by id. */
   rows: Record<string, TaskRow>;
   /** Each listed task's Daily state now: pending, WIP, done or on hold. */
