@@ -134,7 +134,6 @@ export function SideDrawer({
         style={{ width: open ? WIDE : RAIL }}
         className={clsx(
           'chrome fixed bottom-0 left-0 top-14 z-50 flex flex-col overflow-hidden border-r border-white/10 bg-chrome text-white transition-[width,box-shadow,transform] duration-200 ease-out',
-          open && !pinned && 'shadow-[8px_0_32px_rgba(0,0,0,0.35)]',
           // Small screens: hidden until opened from the top bar.
           mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
         )}
@@ -167,7 +166,7 @@ export function SideDrawer({
           </Tip>
           <span
             className={clsx(
-              'whitespace-nowrap font-heading text-label uppercase tracking-[0.14em] text-primary-soft-300 transition-opacity duration-150',
+              'whitespace-nowrap font-heading text-label uppercase text-primary-soft-300 transition-opacity duration-150',
               open ? 'opacity-100' : 'opacity-0',
             )}
           >
@@ -263,9 +262,7 @@ function Module({
       className={clsx('relative rounded-2xl', isDragging && 'z-10 bg-white/[0.06] shadow-lg')}
     >
       <div className="group/mod relative flex items-center">
-        {current && (
-          <span className="absolute -left-3 top-2 h-7 w-1 rounded-r-full bg-accent shadow-[0_0_12px_var(--accent)]" />
-        )}
+        {current && <span className="absolute -left-3 top-2 h-7 w-1 rounded-r-full bg-accent" />}
         <button
           type="button"
           data-module-head
@@ -275,14 +272,14 @@ function Module({
           className={clsx(
             'flex h-11 w-full items-center gap-3 rounded-xl pl-2.5 pr-2 text-left transition',
             current
-              ? 'bg-gradient-to-r from-primary/35 to-accent/15 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]'
+              ? 'text-white underline decoration-white decoration-2 underline-offset-[6px]'
               : 'text-primary-soft-300 hover:bg-white/[0.07] hover:text-white',
           )}
         >
           <span
             className={clsx(
               'grid h-8 w-8 shrink-0 place-items-center rounded-lg transition',
-              current ? 'bg-accent/20 text-accent' : 'group-hover/mod:scale-110',
+              current ? 'text-white' : '',
             )}
           >
             {group.icon}
@@ -380,7 +377,7 @@ function Page({
         className={clsx(
           'relative flex h-10 w-full items-center gap-3 rounded-xl pl-1.5 text-left transition',
           active
-            ? 'bg-gradient-to-r from-accent/25 to-primary/20 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]'
+            ? 'text-white underline decoration-white decoration-2 underline-offset-[6px]'
             : 'text-primary-soft-300 hover:bg-white/[0.07] hover:text-white',
           isDragging && 'bg-white/10 shadow-lg',
         )}
@@ -388,7 +385,7 @@ function Page({
         <span
           className={clsx(
             'relative grid h-7 w-7 shrink-0 place-items-center rounded-lg transition [&>svg]:h-[18px] [&>svg]:w-[18px]',
-            active ? 'text-accent' : 'group-hover/nav:scale-110',
+            active ? 'text-white' : '',
           )}
         >
           {item.icon}
@@ -408,7 +405,7 @@ function Page({
           <span className={clsx('block truncate font-heading text-button', active && 'font-bold')}>
             {item.label}
           </span>
-          <span className="block truncate text-[11px] leading-tight text-primary-soft-300/70">
+          <span className="block truncate text-[12px] leading-tight text-primary-soft-300/70">
             {item.hint}
           </span>
         </span>

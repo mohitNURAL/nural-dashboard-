@@ -158,7 +158,7 @@ function StageCard({
           <span className="truncate font-heading text-button text-primary-dark">
             {s.title || 'New stage'}
           </span>
-          <span className="truncate text-[11px] text-text-muted">
+          <span className="truncate text-[12px] text-text-muted">
             {DEPARTMENT_LABEL[s.department]} · {CATEGORY_LABEL[s.category].split(' ')[0]}
             {s.roles.length
               ? ` · ${s.roles.map((r) => ROLE_LABEL[r].split(':')[0]).join(', ')}`
@@ -182,7 +182,7 @@ function StageCard({
       </div>
       {open && (
         <div className="grid gap-2 border-t border-border p-3 sm:grid-cols-2">
-          <label className="text-[11px] text-text-muted">
+          <label className="text-[12px] text-text-muted">
             Title
             <input
               value={s.title}
@@ -190,7 +190,7 @@ function StageCard({
               className={field}
             />
           </label>
-          <label className="text-[11px] text-text-muted">
+          <label className="text-[12px] text-text-muted">
             Department
             <Select
               size="sm"
@@ -205,7 +205,7 @@ function StageCard({
               ))}
             </Select>
           </label>
-          <label className="text-[11px] text-text-muted">
+          <label className="text-[12px] text-text-muted">
             Counts as
             <Select
               size="sm"
@@ -220,7 +220,7 @@ function StageCard({
               ))}
             </Select>
           </label>
-          <label className="text-[11px] text-text-muted">
+          <label className="text-[12px] text-text-muted">
             Colour
             <span className="flex items-center gap-2">
               <input
@@ -237,7 +237,7 @@ function StageCard({
             </span>
           </label>
           <div className="sm:col-span-2">
-            <p className="mb-1 text-[11px] text-text-muted">
+            <p className="mb-1 text-[12px] text-text-muted">
               Roles (each role belongs to one stage)
             </p>
             <span className="flex flex-wrap gap-1.5">
@@ -266,7 +266,7 @@ function StageCard({
               ))}
             </span>
           </div>
-          <label className="text-[11px] text-text-muted sm:col-span-2">
+          <label className="text-[12px] text-text-muted sm:col-span-2">
             Description (shown on the diagram and in the guides)
             <textarea
               value={s.description}
@@ -276,7 +276,7 @@ function StageCard({
             />
           </label>
           <div className="sm:col-span-2">
-            <p className="mb-1 text-[11px] text-text-muted">
+            <p className="mb-1 text-[12px] text-text-muted">
               Board column names that mean this stage
             </p>
             <Chips
@@ -305,7 +305,7 @@ function StageCard({
             </span>
           </div>
           <div className="sm:col-span-2">
-            <p className="mb-1 text-[11px] text-text-muted">Usual next stages (arrows)</p>
+            <p className="mb-1 text-[12px] text-text-muted">Usual next stages (arrows)</p>
             <span className="flex flex-wrap gap-1.5">
               {titles
                 .filter((t) => t !== s.title)
@@ -409,7 +409,6 @@ export function WorkflowEditor({ workflow, onClose }: { workflow: Workflow; onCl
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]" />
         <Dialog.Content className="fixed inset-y-4 left-1/2 z-50 flex w-[min(900px,96vw)] -translate-x-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop outline-none">
-          <div className="h-1.5 bg-gradient-to-r from-primary to-accent" />
           <div className="flex items-center gap-3 border-b border-border px-5 py-3">
             <div className="min-w-0 flex-1">
               <Dialog.Title className="font-heading text-h2 text-primary-dark">
@@ -469,7 +468,7 @@ export function WorkflowEditor({ workflow, onClose }: { workflow: Workflow; onCl
               </p>
               {(['from', 'to'] as const).map((side) => (
                 <div key={side} className="mb-2">
-                  <p className="mb-1 text-[11px] text-text-muted">
+                  <p className="mb-1 text-[12px] text-text-muted">
                     {side === 'from' ? 'From' : 'Back to'}
                   </p>
                   <span className="flex flex-wrap gap-1.5">
@@ -496,14 +495,12 @@ export function WorkflowEditor({ workflow, onClose }: { workflow: Workflow; onCl
           <div className="flex items-center justify-between gap-2 border-t border-border px-5 py-3">
             <span className="text-table text-text-muted">{items.length} stages</span>
             <span className="flex gap-2">
-              <Dialog.Close className="h-10 rounded-control border border-border px-4 font-heading text-button text-text-muted">
-                Cancel
-              </Dialog.Close>
+              <Dialog.Close className="btn btn-stroke h-10 px-4">Cancel</Dialog.Close>
               <button
                 type="button"
                 disabled={busy}
                 onClick={() => void save()}
-                className="h-10 rounded-control bg-gradient-to-r from-primary to-accent px-4 font-heading text-button text-white shadow-sm hover:brightness-110 disabled:opacity-50"
+                className="btn btn-page h-10 px-4 disabled:opacity-50"
               >
                 {busy ? 'Saving…' : 'Save workflow'}
               </button>

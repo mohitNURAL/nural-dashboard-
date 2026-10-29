@@ -155,7 +155,7 @@ export function TaskList({
           download
           aria-label={`Export ${data?.total ?? ''} tasks to Excel`}
           title={`Export to Excel: ${data ? `all ${data.total.toLocaleString('en-IN')}` : 'these'} tasks with every detail`}
-          className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-control border border-border bg-surface px-2.5 font-heading text-button text-primary hover:border-primary"
+          className="btn btn-stroke ml-auto inline-flex h-8 items-center gap-1.5 px-2.5"
         >
           <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
             <rect x="1.5" y="1.5" width="13" height="13" rx="2" fill="#1D6F42" />

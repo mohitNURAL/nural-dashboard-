@@ -123,7 +123,7 @@ export function InHandCalendarDialog({
           title={`${label}: click for the tasks`}
           onClick={() => open(label, params, overdue)}
           className={clsx(
-            'self-start rounded-full px-2 py-0.5 font-heading text-[13px] font-bold tabular-nums transition hover:scale-105',
+            'self-start rounded-full px-2 py-0.5 font-heading text-[12px] font-bold tabular-nums transition hover:scale-105',
             overdue ? 'bg-bad text-white' : 'bg-primary text-white',
           )}
         >
@@ -150,7 +150,7 @@ export function InHandCalendarDialog({
         ))}
         {rest.length > 0 && (
           <span
-            className="text-[11px] text-text-muted"
+            className="text-[12px] text-text-muted"
             title={rest.map((i) => `${i.name} ${i.count}`).join('\n')}
           >
             +{rest.length} more
@@ -165,9 +165,8 @@ export function InHandCalendarDialog({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px]" />
         <Dialog.Content className="fixed inset-y-4 left-1/2 z-50 flex w-[min(1480px,98vw)] -translate-x-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop outline-none">
-          <div className="h-1.5 bg-gradient-to-r from-primary to-accent" />
           <div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-4">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent text-white">
+            <span className="grid h-10 w-10 place-items-center text-primary">
               <IconCalendar size={20} />
             </span>
             <div className="min-w-0 flex-1">
@@ -210,7 +209,7 @@ export function InHandCalendarDialog({
               type="button"
               onClick={() => void exportAs('xlsx')}
               disabled={!!busy || !rows.length}
-              className="inline-flex h-8 items-center gap-1.5 rounded-control border border-border bg-surface px-2.5 font-heading text-button text-text hover:border-primary hover:text-primary disabled:opacity-50"
+              className="btn btn-stroke inline-flex h-8 items-center gap-1.5 px-2.5 disabled:opacity-50"
             >
               <IconExcel size={14} /> {busy === 'xlsx' ? 'Exporting…' : 'Excel'}
             </button>
@@ -218,7 +217,7 @@ export function InHandCalendarDialog({
               type="button"
               onClick={() => void exportAs('pdf')}
               disabled={!!busy || !rows.length}
-              className="inline-flex h-8 items-center gap-1.5 rounded-control border border-border bg-surface px-2.5 font-heading text-button text-text hover:border-primary hover:text-primary disabled:opacity-50"
+              className="btn btn-stroke inline-flex h-8 items-center gap-1.5 px-2.5 disabled:opacity-50"
             >
               <IconPdf size={14} /> {busy === 'pdf' ? 'Exporting…' : 'PDF'}
             </button>
@@ -254,7 +253,7 @@ export function InHandCalendarDialog({
                     </th>
                     <th className="min-w-[132px] border-b border-r border-border bg-bad/10 px-2 py-2 text-left font-heading text-label font-bold uppercase text-bad">
                       Overdue
-                      <span className="block font-body text-[11px] font-normal normal-case text-bad">
+                      <span className="block font-body text-[12px] font-normal normal-case text-bad">
                         past the deadline
                       </span>
                     </th>
@@ -275,7 +274,7 @@ export function InHandCalendarDialog({
                           )}
                         >
                           {top}
-                          <span className="block font-body text-[11px] font-normal normal-case text-text-muted">
+                          <span className="block font-body text-[12px] font-normal normal-case text-text-muted">
                             {dates}
                           </span>
                         </th>

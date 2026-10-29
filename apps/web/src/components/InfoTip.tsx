@@ -12,7 +12,7 @@ export function InfoTip({ text, label }: { text: string; label?: string }) {
           type="button"
           aria-label={label ? `About ${label}` : 'About this number'}
           onClick={(e) => e.stopPropagation()}
-          className="inline-grid h-3.5 w-3.5 shrink-0 cursor-help place-items-center rounded-full border border-current align-middle font-heading text-[9px] font-bold normal-case leading-none tracking-normal text-text-muted hover:text-primary focus-visible:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+          className="inline-grid h-3.5 w-3.5 shrink-0 cursor-help place-items-center rounded-full border border-current align-middle font-heading text-[10px] font-bold normal-case leading-none tracking-normal text-text-muted hover:text-primary focus-visible:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
         >
           i
         </button>

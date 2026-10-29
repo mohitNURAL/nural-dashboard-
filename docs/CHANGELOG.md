@@ -20,7 +20,13 @@ and the next change fills its ID in.
 
 ## 2026-10-29
 
-- Daily update wrap-up: tasks assigned (or changed) after the plan and not on it are listed with
+- Nural brand (Product UI track): the supplied Nural Pulse logo (SVG) in the top bar and footer, the
+  symbol as favicon; flat fills only (no gradients, glows, shadows, blur); Primary 500 top bar and
+  menu with underlined selection; shared pill buttons (`btn-page`, `btn-card`, `btn-stroke`,
+  `btn-link` in index.css); weights 400/700, letter-spacing 0, brand type sizes and no shadows
+  enforced in tailwind.config.ts; the brand table pattern; flat charts. `--warn` (amber) is not in
+  the palette: kept until design names a warning colour.
+- `2faab72` Daily update wrap-up: tasks assigned (or changed) after the plan and not on it are listed with
   Add and Add all, each added as it stands now (`dailyNewSince`).
 - `4deaeab` Bitrix24 sign-in renewal: one at a time per person (two requests renewing together spent the
   one-use refresh token twice and could store a dead one, leaving Add task greyed out until

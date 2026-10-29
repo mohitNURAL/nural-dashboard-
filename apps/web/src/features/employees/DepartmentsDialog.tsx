@@ -130,7 +130,7 @@ export function DepartmentForm({ onDone }: { onDone: (id: number | null) => void
         type="button"
         disabled={busy}
         onClick={() => void add()}
-        className="h-9 rounded-control bg-gradient-to-r from-primary to-accent font-heading text-button text-white hover:brightness-110 disabled:opacity-50 sm:col-span-2"
+        className="btn btn-page h-9 disabled:opacity-50 sm:col-span-2"
       >
         {busy ? 'Adding…' : 'Add department'}
       </button>
@@ -200,14 +200,14 @@ function DeptRow({ d, depth }: { d: DeptNode; depth: number }) {
           <span className="block truncate font-heading text-button text-primary-dark">
             {d.name}
           </span>
-          <span className="block truncate text-[11px] text-text-muted">
+          <span className="block truncate text-[12px] text-text-muted">
             {d.members.length} people{d.head ? ` · head ${d.head.name}` : ''}
           </span>
         </span>
         <button
           type="button"
           onClick={() => setEditing(!editing)}
-          className="rounded-control border border-border px-2.5 py-1 font-heading text-button text-primary hover:border-primary"
+          className="btn btn-stroke px-2.5 py-1"
         >
           {editing ? 'Close' : 'Edit'}
         </button>
@@ -256,7 +256,7 @@ function DeptRow({ d, depth }: { d: DeptNode; depth: number }) {
             type="button"
             disabled={busy}
             onClick={() => void save()}
-            className="h-9 rounded-control bg-gradient-to-r from-primary to-accent font-heading text-button text-white hover:brightness-110 disabled:opacity-50 sm:col-span-3"
+            className="btn btn-page h-9 disabled:opacity-50 sm:col-span-3"
           >
             {busy ? 'Saving…' : 'Save'}
           </button>
@@ -287,9 +287,8 @@ export function DepartmentsDialog({ onClose }: { onClose: () => void }) {
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]" />
         <Dialog.Content className="fixed inset-y-4 left-1/2 z-50 flex w-[min(760px,94vw)] -translate-x-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop outline-none">
-          <div className="h-1.5 bg-gradient-to-r from-primary to-accent" />
           <div className="flex items-center gap-3 border-b border-border px-5 py-4">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent text-white">
+            <span className="grid h-10 w-10 place-items-center text-primary">
               <IconTree size={20} />
             </span>
             <div className="min-w-0 flex-1">

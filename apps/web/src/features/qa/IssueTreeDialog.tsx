@@ -53,8 +53,8 @@ const Chevron = ({ open }: { open: boolean }) => (
 const Avatar = ({ name, small }: { name: string; small?: boolean }) => (
   <span
     className={clsx(
-      'grid place-items-center rounded-full bg-gradient-to-br from-primary to-accent font-heading font-bold text-white',
-      small ? 'h-5 w-5 text-[9px]' : 'h-6 w-6 text-[10px]',
+      'grid place-items-center rounded-full bg-primary font-heading font-bold text-white',
+      small ? 'h-5 w-5 text-[10px]' : 'h-6 w-6 text-[10px]',
     )}
   >
     {initials(name)}
@@ -170,9 +170,8 @@ export function IssueTreeDialog<C extends Record<keyof C, number>>({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px]" />
         <Dialog.Content className="fixed inset-y-4 left-1/2 z-50 flex w-[min(1040px,97vw)] -translate-x-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop outline-none">
-          <div className="h-1.5 bg-gradient-to-r from-primary to-accent" />
           <div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-4">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent text-white">
+            <span className="grid h-10 w-10 place-items-center text-primary">
               <IconQa size={20} />
             </span>
             <div className="min-w-0 flex-1">
@@ -203,7 +202,7 @@ export function IssueTreeDialog<C extends Record<keyof C, number>>({
               type="button"
               onClick={() => void exportAs('xlsx')}
               disabled={!!busy || !rows.length}
-              className="inline-flex h-8 items-center gap-1.5 rounded-control border border-border bg-surface px-2.5 font-heading text-button text-text hover:border-primary hover:text-primary disabled:opacity-50"
+              className="btn btn-stroke inline-flex h-8 items-center gap-1.5 px-2.5 disabled:opacity-50"
             >
               <IconExcel size={14} /> {busy === 'xlsx' ? 'Exporting…' : 'Excel'}
             </button>
@@ -211,7 +210,7 @@ export function IssueTreeDialog<C extends Record<keyof C, number>>({
               type="button"
               onClick={() => void exportAs('pdf')}
               disabled={!!busy || !rows.length}
-              className="inline-flex h-8 items-center gap-1.5 rounded-control border border-border bg-surface px-2.5 font-heading text-button text-text hover:border-primary hover:text-primary disabled:opacity-50"
+              className="btn btn-stroke inline-flex h-8 items-center gap-1.5 px-2.5 disabled:opacity-50"
             >
               <IconPdf size={14} /> {busy === 'pdf' ? 'Exporting…' : 'PDF'}
             </button>

@@ -19,7 +19,7 @@ export function TopBar({ tab, onTab }: { tab: Tab; onTab: (t: Tab) => void }) {
   const [group, page] = crumbs(tab);
   const openMenu = useDrawer((s) => s.setMobileOpen);
   return (
-    <header className="chrome sticky top-0 z-[45] bg-chrome text-white shadow-[0_1px_0_rgba(255,255,255,0.06)]">
+    <header className="chrome sticky top-0 z-[45] border-b border-white/10 bg-chrome text-white">
       <div className="flex h-14 items-center gap-3 px-3 md:pl-5 lg:gap-6 lg:pr-6">
         <button
           type="button"
@@ -29,19 +29,14 @@ export function TopBar({ tab, onTab }: { tab: Tab; onTab: (t: Tab) => void }) {
         >
           <IconMenu />
         </button>
-        {/* Nural Pulse: the live heartbeat of every project and person. */}
-        <div className="flex items-center gap-2" aria-label="Nural Pulse">
-          <span className="bg-gradient-to-r from-white to-primary-soft-300 bg-clip-text font-heading text-title text-transparent">
-            Nural
-          </span>
-          <span className="relative flex items-center gap-1.5 font-heading text-title font-extrabold text-accent">
-            Pulse
-            <span aria-hidden className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
-            </span>
-          </span>
-        </div>
+        {/* The supplied Nural Pulse lockup, white colourway on the Primary 500 bar (Nural brand). */}
+        <img
+          src="/brand/pulse-lockup-white.svg"
+          alt="Nural Pulse"
+          width={90}
+          height={32}
+          className="h-8 w-auto shrink-0"
+        />
         <nav aria-label="You are here" className="hidden items-center gap-1.5 sm:flex">
           <span className="h-5 w-px bg-white/15" />
           <span className="pl-2 font-heading text-button uppercase tracking-wider text-primary-soft-300">
@@ -146,7 +141,7 @@ function UserMenu() {
       <Popover.Trigger
         aria-label={`Profile: ${name}`}
         data-tour="profile"
-        className="grid h-8 w-8 place-items-center rounded-full bg-primary font-heading text-button text-white ring-2 ring-white/20 hover:brightness-110"
+        className="btn btn-page grid h-8 w-8 place-items-center"
       >
         {monogram}
       </Popover.Trigger>
@@ -214,7 +209,7 @@ function UserMenu() {
                 onClick={() =>
                   void signOutAfterWrap(() => void signOut(), me.dailyUpdate !== false)
                 }
-                className="flex h-9 w-full items-center justify-center gap-2 rounded-control border border-border font-heading text-button text-bad hover:border-bad hover:bg-bad-soft/20"
+                className="btn btn-stroke flex h-9 w-full items-center justify-center gap-2 text-bad"
               >
                 <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
                   <path

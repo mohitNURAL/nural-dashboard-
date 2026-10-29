@@ -1,14 +1,14 @@
 // Apache ECharts wrapper (SRS 7). Only the bar chart pieces are registered to keep the bundle small.
-// Every chart gets the dashboard look here (2026-10-12), under its own settings: gradient bars
-// with rounded ends, smooth lines with a soft glow and a faded area, light dashed grid lines,
-// frosted tooltips and an easing entry.
+// Every chart gets the dashboard look here (2026-10-12; Nural brand flat fills 2026-10-29), under
+// its own settings: flat bars with rounded ends, smooth flat lines, 1px Neutral 200 grid lines
+// and an easing entry. No gradients, glows or shadows.
 import { BarChart, LineChart } from 'echarts/charts';
 import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/components';
 import * as echarts from 'echarts/core';
 import { SVGRenderer } from 'echarts/renderers';
 import type { EChartsOption } from 'echarts';
 import ReactEChartsCore from 'echarts-for-react/lib/core';
-import { alpha, chartText, chartTooltip, lighten, token } from './chartTheme';
+import { chartText, chartTooltip, token } from './chartTheme';
 
 echarts.use([BarChart, LineChart, GridComponent, LegendComponent, TooltipComponent, SVGRenderer]);
 
@@ -23,50 +23,22 @@ type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => !!v && typeof v === 'object' && !Array.isArray(v);
 const list = (v: unknown): unknown[] => (Array.isArray(v) ? v : v ? [v] : []);
 
-/** A plain colour as a gradient along the bar: light at the start, full at the end. */
-function gradient(color: unknown, horizontal: boolean): unknown {
-  if (typeof color !== 'string') return color;
-  const start = lighten(color, 0.28);
-  return {
-    type: 'linear',
-    x: 0,
-    y: horizontal ? 0 : 1,
-    x2: horizontal ? 1 : 0,
-    y2: 0,
-    colorStops: [
-      { offset: 0, color: start },
-      { offset: 1, color },
-    ],
-  };
-}
-
 function styleBar(sr: Obj, horizontal: boolean): Obj {
   const stacked = !!sr.stack;
   const r = stacked ? 3 : 7;
   const radius = horizontal ? [0, r, r, 0] : [r, r, 0, 0];
   const own = isObj(sr.itemStyle) ? sr.itemStyle : {};
-  const data = Array.isArray(sr.data)
-    ? sr.data.map((d) =>
-        isObj(d) && isObj(d.itemStyle) && typeof d.itemStyle.color === 'string'
-          ? { ...d, itemStyle: { ...d.itemStyle, color: gradient(d.itemStyle.color, horizontal) } }
-          : d,
-      )
-    : sr.data;
   const color = typeof own.color === 'string' ? own.color : undefined;
   return {
     ...sr,
-    data,
     itemStyle: {
       borderRadius: radius,
       ...own,
-      ...(color ? { color: gradient(color, horizontal) } : {}),
+      ...(color ? { color } : {}),
     },
     emphasis: {
       focus: 'series',
-      itemStyle: {
-        shadowBlur: 14,
-        shadowColor: color ? alpha(color, 0.45) : 'rgba(16,24,64,0.25)',
-      },
+      itemStyle: { opacity: 0.85 },
       ...(isObj(sr.emphasis) ? sr.emphasis : {}),
     },
   };
@@ -74,39 +46,12 @@ function styleBar(sr: Obj, horizontal: boolean): Obj {
 
 function styleLine(sr: Obj): Obj {
   const own = isObj(sr.lineStyle) ? sr.lineStyle : {};
-  const color =
-    typeof own.color === 'string'
-      ? own.color
-      : isObj(sr.itemStyle) && typeof sr.itemStyle.color === 'string'
-        ? sr.itemStyle.color
-        : undefined;
   return {
     smooth: 0.35,
     symbol: 'circle',
     symbolSize: 7,
     ...sr,
-    lineStyle: {
-      width: 3,
-      ...(color ? { shadowBlur: 10, shadowColor: alpha(color, 0.35), shadowOffsetY: 4 } : {}),
-      ...own,
-    },
-    ...(color && !sr.areaStyle
-      ? {
-          areaStyle: {
-            color: {
-              type: 'linear',
-              x: 0,
-              y: 0,
-              x2: 0,
-              y2: 1,
-              colorStops: [
-                { offset: 0, color: alpha(color, 0.22) },
-                { offset: 1, color: alpha(color, 0) },
-              ],
-            },
-          },
-        }
-      : {}),
+    lineStyle: { width: 3, ...own },
   };
 }
 
@@ -117,14 +62,14 @@ function styleLine(sr: Obj): Obj {
 function themed(option: EChartsOption): EChartsOption {
   const text = token('--text');
   const muted = token('--text-muted');
-  const grid = alpha(token('--primary'), 0.1);
+  const grid = token('--border');
   const axis = (a: unknown) =>
     list(a).map((x) =>
       isObj(x)
         ? {
             axisLine: { show: x.type === 'category', lineStyle: { color: grid } },
             axisTick: { show: false },
-            splitLine: { lineStyle: { color: grid, type: 'dashed' } },
+            splitLine: { lineStyle: { color: grid } },
             ...x,
             axisLabel: { color: muted, ...(x.axisLabel as Obj | undefined) },
           }

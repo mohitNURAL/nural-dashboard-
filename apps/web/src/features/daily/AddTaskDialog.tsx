@@ -173,7 +173,6 @@ export function AddTaskDialog({
           aria-describedby={undefined}
           className="fixed left-1/2 top-1/2 z-[62] flex max-h-[90vh] w-[min(1120px,96vw)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop"
         >
-          <div className="h-1.5 shrink-0 bg-gradient-to-r from-primary to-accent" />
           <div className="flex items-center gap-3 border-b border-border px-5 py-3">
             <div className="flex-1">
               <Dialog.Title className="font-heading text-h2 text-primary-dark">
@@ -364,7 +363,7 @@ export function AddTaskDialog({
               type="button"
               onClick={onClose}
               disabled={busy}
-              className="h-10 rounded-control border border-border px-4 font-heading text-button text-text hover:border-primary hover:text-primary"
+              className="btn btn-stroke h-10 px-4"
             >
               Cancel
             </button>
@@ -372,7 +371,7 @@ export function AddTaskDialog({
               type="button"
               disabled={busy || !ready.length}
               onClick={() => void save()}
-              className="h-10 rounded-control bg-gradient-to-r from-primary to-accent px-4 font-heading text-button text-white shadow-sm hover:brightness-110 disabled:opacity-50"
+              className="btn btn-page h-10 px-4 disabled:opacity-50"
             >
               {busy
                 ? 'Creating…'

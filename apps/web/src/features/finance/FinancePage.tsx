@@ -24,23 +24,15 @@ export function FinancePage() {
             id: 'quote',
             className: 'xl:col-span-5',
             node: (
-              <div className="relative h-full overflow-hidden rounded-card bg-gradient-to-br from-[var(--primary-dark)] via-primary to-accent p-6 text-white shadow-pop">
-                <span
-                  aria-hidden
-                  className="absolute -right-10 -top-10 h-44 w-44 rounded-full bg-white/10"
-                />
-                <span
-                  aria-hidden
-                  className="absolute -bottom-12 -left-8 h-36 w-36 rounded-full bg-accent/30 blur-xl"
-                />
-                <p className="relative font-heading text-label uppercase tracking-[0.18em] text-white/70">
+              <div className="relative h-full overflow-hidden rounded-card bg-primary p-6 text-white">
+                <p className="relative font-heading text-label font-bold uppercase text-primary-soft">
                   We need your insights
                 </p>
-                <blockquote className="relative mt-4 font-heading text-[26px] font-extrabold leading-tight">
+                <blockquote className="relative mt-4 font-heading text-title">
                   “What gets measured gets managed.”
                 </blockquote>
-                <p className="relative mt-2 text-white/80">Peter Drucker</p>
-                <p className="relative mt-6 text-body text-white/90">
+                <p className="relative mt-2 text-accent">Peter Drucker</p>
+                <p className="relative mt-6 text-body text-white">
                   Cost to company will show what each project, team and person costs against what
                   they deliver. Tell us what you want to see first, what decisions it should help
                   with, and which figures you track by hand today.

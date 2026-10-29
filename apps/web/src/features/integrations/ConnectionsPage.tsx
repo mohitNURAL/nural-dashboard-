@@ -62,7 +62,7 @@ function TestButton({ channel, disabled }: { channel: 'mail' | 'slack'; disabled
           setBusy(false);
         }
       }}
-      className="rounded-control bg-primary px-3 py-1.5 font-heading text-button text-white hover:brightness-110 disabled:opacity-40"
+      className="btn btn-card px-3 py-1.5 disabled:opacity-40"
     >
       {busy ? 'Sending…' : 'Send a test to me'}
     </button>
@@ -128,7 +128,7 @@ function DailyChannel({ connected }: { connected: boolean }) {
           type="button"
           disabled={busy || text.trim() === shown(saved)}
           onClick={() => void save()}
-          className="rounded-control bg-primary px-3 py-1.5 font-heading text-button text-white hover:brightness-110 disabled:opacity-40"
+          className="btn btn-card px-3 py-1.5 disabled:opacity-40"
         >
           {busy ? 'Saving…' : 'Save'}
         </button>
@@ -141,7 +141,7 @@ function DailyChannel({ connected }: { connected: boolean }) {
 }
 
 const code = (s: string) => (
-  <code className="rounded bg-primary-soft-100 px-1 font-mono text-[11px]">{s}</code>
+  <code className="rounded bg-primary-soft-100 px-1 font-mono text-[12px]">{s}</code>
 );
 
 export function ConnectionsPage() {
@@ -272,13 +272,14 @@ export function ConnectionsPage() {
                     <>At api.slack.com create an app for your workspace.</>,
                     <>
                       Add the bot scopes {code('chat:write')}, {code('users:read')},{' '}
-                      {code('users:read.email')}, {code('im:write')} and {code('channels:read')}, and
-                      install it.
+                      {code('users:read.email')}, {code('im:write')} and {code('channels:read')},
+                      and install it.
                     </>,
                     <>Invite the app to every channel that should get reports.</>,
                     <>
-                      Put the Bot User OAuth Token in the server's {code('.env')} ({code('.env.prod')}{' '}
-                      with Docker) as {code('SLACK_BOT_TOKEN')} and restart the API.
+                      Put the Bot User OAuth Token in the server's {code('.env')} (
+                      {code('.env.prod')} with Docker) as {code('SLACK_BOT_TOKEN')} and restart the
+                      API.
                     </>,
                   ]}
                 />

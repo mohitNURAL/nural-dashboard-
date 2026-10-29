@@ -41,8 +41,8 @@ export const Accordion = forwardRef<HTMLElement, Props>(function Accordion(
           <span
             aria-hidden
             className={clsx(
-              'grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-gradient-to-br text-white shadow-sm',
-              tone === 'bad' ? 'from-bad to-warn' : 'from-primary to-accent',
+              'grid h-8 w-8 shrink-0 place-items-center',
+              tone === 'bad' ? 'text-bad' : 'text-primary',
             )}
           >
             <svg

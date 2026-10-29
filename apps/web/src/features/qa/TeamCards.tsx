@@ -173,11 +173,7 @@ export function RetestCard({ className, onShow }: { className?: string; onShow: 
       emptyText="Nothing waiting in QA Backlog or In QA."
       action={
         retest && retest.total > 0 ? (
-          <button
-            type="button"
-            onClick={onShow}
-            className="font-heading text-button text-primary hover:underline"
-          >
+          <button type="button" onClick={onShow} className="btn btn-link">
             Show {retest.total} issues
           </button>
         ) : undefined

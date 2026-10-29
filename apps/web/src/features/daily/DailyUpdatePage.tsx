@@ -29,10 +29,8 @@ const countsOf = (plan: DailyPlan | null, wrap: DailyWrap | null) => ({
   extra: wrap?.items.filter((i) => i.extra).length ?? 0,
 });
 
-const btn =
-  'h-9 rounded-control border border-border px-3 font-heading text-button text-text-muted hover:border-primary hover:text-primary';
-const mainBtn =
-  'h-9 rounded-control bg-gradient-to-r from-primary to-accent px-3 font-heading text-button text-white shadow-sm hover:brightness-110';
+const btn = 'btn btn-stroke h-9 px-3';
+const mainBtn = 'btn btn-page h-9 px-3';
 
 export function DailyUpdatePage() {
   const { data: today } = useDailyToday();

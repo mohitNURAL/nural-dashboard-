@@ -380,7 +380,7 @@ function FeedbackForm({ className }: { className?: string }) {
             <button
               type="submit"
               disabled={busy}
-              className="h-10 rounded-control bg-primary px-5 font-heading text-button text-white hover:brightness-110 disabled:opacity-50"
+              className="btn btn-card h-10 px-5 disabled:opacity-50"
             >
               {busy ? 'Sending…' : 'Send feedback'}
             </button>
@@ -478,11 +478,7 @@ function Inbox() {
                   : `All ${data?.counts.total ?? ''}`}
             </button>
           ))}
-          <a
-            href="/api/feedback/export"
-            download
-            className="rounded-control border border-border px-3 py-1 font-heading text-button text-primary hover:border-primary"
-          >
+          <a href="/api/feedback/export" download className="btn btn-stroke px-3 py-1">
             Excel
           </a>
         </span>
@@ -545,7 +541,7 @@ function Inbox() {
                     onClick={() =>
                       void review(r.id, { status: r.status === 'new' ? 'reviewed' : 'new' })
                     }
-                    className="rounded-control bg-primary px-4 py-1.5 font-heading text-button text-white hover:brightness-110"
+                    className="btn btn-card px-4 py-1.5"
                   >
                     {r.status === 'new' ? 'Mark reviewed' : 'Mark as new'}
                   </button>

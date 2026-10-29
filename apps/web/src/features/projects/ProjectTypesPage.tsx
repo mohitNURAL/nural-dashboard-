@@ -99,7 +99,7 @@ export function ProjectTypesPage() {
             type="button"
             onClick={() => setEditing(true)}
             data-tour="projecttypes-edit"
-            className="h-10 rounded-control bg-gradient-to-r from-primary to-accent px-4 font-heading text-button text-white shadow-sm hover:brightness-110"
+            className="btn btn-page h-10 px-4"
           >
             Edit types
           </button>
@@ -247,9 +247,9 @@ function ProjectRow({
     <li className="rounded-xl border border-border bg-bg/40 px-3 py-2">
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-heading text-button text-primary-dark">{p.name}</span>
-        <span className="text-[11px] text-text-muted">{p.tasks} tasks</span>
+        <span className="text-[12px] text-text-muted">{p.tasks} tasks</span>
         {p.overridden && (
-          <span className="rounded-full bg-warn/15 px-2 py-0.5 text-[11px] font-bold text-warn">
+          <span className="rounded-full bg-warn/15 px-2 py-0.5 text-[12px] font-bold text-warn">
             set by hand
           </span>
         )}
@@ -332,7 +332,7 @@ function StagePicker({
 }) {
   return (
     <div>
-      <p className="mb-1 text-[11px] text-text-muted">{label}</p>
+      <p className="mb-1 text-[12px] text-text-muted">{label}</p>
       <span className="flex flex-wrap gap-1">
         {stages.map((s) => (
           <button
@@ -400,7 +400,6 @@ function TypesEditor({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]" />
         <Dialog.Content className="fixed inset-y-4 left-1/2 z-50 flex w-[min(820px,96vw)] -translate-x-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop outline-none">
-          <div className="h-1.5 bg-gradient-to-r from-primary to-accent" />
           <div className="flex items-center gap-3 border-b border-border px-5 py-3">
             <div className="min-w-0 flex-1">
               <Dialog.Title className="font-heading text-h2 text-primary-dark">
@@ -501,14 +500,12 @@ function TypesEditor({
             </button>
           </div>
           <div className="flex justify-end gap-2 border-t border-border px-5 py-3">
-            <Dialog.Close className="h-10 rounded-control border border-border px-4 font-heading text-button text-text-muted">
-              Cancel
-            </Dialog.Close>
+            <Dialog.Close className="btn btn-stroke h-10 px-4">Cancel</Dialog.Close>
             <button
               type="button"
               disabled={busy}
               onClick={() => void save()}
-              className="h-10 rounded-control bg-gradient-to-r from-primary to-accent px-4 font-heading text-button text-white hover:brightness-110 disabled:opacity-50"
+              className="btn btn-page h-10 px-4 disabled:opacity-50"
             >
               {busy ? 'Saving…' : 'Save types'}
             </button>

@@ -124,7 +124,7 @@ export function AlertsBell({ onTab }: { onTab: (t: Tab) => void }) {
                 onTab('dev');
                 openAlerts();
               }}
-              className="font-heading text-button text-primary hover:underline"
+              className="btn btn-link"
             >
               See alert details (by person and stage) →
             </button>

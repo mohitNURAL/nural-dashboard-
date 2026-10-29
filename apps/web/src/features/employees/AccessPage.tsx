@@ -184,7 +184,7 @@ export function AccessPage() {
               <div className="grid min-w-0 grid-cols-1 gap-4 rounded-card border border-border bg-surface p-3 lg:grid-cols-[300px_minmax(0,1fr)]">
                 <aside className="flex min-h-0 flex-col gap-2 lg:max-h-[78vh]">
                   <div
-                    className="flex rounded-xl border border-border bg-bg p-1"
+                    className="flex rounded-full bg-primary-soft p-1"
                     role="radiogroup"
                     aria-label="Set access for"
                   >
@@ -196,10 +196,10 @@ export function AccessPage() {
                         aria-checked={view === v}
                         onClick={() => setView(v)}
                         className={clsx(
-                          'flex-1 rounded-lg px-3 py-1.5 font-heading text-button transition',
+                          'flex-1 rounded-full px-3 py-1.5 font-heading text-button uppercase transition',
                           view === v
-                            ? 'bg-gradient-to-r from-primary to-accent text-white shadow-sm'
-                            : 'text-text-muted hover:text-primary',
+                            ? 'bg-surface text-primary'
+                            : 'text-primary-muted hover:text-primary',
                         )}
                       >
                         {v === 'people' ? 'People' : 'Departments'}
@@ -223,7 +223,7 @@ export function AccessPage() {
                               className={clsx(
                                 'flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left transition',
                                 picked?.type === 'user' && picked.id === p.id
-                                  ? 'bg-gradient-to-r from-primary/15 to-accent/10 shadow-[inset_3px_0_0_var(--accent)]'
+                                  ? 'bg-primary-soft'
                                   : 'hover:bg-primary-soft-100',
                               )}
                             >
@@ -232,7 +232,7 @@ export function AccessPage() {
                                 <span className="block truncate font-heading text-button text-primary-dark">
                                   {p.name}
                                 </span>
-                                <span className="block truncate text-[11px] text-text-muted">
+                                <span className="block truncate text-[12px] text-text-muted">
                                   {ROLE_NAME[p.role]}
                                   {p.departments[0] ? ` · ${p.departments[0]}` : ''}
                                 </span>
@@ -259,7 +259,7 @@ export function AccessPage() {
                               className={clsx(
                                 'flex w-full items-center gap-2 rounded-xl py-1.5 pr-2 text-left transition',
                                 picked?.type === 'dept' && picked.id === d.id
-                                  ? 'bg-gradient-to-r from-primary/15 to-accent/10 shadow-[inset_3px_0_0_var(--accent)]'
+                                  ? 'bg-primary-soft'
                                   : 'hover:bg-primary-soft-100',
                               )}
                             >
@@ -267,7 +267,7 @@ export function AccessPage() {
                                 <span className="block truncate font-heading text-button text-primary-dark">
                                   {d.name}
                                 </span>
-                                <span className="block truncate text-[11px] text-text-muted">
+                                <span className="block truncate text-[12px] text-text-muted">
                                   {d.members} people{d.head ? ` · head ${d.head}` : ''}
                                 </span>
                               </span>
@@ -397,14 +397,14 @@ function Editor({ subject }: { subject: Subject }) {
             <button
               type="button"
               onClick={() => setMany(bulkKeys, true)}
-              className="h-8 rounded-control border border-good/40 px-2.5 font-heading text-button text-good hover:bg-good/10"
+              className="btn btn-stroke h-8 border-good/40 px-2.5 text-good"
             >
               Allow all modules
             </button>
             <button
               type="button"
               onClick={() => setMany([...bulkKeys, 'admin'], false)}
-              className="h-8 rounded-control border border-bad/40 px-2.5 font-heading text-button text-bad hover:bg-bad/10"
+              className="btn btn-stroke h-8 border-bad/40 px-2.5 text-bad"
             >
               Remove all
             </button>
@@ -452,14 +452,14 @@ function Editor({ subject }: { subject: Subject }) {
                   aria-expanded={expanded}
                   className="flex min-w-0 flex-1 items-center gap-3 text-left"
                 >
-                  <span className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent text-white shadow-sm">
+                  <span className="grid h-8 w-8 place-items-center text-primary">
                     {MODULE_ICON[m.label]}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block font-heading text-h3 font-extrabold text-primary-dark">
                       {m.label}
                     </span>
-                    <span className="block text-[11px] text-text-muted">
+                    <span className="block text-[12px] text-text-muted">
                       {onCount} of {keys.length} pages open
                     </span>
                   </span>
@@ -494,7 +494,7 @@ function Editor({ subject }: { subject: Subject }) {
             </div>
           );
         })}
-        <p className="px-1 text-[11px] text-text-muted">
+        <p className="px-1 text-[12px] text-text-muted">
           Finance is for admins only and cannot be given here.
         </p>
       </div>
@@ -514,7 +514,7 @@ function Editor({ subject }: { subject: Subject }) {
               type="button"
               disabled={!dirty || busy}
               onClick={() => setDraft(saved)}
-              className="h-9 rounded-control border border-border px-3 font-heading text-button text-text-muted hover:border-primary disabled:opacity-40"
+              className="btn btn-stroke h-9 px-3 disabled:opacity-40"
             >
               Discard
             </button>
@@ -522,7 +522,7 @@ function Editor({ subject }: { subject: Subject }) {
               type="button"
               disabled={!dirty || busy}
               onClick={() => void save()}
-              className="h-9 rounded-control bg-gradient-to-r from-primary to-accent px-4 font-heading text-button text-white shadow-sm hover:brightness-110 disabled:opacity-40"
+              className="btn btn-page h-9 px-4 disabled:opacity-40"
             >
               {busy ? 'Saving…' : 'Save'}
             </button>
@@ -540,14 +540,14 @@ function PageRow({ pg, locked, get, set }: { pg: PageDef; locked: boolean; get: 
   const k = pg.right as RightKey;
   const v = get(k);
   return (
-    <li className="rounded-xl bg-surface px-3 py-2 shadow-[0_1px_0_rgba(16,24,64,0.04)]">
+    <li className="rounded-xl bg-surface px-3 py-2">
       <div className="flex items-center gap-3">
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2 font-heading text-button text-primary-dark">
             {pg.label}
             <SourceDot source={v.source} />
           </span>
-          <span className="block truncate text-[11px] text-text-muted">{pg.hint}</span>
+          <span className="block truncate text-[12px] text-text-muted">{pg.hint}</span>
         </span>
         <ResetButton
           show={!locked && v.source !== 'inherit' && v.source !== 'role' && v.source !== 'locked'}
@@ -593,14 +593,14 @@ function PermissionRow({
           {perm.label}
           <SourceDot source={v.source} />
         </span>
-        <span className="block truncate text-[11px] text-text-muted">{perm.hint}</span>
+        <span className="block truncate text-[12px] text-text-muted">{perm.hint}</span>
       </span>
       <ResetButton
         show={!locked && v.source !== 'inherit' && v.source !== 'role' && v.source !== 'locked'}
         onClick={() => set(k, undefined)}
       />
       <span
-        className="inline-flex rounded-lg border border-border bg-bg p-0.5"
+        className="inline-flex rounded-full bg-primary-soft p-0.5"
         role="radiogroup"
         aria-label={perm.label}
       >
@@ -615,12 +615,12 @@ function PermissionRow({
               disabled={locked}
               onClick={() => set(k, valueOf(k, i === 0))}
               className={clsx(
-                'rounded-md px-2.5 py-1 font-heading text-[12px] transition disabled:cursor-not-allowed',
+                'rounded-full px-2.5 py-1 font-heading text-[12px] font-bold transition disabled:cursor-not-allowed',
                 active
                   ? i === 0
-                    ? 'bg-gradient-to-r from-primary to-accent text-white shadow-sm'
-                    : 'bg-[color-mix(in_srgb,var(--text)_70%,var(--surface))] text-surface'
-                  : 'text-text-muted hover:text-primary',
+                    ? 'bg-surface text-primary'
+                    : 'bg-navy text-white'
+                  : 'text-primary-muted hover:text-primary',
               )}
             >
               {label}
@@ -667,9 +667,9 @@ function Toggle({
         unknown
           ? 'bg-[color-mix(in_srgb,var(--text)_14%,var(--surface))]'
           : on
-            ? 'bg-gradient-to-r from-primary to-accent shadow-[0_0_10px_color-mix(in_srgb,var(--accent)_45%,transparent)]'
+            ? 'bg-accent'
             : partial
-              ? 'bg-gradient-to-r from-[color-mix(in_srgb,var(--primary)_55%,var(--surface))] to-[color-mix(in_srgb,var(--accent)_55%,var(--surface))]'
+              ? 'bg-accent/50'
               : 'bg-[color-mix(in_srgb,var(--text)_32%,var(--surface))]',
       )}
     >
@@ -712,7 +712,7 @@ function ResetButton({ show, onClick }: { show: boolean; onClick: () => void }) 
 
 function Legend() {
   return (
-    <p className="flex flex-wrap gap-x-4 gap-y-1 pt-2 text-[11px] text-text-muted">
+    <p className="flex flex-wrap gap-x-4 gap-y-1 pt-2 text-[12px] text-text-muted">
       {(Object.keys(SOURCE) as (keyof typeof SOURCE)[]).map((k) => (
         <span key={k} className="inline-flex items-center gap-1.5">
           <span className={clsx('h-2 w-2 rounded-full', SOURCE[k].dot)} />
@@ -746,7 +746,7 @@ function RecentChanges() {
               key={r.id}
               className="relative rounded-xl border-l-2 border-accent/50 bg-bg/60 px-3 py-2"
             >
-              <span className="block text-[11px] text-text-muted">
+              <span className="block text-[12px] text-text-muted">
                 {timeAgo(r.at)} · {r.by}
               </span>
               <span className="block font-heading text-button text-primary-dark">

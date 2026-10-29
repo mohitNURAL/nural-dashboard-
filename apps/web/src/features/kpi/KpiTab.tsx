@@ -128,11 +128,7 @@ export function KpiTab() {
               {list.back === 'planner' && (
                 <BackButton label="Back to planner" onBack={() => usePlanner.getState().show()} />
               )}
-              <button
-                type="button"
-                onClick={reset}
-                className="font-heading text-button text-primary hover:underline"
-              >
+              <button type="button" onClick={reset} className="btn btn-link">
                 Show all open tasks
               </button>
             </div>

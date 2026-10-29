@@ -165,7 +165,7 @@ function Head({ r, who }: { r: HelpRow; who?: boolean }) {
       >
         {r.status === 'reviewed' ? 'Reviewed' : 'New'}
       </span>
-      <span className="text-[11px] text-text-muted">
+      <span className="text-[12px] text-text-muted">
         {who ? `${r.name} · ` : ''}
         {ABOUT_LABEL[r.aboutKind]}
         {r.aboutLabel ? `: ${r.aboutLabel}` : ''} · {timeAgo(r.at)}
@@ -252,7 +252,7 @@ function Inbox({ rows, loading }: { rows: HelpRow[]; loading: boolean }) {
           </Select>
           <a
             href="/api/help/feedback/export"
-            className="inline-flex h-8 items-center gap-1.5 rounded-control border border-border px-2.5 font-heading text-button text-primary hover:border-primary"
+            className="btn btn-stroke inline-flex h-8 items-center gap-1.5 px-2.5"
           >
             <IconExcel size={15} /> Excel
           </a>
@@ -285,11 +285,7 @@ function InboxItem({ r, onReview }: { r: HelpRow; onReview: (r: HelpRow, note: s
           placeholder="Reply (shown to the sender)"
           className="h-8 min-w-0 flex-1 rounded-control border border-border bg-surface px-2 text-table focus:border-primary focus:outline-none"
         />
-        <button
-          type="button"
-          onClick={() => onReview(r, note)}
-          className="h-8 rounded-control bg-gradient-to-r from-primary to-accent px-3 font-heading text-button text-white hover:brightness-110"
-        >
+        <button type="button" onClick={() => onReview(r, note)} className="btn btn-page h-8 px-3">
           {r.status === 'reviewed' ? 'Update' : 'Mark reviewed'}
         </button>
       </div>

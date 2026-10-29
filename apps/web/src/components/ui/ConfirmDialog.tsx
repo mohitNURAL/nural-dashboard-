@@ -42,28 +42,25 @@ const useConfirmStore = create<State>((set, get) => ({
 /** Ask for confirmation: resolves true when the person confirms. */
 export const confirm = (o: ConfirmOptions) => useConfirmStore.getState().ask(o);
 
-const TONE: Record<Tone, { band: string; button: string; ring: string; mark: string }> = {
+// Flat fills (Nural brand): the confirm button's fill and label carry the tone.
+const TONE: Record<Tone, { button: string; ring: string; mark: string }> = {
   primary: {
-    band: 'from-primary to-accent',
-    button: 'bg-gradient-to-r from-primary to-accent',
+    button: 'bg-accent text-on-accent hover:bg-accent-dark',
     ring: 'bg-primary/15 text-primary',
     mark: '?',
   },
   good: {
-    band: 'from-good to-accent',
-    button: 'bg-gradient-to-r from-good to-accent',
+    button: 'bg-accent text-on-accent hover:bg-accent-dark',
     ring: 'bg-good/15 text-good',
     mark: '✓',
   },
   warn: {
-    band: 'from-warn to-primary',
-    button: 'bg-gradient-to-r from-warn to-[color-mix(in_srgb,var(--warn)_70%,var(--bad))]',
+    button: 'bg-navy text-white hover:bg-navy-deep',
     ring: 'bg-warn/15 text-warn',
     mark: '!',
   },
   bad: {
-    band: 'from-bad to-warn',
-    button: 'bg-gradient-to-r from-bad to-[color-mix(in_srgb,var(--bad)_75%,black)]',
+    button: 'bg-bad text-white hover:bg-bad-dark',
     ring: 'bg-bad/15 text-bad',
     mark: '!',
   },
@@ -85,7 +82,6 @@ export function ConfirmHost() {
         >
           {current && (
             <>
-              <div className={clsx('h-1.5 bg-gradient-to-r', tone.band)} />
               <div className="flex gap-4 px-5 pb-2 pt-5">
                 <span
                   aria-hidden
@@ -129,7 +125,7 @@ export function ConfirmHost() {
                 <button
                   type="button"
                   onClick={() => answer(false)}
-                  className="h-10 rounded-control border border-border px-4 font-heading text-button text-text-muted hover:border-primary hover:text-primary"
+                  className="h-10 rounded-full border border-primary-dark px-4 font-heading text-button uppercase text-primary-dark hover:bg-primary-soft-100"
                 >
                   {current.cancelLabel ?? 'Cancel'}
                 </button>
@@ -138,7 +134,7 @@ export function ConfirmHost() {
                   autoFocus
                   onClick={() => answer(true)}
                   className={clsx(
-                    'h-10 rounded-control px-5 font-heading text-button text-white shadow-sm transition hover:brightness-110',
+                    'h-10 rounded-full px-5 font-heading text-button uppercase transition',
                     tone.button,
                   )}
                 >

@@ -221,11 +221,7 @@ export function DevTab() {
                           onBack={() => usePlanner.getState().show()}
                         />
                       )}
-                      <button
-                        type="button"
-                        onClick={clear}
-                        className="font-heading text-button text-primary hover:underline"
-                      >
+                      <button type="button" onClick={clear} className="btn btn-link">
                         Show all tasks
                       </button>
                     </div>

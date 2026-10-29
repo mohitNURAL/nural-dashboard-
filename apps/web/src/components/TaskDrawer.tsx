@@ -75,7 +75,7 @@ export function TaskDrawer() {
                         <button
                           type="button"
                           onClick={() => setEditing(true)}
-                          className="h-8 rounded-control border border-primary px-3 font-heading text-button text-primary hover:bg-primary/10"
+                          className="btn btn-stroke h-8 px-3"
                         >
                           Edit fields
                         </button>
@@ -123,7 +123,7 @@ export function TaskDrawer() {
                 href={t.url}
                 target="_blank"
                 rel="noreferrer"
-                className="flex h-10 w-full items-center justify-center rounded-control bg-primary font-heading text-button uppercase text-white hover:brightness-110"
+                className="btn btn-card flex h-10 w-full items-center justify-center"
               >
                 Open in Bitrix24
               </a>

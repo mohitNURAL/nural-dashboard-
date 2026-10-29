@@ -34,7 +34,7 @@ export function ColumnsMenu({
           <button
             type="button"
             aria-label="Choose columns"
-            className="inline-flex h-8 items-center gap-1.5 rounded-control border border-border bg-surface px-2.5 font-heading text-button text-primary hover:border-primary"
+            className="btn btn-stroke inline-flex h-8 items-center gap-1.5 px-2.5"
           >
             <IconSliders size={15} />
             Columns

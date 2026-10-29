@@ -49,8 +49,7 @@ const WHY: Record<string, string> = {
 };
 
 const col = createColumnHelper<ReportLine>();
-const btn =
-  'inline-flex h-9 items-center gap-1.5 rounded-control border border-border bg-surface px-3 font-heading text-button text-text hover:border-primary hover:text-primary disabled:opacity-50';
+const btn = 'btn btn-stroke inline-flex h-9 items-center gap-1.5 px-3 disabled:opacity-50';
 const dateInput =
   'h-9 rounded-control border border-border bg-surface px-2 text-table text-text outline-none focus:border-primary';
 

@@ -182,11 +182,6 @@ export function WorkflowDiagram({
                 fill="var(--surface)"
                 stroke={on ? 'var(--accent)' : s.color}
                 strokeWidth={on ? 3 : 1.6}
-                style={
-                  on
-                    ? { filter: 'drop-shadow(0 0 8px var(--accent))' }
-                    : { filter: 'drop-shadow(0 2px 3px rgba(16,24,64,0.12))' }
-                }
               />
               <rect width={6} height={CARD_H} rx={3} fill={s.color} />
               <text
@@ -237,7 +232,7 @@ export function WorkflowDiagram({
           Counts as
         </text>
       </svg>
-      <p className="flex flex-wrap gap-x-5 gap-y-1 px-2 pt-2 text-[11px] text-text-muted">
+      <p className="flex flex-wrap gap-x-5 gap-y-1 px-2 pt-2 text-[12px] text-text-muted">
         <span className="inline-flex items-center gap-1.5">
           <span className="h-0.5 w-6 bg-primary" /> usual move
         </span>

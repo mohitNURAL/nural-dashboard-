@@ -139,7 +139,7 @@ export function DataTable<T>({
                 lay.custom ? 'Rows in your order; click to use the sort' : 'Put rows in your order'
               }
               className={clsx(
-                'inline-flex h-8 items-center gap-1.5 rounded-control border px-2.5 font-heading text-button',
+                'btn btn-stroke inline-flex h-8 items-center gap-1.5 px-2.5',
                 lay.custom
                   ? 'border-accent bg-accent/10 text-accent-dark'
                   : 'border-border text-text-muted hover:border-primary hover:text-primary',

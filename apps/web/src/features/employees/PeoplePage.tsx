@@ -154,7 +154,7 @@ function columnsFor(onEdit?: (e: Employee) => void) {
               e.stopPropagation();
               onEdit(c.row.original);
             }}
-            className="rounded-control border border-border px-2.5 py-1 font-heading text-button text-primary hover:border-primary"
+            className="btn btn-stroke px-2.5 py-1"
           >
             Edit
           </button>
@@ -247,7 +247,7 @@ export function PeoplePage() {
             type="button"
             onClick={() => setManaging(true)}
             data-tour="people-departments"
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-accent px-3.5 font-heading text-button text-white shadow-sm hover:brightness-110"
+            className="btn btn-page inline-flex h-10 items-center gap-2 px-3.5"
           >
             <IconTree size={18} /> Manage departments
           </button>

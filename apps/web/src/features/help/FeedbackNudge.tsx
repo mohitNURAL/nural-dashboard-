@@ -47,9 +47,8 @@ export function FeedbackNudge({ onGo }: { onGo: (t: Tab) => void }) {
       className="fixed bottom-5 right-20 z-[55] w-[min(380px,calc(100vw-2rem))] overflow-hidden rounded-card border border-border bg-surface shadow-pop"
       style={{ animation: 'tour-in 320ms cubic-bezier(0.2,0,0,1)' }}
     >
-      <div className="h-1.5 bg-gradient-to-r from-primary via-accent to-primary" />
       <div className="flex gap-3 p-4">
-        <span className="grid h-12 w-12 shrink-0 animate-[spot-pulse_2.4s_ease-in-out_infinite] place-items-center rounded-2xl bg-gradient-to-br from-primary to-accent text-white">
+        <span className="grid h-12 w-12 shrink-0 place-items-center text-primary">
           <IconFeedback size={24} />
         </span>
         <div className="min-w-0 flex-1">
@@ -67,15 +66,11 @@ export function FeedbackNudge({ onGo }: { onGo: (t: Tab) => void }) {
                 close(30);
                 onGo('feedback');
               }}
-              className="h-9 rounded-control bg-gradient-to-r from-primary to-accent px-3 font-heading text-button text-white shadow-sm hover:brightness-110"
+              className="btn btn-page h-9 px-3"
             >
               Give feedback
             </button>
-            <button
-              type="button"
-              onClick={() => close(7)}
-              className="h-9 rounded-control border border-border px-3 font-heading text-button text-text-muted hover:border-primary hover:text-primary"
-            >
+            <button type="button" onClick={() => close(7)} className="btn btn-stroke h-9 px-3">
               Later
             </button>
             <button

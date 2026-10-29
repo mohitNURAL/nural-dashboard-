@@ -369,7 +369,7 @@ export function BulkBar({ bulk, boards }: { bulk: Bulk; boards: Record<string, B
               type="button"
               disabled={!all.length || busy}
               onClick={() => void send('check')}
-              className="h-8 rounded-control border border-primary px-3 font-heading text-button text-primary hover:bg-surface disabled:opacity-50"
+              className="btn btn-stroke h-8 px-3 disabled:opacity-50"
             >
               Check
             </button>
@@ -396,7 +396,7 @@ export function BulkBar({ bulk, boards }: { bulk: Bulk; boards: Record<string, B
                 });
                 if (ok) void send('apply');
               }}
-              className="h-8 rounded-control bg-primary px-3 font-heading text-button text-white hover:brightness-110 disabled:opacity-50"
+              className="btn btn-card h-8 px-3 disabled:opacity-50"
             >
               {busy ? 'Working…' : checked ? `Apply to ${ready}` : 'Apply'}
             </button>
@@ -404,11 +404,7 @@ export function BulkBar({ bulk, boards }: { bulk: Bulk; boards: Record<string, B
         ) : (
           <span className="text-table text-text-muted">Sign in with Bitrix24 to change tasks.</span>
         )}
-        <button
-          type="button"
-          onClick={bulk.clear}
-          className="ml-auto font-heading text-button text-primary hover:underline"
-        >
+        <button type="button" onClick={bulk.clear} className="btn btn-link ml-auto">
           Clear selection
         </button>
       </div>

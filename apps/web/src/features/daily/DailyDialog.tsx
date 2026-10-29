@@ -40,10 +40,8 @@ const WHY: Record<DailyItem['why'], { label: string; cls: string }> = {
   added: { label: 'Added', cls: 'bg-primary/10 text-primary' },
 };
 
-const btn =
-  'h-10 rounded-control border border-border px-4 font-heading text-button text-text-muted hover:border-primary hover:text-primary disabled:opacity-50';
-const mainBtn =
-  'h-10 rounded-control bg-gradient-to-r from-primary to-accent px-4 font-heading text-button text-white shadow-sm hover:brightness-110 disabled:opacity-50';
+const btn = 'btn btn-stroke h-10 px-4 disabled:opacity-50';
+const mainBtn = 'btn btn-page h-10 px-4 disabled:opacity-50';
 
 export function DailyDialog() {
   const { mode, after, close } = useDailyDialog();
@@ -65,9 +63,8 @@ export function DailyDialog() {
           className="fixed left-1/2 top-1/2 z-[58] flex max-h-[92vh] w-[min(1240px,96vw)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop"
           style={{ animation: 'tour-in 200ms cubic-bezier(0.2,0,0,1)' }}
         >
-          <div className="h-1.5 shrink-0 bg-gradient-to-r from-primary via-accent to-primary" />
           <div className="flex shrink-0 items-start gap-3 px-5 pb-3 pt-4">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-primary to-accent text-white">
+            <span className="grid h-11 w-11 shrink-0 place-items-center text-primary">
               <IconDaily size={22} />
             </span>
             <div className="min-w-0 flex-1">
@@ -462,7 +459,7 @@ function PostedPlan({
                 onClick={() => setCreating(true)}
                 disabled={!today.canWrite}
                 title={today.canWrite ? undefined : 'Sign in again with Bitrix24 to create tasks'}
-                className="h-9 rounded-control bg-primary px-3 font-heading text-button text-white hover:brightness-110 disabled:opacity-50"
+                className="btn btn-card h-9 px-3 disabled:opacity-50"
               >
                 + Add task
               </button>
@@ -655,7 +652,7 @@ function PlanEditor({ today, onLater }: { today: DailyToday; onLater: () => void
           <button
             type="button"
             onClick={() => addItem(c.row.original)}
-            className="whitespace-nowrap rounded-control border border-primary px-2.5 py-1 font-heading text-button text-primary hover:bg-primary/10"
+            className="btn btn-stroke px-2.5 py-1"
           >
             Add to plan
           </button>
@@ -724,7 +721,7 @@ function PlanEditor({ today, onLater }: { today: DailyToday; onLater: () => void
             onClick={() => setAdding(true)}
             disabled={!today.canWrite}
             title={today.canWrite ? undefined : 'Sign in again with Bitrix24 to create tasks'}
-            className="h-9 rounded-control bg-primary px-3 font-heading text-button text-white hover:brightness-110 disabled:opacity-50"
+            className="btn btn-card h-9 px-3 disabled:opacity-50"
           >
             + Add task
           </button>
@@ -938,7 +935,7 @@ function WrapView({ today, onLater }: { today: DailyToday; onLater: () => void }
               <button
                 type="button"
                 onClick={() => addNew(newSince)}
-                className="rounded-control border border-primary px-2.5 py-1 font-heading text-button text-primary hover:bg-primary/10"
+                className="btn btn-stroke px-2.5 py-1"
               >
                 Add all
               </button>
@@ -989,7 +986,7 @@ function WrapView({ today, onLater }: { today: DailyToday; onLater: () => void }
             type="button"
             onClick={() => setAdding(true)}
             disabled={!today.canWrite}
-            className="h-9 rounded-control bg-primary px-3 font-heading text-button text-white hover:brightness-110 disabled:opacity-50"
+            className="btn btn-card h-9 px-3 disabled:opacity-50"
           >
             + Add task
           </button>

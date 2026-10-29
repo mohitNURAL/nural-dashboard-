@@ -265,7 +265,7 @@ export function FeedbackForm({
             />
           </label>
         </p>
-        <p className="text-[11px] text-text-muted">
+        <p className="text-[12px] text-text-muted">
           Images, PDF, Excel, Word · up to {MAX_FILES} files, 8 MB each
         </p>
         {files.length > 0 && (
@@ -292,7 +292,7 @@ export function FeedbackForm({
       <button
         type="submit"
         disabled={busy}
-        className="h-11 w-full rounded-control bg-gradient-to-r from-primary to-accent font-heading text-button text-white shadow-sm transition hover:brightness-110 disabled:opacity-50"
+        className="btn btn-page h-11 w-full disabled:opacity-50"
       >
         {busy ? 'Sending…' : 'Send feedback'}
       </button>

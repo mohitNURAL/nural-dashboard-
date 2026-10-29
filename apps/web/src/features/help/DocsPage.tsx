@@ -59,7 +59,7 @@ export function DocsPage() {
       className="group flex items-start gap-3 rounded-card border border-border bg-surface p-3 transition hover:-translate-y-0.5 hover:border-primary hover:shadow-pop"
     >
       <span
-        className={`grid shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent text-white shadow-sm ${big ? 'h-12 w-12' : 'h-10 w-10'}`}
+        className={`grid shrink-0 place-items-center text-primary ${big ? 'h-12 w-12' : 'h-10 w-10'}`}
       >
         {big ? <IconBook size={22} /> : <IconPdf size={18} />}
       </span>

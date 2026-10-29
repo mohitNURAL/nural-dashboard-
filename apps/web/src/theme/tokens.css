@@ -1,4 +1,4 @@
-/* Nural design tokens from Figma (SRS section 6). */
+/* Nural design tokens (SRS section 6; Nural brand skill, Product UI track, 2026-10-29). */
 :root {
   --primary: #32499f; /* Blue/B500 */
   --primary-dark: #18244e; /* Blue/B700 */
@@ -8,7 +8,7 @@
   --primary-soft-100: #f1f3fb; /* Blue/B100 */
   --primary-soft-300: #c6ceed; /* Blue/B300 */
   --primary-muted: #8d9edb; /* Blue/B400 */
-  --bg: #f8f9fd; /* Blue/B50 */
+  --bg: #f1f3fb; /* Primary 100: page fill; cards are White */
   --surface: #ffffff;
   --accent: #05cfd3; /* Teal/T500 */
   --accent-dark: #039194; /* Teal/T600 */
@@ -24,8 +24,12 @@
   --border: #dfddde; /* Grey 200 */
   --text-muted: #b9b2b4; /* Grey 300 */
   /* Top bar and tooltips: navy in every theme (headings use --primary-dark, which flips). */
-  --chrome: #18244e;
-  --neutral-chip: #efeeee;
+  --chrome: #32499f; /* Primary 500: the side rail and top bar (brand: flat Primary 500 rail) */
+  --neutral-chip: #e2e7f6; /* Primary 200 */
+  /* Fixed in every theme: navy (card actions) and the label on Secondary 500 (never white). */
+  --navy: #18244e; /* Primary 700 */
+  --navy-deep: #111937; /* Primary 800 */
+  --on-accent: #18244e; /* Primary 700 on Secondary 500 */
   /* Text on a strong --primary background (heat cells). */
   --on-primary: #ffffff;
   color-scheme: light;
@@ -49,7 +53,7 @@
   --text: #e4e6ef;
   --text-muted: #8b91a8;
   --border: #2a3150;
-  --chrome: #0a0e1a;
+  --chrome: #111937; /* Primary 800 */
   --neutral-chip: #2a3150;
   --on-primary: #0d111e;
   color-scheme: dark;
@@ -61,10 +65,13 @@
   --primary-muted: #8d9edb;
 }
 
-/* Shape and spacing: 4 px grid; 16 px cards, 10 px controls (SRS section 6, 2026-10-11). */
+/*
+ * Shape and spacing: 4 px grid; 16 px cards, 8 px inputs and controls, pill buttons (Nural brand,
+ * 2026-10-29). No drop shadows: separation comes from fill, a hairline or space.
+ */
 :root {
   --space: 4px;
   --radius-card: 16px;
-  --radius-control: 10px;
-  --shadow-pop: 0 8px 24px rgb(24 36 78 / 0.14);
+  --radius-control: 8px;
+  --shadow-pop: none;
 }

@@ -120,7 +120,6 @@ export function EditPerson({ person, onClose }: { person: Employee; onClose: () 
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]" />
         <Dialog.Content className="fixed inset-y-0 right-0 z-50 flex w-[min(460px,100vw)] flex-col bg-surface shadow-pop outline-none">
-          <div className="h-1.5 bg-gradient-to-r from-primary to-accent" />
           <div className="flex items-center gap-3 border-b border-border px-5 py-4">
             <Avatar id={person.id} name={person.name} size={40} />
             <div className="min-w-0 flex-1">
@@ -254,14 +253,12 @@ export function EditPerson({ person, onClose }: { person: Employee; onClose: () 
               {[roleChanged, posChanged, deptChanged].filter(Boolean).length === 1 ? '' : 's'}
             </span>
             <span className="flex gap-2">
-              <Dialog.Close className="h-10 rounded-control border border-border px-4 font-heading text-button text-text-muted">
-                Cancel
-              </Dialog.Close>
+              <Dialog.Close className="btn btn-stroke h-10 px-4">Cancel</Dialog.Close>
               <button
                 type="button"
                 disabled={busy || !(roleChanged || posChanged || deptChanged)}
                 onClick={() => void save()}
-                className="h-10 rounded-control bg-gradient-to-r from-primary to-accent px-4 font-heading text-button text-white shadow-sm hover:brightness-110 disabled:opacity-40"
+                className="btn btn-page h-10 px-4 disabled:opacity-40"
               >
                 {busy ? 'Saving…' : 'Save'}
               </button>

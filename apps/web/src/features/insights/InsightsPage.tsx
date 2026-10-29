@@ -216,11 +216,7 @@ export function InsightsPage() {
       >
         <div className="mb-3 flex flex-wrap gap-4">
           {list.back && (
-            <button
-              type="button"
-              onClick={list.goBack}
-              className="font-heading text-button text-primary hover:underline"
-            >
+            <button type="button" onClick={list.goBack} className="btn btn-link">
               ‹ Back to {list.back.label.toLowerCase()}
             </button>
           )}
@@ -279,7 +275,7 @@ function HoldingCard({ data, loading, className }: CardProps) {
                 onClick={() => open(p.text, p.taskIds)}
                 className="flex w-full items-start gap-3 rounded-card border border-border p-3 text-left transition hover:-translate-y-0.5 hover:border-primary hover:shadow-pop"
               >
-                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-accent font-heading text-button text-white">
+                <span className="btn btn-card grid h-7 w-7 shrink-0 place-items-center">
                   {i + 1}
                 </span>
                 <span className="min-w-0">

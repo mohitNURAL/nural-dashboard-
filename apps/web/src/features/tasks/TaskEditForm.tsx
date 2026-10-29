@@ -278,12 +278,7 @@ export function TaskEditForm({
             ? `${changes.length} change${changes.length === 1 ? '' : 's'}`
             : 'No changes yet'}
         </span>
-        <button
-          type="button"
-          onClick={onDone}
-          disabled={busy}
-          className="h-8 rounded-control border border-border px-3 font-heading text-button text-text-muted hover:border-primary hover:text-primary"
-        >
+        <button type="button" onClick={onDone} disabled={busy} className="btn btn-stroke h-8 px-3">
           Cancel
         </button>
         <button
@@ -292,7 +287,7 @@ export function TaskEditForm({
           disabled={
             busy || !changes.length || (!!day && day < firstAllowedDay() && day !== startDay)
           }
-          className="h-8 rounded-control bg-primary px-3 font-heading text-button text-white hover:brightness-110 disabled:opacity-50"
+          className="btn btn-card h-8 px-3 disabled:opacity-50"
         >
           {busy ? 'Saving…' : 'Save changes'}
         </button>

@@ -4,19 +4,20 @@ import { initials } from '../dev/format';
 import type { SignInStatus } from './api';
 import { STATUS } from './labels';
 
-/** A round monogram in a colour of its own (the same person always gets the same colour). */
+/**
+ * A round monogram in a flat brand fill (the same person always gets the same one): Primary 500,
+ * Primary 700 or Secondary 500 with a navy label (Nural brand, 2026-10-29).
+ */
+const AVATAR_FILL = ['bg-primary text-white', 'bg-navy text-white', 'bg-accent text-on-accent'];
 export function Avatar({ id, name, size = 32 }: { id: number; name: string; size?: number }) {
-  const hue = (id * 47) % 360;
   return (
     <span
       aria-hidden
-      className="grid shrink-0 place-items-center rounded-full font-heading font-bold text-white shadow-sm"
-      style={{
-        width: size,
-        height: size,
-        fontSize: Math.round(size * 0.36),
-        background: `linear-gradient(135deg, hsl(${hue} 55% 52%), hsl(${(hue + 40) % 360} 60% 40%))`,
-      }}
+      className={clsx(
+        'grid shrink-0 place-items-center rounded-full font-heading font-bold',
+        AVATAR_FILL[id % AVATAR_FILL.length],
+      )}
+      style={{ width: size, height: size, fontSize: Math.round(size * 0.36) }}
     >
       {initials(name)}
     </span>

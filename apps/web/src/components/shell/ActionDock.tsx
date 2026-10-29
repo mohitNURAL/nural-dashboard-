@@ -124,7 +124,7 @@ export function ActionDock({
                 data-tour="customise"
                 className={clsx(
                   BTN,
-                  'bg-gradient-to-br from-primary to-accent text-white hover:text-white hover:brightness-110',
+                  'bg-accent text-on-accent hover:bg-accent-dark hover:text-on-accent',
                 )}
               >
                 <IconSliders />
@@ -182,7 +182,7 @@ export function ActionDock({
                 rel="noreferrer"
                 className="flex items-start gap-3 rounded-control p-2 hover:bg-primary-soft-100"
               >
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent text-white">
+                <span className="grid h-10 w-10 shrink-0 place-items-center text-primary">
                   <IconBook size={18} />
                 </span>
                 <span>
@@ -312,7 +312,7 @@ function ExportPage() {
               onClick={() => void run(k)}
               className="flex w-full items-start gap-3 rounded-control p-2 text-left hover:bg-primary-soft-100 disabled:opacity-50"
             >
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent text-white">
+              <span className="grid h-10 w-10 shrink-0 place-items-center text-primary">
                 {k === 'xlsx' ? <IconExcel size={18} /> : <IconPdf size={18} />}
               </span>
               <span>

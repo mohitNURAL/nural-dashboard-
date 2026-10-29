@@ -18,6 +18,31 @@ h3 {
   .skeleton {
     @apply animate-pulse rounded bg-primary-soft-100;
   }
+
+  /*
+   * Buttons (Nural brand, Product UI track, 2026-10-29): every button is a pill in Manrope Bold,
+   * uppercase, its tier shown by the fill. Pages add only size and layout (h-9 px-3 ...); the look
+   * is changed here, once, for every page.
+   *   btn-page    the main action on a screen: Secondary 500, Primary 700 label (never white)
+   *   btn-card    the main action inside a card, panel or dialog: Primary 700, White label
+   *   btn-stroke  cancel and other paths: outlined pill, Primary 700 label
+   *   btn-link    low-emphasis actions: text only, Primary 500
+   */
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full font-heading text-button uppercase transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-page {
+    @apply bg-accent text-on-accent hover:bg-accent-dark;
+  }
+  .btn-card {
+    @apply bg-navy text-white hover:bg-navy-deep;
+  }
+  .btn-stroke {
+    @apply border border-primary-dark bg-transparent text-primary-dark hover:bg-primary-soft-100;
+  }
+  .btn-link {
+    @apply rounded-none text-primary hover:underline;
+  }
 }
 
 /* Focus view backdrop (components/layout/useFocusBox.tsx). */
@@ -51,18 +76,13 @@ h3 {
   padding: 0 18px 16px;
   overflow: hidden;
   font-family: 'Work Sans', system-ui, sans-serif;
-  box-shadow:
-    0 20px 50px rgba(10, 16, 40, 0.35),
-    0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
   animation: tour-in 220ms cubic-bezier(0.2, 0, 0, 1);
 }
-/* Accent strip along the top. */
+/* Room above the head (no accent strip: Nural brand, 2026-10-29). */
 .driver-popover.nural-tour::before {
   content: '';
   display: block;
-  height: 4px;
-  margin: 0 -18px 12px;
-  background: linear-gradient(90deg, var(--primary), var(--accent));
+  height: 16px;
 }
 .driver-popover.nural-tour .nural-tour-head {
   display: flex;
@@ -78,22 +98,17 @@ h3 {
   gap: 6px;
   padding: 2px 10px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 16%, transparent);
-  color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-darker);
   font-family: Manrope, system-ui, sans-serif;
   font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  font-weight: 700;
   text-transform: uppercase;
-}
-.driver-popover.nural-tour .nural-tour-kind::before {
-  content: '✦';
-  font-size: 10px;
 }
 .driver-popover.nural-tour .nural-tour-count {
   color: var(--text-muted);
   font-family: Manrope, system-ui, sans-serif;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
 }
 .driver-popover.nural-tour .nural-tour-bar {
@@ -107,14 +122,14 @@ h3 {
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--primary), var(--accent));
+  background: var(--accent);
   transition: width 300ms ease;
 }
 .driver-popover.nural-tour .driver-popover-title {
   font-family: Manrope, system-ui, sans-serif;
-  font-size: 17px;
-  font-weight: 800;
-  line-height: 1.3;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: normal;
   color: var(--primary-dark);
   margin: 0 24px 6px 0;
 }
@@ -161,17 +176,13 @@ h3 {
   background: var(--primary-soft-100);
 }
 .driver-popover.nural-tour .driver-popover-footer .driver-popover-next-btn {
-  background: linear-gradient(
-    135deg,
-    var(--primary),
-    color-mix(in srgb, var(--primary) 70%, var(--accent))
-  );
+  background: var(--accent);
   border-color: transparent;
-  color: #fff;
+  color: var(--on-accent);
   padding: 6px 16px;
 }
 .driver-popover.nural-tour .driver-popover-footer .driver-popover-next-btn:hover {
-  filter: brightness(1.1);
+  background: var(--accent-dark);
 }
 .driver-popover.nural-tour .nural-tour-voice {
   margin-right: auto;
@@ -207,66 +218,52 @@ h3 {
   overflow: visible !important;
 }
 
-/* Tables and grids (2026-10-12; header 2026-10-14): one look for every table. A navy header
-   with white uppercase labels (--chrome, navy in light and dark, so it reads in both themes),
-   soft zebra, a glowing hover with an accent edge, and a highlighted totals row. Used by
-   DataTable and the hand-built tables (class "nural-table" on the <table>, "nural-table-wrap"
-   on its box). Never colour a table header in a page: change it here. */
+/* Tables and grids (2026-10-12; Nural brand table pattern 2026-10-29): one look for every table.
+   The table sits on its card with no zebra rows: uppercase Primary 700 column labels over one
+   1px Primary 400 rule, rows split by 1px Primary 300 hairlines, a flat hover tint, and the
+   totals row on a Primary 300 band. Used by DataTable and the hand-built tables (class
+   "nural-table" on the <table>, "nural-table-wrap" on its box). Never colour a table header in a
+   page: change it here. */
 .nural-table-wrap {
-  border: 1px solid color-mix(in srgb, var(--primary) 14%, var(--border));
-  border-radius: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
   background: var(--surface);
-  box-shadow: 0 1px 2px rgba(16, 24, 64, 0.04);
 }
 .nural-table thead th {
-  background: var(--chrome);
-  color: #fff;
+  background: var(--surface);
+  color: var(--primary-dark);
   font-family: Manrope, system-ui, sans-serif;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, var(--chrome));
-}
-/* The "i" in a header: white, like the labels. */
-.nural-table thead th button.cursor-help {
-  color: rgba(255, 255, 255, 0.8);
-  border-color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0;
+  border-bottom: 1px solid var(--primary-muted);
 }
 .nural-table thead th:first-child {
-  border-top-left-radius: 13px;
+  border-top-left-radius: 15px;
 }
 .nural-table thead th:last-child {
-  border-top-right-radius: 13px;
-}
-.nural-table tbody tr:nth-child(even) > td {
-  background: color-mix(in srgb, var(--primary) 3%, transparent);
+  border-top-right-radius: 15px;
 }
 .nural-table tbody tr > td {
-  border-bottom: 1px solid color-mix(in srgb, var(--primary) 7%, transparent);
-  transition:
-    background-color 120ms ease,
-    box-shadow 120ms ease;
+  border-bottom: 1px solid var(--primary-soft-300);
+  transition: background-color 120ms ease;
+}
+.nural-table tbody tr:last-child > td {
+  border-bottom: 0;
 }
 .nural-table tbody tr:hover > td {
-  background: color-mix(in srgb, var(--accent) 9%, var(--surface));
-}
-.nural-table tbody tr:hover > td:first-child {
-  box-shadow: inset 3px 0 0 var(--accent);
+  background: var(--primary-soft-100);
 }
 .nural-table tfoot td {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--accent) 10%, var(--surface)),
-    color-mix(in srgb, var(--primary) 12%, var(--surface))
-  );
-  border-top: 2px solid color-mix(in srgb, var(--primary) 45%, transparent);
+  background: var(--primary-soft-300);
   color: var(--primary-dark);
+  font-weight: 700;
 }
 .nural-table tfoot tr > td:first-child {
-  border-bottom-left-radius: 13px;
+  border-bottom-left-radius: 15px;
 }
 .nural-table tfoot tr > td:last-child {
-  border-bottom-right-radius: 13px;
+  border-bottom-right-radius: 15px;
 }
 
 /* Spotlight (components/spotlight/spotlight.ts): the page dimmed around the clicked data point,
@@ -285,10 +282,6 @@ h3 {
   pointer-events: none;
   border-radius: 14px;
   border: 2px solid var(--accent);
-  box-shadow:
-    0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent),
-    0 0 28px color-mix(in srgb, var(--accent) 65%, transparent);
-  animation: spot-pulse 1.6s ease-in-out infinite;
 }
 [data-spotlight] .spot-close {
   position: fixed;
@@ -296,10 +289,9 @@ h3 {
   width: 32px;
   height: 32px;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--primary), var(--accent));
-  color: #fff;
+  background: var(--accent);
+  color: var(--on-accent);
   font-weight: 700;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
 }
 @keyframes spot-pulse {
   0%,
@@ -341,7 +333,7 @@ h3 {
   background-color: color-mix(in srgb, var(--primary) 40%, transparent);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background-color: color-mix(in srgb, var(--accent) 70%, var(--primary));
+  background-color: var(--primary);
 }
 ::-webkit-scrollbar-corner {
   background: transparent;
@@ -356,8 +348,16 @@ h3 {
   position: relative;
   z-index: 10001;
   border-radius: 16px;
-  box-shadow:
-    0 0 0 3px color-mix(in srgb, var(--accent) 70%, transparent),
-    0 0 26px color-mix(in srgb, var(--accent) 55%, transparent);
-  animation: spot-pulse 1.8s ease-in-out infinite;
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+/* The supplied logo in the colourway for the theme (Nural brand, 2026-10-29). */
+.logo-dark {
+  display: none;
+}
+:root[data-theme='dark'] .logo-light {
+  display: none;
+}
+:root[data-theme='dark'] .logo-dark {
+  display: inline-block;
 }

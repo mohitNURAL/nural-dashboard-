@@ -25,21 +25,12 @@ export function alpha(color: string, a: number): string {
   return rgb ? `rgba(${rgb.join(',')},${a})` : color;
 }
 
-/** The colour mixed towards white by `t` (0..1), for the light end of a gradient. */
-export function lighten(color: string, t: number): string {
-  const rgb = rgbOf(color);
-  if (!rgb) return color;
-  const [r, g, b] = rgb.map((c) => Math.round(c + (255 - c) * t));
-  return `rgb(${r},${g},${b})`;
-}
-
-/** Tooltip look in the current theme: frosted glass with a soft shadow. */
+/** Tooltip look (Nural brand): a flat White chip with a Primary 300 hairline, no blur or shadow. */
 export const chartTooltip = () => ({
-  backgroundColor: alpha(token('--surface'), 0.92),
-  borderColor: alpha(token('--primary'), 0.25),
+  backgroundColor: token('--surface'),
+  borderColor: token('--primary-soft-300'),
   borderWidth: 1,
   padding: [8, 12],
-  extraCssText:
-    'backdrop-filter: blur(8px); border-radius: 12px; box-shadow: 0 12px 32px rgba(16,24,64,0.18);',
+  extraCssText: 'border-radius: 8px; box-shadow: none;',
   textStyle: { color: token('--text'), fontFamily: '"Work Sans", system-ui, sans-serif' },
 });

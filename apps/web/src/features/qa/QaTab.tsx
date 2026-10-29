@@ -247,11 +247,7 @@ export function QaTab() {
                           onBack={() => usePlanner.getState().show()}
                         />
                       )}
-                      <button
-                        type="button"
-                        onClick={reset}
-                        className="font-heading text-button text-primary hover:underline"
-                      >
+                      <button type="button" onClick={reset} className="btn btn-link">
                         Show all issues
                       </button>
                     </div>

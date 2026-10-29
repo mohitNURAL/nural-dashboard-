@@ -214,12 +214,8 @@ export function OrgTree() {
   );
 }
 
-const DEPTH_TINT = [
-  'from-primary to-accent',
-  'from-accent to-primary',
-  'from-primary-dark to-primary',
-  'from-accent-dark to-accent',
-];
+// Flat fills by depth (Nural brand): Primary 500, Primary 700, Secondary 500 (navy label).
+const DEPTH_TINT = ['bg-primary text-white', 'bg-navy text-white', 'bg-accent text-on-accent'];
 
 function Node({
   d,
@@ -261,7 +257,7 @@ function Node({
           aria-expanded={open}
           aria-label={`${open ? 'Close' : 'Open'} ${d.name}`}
           className={clsx(
-            'grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br text-white shadow-sm transition group-hover:scale-105',
+            'grid h-11 w-11 shrink-0 place-items-center rounded-full transition',
             DEPTH_TINT[depth % DEPTH_TINT.length],
           )}
         >

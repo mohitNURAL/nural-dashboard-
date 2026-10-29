@@ -65,7 +65,7 @@ export function CheckInsCard() {
             type="button"
             disabled={busy}
             onClick={() => void test()}
-            className="h-9 rounded-control bg-primary px-3 font-heading text-button text-white hover:brightness-110 disabled:opacity-50"
+            className="btn btn-card h-9 px-3 disabled:opacity-50"
           >
             {busy ? 'Sending…' : 'Send me a test'}
           </button>

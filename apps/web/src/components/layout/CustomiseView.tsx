@@ -78,7 +78,7 @@ export function CustomisePanel() {
           type="button"
           onClick={showAll}
           disabled={!hiddenCount}
-          className="rounded-control border border-border px-3 py-1.5 font-heading text-button text-primary hover:border-primary disabled:opacity-40"
+          className="btn btn-stroke px-3 py-1.5 disabled:opacity-40"
         >
           Show all
         </button>

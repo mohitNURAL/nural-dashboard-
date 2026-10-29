@@ -56,7 +56,7 @@ export function WorkflowPage() {
             type="button"
             onClick={() => setEditing(true)}
             data-tour="workflow-edit"
-            className="h-10 rounded-control bg-gradient-to-r from-primary to-accent px-4 font-heading text-button text-white shadow-sm hover:brightness-110"
+            className="btn btn-page h-10 px-4"
           >
             Edit workflow
           </button>
@@ -281,7 +281,7 @@ function Versions() {
               <button
                 type="button"
                 onClick={() => void restore(v.version)}
-                className="font-heading text-button text-primary hover:underline"
+                className="btn btn-link"
               >
                 Restore
               </button>
@@ -290,11 +290,7 @@ function Versions() {
         ))}
         <li className="flex items-center justify-between rounded-xl border border-dashed border-border px-3 py-2 text-table">
           <span>Standard workflow</span>
-          <button
-            type="button"
-            onClick={() => void restore(0)}
-            className="font-heading text-button text-primary hover:underline"
-          >
+          <button type="button" onClick={() => void restore(0)} className="btn btn-link">
             Restore
           </button>
         </li>

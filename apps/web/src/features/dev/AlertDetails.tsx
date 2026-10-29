@@ -141,7 +141,7 @@ export function AlertDetails() {
                 groups.map((g) => g.id),
               )
             }
-            className="font-heading text-button text-primary hover:underline"
+            className="btn btn-link"
           >
             {openIds.size < groups.length ? 'Expand all' : 'Collapse all'}
           </button>

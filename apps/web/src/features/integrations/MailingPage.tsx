@@ -62,7 +62,7 @@ export function MailingPage() {
         <button
           type="button"
           onClick={() => setEditing('new')}
-          className="h-10 rounded-control bg-gradient-to-r from-primary to-accent px-4 font-heading text-button text-white shadow-sm hover:brightness-110"
+          className="btn btn-page h-10 px-4"
           data-tour="mailing-new"
         >
           + New report
@@ -187,8 +187,7 @@ function ReportCard({
   const d = r.definition;
   const topicLabel = (k: string) => cat?.topics.find((t) => t.key === k)?.label ?? k;
   const sent = r.lastRuns.filter((x) => x.status === 'sent' || x.status === 'test').length;
-  const btn =
-    'rounded-control border border-border px-2.5 py-1 font-heading text-button text-primary hover:border-primary';
+  const btn = 'btn btn-stroke px-2.5 py-1';
   return (
     <Card
       title={r.name}
@@ -282,7 +281,7 @@ function ReportCard({
           <Tip label="Go live" hint="Sent to every recipient on schedule">
             <button
               type="button"
-              className="rounded-control bg-good px-2.5 py-1 font-heading text-button text-white hover:brightness-110"
+              className="btn btn-card px-2.5 py-1"
               onClick={() =>
                 void act(
                   () => apiPost(`/api/reports/${r.id}/state`, { state: 'live' }),
@@ -409,11 +408,7 @@ function AddLine({
         placeholder={placeholder}
         className={input}
       />
-      <button
-        type="button"
-        onClick={add}
-        className="rounded-control border border-border px-3 font-heading text-button text-primary hover:border-primary"
-      >
+      <button type="button" onClick={add} className="btn btn-stroke px-3">
         Add
       </button>
     </span>
@@ -828,14 +823,12 @@ function Editor({ report, onClose }: { report: Report | null; onClose: () => voi
                 : 'New reports start in Preview: admins only.'}
             </span>
             <span className="flex gap-2">
-              <Dialog.Close className="rounded-control border border-border px-4 py-2 font-heading text-button text-text-muted">
-                Cancel
-              </Dialog.Close>
+              <Dialog.Close className="btn btn-stroke px-4 py-2">Cancel</Dialog.Close>
               <button
                 type="button"
                 disabled={busy}
                 onClick={() => void save()}
-                className="rounded-control bg-primary px-4 py-2 font-heading text-button text-white hover:brightness-110 disabled:opacity-50"
+                className="btn btn-card px-4 py-2 disabled:opacity-50"
               >
                 {busy ? 'Saving…' : report ? 'Save' : 'Create'}
               </button>

@@ -173,7 +173,7 @@ export function SearchCombobox({
                       >
                         <span
                           className={clsx(
-                            'grid h-3.5 w-3.5 shrink-0 place-items-center border text-[9px] text-white',
+                            'grid h-3.5 w-3.5 shrink-0 place-items-center border text-[10px] text-white',
                             single ? 'rounded-full' : 'rounded-sm',
                             on ? 'border-primary bg-primary' : 'border-primary-soft-300',
                           )}
@@ -195,11 +195,7 @@ export function SearchCombobox({
           {selected.length > 0 && (
             <div className="flex items-center justify-between border-t border-border px-3 py-2">
               <span className="text-text-muted">{selected.length} selected</span>
-              <button
-                type="button"
-                onClick={() => onChange([])}
-                className="font-heading text-button text-primary hover:underline"
-              >
+              <button type="button" onClick={() => onChange([])} className="btn btn-link">
                 Clear
               </button>
             </div>

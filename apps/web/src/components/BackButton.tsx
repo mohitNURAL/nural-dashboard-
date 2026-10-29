@@ -10,7 +10,7 @@ export function BackButton({ label, onBack }: { label: string; onBack: () => voi
         closeSpotlight();
         onBack();
       }}
-      className="inline-flex items-center gap-1.5 rounded-control border border-primary/30 px-3 py-1.5 font-heading text-button text-primary hover:bg-primary-soft-100"
+      className="btn btn-stroke inline-flex items-center gap-1.5 border-primary/30 px-3 py-1.5"
     >
       <span aria-hidden>‹</span> {label}
     </button>
