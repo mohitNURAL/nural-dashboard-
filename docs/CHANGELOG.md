@@ -20,7 +20,11 @@ and the next change fills its ID in.
 
 ## 2026-10-30
 
-- Saving shows at once: a changed field (grids, task view, Daily update) shows its new value
+- One stacking order (tailwind `zIndex`: window, daily, daily-add, confirm, popup, tip): the
+  task search list in the Daily update (Add one of my tasks, Add a task I finished ahead)
+  opened hidden behind the window since 14 Oct; dropdown lists, menus and tips now always
+  open on top, and the confirmation over Add task.
+- `44b7b3d` Saving shows at once: a changed field (grids, task view, Daily update) shows its new value
   with a spinner until the data has it, instead of the old value with no sign of saving
   (`pending.ts`, shared `Spinner`).
 - `e5bf748` Speed of task edits: the in-memory dataset is patched with only the changed tasks instead of

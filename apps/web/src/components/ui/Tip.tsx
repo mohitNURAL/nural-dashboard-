@@ -23,7 +23,7 @@ export function Tip({
           side={side}
           sideOffset={8}
           collisionPadding={12}
-          className="z-[70] max-w-[240px] rounded-control bg-chrome px-2.5 py-1.5 font-heading text-button text-white shadow-pop data-[state=delayed-open]:animate-[tip-in_140ms_ease-out]"
+          className="z-tip max-w-[240px] rounded-control bg-chrome px-2.5 py-1.5 font-heading text-button text-white shadow-pop data-[state=delayed-open]:animate-[tip-in_140ms_ease-out]"
         >
           {label}
           {hint && (

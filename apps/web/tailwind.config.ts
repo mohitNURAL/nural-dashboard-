@@ -65,6 +65,17 @@ export default {
       },
       borderRadius: { card: 'var(--radius-card)', control: 'var(--radius-control)' },
       maxWidth: { page: '1440px' },
+      // One stacking order (2026-10-30): windows, then the Daily update over them, Add task over
+      // that, the confirmation over every window, and pop-ups (dropdown lists, menus, tips) over
+      // everything, so a list never opens hidden behind the window it belongs to.
+      zIndex: {
+        window: '50',
+        daily: '58',
+        'daily-add': '62',
+        confirm: '66',
+        popup: '70',
+        tip: '80',
+      },
     },
     // Only Regular and Bold exist (Nural brand): the in-between weights map to the nearest one.
     fontWeight: {

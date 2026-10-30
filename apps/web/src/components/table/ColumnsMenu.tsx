@@ -51,7 +51,7 @@ export function ColumnsMenu({
           align="end"
           sideOffset={6}
           collisionPadding={12}
-          className="z-[60] max-h-[70vh] w-64 overflow-auto rounded-card border border-border bg-surface p-2 text-text shadow-pop"
+          className="z-popup max-h-[70vh] w-64 overflow-auto rounded-card border border-border bg-surface p-2 text-text shadow-pop"
         >
           <p className="px-2 pt-1 font-heading text-h3 text-primary-dark">Columns</p>
           <p className="px-2 pb-2 text-table text-text-muted">Tick to show; drag ⠿ to order.</p>

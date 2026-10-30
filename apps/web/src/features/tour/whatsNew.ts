@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-30-lists-on-top',
+    date: '2026-10-30',
+    tab: 'daily',
+    title: 'Daily update: the task search list shows again',
+    steps: [
+      {
+        target: '[data-tour="daily-plan"]',
+        title: 'Add one of my tasks',
+        text: 'Its list opened behind the Daily update window, so a click seemed to do nothing. It now opens on top, as every list and menu does.',
+      },
+    ],
+  },
+  {
     id: '2026-10-30-saving-shows',
     date: '2026-10-30',
     tab: 'dev',

@@ -55,12 +55,12 @@ export function DailyDialog() {
     <Dialog.Root open={!!mode} onOpenChange={(o) => !o && later()}>
       <Dialog.Portal>
         <Dialog.Overlay
-          className="fixed inset-0 z-[58] overlay"
+          className="fixed inset-0 z-daily overlay"
           style={{ animation: 'fade-in 160ms ease-out' }}
         />
         <Dialog.Content
           aria-describedby={undefined}
-          className="fixed left-1/2 top-1/2 z-[58] flex max-h-[92vh] w-[min(1240px,96vw)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop"
+          className="fixed left-1/2 top-1/2 z-daily flex max-h-[92vh] w-[min(1240px,96vw)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop"
           style={{ animation: 'tour-in 200ms cubic-bezier(0.2,0,0,1)' }}
         >
           <div className="flex shrink-0 items-start gap-3 px-5 pb-3 pt-4">

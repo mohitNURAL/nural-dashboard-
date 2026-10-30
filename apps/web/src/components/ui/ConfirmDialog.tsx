@@ -73,11 +73,11 @@ export function ConfirmHost() {
     <Dialog.Root open={!!current} onOpenChange={(o) => !o && answer(false)}>
       <Dialog.Portal>
         <Dialog.Overlay
-          className="fixed inset-0 z-[60] overlay"
+          className="fixed inset-0 z-confirm overlay"
           style={{ animation: 'fade-in 160ms ease-out' }}
         />
         <Dialog.Content
-          className="fixed left-1/2 top-1/2 z-[60] w-[min(440px,92vw)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-card border border-border bg-surface shadow-pop"
+          className="fixed left-1/2 top-1/2 z-confirm w-[min(440px,92vw)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-card border border-border bg-surface shadow-pop"
           style={{ animation: 'tour-in 200ms cubic-bezier(0.2,0,0,1)' }}
         >
           {current && (

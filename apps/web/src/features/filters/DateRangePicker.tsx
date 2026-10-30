@@ -79,7 +79,7 @@ export function DateRangePicker({ value, onChange }: Props) {
         <Popover.Content
           align="end"
           sideOffset={4}
-          className="z-50 w-72 space-y-3 rounded-card border border-border bg-surface p-3 shadow-pop"
+          className="z-popup w-72 space-y-3 rounded-card border border-border bg-surface p-3 shadow-pop"
         >
           <div className="flex rounded-control bg-primary-soft-100 p-0.5" role="radiogroup">
             {(['created', 'deadline'] as const).map((f) => (

@@ -22,7 +22,7 @@ export function InfoTip({ text, label }: { text: string; label?: string }) {
           side="top"
           sideOffset={6}
           collisionPadding={12}
-          className="z-[60] max-w-[260px] rounded-control bg-chrome px-2.5 py-1.5 font-body text-table normal-case leading-snug tracking-normal text-white shadow-pop"
+          className="z-tip max-w-[260px] rounded-control bg-chrome px-2.5 py-1.5 font-body text-table normal-case leading-snug tracking-normal text-white shadow-pop"
         >
           {text}
           {showing && <span className="mt-1 block text-primary-soft-300">{showing}</span>}

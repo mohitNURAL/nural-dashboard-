@@ -125,7 +125,7 @@ export function SearchCombobox({
         <Popover.Content
           align="start"
           sideOffset={4}
-          className="z-50 w-[var(--radix-popover-trigger-width)] min-w-[16rem] rounded-card border border-border bg-surface shadow-pop"
+          className="z-popup w-[var(--radix-popover-trigger-width)] min-w-[16rem] rounded-card border border-border bg-surface shadow-pop"
         >
           <Command shouldFilter={false} label={label}>
             {/* The same search box look as everywhere (ui/SearchInput): icon, clear ×. */}
