@@ -1195,6 +1195,8 @@ The dashboard shows each person around, in their own scope, and walks them throu
 **Switches name what they change (2026-10-12).** A tour step for a switch or filter lists the data points it changes (`affects` in `steps.ts`); while it shows they glow above the dimmed page, and the text says which data points do not follow it: KPI Day / Week / Month (Closed, On-time, Project health, People; not Open, On hold, Overdue, Active projects, No deadline), Development All / Dev / Issues (every tile and card), Insights 7 / 14 / 30 days (lagging, has room, findings, projects, load, pulls; not overload, split work, release plan). A common step explains that one number can differ between two places. Tour bubbles that land away from their element are moved next to it (`keepNear` in `runTour.ts`).
 
 
+**Tours and windows (2026-10-30).** A tour never runs under a window (any open dialog: the Daily update, Add task, the task view, a confirmation): one that is due waits until the window closes, and one already running ends when a window opens and plays again once it closes (`windowOpen`, runTour.ts; useGuidedTour). A tour lets clicks through only to the element it highlights, so under a window it made the window look frozen.
+
 ## 17. Employee module (2026-10-11)
 
 For people with the **employees** right (by default admins, PM and team leads). **Access permissions** needs the **admin** right. Pages open from the side drawer's *Employees* group. Data comes from Bitrix24 (users, departments) and the dashboard (sign-ins, activity, rights). Code: `apps/api/src/routes/employees.ts`, `access.ts`; `apps/web/src/features/employees`.

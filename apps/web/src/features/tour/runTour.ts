@@ -15,13 +15,23 @@ interface Options {
   doneLabel?: string;
   /** Small label above the title, e.g. "Guided tour" or "What's new". */
   kind?: string;
-  /** Called when the tour ends; `finished` = the last step's button was pressed. */
-  onEnd: (finished: boolean) => void;
+  /**
+   * Called when the tour ends; `finished` = the last step's button was pressed, `interrupted` = a
+   * window opened over it (the person did not close it).
+   */
+  onEnd: (finished: boolean, interrupted: boolean) => void;
 }
 
 let active: ReturnType<typeof driver> | undefined;
 
 export const tourRunning = () => !!active?.isActive();
+
+/**
+ * A window is open (a dialog: Daily update, Add task, task view, a confirmation). A tour must not
+ * run under it (2026-10-30): driver.js lets clicks through only to the highlighted element, so
+ * the window looked frozen (Vishal, Add task did nothing while a What's-new tour had started).
+ */
+export const windowOpen = () => !!document.querySelector('[role="dialog"][data-state="open"]');
 
 /**
  * What to highlight for a step: the element, or for one taller than most of the screen (an open
@@ -48,9 +58,10 @@ export function runTour(
   steps: TourStep[],
   { voice: voiceOn, onVoice, doneLabel, kind = 'Guided tour', onEnd }: Options,
 ) {
-  if (!steps.length || tourRunning()) return;
+  if (!steps.length || tourRunning() || windowOpen()) return;
   let voice = voiceOn && voiceAvailable();
   let finished = false;
+  let interrupted = false;
   const read = (i: number) => {
     const s = steps[i];
     if (voice && s) speak(`${s.title}. ${s.text}`);
@@ -141,13 +152,18 @@ export function runTour(
       mark(undefined);
       stopSpeaking();
       active = undefined;
-      onEnd(finished);
+      onEnd(finished, interrupted);
     },
   });
 
-  // Keep the bubble and the highlight on the element as the page settles or scrolls.
+  // Keep the bubble and the highlight on the element as the page settles or scrolls. A window
+  // opening ends the tour, so the window works.
   let last = '';
   const follow = window.setInterval(() => {
+    if (windowOpen()) {
+      interrupted = true;
+      return d.destroy();
+    }
     const el = current;
     if (!el?.isConnected) return;
     const r = el.getBoundingClientRect();

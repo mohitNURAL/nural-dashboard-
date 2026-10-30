@@ -19,7 +19,7 @@ import {
   unseenFeatures,
   visibleSteps,
 } from './logic';
-import { runTour, tourRunning } from './runTour';
+import { runTour, tourRunning, windowOpen } from './runTour';
 import { COMMON_STEPS, roleStep, TAB_LABEL, TAB_STEPS, type TourStep } from './steps';
 import { WHATS_NEW } from './whatsNew';
 
@@ -32,6 +32,8 @@ export const useTourRequest = create<{ n: number; request: () => void }>((set) =
 const present = (selector: string) => !!document.querySelector(selector);
 /** Lets the tab draw its tiles and cards before the tour looks for them. */
 const SETTLE_MS = 1500;
+/** How often a tour waiting for a window to close checks again. */
+const WINDOW_WAIT_MS = 2000;
 
 export const tourTabs = (me: Me) => tabsFor({ kpi: me.kpi ?? me.full, support: me.support });
 
@@ -72,8 +74,15 @@ export function useGuidedTour(tab: Tab, setTab: (t: Tab) => void) {
       : [];
     if (!manual && !due && !features.length) return;
 
-    const timer = window.setTimeout(() => {
+    let timer = 0;
+    const attempt = () => {
       if (tourRunning()) return;
+      // A window is open (e.g. the Daily update): wait until it closes, then play; nothing is
+      // marked seen before it plays (2026-10-30).
+      if (windowOpen()) {
+        timer = window.setTimeout(attempt, WINDOW_WAIT_MS);
+        return;
+      }
       const member = !me.full;
       if (manual || due) {
         const first = manual || firstOfSignIn(prefs.loginCount, prefs.tour);
@@ -95,6 +104,7 @@ export function useGuidedTour(tab: Tab, setTab: (t: Tab) => void) {
         play(visibleSteps(steps, member, present), prefs, {
           doneLabel: next ? `Next: ${TAB_LABEL[next]} tab →` : 'Done',
           onEnd: (finished) => finished && next && setTab(next),
+          again,
         });
         return;
       }
@@ -104,8 +114,13 @@ export function useGuidedTour(tab: Tab, setTab: (t: Tab) => void) {
       const steps = features.flatMap((w) =>
         w.steps.map((s) => ({ ...s, title: `New: ${s.title}` })),
       );
-      play(visibleSteps(steps, member, present), prefs, {});
-    }, SETTLE_MS);
+      play(visibleSteps(steps, member, present), prefs, { again });
+    };
+    // Ended by a window opening over it: play it again once the window closes.
+    const again = () => {
+      timer = window.setTimeout(attempt, WINDOW_WAIT_MS);
+    };
+    timer = window.setTimeout(attempt, SETTLE_MS);
     return () => window.clearTimeout(timer);
     // prefs.tour changes after each save; the tour state checks above keep it from replaying.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -135,13 +150,13 @@ export function useGuidedTour(tab: Tab, setTab: (t: Tab) => void) {
   function play(
     steps: TourStep[],
     p: Prefs,
-    o: { doneLabel?: string; onEnd?: (finished: boolean) => void },
+    o: { doneLabel?: string; onEnd?: (finished: boolean) => void; again?: () => void },
   ) {
     runTour(steps, {
       voice: !!p.tour.voice,
       onVoice: (on) => save((cur) => ({ tour: { ...cur.tour, voice: on } })),
       doneLabel: o.doneLabel,
-      onEnd: (finished) => o.onEnd?.(finished),
+      onEnd: (finished, interrupted) => (interrupted ? o.again?.() : o.onEnd?.(finished)),
     });
   }
 }

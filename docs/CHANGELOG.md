@@ -20,7 +20,12 @@ and the next change fills its ID in.
 
 ## 2026-10-30
 
-- One stacking order (tailwind `zIndex`: window, daily, daily-add, confirm, popup, tip): the
+- Guided tours never run under a window: a What's-new tour that started by itself (1.5 s after
+  the page opened) blocked every click outside its highlight, so with the Daily update open
+  + Add task did nothing and the page looked frozen (Vishal, reproduced in headless Chrome).
+  A tour now waits while any dialog is open, ends when one opens, and plays again once it
+  closes (`windowOpen` in runTour.ts).
+- `ea921a9` One stacking order (tailwind `zIndex`: window, daily, daily-add, confirm, popup, tip): the
   task search list in the Daily update (Add one of my tasks, Add a task I finished ahead)
   opened hidden behind the window since 14 Oct; dropdown lists, menus and tips now always
   open on top, and the confirmation over Add task.

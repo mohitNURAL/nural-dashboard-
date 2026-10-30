@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-10-30-tours-wait',
+    date: '2026-10-30',
+    tab: 'daily',
+    title: 'Daily update: Add task no longer gets stuck',
+    steps: [
+      {
+        target: '[data-tour="daily-plan"]',
+        title: '+ Add task works every time',
+        text: 'A guided tour could start behind the Daily update and block its buttons. Tours now wait until you close the window.',
+      },
+    ],
+  },
+  {
     id: '2026-10-30-lists-on-top',
     date: '2026-10-30',
     tab: 'daily',
