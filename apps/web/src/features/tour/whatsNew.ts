@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-11-02-your-order-freeze',
+    date: '2026-11-02',
+    tab: 'daily',
+    title: 'Daily update: Add to plan and + Add task no longer freeze',
+    steps: [
+      {
+        target: '[data-tour="daily-plan"]',
+        title: 'Works with your row order',
+        text: 'With a table set to "Your order", clicking Add to plan or + Add task froze the page. Both work again, and your order is kept.',
+      },
+    ],
+  },
+  {
     id: '2026-11-02-no-frozen-page',
     date: '2026-11-02',
     tab: 'dev',

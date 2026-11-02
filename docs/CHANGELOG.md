@@ -20,7 +20,12 @@ and the next change fills its ID in.
 
 ## 2026-11-02
 
-- No frozen page (Faiz, Vishal): an enlarged card or a spotlight list closes again with a click
+- Daily update froze on Add to plan or + Add task for anyone with a table in "Your order"
+  (Faiz: Upcoming). DataTable passed a new [] as the sort state on every render in that mode;
+  the table took it as a sort change, reset and rendered again, forever, once a click redrew
+  it. Sort, column order and hidden columns are now stable values. Found by pausing the hung
+  page on Faiz's own data (read-only, writes blocked).
+- `a36f4e5` No frozen page (Faiz, Vishal): an enlarged card or a spotlight list closes again with a click
   outside or Escape (since beb15c0 a stray click on a card's empty area zoomed it and left the
   page dimmed with only a small ×); windows with a form stay ×-only, and a click outside or
   Escape shakes them and lights up the × (`nudge`, the top layer by z-index). A tour never starts

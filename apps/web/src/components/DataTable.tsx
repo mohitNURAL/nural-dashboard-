@@ -13,7 +13,7 @@ import {
   type SortingState,
 } from '@tanstack/react-table';
 import clsx from 'clsx';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { InfoTip } from './InfoTip';
 import { ColumnsMenu } from './table/ColumnsMenu';
 import { dropRow, inOrder, moveTo, useTableLayout } from './table/useTableLayout';
@@ -70,6 +70,12 @@ interface Props<T> {
   tableId?: string;
 }
 
+// Stable empty values for the table state (2026-11-02). A new [] on every render made the
+// table see "sorting changed", reset itself and render again, forever: with "Your order" on, a
+// click that redrew the table (Daily update: Add to plan, + Add task) froze the page.
+const NO_SORT: SortingState = [];
+const NO_ORDER: string[] = [];
+
 export function DataTable<T>({
   columns,
   data,
@@ -91,16 +97,22 @@ export function DataTable<T>({
   const [localSorting, setLocalSorting] = useState<SortingState>(initialSorting);
   const manual = controlledSorting !== undefined;
   const lay = useTableLayout(tableId);
+  const hiddenKey = lay.hidden.join(',');
+  const columnVisibility = useMemo(
+    () => Object.fromEntries(lay.hidden.map((h) => [h, false])),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [hiddenKey],
+  );
   // In "Your order" no sort arrow shows: the rows are in the reader's order.
-  const sorting = lay.custom ? [] : manual ? controlledSorting : localSorting;
+  const sorting = lay.custom ? NO_SORT : manual ? controlledSorting : localSorting;
 
   const table = useReactTable({
     data,
     columns,
     state: {
       sorting,
-      columnOrder: lay.cols ?? [],
-      columnVisibility: Object.fromEntries(lay.hidden.map((h) => [h, false])),
+      columnOrder: lay.cols ?? NO_ORDER,
+      columnVisibility,
     },
     onSortingChange: (updater) => {
       if (lay.custom) lay.setCustom(false);
