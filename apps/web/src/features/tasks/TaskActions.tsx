@@ -9,6 +9,9 @@ import clsx from 'clsx';
 import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { apiPost } from '../../api/client';
+
+/** Longest a save waits for its answer (the server gives Bitrix24 40 s per call). */
+export const SAVE_WAIT_MS = 60_000;
 import { useMe } from '../../api/me';
 import { API_KEY, useApi } from '../../api/queries';
 import type { BitrixStatus, BoardStage, Priority, TaskRow } from '../../api/types';
@@ -55,7 +58,7 @@ function useSave(task: TaskRow, field: EditField) {
   const save = async (path: string, body: unknown, done: string, show: ReactNode) => {
     start(task, field, show);
     try {
-      await apiPost(`/api/tasks/${task.id}/${path}`, body);
+      await apiPost(`/api/tasks/${task.id}/${path}`, body, 'POST', { timeoutMs: SAVE_WAIT_MS });
       toast.success(done, { description: 'Saved in Bitrix24. It shows here in a moment.' });
       // The change syncs back through Bitrix24; refresh when it has (live updates also do).
       setTimeout(() => void queryClient.invalidateQueries({ queryKey: [API_KEY] }), 2000);

@@ -320,6 +320,14 @@ function explain(e: unknown, denied?: string): { status: number; message: string
     }
     return { status: 400, message: `Bitrix24: ${e.description || e.code}` };
   }
+  // The person's call waited its 40 s (bitrix/limiter.ts USER_CALL_TIMEOUT_MS).
+  if (e instanceof Error && /timed out/i.test(e.message)) {
+    return {
+      status: 504,
+      message:
+        'Bitrix24 is taking too long to answer. The change may still go through: check the task in a minute before trying again.',
+    };
+  }
   return { status: 502, message: 'Bitrix24 could not be reached. Try again.' };
 }
 

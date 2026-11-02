@@ -63,6 +63,16 @@ export interface LimiterOptions {
   callTimeoutMs?: number;
 }
 
+/**
+ * A person's own edit (task action, Add task, people change) waits at most this long and is tried
+ * at most twice (2026-11-02). Reads keep the long, patient retries; a person waiting on a save
+ * gets an answer within seconds instead of a form stuck on "Saving" for minutes.
+ */
+export const USER_CALL_TIMEOUT_MS = 40_000;
+export const USER_ATTEMPTS = 2;
+/** Creating twice would make two tasks: never retried. */
+const NOT_RETRIED = new Set(['tasks.task.add', 'department.add']);
+
 // Error details cross Redis as a plain message, so the code is encoded in it and parsed back.
 const ERROR_RE = /^(\S+): \[([^\]]+)\] ?([\s\S]*)$/;
 
@@ -153,15 +163,28 @@ export function createBitrixLimiter({
     priority?: number,
   ): Promise<BitrixResponse<T>> {
     await ready;
+    const user = !!data.user;
     const job = await queue.add(data.method, data, {
       ...(forget && { removeOnComplete: true, removeOnFail: true }),
       ...(priority && { priority }),
+      ...(user && {
+        attempts: NOT_RETRIED.has(data.method) ? 1 : USER_ATTEMPTS,
+        backoff: { type: 'fixed', delay: backoffMs },
+      }),
     });
     try {
-      const out = (await job.waitUntilFinished(events, callTimeoutMs)) as BitrixResponse<T>;
+      const out = (await job.waitUntilFinished(
+        events,
+        user ? Math.min(callTimeoutMs, USER_CALL_TIMEOUT_MS) : callTimeoutMs,
+      )) as BitrixResponse<T>;
       callCount++;
       return out;
     } catch (err) {
+      // Timed out while still queued: take it back, so it never lands after the person was told
+      // it failed (a job already running cannot be removed; that one finishes as it may).
+      if (user && /timed out/i.test(err instanceof Error ? err.message : '')) {
+        await job.remove().catch(() => undefined);
+      }
       const msg = err instanceof Error ? err.message : String(err);
       const m = ERROR_RE.exec(msg);
       if (m) throw new BitrixError(m[1]!, m[2]!, m[3] ?? '', false);

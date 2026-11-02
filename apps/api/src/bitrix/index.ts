@@ -18,6 +18,8 @@ export function getBitrix(opts: Pick<LimiterOptions, 'worker'> = {}): BitrixLimi
     userRawCall: createRawCaller({
       baseUrl: new URL('/rest/', config.BITRIX_INBOUND_URL).toString(),
       mode: 'userAction',
+      // Two tries fit in the 40 s a person waits (limiter USER_CALL_TIMEOUT_MS).
+      timeoutMs: 18_000,
     }),
     ...opts,
   });

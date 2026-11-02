@@ -138,6 +138,9 @@ export function AddTaskDialog({
             deadline: r.deadline || null,
             done: forWrap && r.done,
           },
+          'POST',
+          // Create, then complete when done: two Bitrix24 calls of at most 40 s each.
+          { timeoutMs: 90_000 },
         );
         for (const f of t.failures ?? [])
           toast.error(`Created, not completed: ${f.title}`, { description: f.message });

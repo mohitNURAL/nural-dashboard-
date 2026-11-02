@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-11-02-no-frozen-page',
+    date: '2026-11-02',
+    tab: 'dev',
+    title: 'The page no longer looks frozen',
+    steps: [
+      {
+        target: 'header',
+        title: 'Windows keep your work',
+        text: 'A window you fill in (the task view, Add task, the Daily update) closes only with its ×: a click outside or Escape shakes it and lights up the ×. An enlarged card or a list opened from a number closes with a click outside again. A slow Bitrix24 no longer leaves a save spinning: after a minute at most you get a message. And a tour no longer pops up the moment you close a task.',
+      },
+    ],
+  },
+  {
     id: '2026-11-02-close-with-x',
     date: '2026-11-02',
     tab: 'dev',
@@ -26,7 +39,7 @@ export const WHATS_NEW: WhatsNew[] = [
       {
         target: 'header',
         title: 'Your details stay put',
-        text: 'A window, the task view, an enlarged card or a highlighted number now stays open when you click outside it or press Escape. Close it with its × (or Cancel) button, so a task you are editing is never closed by accident.',
+        text: 'A window or the task view now stays open when you click outside it or press Escape. Close it with its × (or Cancel) button, so a task you are editing is never closed by accident.',
       },
     ],
   },

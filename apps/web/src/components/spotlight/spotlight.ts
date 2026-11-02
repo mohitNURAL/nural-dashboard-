@@ -136,6 +136,9 @@ export function spotlight(panel: HTMLElement | null, opts: { onClose?: () => voi
   // Cards above may still load and move the point: follow it while the spotlight is on.
   let frame = 0;
   const follow = () => {
+    // The list was redrawn or closed (e.g. after a task update): put the spotlight away, so the
+    // page is never left dimmed and locked with nothing in the middle (2026-11-02).
+    if (!panel.isConnected || !panel.getClientRects().length) return close?.();
     place();
     frame = requestAnimationFrame(follow);
   };
@@ -152,11 +155,24 @@ export function spotlight(panel: HTMLElement | null, opts: { onClose?: () => voi
     );
   }
 
-  // Only the close button puts it away (2026-11-02): no Escape, no click on the dimmed page.
+  const onKey = (e: KeyboardEvent) => {
+    // Escape inside an open popup (a picker, the task view) closes that first.
+    if (
+      e.key === 'Escape' &&
+      !document.querySelector('[role=dialog], [data-radix-popper-content-wrapper]')
+    )
+      close?.();
+  };
+  const onDown = (e: MouseEvent) => {
+    if (e.target instanceof Element && e.target.closest('.spot-dim')) close?.();
+  };
+  window.addEventListener('keydown', onKey);
+  layer.addEventListener('mousedown', onDown);
   btn.addEventListener('click', () => close?.());
 
   close = () => {
     cancelAnimationFrame(frame);
+    window.removeEventListener('keydown', onKey);
     window.removeEventListener('resize', placePanel);
     layer.remove();
     placeholder.remove();

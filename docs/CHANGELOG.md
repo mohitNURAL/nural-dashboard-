@@ -20,7 +20,17 @@ and the next change fills its ID in.
 
 ## 2026-11-02
 
-- Boxes close only with their × (or Cancel) button: a click outside or Escape no longer closes
+- No frozen page (Faiz, Vishal): an enlarged card or a spotlight list closes again with a click
+  outside or Escape (since beb15c0 a stray click on a card's empty area zoomed it and left the
+  page dimmed with only a small ×); windows with a form stay ×-only, and a click outside or
+  Escape shakes them and lights up the × (`nudge`, the top layer by z-index). A tour never starts
+  the moment a window closes or replays after one interrupts it (it ate the next click after a
+  task update). A person's Bitrix24 call (task edit, Add task, people change) waits at most 40 s
+  and is tried at most twice, Add task never twice (limiter USER_CALL_TIMEOUT_MS; it retried 5
+  times for up to 2 minutes with the form stuck on Saving); the browser gives up after a minute
+  with a message. A spotlight whose list is redrawn puts itself away, and a body click or scroll
+  lock left with no window open is lifted within a second (components/ui/unfreeze.ts).
+- `beb15c0` Boxes close only with their × (or Cancel) button: a click outside or Escape no longer closes
   any dialog, the task view (so a task being edited is never lost), an enlarged card or a
   spotlight (`keepOpen` in components/ui/keepOpen.ts on every Dialog.Content).
 

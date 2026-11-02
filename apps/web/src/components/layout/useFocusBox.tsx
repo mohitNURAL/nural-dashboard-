@@ -1,6 +1,5 @@
 // Focus view (2026-10-11): clicking a card's title or empty area brings it to the centre of the
-// screen with the page behind blurred; only its close button puts it back (2026-11-02: a click
-// outside or Escape no longer does).
+// screen with the page behind blurred; a click outside, Escape or the close button puts it back.
 // Clicks on counts, charts, tables, buttons and fields keep doing what they do (drill-downs).
 // The card stays mounted where it is (sorting, paging and chart state are kept); only its
 // position changes, animated from where it was (FLIP) unless the system asks for less motion.
@@ -78,9 +77,14 @@ export function useFocusBox<T extends HTMLElement>() {
 
   useEffect(() => {
     if (!focused) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close();
     const onResize = () => close();
+    window.addEventListener('keydown', onKey);
     window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('resize', onResize);
+    };
   }, [focused, close]);
 
   /** On the card: a click on its title or empty area focuses it. */
@@ -114,6 +118,7 @@ export function useFocusBox<T extends HTMLElement>() {
     ? createPortal(
         <div
           aria-hidden
+          onClick={close}
           className="fixed inset-0 z-40 overlay"
           style={reduceMotion() ? undefined : { animation: 'fade-in 200ms ease-out' }}
         />,

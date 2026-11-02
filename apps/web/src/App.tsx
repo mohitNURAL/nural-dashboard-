@@ -7,6 +7,7 @@ import { allowedPage, firstPage, navFor } from './components/shell/nav';
 import { useDrawer } from './components/shell/drawerStore';
 import { ConfirmHost } from './components/ui/ConfirmDialog';
 import { trackClicks } from './components/spotlight/spotlight';
+import { watchForStuckLocks } from './components/ui/unfreeze';
 import { AppFooter } from './components/shell/AppFooter';
 import { SideDrawer } from './components/shell/SideDrawer';
 import { DevTab } from './features/dev/DevTab';
@@ -56,6 +57,8 @@ export default function App() {
   const newTabs = useNewTabs();
   // Which data point a click came from, for the spotlight (components/spotlight).
   useEffect(() => trackClicks(), []);
+  // A page never stays frozen by a lock left behind by a closed window (2026-11-02).
+  useEffect(() => watchForStuckLocks(), []);
 
   return (
     <div className="min-h-screen">

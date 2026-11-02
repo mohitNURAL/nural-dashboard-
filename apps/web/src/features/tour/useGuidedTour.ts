@@ -32,8 +32,6 @@ export const useTourRequest = create<{ n: number; request: () => void }>((set) =
 const present = (selector: string) => !!document.querySelector(selector);
 /** Lets the tab draw its tiles and cards before the tour looks for them. */
 const SETTLE_MS = 1500;
-/** How often a tour waiting for a window to close checks again. */
-const WINDOW_WAIT_MS = 2000;
 
 export const tourTabs = (me: Me) => tabsFor({ kpi: me.kpi ?? me.full, support: me.support });
 
@@ -77,12 +75,11 @@ export function useGuidedTour(tab: Tab, setTab: (t: Tab) => void) {
     let timer = 0;
     const attempt = () => {
       if (tourRunning()) return;
-      // A window is open (e.g. the Daily update): wait until it closes, then play; nothing is
-      // marked seen before it plays (2026-10-30).
-      if (windowOpen()) {
-        timer = window.setTimeout(attempt, WINDOW_WAIT_MS);
-        return;
-      }
+      // A window is open (the task view, the Daily update): no tour now. Starting it the moment
+      // the window closes dimmed the page and ate the next click, which looked like a frozen
+      // screen after a task update (2026-11-02). Nothing is marked seen, so it plays the next
+      // time the tab opens (the "New" dot stays).
+      if (windowOpen()) return;
       const member = !me.full;
       if (manual || due) {
         const first = manual || firstOfSignIn(prefs.loginCount, prefs.tour);
@@ -116,10 +113,8 @@ export function useGuidedTour(tab: Tab, setTab: (t: Tab) => void) {
       );
       play(visibleSteps(steps, member, present), prefs, { again });
     };
-    // Ended by a window opening over it: play it again once the window closes.
-    const again = () => {
-      timer = window.setTimeout(attempt, WINDOW_WAIT_MS);
-    };
+    // Ended by a window opening over it: not replayed by itself (2026-11-02, see above).
+    const again = () => undefined;
     timer = window.setTimeout(attempt, SETTLE_MS);
     return () => window.clearTimeout(timer);
     // prefs.tour changes after each save; the tour state checks above keep it from replaying.

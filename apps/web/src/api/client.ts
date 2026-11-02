@@ -39,13 +39,34 @@ export async function apiGet<T>(
   return (await res.json()) as T;
 }
 
-/** POST JSON; the error message comes from the API's `error` field. */
-export async function apiPost<T>(path: string, body: unknown, method = 'POST'): Promise<T> {
-  const res = await fetch(path, {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+/** No answer in time (a save waiting on Bitrix24): the form is freed with this message. */
+export const SLOW_SAVE =
+  'No answer from Bitrix24 in time. The change may still go through: check the task in a minute before trying again.';
+
+/**
+ * POST JSON; the error message comes from the API's `error` field. With `timeoutMs`, a request
+ * still unanswered by then fails with SLOW_SAVE (2026-11-02), so a save never leaves a form
+ * stuck on "Saving".
+ */
+export async function apiPost<T>(
+  path: string,
+  body: unknown,
+  method = 'POST',
+  { timeoutMs }: { timeoutMs?: number } = {},
+): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(path, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      ...(timeoutMs && { signal: AbortSignal.timeout(timeoutMs) }),
+    });
+  } catch (e) {
+    if (e instanceof DOMException && (e.name === 'TimeoutError' || e.name === 'AbortError'))
+      throw new ApiError(0, SLOW_SAVE);
+    throw e;
+  }
   if (res.status === 401) await on401(res);
   const data = (await res.json().catch(() => null)) as (T & { error?: string }) | null;
   if (!res.ok) throw new ApiError(res.status, data?.error ?? `${res.status} ${res.statusText}`);

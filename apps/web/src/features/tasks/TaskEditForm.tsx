@@ -21,6 +21,7 @@ import {
   firstAllowedDay,
   istDate,
   PRIORITIES,
+  SAVE_WAIT_MS,
   STATUS_CHOICES,
   STATUS_LABEL,
   useCanEdit,
@@ -152,7 +153,13 @@ export function TaskEditForm({
       return;
     setBusy(true);
     try {
-      await apiPost(`/api/tasks/${task.id}/edit`, { edits: changes.map((c) => c.edit) });
+      await apiPost(
+        `/api/tasks/${task.id}/edit`,
+        { edits: changes.map((c) => c.edit) },
+        'POST',
+        // The fields are saved one after another, each within the server's 40 s.
+        { timeoutMs: SAVE_WAIT_MS + changes.length * 40_000 },
+      );
       toast.success(
         `Task ${task.id}: ${changes.length} change${changes.length === 1 ? '' : 's'} saved`,
         {
