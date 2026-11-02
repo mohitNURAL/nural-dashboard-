@@ -4,6 +4,7 @@
 // it is sent (mail with CC, Slack direct message, Slack channels). New reports start in Preview:
 // only admins get them until someone switches them to Live.
 import * as Dialog from '@radix-ui/react-dialog';
+import { keepOpen } from '../../components/ui/keepOpen';
 import { useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { useMemo, useState, type ReactNode } from 'react';
@@ -466,7 +467,10 @@ function Editor({ report, onClose }: { report: Report | null; onClose: () => voi
     <Dialog.Root open onOpenChange={(o) => !o && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 overlay" />
-        <Dialog.Content className="fixed inset-y-4 left-1/2 z-50 flex w-[min(760px,94vw)] -translate-x-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop">
+        <Dialog.Content
+          {...keepOpen}
+          className="fixed inset-y-4 left-1/2 z-50 flex w-[min(760px,94vw)] -translate-x-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop"
+        >
           <div className="flex items-center justify-between border-b border-border px-5 py-4">
             <Dialog.Title className="font-heading text-h1 text-primary-dark">
               {report ? 'Edit report' : 'New report'}
@@ -866,7 +870,10 @@ function PreviewDialog({ report, onClose }: { report: Report; onClose: () => voi
     <Dialog.Root open onOpenChange={(o) => !o && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 overlay" />
-        <Dialog.Content className="fixed inset-y-4 left-1/2 z-50 flex w-[min(820px,94vw)] -translate-x-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop">
+        <Dialog.Content
+          {...keepOpen}
+          className="fixed inset-y-4 left-1/2 z-50 flex w-[min(820px,94vw)] -translate-x-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop"
+        >
           <div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-3">
             <Dialog.Title className="font-heading text-h1 text-primary-dark">
               Preview: {report.name}

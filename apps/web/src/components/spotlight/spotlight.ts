@@ -152,24 +152,11 @@ export function spotlight(panel: HTMLElement | null, opts: { onClose?: () => voi
     );
   }
 
-  const onKey = (e: KeyboardEvent) => {
-    // Escape inside an open popup (a picker, the task view) closes that first.
-    if (
-      e.key === 'Escape' &&
-      !document.querySelector('[role=dialog], [data-radix-popper-content-wrapper]')
-    )
-      close?.();
-  };
-  const onDown = (e: MouseEvent) => {
-    if (e.target instanceof Element && e.target.closest('.spot-dim')) close?.();
-  };
-  window.addEventListener('keydown', onKey);
-  layer.addEventListener('mousedown', onDown);
+  // Only the close button puts it away (2026-11-02): no Escape, no click on the dimmed page.
   btn.addEventListener('click', () => close?.());
 
   close = () => {
     cancelAnimationFrame(frame);
-    window.removeEventListener('keydown', onKey);
     window.removeEventListener('resize', placePanel);
     layer.remove();
     placeholder.remove();

@@ -5,6 +5,7 @@
 // marked. Everyone can view; admins edit the types, set a project's type by hand and map an
 // unknown column to a stage (it becomes one of that stage's column names, for every project).
 import * as Dialog from '@radix-ui/react-dialog';
+import { keepOpen } from '../../components/ui/keepOpen';
 import { STAGE_COLORS, type ProjectType, type Workflow } from '@nural/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
@@ -399,7 +400,10 @@ function TypesEditor({
     <Dialog.Root open onOpenChange={(o) => !o && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 overlay" />
-        <Dialog.Content className="fixed inset-y-4 left-1/2 z-50 flex w-[min(820px,96vw)] -translate-x-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop outline-none">
+        <Dialog.Content
+          {...keepOpen}
+          className="fixed inset-y-4 left-1/2 z-50 flex w-[min(820px,96vw)] -translate-x-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop outline-none"
+        >
           <div className="flex items-center gap-3 border-b border-border px-5 py-3">
             <div className="min-w-0 flex-1">
               <Dialog.Title className="font-heading text-h2 text-primary-dark">

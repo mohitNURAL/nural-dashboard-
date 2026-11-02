@@ -2,6 +2,7 @@
 // confirm(). `await confirm({...})` resolves true on the main button, false on Cancel, Escape or
 // a click outside. One host (<ConfirmHost/>, mounted once in App) shows them one at a time.
 import * as Dialog from '@radix-ui/react-dialog';
+import { keepOpen } from './keepOpen';
 import clsx from 'clsx';
 import type { ReactNode } from 'react';
 import { create } from 'zustand';
@@ -77,6 +78,7 @@ export function ConfirmHost() {
           style={{ animation: 'fade-in 160ms ease-out' }}
         />
         <Dialog.Content
+          {...keepOpen}
           className="fixed left-1/2 top-1/2 z-confirm w-[min(440px,92vw)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-card border border-border bg-surface shadow-pop"
           style={{ animation: 'tour-in 200ms cubic-bezier(0.2,0,0,1)' }}
         >

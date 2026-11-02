@@ -18,9 +18,15 @@ and the next change fills its ID in.
 - Five tables (Alert details, Projects at work, Stage matrix, Ranking, Insights list) still use
   their own markup instead of the shared table.
 
+## 2026-11-02
+
+- Boxes close only with their × (or Cancel) button: a click outside or Escape no longer closes
+  any dialog, the task view (so a task being edited is never lost), an enlarged card or a
+  spotlight (`keepOpen` in components/ui/keepOpen.ts on every Dialog.Content).
+
 ## 2026-10-30
 
-- Guided tours never run under a window: a What's-new tour that started by itself (1.5 s after
+- `0b08063` Guided tours never run under a window: a What's-new tour that started by itself (1.5 s after
   the page opened) blocked every click outside its highlight, so with the Daily update open
   + Add task did nothing and the page looked frozen (Vishal, reproduced in headless Chrome).
   A tour now waits while any dialog is open, ends when one opens, and plays again once it

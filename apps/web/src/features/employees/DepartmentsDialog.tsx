@@ -2,6 +2,7 @@
 // under another, or change its head. Sent to Bitrix24 with the admin's own sign-in after a
 // confirmation; the directory is synced from Bitrix24 right after.
 import * as Dialog from '@radix-ui/react-dialog';
+import { keepOpen } from '../../components/ui/keepOpen';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -286,7 +287,10 @@ export function DepartmentsDialog({ onClose }: { onClose: () => void }) {
     <Dialog.Root open onOpenChange={(o) => !o && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 overlay" />
-        <Dialog.Content className="fixed inset-y-4 left-1/2 z-50 flex w-[min(760px,94vw)] -translate-x-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop outline-none">
+        <Dialog.Content
+          {...keepOpen}
+          className="fixed inset-y-4 left-1/2 z-50 flex w-[min(760px,94vw)] -translate-x-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop outline-none"
+        >
           <div className="flex items-center gap-3 border-b border-border px-5 py-4">
             <span className="grid h-10 w-10 place-items-center text-primary">
               <IconTree size={20} />

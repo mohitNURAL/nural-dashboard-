@@ -3,6 +3,7 @@
 // right on 2026-10-14, at the user's request; it was centred at 70% on 2026-10-13.)
 import { STAGE_COLORS } from '@nural/shared';
 import * as Dialog from '@radix-ui/react-dialog';
+import { keepOpen } from './ui/keepOpen';
 import clsx from 'clsx';
 import { useEffect, useState, type ReactNode } from 'react';
 import type { BoardStage, StageMove, TaskRow } from '../api/types';
@@ -35,6 +36,7 @@ export function TaskDrawer() {
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-[rgb(12_18_38/0.35)]" />
         <Dialog.Content
+          {...keepOpen}
           className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[480px] flex-col bg-surface shadow-pop outline-none"
           aria-describedby={undefined}
         >

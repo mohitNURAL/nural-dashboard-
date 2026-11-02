@@ -20,6 +20,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import * as Dialog from '@radix-ui/react-dialog';
+import { keepOpen } from '../../components/ui/keepOpen';
 import {
   CATEGORY_LABEL,
   DEPARTMENT_LABEL,
@@ -408,7 +409,10 @@ export function WorkflowEditor({ workflow, onClose }: { workflow: Workflow; onCl
     <Dialog.Root open onOpenChange={(o) => !o && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 overlay" />
-        <Dialog.Content className="fixed inset-y-4 left-1/2 z-50 flex w-[min(900px,96vw)] -translate-x-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop outline-none">
+        <Dialog.Content
+          {...keepOpen}
+          className="fixed inset-y-4 left-1/2 z-50 flex w-[min(900px,96vw)] -translate-x-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop outline-none"
+        >
           <div className="flex items-center gap-3 border-b border-border px-5 py-3">
             <div className="min-w-0 flex-1">
               <Dialog.Title className="font-heading text-h2 text-primary-dark">

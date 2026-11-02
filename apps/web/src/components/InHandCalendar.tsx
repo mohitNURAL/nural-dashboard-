@@ -4,6 +4,7 @@
 // project's cell lists who works on it. The cell's tint grows with what is planned in it, so heavy
 // days and weeks stand out for sprint planning. Every count opens its tasks in the tab's list.
 import * as Dialog from '@radix-ui/react-dialog';
+import { keepOpen } from './ui/keepOpen';
 import clsx from 'clsx';
 import { useMemo, useState, type CSSProperties } from 'react';
 import { useApi } from '../api/queries';
@@ -164,7 +165,10 @@ export function InHandCalendarDialog({
     <Dialog.Root open onOpenChange={(o) => !o && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 overlay" />
-        <Dialog.Content className="fixed inset-y-4 left-1/2 z-50 flex w-[min(1480px,98vw)] -translate-x-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop outline-none">
+        <Dialog.Content
+          {...keepOpen}
+          className="fixed inset-y-4 left-1/2 z-50 flex w-[min(1480px,98vw)] -translate-x-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop outline-none"
+        >
           <div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-4">
             <span className="grid h-10 w-10 place-items-center text-primary">
               <IconCalendar size={20} />

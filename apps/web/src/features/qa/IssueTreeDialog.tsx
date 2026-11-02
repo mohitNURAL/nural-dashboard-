@@ -3,6 +3,7 @@
 // each creator opens to who the issues are with (the assignees). The caller picks the count
 // columns; a count closes the popup and opens exactly those issues.
 import * as Dialog from '@radix-ui/react-dialog';
+import { keepOpen } from '../../components/ui/keepOpen';
 import clsx from 'clsx';
 import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import type { Person } from '../../api/types';
@@ -169,7 +170,10 @@ export function IssueTreeDialog<C extends Record<keyof C, number>>({
     <Dialog.Root open onOpenChange={(o) => !o && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 overlay" />
-        <Dialog.Content className="fixed inset-y-4 left-1/2 z-50 flex w-[min(1040px,97vw)] -translate-x-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop outline-none">
+        <Dialog.Content
+          {...keepOpen}
+          className="fixed inset-y-4 left-1/2 z-50 flex w-[min(1040px,97vw)] -translate-x-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop outline-none"
+        >
           <div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-4">
             <span className="grid h-10 w-10 place-items-center text-primary">
               <IconQa size={20} />

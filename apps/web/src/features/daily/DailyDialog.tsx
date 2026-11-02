@@ -7,6 +7,7 @@
 // place like the task lists (2026-10-17). Opens from the dock icon, the Daily update page or before
 // signing out, never by itself. Tables and dropdowns are the shared ones.
 import * as Dialog from '@radix-ui/react-dialog';
+import { keepOpen } from '../../components/ui/keepOpen';
 import { createColumnHelper } from '@tanstack/react-table';
 import clsx from 'clsx';
 import { useEffect, useMemo, useState } from 'react';
@@ -59,6 +60,7 @@ export function DailyDialog() {
           style={{ animation: 'fade-in 160ms ease-out' }}
         />
         <Dialog.Content
+          {...keepOpen}
           aria-describedby={undefined}
           className="fixed left-1/2 top-1/2 z-daily flex max-h-[92vh] w-[min(1240px,96vw)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop"
           style={{ animation: 'tour-in 200ms cubic-bezier(0.2,0,0,1)' }}

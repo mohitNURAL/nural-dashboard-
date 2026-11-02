@@ -4,6 +4,7 @@
 // several are added in one go. Each is assigned to the person and created with their own Bitrix24
 // login (bitrix/methods.ts CREATE_FIELDS); in the wrap-up it can be reported Done at once.
 import * as Dialog from '@radix-ui/react-dialog';
+import { keepOpen } from '../../components/ui/keepOpen';
 import { useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { Fragment, useEffect, useRef, useState } from 'react';
@@ -170,6 +171,7 @@ export function AddTaskDialog({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-daily-add overlay" />
         <Dialog.Content
+          {...keepOpen}
           aria-describedby={undefined}
           className="fixed left-1/2 top-1/2 z-daily-add flex max-h-[90vh] w-[min(1120px,96vw)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-card border border-border bg-surface shadow-pop"
         >

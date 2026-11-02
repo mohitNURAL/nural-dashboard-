@@ -2,6 +2,7 @@
 // their designation and departments (sent to Bitrix24 with the admin's own sign-in). A
 // confirmation lists every change and where it goes before anything is sent.
 import * as Dialog from '@radix-ui/react-dialog';
+import { keepOpen } from '../../components/ui/keepOpen';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -119,7 +120,10 @@ export function EditPerson({ person, onClose }: { person: Employee; onClose: () 
     <Dialog.Root open onOpenChange={(o) => !o && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 overlay" />
-        <Dialog.Content className="fixed inset-y-0 right-0 z-50 flex w-[min(460px,100vw)] flex-col bg-surface shadow-pop outline-none">
+        <Dialog.Content
+          {...keepOpen}
+          className="fixed inset-y-0 right-0 z-50 flex w-[min(460px,100vw)] flex-col bg-surface shadow-pop outline-none"
+        >
           <div className="flex items-center gap-3 border-b border-border px-5 py-4">
             <Avatar id={person.id} name={person.name} size={40} />
             <div className="min-w-0 flex-1">
