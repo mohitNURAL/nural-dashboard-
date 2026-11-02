@@ -20,7 +20,13 @@ and the next change fills its ID in.
 
 ## 2026-11-02
 
-- Daily update froze on Add to plan or + Add task for anyone with a table in "Your order"
+- Pulse account: sign in with a Nural work email (@nuraltech.com, SIGNUP_EMAIL_DOMAINS) and a
+  password, beside Sign in with Bitrix24 (new sign-in page /api/auth/signin; signed-out and
+  session-ended go there too). Create account and Forgot password mail a 6-digit code (Microsoft
+  365, 10 min, 5 tries) and only to an active Bitrix24 user with that email, so the account is
+  that person with the same role and scope. scrypt hashes in local_accounts (migration 0014);
+  5 wrong passwords lock for 15 min; JSON-only posts. Task changes still need Bitrix24 sign-in.
+- `66a894b` Daily update froze on Add to plan or + Add task for anyone with a table in "Your order"
   (Faiz: Upcoming). DataTable passed a new [] as the sort state on every render in that mode;
   the table took it as a sort change, reset and rendered again, forever, once a click redrew
   it. Sort, column order and hidden columns are now stable values. Found by pausing the hung

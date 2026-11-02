@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-11-02-pulse-account',
+    date: '2026-11-02',
+    tab: 'dev',
+    title: 'Sign in with your work email and a Pulse password',
+    steps: [
+      {
+        target: 'header',
+        title: 'A Pulse account',
+        text: 'Besides Sign in with Bitrix24, you can now sign in with your @nuraltech.com email and a Pulse password. On the sign-in page choose Create account: a code is mailed to your work email to confirm it is you. You see exactly what you see today. To change tasks from Pulse, sign in with Bitrix24 once.',
+      },
+    ],
+  },
+  {
     id: '2026-11-02-your-order-freeze',
     date: '2026-11-02',
     tab: 'daily',

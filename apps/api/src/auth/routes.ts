@@ -4,6 +4,13 @@ import { randomBytes } from 'node:crypto';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { authorizeUrl, exchangeCode, portalUserId, type TokenResponse } from './bitrixOAuth';
 import {
+  MIN_PASSWORD,
+  passwordRoutes,
+  type AccountStore,
+  type PasswordMailer,
+  type PortalUser,
+} from './password';
+import {
   COOKIE_DAYS,
   cookie,
   parseCookies,
@@ -16,6 +23,7 @@ import {
   verify,
   type Session,
 } from './session';
+import { signinPage } from './signinPage';
 
 export interface AuthOptions {
   mode: 'off' | 'bitrix';
@@ -53,6 +61,16 @@ export interface AuthOptions {
   /** Defaults to the real code exchange; tests pass a stub. */
   exchange?: (code: string) => Promise<TokenResponse>;
   now?: () => number;
+  /**
+   * Pulse accounts (email and password, 2026-11-02); off without them. The domains allowed to
+   * sign up, the store, the mailer for codes and every portal user (to match the work email).
+   */
+  accounts?: {
+    store: AccountStore;
+    mailer: PasswordMailer;
+    domains: string[];
+    users: () => Promise<Iterable<PortalUser>>;
+  };
 }
 
 const STATE_TTL_SEC = 10 * 60;
@@ -105,26 +123,27 @@ export function authRoutes(app: FastifyInstance, opts: AuthOptions) {
     return { id: s.userId, name: s.name, auth: opts.mode, exp, ...access };
   });
 
-  // After Sign out: a plain page with a way back in (signing in again also picks up new
-  // Bitrix24 permissions, e.g. Tasks).
-  // ?expired=1: the session ran out (SESSION_DAYS after sign-in).
+  // The sign-in page: Pulse account (email and password) and Sign in with Bitrix24. Without
+  // Pulse accounts it is the plain Bitrix24 button page it always was.
+  const domains = opts.accounts?.domains ?? [];
+  const page = (notice?: 'expired' | 'out') =>
+    opts.accounts
+      ? signinPage({ notice, domains, minPassword: MIN_PASSWORD, sessionDays: SESSION_DAYS })
+      : bitrixOnlyPage(notice);
+  app.get<{ Querystring: { expired?: string; out?: string } }>(
+    '/api/auth/signin',
+    async (req, reply) =>
+      reply
+        .type('text/html')
+        .header('Cache-Control', 'no-store')
+        .send(page(req.query.expired ? 'expired' : req.query.out ? 'out' : undefined)),
+  );
+  // After Sign out (?expired=1: the session ran out SESSION_DAYS after sign-in).
   app.get<{ Querystring: { expired?: string } }>('/api/auth/signed-out', async (req, reply) =>
     reply
       .type('text/html')
-      .send(
-        '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
-          '<title>Signed out · Nural Pulse</title>' +
-          '<body style="font-family:system-ui,sans-serif;background:#f8f9fd;color:#231f20;display:grid;place-items:center;min-height:100vh;margin:0">' +
-          '<main style="background:#fff;border:1px solid #dfddde;border-radius:8px;padding:32px;text-align:center;max-width:360px">' +
-          (req.query.expired
-            ? `<h1 style="font-size:18px;color:#18244e;margin:0 0 8px">Your session ended</h1>` +
-              `<p style="margin:0 0 20px;color:#6b6567">For security you are signed out ${SESSION_DAYS} days after signing in. Sign in again to continue.</p>`
-            : '<h1 style="font-size:18px;color:#18244e;margin:0 0 8px">You are signed out</h1>' +
-              '<p style="margin:0 0 20px;color:#6b6567">Nural Pulse</p>') +
-          '<a href="/api/auth/login" style="display:inline-block;background:#32499f;color:#fff;text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:700">Sign in with Bitrix24</a>' +
-          '</main>' +
-          '<p style="margin-top:16px;font-size:12px;color:#8b91a8;text-align:center">Powered by <b>Bitrix24</b> and <b>Nural</b></p></body>',
-      ),
+      .header('Cache-Control', 'no-store')
+      .send(page(req.query.expired ? 'expired' : 'out')),
   );
 
   app.post('/api/auth/logout', async (_req, reply) => {
@@ -136,6 +155,19 @@ export function authRoutes(app: FastifyInstance, opts: AuthOptions) {
   const clientId = opts.clientId ?? '';
   const exchange =
     opts.exchange ?? ((code: string) => exchangeCode(code, clientId, opts.clientSecret ?? ''));
+
+  /** Session cookie for a signed-in person, and the sign-in count. */
+  const startSession = async (reply: FastifyReply, user: { id: number; name: string }) => {
+    await opts
+      .onSignIn?.(user.id)
+      .catch((err: Error) => reply.log.error({ err: err.message }, 'could not count the sign-in'));
+    const s: Session = { userId: user.id, name: user.name, exp: now() + SESSION_DAYS * 86_400_000 };
+    reply.header(
+      'Set-Cookie',
+      cookie(SESSION_COOKIE, sign(s, secret), COOKIE_DAYS * 86_400, opts.secure),
+    );
+  };
+  if (opts.accounts) passwordRoutes(app, { ...opts.accounts, signIn: startSession, now });
 
   app.get('/api/auth/login', async (_req, reply) => {
     const state = randomBytes(16).toString('base64url');
@@ -194,6 +226,23 @@ function refuse(reply: FastifyReply, secure: boolean) {
     .send(
       '<!doctype html><meta charset="utf-8"><title>Sign-in refused</title>' +
         '<p style="font-family:sans-serif">Sign-in was refused. Use your Nural Bitrix24 account, ' +
-        'then <a href="/api/auth/login">try again</a>.</p>',
+        'then <a href="/api/auth/signin">try again</a>.</p>',
     );
+}
+
+function bitrixOnlyPage(notice?: 'expired' | 'out') {
+  return (
+    '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+    '<title>Sign in · Nural Pulse</title>' +
+    '<body style="font-family:system-ui,sans-serif;background:#f8f9fd;color:#231f20;display:grid;place-items:center;min-height:100vh;margin:0">' +
+    '<main style="background:#fff;border:1px solid #dfddde;border-radius:8px;padding:32px;text-align:center;max-width:360px">' +
+    (notice === 'expired'
+      ? `<h1 style="font-size:18px;color:#18244e;margin:0 0 8px">Your session ended</h1>` +
+        `<p style="margin:0 0 20px;color:#6b6567">For security you are signed out ${SESSION_DAYS} days after signing in. Sign in again to continue.</p>`
+      : `<h1 style="font-size:18px;color:#18244e;margin:0 0 8px">${notice === 'out' ? 'You are signed out' : 'Sign in'}</h1>` +
+        '<p style="margin:0 0 20px;color:#6b6567">Nural Pulse</p>') +
+    '<a href="/api/auth/login" style="display:inline-block;background:#32499f;color:#fff;text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:700">Sign in with Bitrix24</a>' +
+    '</main>' +
+    '<p style="margin-top:16px;font-size:12px;color:#8b91a8;text-align:center">Powered by <b>Bitrix24</b> and <b>Nural</b></p></body>'
+  );
 }

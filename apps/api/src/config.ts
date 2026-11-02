@@ -43,6 +43,8 @@ const schema = z
     BITRIX_CLIENT_ID: optionalString,
     BITRIX_CLIENT_SECRET: optionalString,
     SESSION_SECRET: optionalString,
+    // Pulse accounts (email and password, 2026-11-02): work email domains allowed to sign up.
+    SIGNUP_EMAIL_DOMAINS: z.string().default('nuraltech.com'),
     // Report mails (SRS 19): Microsoft 365 through Graph, sent from one Nural mailbox.
     MS_TENANT_ID: optionalString,
     MS_CLIENT_ID: optionalString,

@@ -10,10 +10,10 @@ export class ApiError extends Error {
 
 /**
  * Signed out (SRS 7, Auth). A session that ran out (3 days after sign-in) shows "Your session
- * ended" with a Sign in button; without one, go straight to Sign in with Bitrix24.
+ * ended"; either way the sign-in page offers the Pulse account and Sign in with Bitrix24.
  */
 export function signInAgain(expired: boolean) {
-  window.location.href = expired ? '/api/auth/signed-out?expired=1' : '/api/auth/login';
+  window.location.href = expired ? '/api/auth/signin?expired=1' : '/api/auth/signin';
 }
 
 async function on401(res: Response) {

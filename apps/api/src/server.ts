@@ -2,6 +2,7 @@ import cors from '@fastify/cors';
 import Fastify, { type FastifyBaseLogger } from 'fastify';
 import { pathToFileURL } from 'node:url';
 import { ZodError } from 'zod';
+import type { AccountStore } from './auth/password';
 import { authRoutes, sessionUserOf, type AuthOptions } from './auth/routes';
 import { loadRoles, requestDataset, resolveFor, type RolesConfig } from './auth/roles';
 import { SESSION_DAYS } from './auth/session';
@@ -88,6 +89,8 @@ export interface ServerOptions {
   workflow?: WorkflowStore;
   /** Per-person settings (sign-in count, layout, guided tour); in-memory by default. */
   prefs?: PrefsStore;
+  /** Pulse accounts (email and password sign-in); off without a store. */
+  accounts?: AccountStore;
   /** Access overrides set by admins (SRS 7, Access permissions); in-memory by default. */
   access?: AccessStore;
   /** Reports by mail and Slack (SRS 19): store, senders, and a scheduler where the worker runs. */
@@ -136,6 +139,7 @@ export async function buildServer({
   people,
   prefs,
   access,
+  accounts,
   reports,
   daily,
 }: ServerOptions = {}) {
@@ -236,7 +240,25 @@ export async function buildServer({
   const prefStore = prefs ?? memoryPrefsStore();
   // Last active (People directory): at most one write a minute per person.
   const lastSeen = new Map<number, number>();
+  // One Microsoft 365 mailer: report mails and Pulse account codes.
+  const mailer =
+    reports?.mailer ??
+    graphMailer({
+      tenantId: config.MS_TENANT_ID,
+      clientId: config.MS_CLIENT_ID,
+      clientSecret: config.MS_CLIENT_SECRET,
+      from: config.MAIL_FROM,
+    });
   authRoutes(app, {
+    // Pulse accounts (email and password) where a database holds them (2026-11-02).
+    accounts: accounts && {
+      store: accounts,
+      mailer,
+      domains: config.SIGNUP_EMAIL_DOMAINS.split(',')
+        .map((d) => d.trim().toLowerCase().replace(/^@/, ''))
+        .filter(Boolean),
+      users: async () => (await ds()).users.values(),
+    },
     onSignIn: (userId) => prefStore.signIn(userId),
     onSeen: (userId) => {
       const t = Date.now();
@@ -384,14 +406,7 @@ export async function buildServer({
     dataset: ds,
     roles: rolesCfg,
     grants: () => grants,
-    mailer:
-      reports?.mailer ??
-      graphMailer({
-        tenantId: config.MS_TENANT_ID,
-        clientId: config.MS_CLIENT_ID,
-        clientSecret: config.MS_CLIENT_SECRET,
-        from: config.MAIL_FROM,
-      }),
+    mailer,
     slack: reports?.slack ?? slackBot(config.SLACK_BOT_TOKEN),
     store: reportStore,
     tz: config.APP_TIMEZONE,
@@ -554,6 +569,10 @@ async function main() {
     workflow: await (await import('./routes/workflow')).dbWorkflowStore(),
     prefs: await (await import('./routes/prefs')).dbPrefsStore(),
     access: await (await import('./routes/access')).dbAccessStore(),
+    accounts:
+      config.AUTH === 'bitrix'
+        ? await (await import('./auth/password')).dbAccountStore()
+        : undefined,
     daily: {
       ...(await (await import('./routes/daily')).dbDailyStores()),
       // The directors' check-ins run only where the worker runs (the server), never on a laptop.

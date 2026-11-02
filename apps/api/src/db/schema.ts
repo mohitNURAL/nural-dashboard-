@@ -174,6 +174,22 @@ export const userTokens = pgTable('user_tokens', {
   updatedAt: tz('updated_at').notNull().defaultNow(),
 });
 
+/**
+ * Pulse accounts (2026-11-02): email and password sign-in beside Sign in with Bitrix24. One row
+ * per Bitrix24 user (user_id), with their Nural work email, confirmed by a mailed code. The
+ * password is a scrypt hash (auth/password.ts), never the password itself.
+ */
+export const localAccounts = pgTable('local_accounts', {
+  userId: integer('user_id').primaryKey(),
+  email: text('email').notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  failedCount: integer('failed_count').notNull().default(0),
+  lockedUntil: tz('locked_until'),
+  lastSignInAt: tz('last_sign_in_at'),
+  createdAt: tz('created_at').notNull().defaultNow(),
+  updatedAt: tz('updated_at').notNull().defaultNow(),
+});
+
 /** Every task action from the dashboard: who, which task, what, and whether Bitrix24 took it. */
 export const taskActions = pgTable(
   'task_actions',
