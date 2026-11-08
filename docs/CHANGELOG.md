@@ -20,7 +20,12 @@ and the next change fills its ID in.
 
 ## 2026-11-02
 
-- Pulse account: sign in with a Nural work email (@nuraltech.com, SIGNUP_EMAIL_DOMAINS) and a
+- Admins create Pulse accounts (no mail needed): People directory › Edit person › Pulse sign-in
+  sets a temporary password for a person with an active @nuraltech.com Bitrix24 email (or resets
+  it, or removes the account; /api/accounts/:id, admin right). Signing in with it answers
+  { change: true } and no session until the person chooses their own (/api/auth/password-change,
+  must_change, migration 0015).
+- `2336c31` Pulse account: sign in with a Nural work email (@nuraltech.com, SIGNUP_EMAIL_DOMAINS) and a
   password, beside Sign in with Bitrix24 (new sign-in page /api/auth/signin; signed-out and
   session-ended go there too). Create account and Forgot password mail a 6-digit code (Microsoft
   365, 10 min, 5 tries) and only to an active Bitrix24 user with that email, so the account is

@@ -18,6 +18,19 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-11-02-admin-pulse-account',
+    date: '2026-11-02',
+    tab: 'people',
+    title: 'Admins: create a Pulse account for someone',
+    steps: [
+      {
+        target: 'header',
+        title: 'Pulse sign-in in Edit person',
+        text: 'In the People directory, Edit a person: under Pulse sign-in, Generate or type a temporary password and Create. Give it to them with their @nuraltech.com email; the first time they sign in with it, they choose their own. Reset or Remove the account there too.',
+      },
+    ],
+  },
+  {
     id: '2026-11-02-pulse-account',
     date: '2026-11-02',
     tab: 'dev',

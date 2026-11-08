@@ -1,0 +1,1 @@
+ALTER TABLE "local_accounts" ADD COLUMN "must_change" boolean DEFAULT false NOT NULL;

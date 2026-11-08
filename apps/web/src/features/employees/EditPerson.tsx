@@ -1,6 +1,7 @@
 // Edit a person (People directory, admins; SRS 17): their dashboard role (kept on the dashboard),
 // their designation and departments (sent to Bitrix24 with the admin's own sign-in). A
-// confirmation lists every change and where it goes before anything is sent.
+// confirmation lists every change and where it goes before anything is sent. Pulse sign-in
+// (PulseAccount): a temporary password for the person's Pulse account, saved on its own.
 import * as Dialog from '@radix-ui/react-dialog';
 import { keepOpen } from '../../components/ui/keepOpen';
 import { useQueryClient } from '@tanstack/react-query';
@@ -13,6 +14,7 @@ import { IconClose, IconLock } from '../../components/ui/icons';
 import { useOrgTree, type Employee, type Role } from './api';
 import { Avatar } from './common';
 import { DepartmentForm } from './DepartmentsDialog';
+import { PulseAccount } from './PulseAccount';
 import { ROLE_NAME } from './labels';
 import { Select } from '../../components/ui/Select';
 import { SearchInput } from '../../components/ui/SearchInput';
@@ -250,6 +252,7 @@ export function EditPerson({ person, onClose }: { person: Employee; onClose: () 
                 ))}
               </ul>
             </div>
+            <PulseAccount id={person.id} name={person.name} />
           </div>
           <div className="flex items-center justify-between gap-2 border-t border-border px-5 py-3">
             <span className="text-table text-text-muted">

@@ -91,6 +91,19 @@ ${notice ? `<p class="notice">${notice}</p>` : ''}
 <div class="links"><button type="button" class="link" data-resend>Send a new code</button><a data-go="signin">Back to sign in</a></div>
 </form>
 
+<form id="change" hidden>
+<h1>Choose your password</h1>
+<p class="sub">You signed in with a temporary password from an admin. Choose your own to continue.</p>
+<label for="ch-pass">New password</label>
+<input id="ch-pass" type="password" autocomplete="new-password" minlength="${opts.minPassword}" required>
+<p class="hint">At least ${opts.minPassword} characters.</p>
+<label for="ch-pass2">Password again</label>
+<input id="ch-pass2" type="password" autocomplete="new-password" minlength="${opts.minPassword}" required>
+<button class="btn" type="submit">Save and sign in</button>
+<p class="msg" role="alert"></p>
+<div class="links"><a data-go="signin">Back to sign in</a></div>
+</form>
+
 <div class="or">or</div>
 <a class="btn alt" href="/api/auth/login">Sign in with Bitrix24</a>
 <p class="hint" style="text-align:center">Needed to change tasks from Pulse.</p>
@@ -99,7 +112,8 @@ ${notice ? `<p class="notice">${notice}</p>` : ''}
 </main>
 <script>
 (function(){
-  var forms={signin:document.getElementById('signin'),code:document.getElementById('code'),set:document.getElementById('set')};
+  var forms={signin:document.getElementById('signin'),code:document.getElementById('code'),set:document.getElementById('set'),change:document.getElementById('change')};
+  var temp='';
   var mode='create', email='';
   var titles={create:'Create your Pulse account',reset:'Set a new password'};
   function show(name){
@@ -124,7 +138,17 @@ ${notice ? `<p class="notice">${notice}</p>` : ''}
   forms.signin.addEventListener('submit',function(e){
     e.preventDefault(); busy(forms.signin,true);
     post('/api/auth/password-login',{email:document.getElementById('si-email').value,password:document.getElementById('si-pass').value})
-      .then(function(r){busy(forms.signin,false); if(r.ok) return location.replace('/'); say(forms.signin,r.body.error||'Sign-in failed.')});
+      .then(function(r){busy(forms.signin,false);
+        if(r.ok&&r.body.change){temp=document.getElementById('si-pass').value;email=document.getElementById('si-email').value.trim();return show('change')}
+        if(r.ok) return location.replace('/'); say(forms.signin,r.body.error||'Sign-in failed.')});
+  });
+  forms.change.addEventListener('submit',function(e){
+    e.preventDefault();
+    var p1=document.getElementById('ch-pass').value,p2=document.getElementById('ch-pass2').value;
+    if(p1!==p2) return say(forms.change,'The two passwords are not the same.');
+    busy(forms.change,true);
+    post('/api/auth/password-change',{email:email,password:temp,newPassword:p1})
+      .then(function(r){busy(forms.change,false); if(r.ok){temp='';return location.replace('/')} say(forms.change,r.body.error||'Could not save the password.')});
   });
   function sendCode(form){
     busy(form,true);

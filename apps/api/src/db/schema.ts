@@ -183,6 +183,8 @@ export const localAccounts = pgTable('local_accounts', {
   userId: integer('user_id').primaryKey(),
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
+  /** A temporary password set by an admin: the person must choose their own at sign-in. */
+  mustChange: boolean('must_change').notNull().default(false),
   failedCount: integer('failed_count').notNull().default(0),
   lockedUntil: tz('locked_until'),
   lastSignInAt: tz('last_sign_in_at'),

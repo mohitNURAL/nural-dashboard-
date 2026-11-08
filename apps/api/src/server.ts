@@ -2,7 +2,7 @@ import cors from '@fastify/cors';
 import Fastify, { type FastifyBaseLogger } from 'fastify';
 import { pathToFileURL } from 'node:url';
 import { ZodError } from 'zod';
-import type { AccountStore } from './auth/password';
+import { accountAdminRoutes, type AccountStore } from './auth/password';
 import { authRoutes, sessionUserOf, type AuthOptions } from './auth/routes';
 import { loadRoles, requestDataset, resolveFor, type RolesConfig } from './auth/roles';
 import { SESSION_DAYS } from './auth/session';
@@ -249,16 +249,13 @@ export async function buildServer({
       clientSecret: config.MS_CLIENT_SECRET,
       from: config.MAIL_FROM,
     });
+  const signupDomains = config.SIGNUP_EMAIL_DOMAINS.split(',')
+    .map((d) => d.trim().toLowerCase().replace(/^@/, ''))
+    .filter(Boolean);
+  const portalUsers = async () => (await ds()).users.values();
   authRoutes(app, {
     // Pulse accounts (email and password) where a database holds them (2026-11-02).
-    accounts: accounts && {
-      store: accounts,
-      mailer,
-      domains: config.SIGNUP_EMAIL_DOMAINS.split(',')
-        .map((d) => d.trim().toLowerCase().replace(/^@/, ''))
-        .filter(Boolean),
-      users: async () => (await ds()).users.values(),
-    },
+    accounts: accounts && { store: accounts, mailer, domains: signupDomains, users: portalUsers },
     onSignIn: (userId) => prefStore.signIn(userId),
     onSeen: (userId) => {
       const t = Date.now();
@@ -378,6 +375,15 @@ export async function buildServer({
     },
   });
   prefsRoutes(app, prefStore, scoping.viewer);
+  // Admins create Pulse accounts with a temporary password (People directory › Edit person).
+  if (accounts) {
+    accountAdminRoutes(app, {
+      store: accounts,
+      domains: signupDomains,
+      users: portalUsers,
+      viewer: scoping.viewer,
+    });
+  }
   accessRoutes(app, scoping.dataset, scoping.viewer, {
     store: accessStore,
     roles: rolesCfg,

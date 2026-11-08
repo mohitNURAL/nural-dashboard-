@@ -5,6 +5,8 @@
 // needs a 6-digit code mailed to that address (Microsoft 365), so nobody can claim a colleague's
 // email. Passwords are scrypt hashes; 5 wrong passwords lock the account for 15 minutes.
 // Task changes still need the person's Bitrix24 sign-in (their own token), as before.
+// Admins can also create an account in the People directory (no mail needed): they set a
+// temporary password, and the person must choose their own at the first sign-in with it.
 import { createHash, randomBytes, randomInt, scrypt, timingSafeEqual } from 'node:crypto';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
@@ -14,12 +16,18 @@ export interface Account {
   hash: string;
   failed: number;
   lockedUntil: Date | null;
+  /** Set by an admin: the person must choose their own password at the next sign-in. */
+  mustChange: boolean;
+  lastSignInAt: Date | null;
 }
 
 export interface AccountStore {
   byEmail(email: string): Promise<Account | undefined>;
+  byUser(userId: number): Promise<Account | undefined>;
   /** Creates or replaces the person's password; clears failed tries and the lock. */
-  setPassword(userId: number, email: string, hash: string): Promise<void>;
+  setPassword(userId: number, email: string, hash: string, mustChange?: boolean): Promise<void>;
+  /** Removes the account: no more sign-in with a password. */
+  remove(userId: number): Promise<void>;
   /** A wrong password: the new count of failed tries and the lock, if any. */
   failed(userId: number, failed: number, lockedUntil: Date | null): Promise<void>;
   /** A right password: clears failed tries and the lock, counts the sign-in time. */
@@ -99,9 +107,25 @@ export function memoryAccountStore(): AccountStore {
       const a = [...rows.values()].find((r) => r.email === email);
       return a && { ...a };
     },
-    async setPassword(userId, email, hash) {
+    byUser: async (userId) => {
+      const a = rows.get(userId);
+      return a && { ...a };
+    },
+    async setPassword(userId, email, hash, mustChange = false) {
       for (const [id, r] of rows) if (r.email === email && id !== userId) rows.delete(id);
-      rows.set(userId, { userId, email, hash, failed: 0, lockedUntil: null });
+      const lastSignInAt = rows.get(userId)?.lastSignInAt ?? null;
+      rows.set(userId, {
+        userId,
+        email,
+        hash,
+        failed: 0,
+        lockedUntil: null,
+        mustChange,
+        lastSignInAt,
+      });
+    },
+    async remove(userId) {
+      rows.delete(userId);
     },
     async failed(userId, failed, lockedUntil) {
       const r = rows.get(userId);
@@ -109,7 +133,7 @@ export function memoryAccountStore(): AccountStore {
     },
     async succeeded(userId) {
       const r = rows.get(userId);
-      if (r) rows.set(userId, { ...r, failed: 0, lockedUntil: null });
+      if (r) rows.set(userId, { ...r, failed: 0, lockedUntil: null, lastSignInAt: new Date() });
     },
   };
 }
@@ -119,25 +143,29 @@ export async function dbAccountStore(): Promise<AccountStore> {
   const { db, schema } = await import('../db/client');
   const { eq, and, ne } = await import('drizzle-orm');
   const t = schema.localAccounts;
+  const toAccount = (r: typeof t.$inferSelect | undefined): Account | undefined =>
+    r && {
+      userId: r.userId,
+      email: r.email,
+      hash: r.passwordHash,
+      failed: r.failedCount,
+      lockedUntil: r.lockedUntil,
+      mustChange: r.mustChange,
+      lastSignInAt: r.lastSignInAt,
+    };
   return {
-    async byEmail(email) {
-      const [r] = await db.select().from(t).where(eq(t.email, email));
-      return (
-        r && {
-          userId: r.userId,
-          email: r.email,
-          hash: r.passwordHash,
-          failed: r.failedCount,
-          lockedUntil: r.lockedUntil,
-        }
-      );
+    byEmail: async (email) => toAccount((await db.select().from(t).where(eq(t.email, email)))[0]),
+    byUser: async (userId) => toAccount((await db.select().from(t).where(eq(t.userId, userId)))[0]),
+    async remove(userId) {
+      await db.delete(t).where(eq(t.userId, userId));
     },
-    async setPassword(userId, email, hash) {
+    async setPassword(userId, email, hash, mustChange = false) {
       // An email belongs to one person: a stale row of someone else with it goes.
       await db.delete(t).where(and(eq(t.email, email), ne(t.userId, userId)));
       const set = {
         email,
         passwordHash: hash,
+        mustChange,
         failedCount: 0,
         lockedUntil: null,
         updatedAt: new Date(),
@@ -267,14 +295,8 @@ export function passwordRoutes(app: FastifyInstance, opts: PasswordOptions) {
     const email = normEmail(body.email);
     const code = typeof body.code === 'string' ? body.code.replace(/\s/g, '') : '';
     const password = typeof body.password === 'string' ? body.password : '';
-    if (password.length < MIN_PASSWORD || password.length > MAX_PASSWORD) {
-      return reply
-        .code(400)
-        .send({ error: `Use a password of at least ${MIN_PASSWORD} characters.` });
-    }
-    if (normEmail(password) === email) {
-      return reply.code(400).send({ error: 'Do not use your email as the password.' });
-    }
+    const bad = badPassword(password, email);
+    if (bad) return reply.code(400).send({ error: bad });
     const c = codes.get(email);
     const wrong = () =>
       reply.code(400).send({ error: 'That code is wrong or has expired. Ask for a new one.' });
@@ -296,40 +318,168 @@ export function passwordRoutes(app: FastifyInstance, opts: PasswordOptions) {
     return { ok: true };
   });
 
-  // 3. Email and password.
-  app.post('/api/auth/password-login', async (req, reply) => {
-    if (!jsonOnly(req, reply)) return reply;
-    const body = (req.body ?? {}) as { email?: unknown; password?: unknown };
-    const email = normEmail(body.email);
-    const password = typeof body.password === 'string' ? body.password.slice(0, MAX_PASSWORD) : '';
-    const no = () => reply.code(401).send({ error: 'Email or password is wrong.' });
+  /** The account if the password is right; else the reply (wrong, locked) has been sent. */
+  async function check(req: FastifyRequest, reply: FastifyReply, email: string, password: string) {
     const acc = email ? await opts.store.byEmail(email) : undefined;
     if (!acc) {
       await checkPassword(password, await DUMMY);
-      return no();
+      await reply.code(401).send({ error: 'Email or password is wrong.' });
+      return null;
     }
     const t = now();
     if (acc.lockedUntil && acc.lockedUntil.getTime() > t) {
       const mins = Math.ceil((acc.lockedUntil.getTime() - t) / 60_000);
-      return reply.code(429).send({
+      await reply.code(429).send({
         error: `Too many wrong passwords. Try again in ${mins} minute${mins === 1 ? '' : 's'}, or set a new password with Forgot password.`,
       });
+      return null;
     }
     if (!(await checkPassword(password, acc.hash))) {
       const failed = acc.failed + 1;
       const lock = failed >= LOCK_AFTER ? new Date(t + LOCK_MINUTES * 60_000) : null;
       await opts.store.failed(acc.userId, lock ? 0 : failed, lock);
       req.log.warn({ userId: acc.userId, locked: !!lock }, 'wrong Pulse password');
-      return no();
+      await reply.code(401).send({ error: 'Email or password is wrong.' });
+      return null;
     }
     // Someone who left (inactive in Bitrix24) cannot sign in any more.
     const user = await userById(acc.userId);
     if (!user?.active) {
       req.log.warn({ userId: acc.userId }, 'Pulse sign-in refused: not an active portal user');
-      return reply.code(403).send({ error: 'This account is not active in Nural Bitrix24.' });
+      await reply.code(403).send({ error: 'This account is not active in Nural Bitrix24.' });
+      return null;
     }
-    await opts.store.succeeded(acc.userId);
-    await opts.signIn(reply, user);
+    return { acc, user };
+  }
+
+  const str = (v: unknown) => (typeof v === 'string' ? v.slice(0, MAX_PASSWORD) : '');
+
+  // 3. Email and password. A temporary password from an admin answers { change: true } and no
+  // session: the person chooses their own first (4).
+  app.post('/api/auth/password-login', async (req, reply) => {
+    if (!jsonOnly(req, reply)) return reply;
+    const body = (req.body ?? {}) as { email?: unknown; password?: unknown };
+    const ok = await check(req, reply, normEmail(body.email), str(body.password));
+    if (!ok) return reply;
+    if (ok.acc.mustChange) return { change: true };
+    await opts.store.succeeded(ok.acc.userId);
+    await opts.signIn(reply, ok.user);
+    return { ok: true };
+  });
+
+  // 4. A new password in place of the current one (after a temporary one), then signed in.
+  app.post('/api/auth/password-change', async (req, reply) => {
+    if (!jsonOnly(req, reply)) return reply;
+    const body = (req.body ?? {}) as {
+      email?: unknown;
+      password?: unknown;
+      newPassword?: unknown;
+    };
+    const email = normEmail(body.email);
+    const next = typeof body.newPassword === 'string' ? body.newPassword : '';
+    const bad = badPassword(next, email);
+    if (bad) return reply.code(400).send({ error: bad });
+    const current = str(body.password);
+    if (next === current) {
+      return reply.code(400).send({ error: 'Choose a new password, not the one you were given.' });
+    }
+    const ok = await check(req, reply, email, current);
+    if (!ok) return reply;
+    await opts.store.setPassword(ok.acc.userId, ok.acc.email, await hashPassword(next));
+    await opts.store.succeeded(ok.acc.userId);
+    await opts.signIn(reply, ok.user);
+    req.log.info({ userId: ok.acc.userId }, 'Pulse password changed');
+    return { ok: true };
+  });
+}
+
+/** Why a password cannot be used, or null. */
+export function badPassword(password: string, email: string): string | null {
+  if (password.length < MIN_PASSWORD || password.length > MAX_PASSWORD) {
+    return `Use a password of at least ${MIN_PASSWORD} characters.`;
+  }
+  if (normEmail(password) === email) return 'Do not use your email as the password.';
+  return null;
+}
+
+export interface AdminAccountOptions {
+  store: AccountStore;
+  domains: string[];
+  users: () => Promise<Iterable<PortalUser>>;
+  /** The person asking: only admins (the admin right) manage accounts. */
+  viewer: (req: FastifyRequest) => Promise<{ admin: boolean; userId: number }>;
+}
+
+/**
+ * Admins (People directory › Edit person): a person's Pulse account, a temporary password (the
+ * person must choose their own at the first sign-in), or removing the account. No mail needed.
+ */
+export function accountAdminRoutes(app: FastifyInstance, opts: AdminAccountOptions) {
+  const domainText = opts.domains.map((d) => `@${d}`).join(' or ');
+  const target = async (req: FastifyRequest, reply: FastifyReply) => {
+    const me = await opts.viewer(req);
+    if (!me.admin) {
+      await reply.code(403).send({ error: 'Only admins manage Pulse accounts.' });
+      return null;
+    }
+    const id = Number((req.params as { id?: string }).id);
+    let user: PortalUser | undefined;
+    for (const u of await opts.users()) if (u.id === id) user = u;
+    if (!user) {
+      await reply.code(404).send({ error: 'No such person.' });
+      return null;
+    }
+    const email = normEmail(user.email);
+    const domainOk = email.includes('@') && opts.domains.includes(email.split('@').pop()!);
+    return { me, user, email, domainOk };
+  };
+
+  app.get('/api/accounts/:id', async (req, reply) => {
+    const t = await target(req, reply);
+    if (!t) return reply;
+    const acc = await opts.store.byUser(t.user.id);
+    return {
+      email: t.email || null,
+      allowed: t.domainOk && t.user.active,
+      domains: opts.domains,
+      account: acc
+        ? {
+            email: acc.email,
+            mustChange: acc.mustChange,
+            locked: !!acc.lockedUntil && acc.lockedUntil.getTime() > Date.now(),
+            lastSignInAt: acc.lastSignInAt?.toISOString() ?? null,
+          }
+        : null,
+    };
+  });
+
+  app.put('/api/accounts/:id', async (req, reply) => {
+    const t = await target(req, reply);
+    if (!t) return reply;
+    if (!t.user.active) {
+      return reply.code(400).send({ error: `${t.user.name} is not active in Bitrix24.` });
+    }
+    if (!t.domainOk) {
+      return reply
+        .code(400)
+        .send({ error: `${t.user.name} has no ${domainText} email in Bitrix24.` });
+    }
+    const password = (req.body as { password?: unknown } | null)?.password;
+    const bad = typeof password === 'string' ? badPassword(password, t.email) : 'Give a password.';
+    if (bad) return reply.code(400).send({ error: bad });
+    await opts.store.setPassword(t.user.id, t.email, await hashPassword(password as string), true);
+    req.log.info(
+      { by: t.me.userId, userId: t.user.id },
+      'Pulse temporary password set by an admin',
+    );
+    return { ok: true, email: t.email };
+  });
+
+  app.delete('/api/accounts/:id', async (req, reply) => {
+    const t = await target(req, reply);
+    if (!t) return reply;
+    await opts.store.remove(t.user.id);
+    req.log.info({ by: t.me.userId, userId: t.user.id }, 'Pulse account removed by an admin');
     return { ok: true };
   });
 }

@@ -2,13 +2,14 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { DatasetProvider } from '../data/dataset';
 import { buildServer } from '../server';
 import { checkPassword, hashPassword, memoryAccountStore } from './password';
-import { readSession, SESSION_COOKIE } from './session';
+import { readSession, sign, SESSION_COOKIE } from './session';
 
 const SECRET = 'x'.repeat(40);
 const users = new Map([
   [7, { id: 7, name: 'Neha Gautam', email: 'Neha@NuralTech.com', active: true }],
   [8, { id: 8, name: 'Left Company', email: 'left@nuraltech.com', active: false }],
   [9, { id: 9, name: 'Outside', email: 'someone@gmail.com', active: true }],
+  [1, { id: 1, name: 'Admin Person', email: 'admin@nuraltech.com', active: true }],
 ]);
 const dataset = (async () => ({
   tasks: [],
@@ -29,6 +30,7 @@ async function server(connected = true) {
     getDataset: dataset,
     logger: false,
     accounts: memoryAccountStore(),
+    roles: { admins: [1], pms: [], teamLeads: [], productOwners: [] },
     reports: {
       mailer: { connected, from: 'pulse@nuraltech.com', send: async (m) => void mails.push(m) },
     },
@@ -185,5 +187,108 @@ describe('Pulse account (email and password)', () => {
   it('says so when mail is not set up', async () => {
     await server(false);
     expect((await post('/api/auth/code', { email: 'neha@nuraltech.com' })).statusCode).toBe(503);
+  });
+});
+
+const as = (userId: number) => ({
+  cookie: `${SESSION_COOKIE}=${encodeURIComponent(sign({ userId, name: 'x', exp: Date.now() + 60_000 }, SECRET))}`,
+});
+
+describe('Pulse accounts set up by an admin', () => {
+  it('lets only admins see or set an account', async () => {
+    await server();
+    const get = await app!.inject({ url: '/api/accounts/7', headers: as(7) });
+    expect(get.statusCode).toBe(403);
+    const put = await app!.inject({
+      method: 'PUT',
+      url: '/api/accounts/7',
+      headers: as(7),
+      payload: { password: 'temporary-pass-1' },
+    });
+    expect(put.statusCode).toBe(403);
+  });
+
+  it('sets a temporary password that must be changed at the first sign-in', async () => {
+    await server();
+    const info = await app!.inject({ url: '/api/accounts/7', headers: as(1) });
+    expect(info.json()).toMatchObject({
+      email: 'neha@nuraltech.com',
+      allowed: true,
+      account: null,
+    });
+    const put = await app!.inject({
+      method: 'PUT',
+      url: '/api/accounts/7',
+      headers: as(1),
+      payload: { password: 'temporary-pass-1' },
+    });
+    expect(put.statusCode).toBe(200);
+    expect(mails).toHaveLength(0);
+
+    // The temporary password alone gives no session.
+    const first = await post('/api/auth/password-login', {
+      email: 'neha@nuraltech.com',
+      password: 'temporary-pass-1',
+    });
+    expect(first.json()).toEqual({ change: true });
+    expect(sessionOf(first)).toBeNull();
+
+    const same = await post('/api/auth/password-change', {
+      email: 'neha@nuraltech.com',
+      password: 'temporary-pass-1',
+      newPassword: 'temporary-pass-1',
+    });
+    expect(same.statusCode).toBe(400);
+    const wrong = await post('/api/auth/password-change', {
+      email: 'neha@nuraltech.com',
+      password: 'not-the-temp-1',
+      newPassword: 'my-own-password',
+    });
+    expect(wrong.statusCode).toBe(401);
+    const changed = await post('/api/auth/password-change', {
+      email: 'neha@nuraltech.com',
+      password: 'temporary-pass-1',
+      newPassword: 'my-own-password',
+    });
+    expect(changed.statusCode).toBe(200);
+    expect(sessionOf(changed)?.userId).toBe(7);
+
+    const next = await post('/api/auth/password-login', {
+      email: 'neha@nuraltech.com',
+      password: 'my-own-password',
+    });
+    expect(sessionOf(next)?.userId).toBe(7);
+    const after = await app!.inject({ url: '/api/accounts/7', headers: as(1) });
+    expect(after.json().account).toMatchObject({ mustChange: false });
+  });
+
+  it('refuses people without an @nuraltech.com email or not active', async () => {
+    await server();
+    for (const id of [9, 8]) {
+      const r = await app!.inject({
+        method: 'PUT',
+        url: `/api/accounts/${id}`,
+        headers: as(1),
+        payload: { password: 'temporary-pass-1' },
+      });
+      expect(r.statusCode, String(id)).toBe(400);
+    }
+  });
+
+  it('removes an account', async () => {
+    await server();
+    await app!.inject({
+      method: 'PUT',
+      url: '/api/accounts/7',
+      headers: as(1),
+      payload: { password: 'temporary-pass-1' },
+    });
+    const del = await app!.inject({ method: 'DELETE', url: '/api/accounts/7', headers: as(1) });
+    expect(del.statusCode).toBe(200);
+    const login = await post('/api/auth/password-login', {
+      email: 'neha@nuraltech.com',
+      password: 'temporary-pass-1',
+    });
+    expect(login.statusCode).toBe(401);
   });
 });
