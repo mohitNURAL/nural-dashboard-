@@ -16,4 +16,8 @@ echo "Updating to $(git log --oneline -1)"
 "${PNPM[@]}" db:migrate
 pm2 restart "$PM2_APP" --update-env
 pm2 save >/dev/null
-echo "Done: web rebuilt, migrations applied, $PM2_APP restarted."
+# Deadline history for the Tasks in hand planner (SRS 25): read-only from Bitrix24 and resumable,
+# so after the first run it only reads tasks added since. A failure never fails the deploy; it
+# picks up where it stopped on the next one.
+"${PNPM[@]}" sync:deadlines || echo "Warning: deadline history not finished (re-runs next deploy)."
+echo "Done: web rebuilt, migrations applied, $PM2_APP restarted, deadline history read."

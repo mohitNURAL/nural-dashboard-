@@ -17,15 +17,16 @@ and the next change fills its ID in.
   New captures need a sign-in at each access level.
 - Five tables (Alert details, Projects at work, Stage matrix, Ranking, Insights list) still use
   their own markup instead of the shared table.
-- Tasks in hand planner: run `pnpm sync:deadlines` once on the server to read every task's
-  deadline history (until then only changes made after the deploy show as moves). The done green
-  is a new `--success` token (#178A4A; the Figma file has no green yet): confirm with design.
+- Tasks in hand planner: the done green is a new `--success` token (#178A4A; the Figma file has no green yet): confirm with design.
 - Tasks in hand planner: day plans come from posted Daily update plans only; working-day
   holidays are not greyed (weekends are). The PDF guides do not show the new planner yet.
 
 ## 2026-11-08
 
-- Tasks in hand planner redesigned (SRS 25, mockup docs/tasks-in-hand-planner.html) on KPI,
+- Every deploy reads the deadline history (scripts/server-update.sh runs `pnpm sync:deadlines`
+  after the restart; resumable, read-only, never fails the deploy), so the planner's moves and
+  missed deadlines cover tasks from before the planner went live.
+- `91124f2` Tasks in hand planner redesigned (SRS 25, mockup docs/tasks-in-hand-planner.html) on KPI,
   Development and QA: each day lists its tasks (Project → Title / Assignee → Title) by deadline
   or Daily update day plan, done / due / not done / moved / re-planned with "Nth deadline missed"
   and who moved it; overdue work stays on the day it was missed; past weeks and months (‹ › and
