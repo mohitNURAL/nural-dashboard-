@@ -80,6 +80,28 @@ export const taskStageEvents = pgTable(
   (t) => [index('stage_events_task_idx').on(t.taskId, t.movedAt)],
 );
 
+/**
+ * Deadline changes (2026-11-08, SRS 25: Tasks in hand planner), from tasks.task.history.list with
+ * FIELD DEADLINE: backfilled once (pnpm sync:deadlines), then read again whenever a synced task's
+ * deadline differs from the stored one. Null deadline = none (removed, or set from none).
+ */
+export const taskDeadlineEvents = pgTable(
+  'task_deadline_events',
+  {
+    id: serial('id').primaryKey(),
+    taskId: integer('task_id').notNull(),
+    oldDeadline: tz('old_deadline'),
+    newDeadline: tz('new_deadline'),
+    changedAt: tz('changed_at').notNull(),
+    changedBy: integer('changed_by'),
+    /** 'history' (backfill), 'webhook' or 'reconcile' (live sync). */
+    source: text('source').notNull(),
+    /** Bitrix24 history entry ID; unique so reading the history again adds nothing. */
+    historyId: bigint('history_id', { mode: 'number' }).unique(),
+  },
+  (t) => [index('deadline_events_task_idx').on(t.taskId, t.changedAt)],
+);
+
 export const taskRelations = pgTable(
   'task_relations',
   {

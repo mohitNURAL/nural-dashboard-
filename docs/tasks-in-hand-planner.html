@@ -1,0 +1,614 @@
+<title>Tasks in Hand Planner</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Work+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: toolbar band, then one scrolling grid (sticky name column + sticky date header), notes below. Nural theme. */
+:root{
+  --bg:#F3F5FA; --surface:#FFFFFF; --surface-2:#EEF1F8; --line:#DCE1EE; --line-soft:#E8ECF4;
+  --fg:#18203A; --muted:#677090; --faint:#9AA1B9;
+  --blue:#32499F; --blue-tint:#E7EBF8; --teal:#05CFD3; --teal-tint:#DDF8F9;
+  --green:#178A4A; --green-tint:#E2F4E9; --green-cell:#EEF9F2;
+  --yellow:#9A6F00; --yellow-tint:#FFF3CC; --yellow-cell:#FFF9E3;
+  --red:#C9302C; --red-tint:#FCE4E3; --red-cell:#FDF0EF;
+  --orange:#C85A00; --orange-tint:#FFE9D6;
+  --shadow:0 8px 30px rgba(24,32,58,.14);
+  --f-display:"Manrope",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Work Sans",ui-sans-serif,system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1322; --surface:#151B2E; --surface-2:#1C2339; --line:#2A3350; --line-soft:#222A43;
+  --fg:#E5E8F4; --muted:#9AA2BF; --faint:#6C7491;
+  --blue:#8FA2EE; --blue-tint:#222C52; --teal:#3FE0E3; --teal-tint:#0F3436;
+  --green:#5BD08F; --green-tint:#14321F; --green-cell:#122419;
+  --yellow:#EAC453; --yellow-tint:#3A2F0E; --yellow-cell:#2A2412;
+  --red:#FF7B74; --red-tint:#3D1A1A; --red-cell:#2C1718;
+  --orange:#FFA35C; --orange-tint:#3C2611;
+  --shadow:0 8px 30px rgba(0,0,0,.5); color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0E1322; --surface:#151B2E; --surface-2:#1C2339; --line:#2A3350; --line-soft:#222A43;
+  --fg:#E5E8F4; --muted:#9AA2BF; --faint:#6C7491;
+  --blue:#8FA2EE; --blue-tint:#222C52; --teal:#3FE0E3; --teal-tint:#0F3436;
+  --green:#5BD08F; --green-tint:#14321F; --green-cell:#122419;
+  --yellow:#EAC453; --yellow-tint:#3A2F0E; --yellow-cell:#2A2412;
+  --red:#FF7B74; --red-tint:#3D1A1A; --red-cell:#2C1718;
+  --orange:#FFA35C; --orange-tint:#3C2611;
+  --shadow:0 8px 30px rgba(0,0,0,.5); color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:13px;line-height:1.4}
+.page{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px;max-width:1800px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;justify-content:space-between}
+.ttl{display:flex;gap:12px;align-items:flex-start;min-width:0}
+.ttl svg{flex:none;color:var(--blue);margin-top:3px}
+h1{font-family:var(--f-display);font-size:20px;font-weight:700;margin:0;text-wrap:balance}
+h1 .sum{font-weight:600;color:var(--muted);font-size:17px}
+.ttl p{margin:2px 0 0;color:var(--muted);max-width:80ch}
+.mock-tag{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--blue);background:var(--blue-tint);padding:5px 10px;border-radius:999px;font-weight:600;white-space:nowrap}
+
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px}
+.seg{display:inline-flex;background:var(--surface-2);border-radius:9px;padding:3px}
+.seg button{border:0;background:transparent;padding:6px 12px;border-radius:7px;font-weight:600;color:var(--muted);font-family:var(--f-display)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--blue);box-shadow:0 1px 3px rgba(24,32,58,.12)}
+.nav{display:inline-flex;align-items:center;gap:4px}
+.nav .ic{width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center}
+.nav .lbl{min-width:150px;text-align:center;font-family:var(--f-display);font-weight:700;font-size:13px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 12px;font-weight:600}
+.btn.pri{border-color:var(--blue);color:var(--blue)}
+.search{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:0 10px;background:var(--surface);flex:1 1 200px;max-width:300px;min-width:0}
+.search input{border:0;background:transparent;padding:7px 0;width:100%;font:inherit;color:var(--fg);outline:none}
+.spacer{flex:1}
+.filter{position:relative}
+.filter > .btn{display:inline-flex;gap:6px;align-items:center}
+.filter .count{background:var(--blue);color:var(--surface);border-radius:999px;padding:0 7px;font-size:11px}
+.pop{position:absolute;top:calc(100% + 6px);left:0;z-index:30;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);width:260px;padding:8px}
+.pop input[type=search]{width:100%;border:1px solid var(--line);border-radius:7px;padding:6px 8px;font:inherit;background:var(--surface);color:var(--fg);margin-bottom:6px}
+.pop .acts{display:flex;justify-content:space-between;padding:4px 4px 6px;font-size:12px}
+.pop .acts button{border:0;background:none;color:var(--blue);font-weight:600;padding:0}
+.pop label{display:flex;gap:8px;align-items:center;padding:6px 6px;border-radius:6px;cursor:pointer}
+.pop label:hover{background:var(--surface-2)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:4px;background:var(--blue-tint);color:var(--blue);border-radius:999px;padding:3px 4px 3px 10px;font-weight:600;font-size:12px;border:0}
+.chip span{width:18px;height:18px;border-radius:50%;display:grid;place-items:center}
+.chip:hover span{background:var(--surface)}
+
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;color:var(--muted);font-size:12px;align-items:center}
+.legend .grp{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+.legend .grp > b{font-weight:600;color:var(--fg);font-size:11px;letter-spacing:.05em;text-transform:uppercase}
+.lg{display:inline-flex;gap:6px;align-items:center}
+.sw{width:12px;height:12px;border-radius:3px;display:inline-block;border:1px solid transparent}
+
+.scroll{overflow:auto;max-height:72vh;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.grid{display:grid;min-width:max-content}
+.hc{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--line);padding:10px 12px;display:flex;flex-direction:column;gap:6px;border-left:1px solid var(--line-soft)}
+.hc.corner{left:0;z-index:7;justify-content:flex-end;border-left:0;border-right:1px solid var(--line)}
+.hc .dname{font-family:var(--f-display);font-weight:700;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--fg)}
+.hc .dsub{color:var(--muted);font-size:12px}
+.hc.today{background:var(--teal-tint)}
+.hc.today .dname{color:var(--blue)}
+.hc.wkend .dname,.hc.wkend .dsub{color:var(--faint)}
+.corner .lab{font-family:var(--f-display);font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--blue)}
+.prog{height:6px;border-radius:999px;background:var(--surface-2);overflow:hidden;display:flex}
+.prog i{display:block;height:100%;background:var(--green)}
+.prog i.rest{background:var(--blue);opacity:.35}
+.pl{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;gap:6px}
+.pl b{color:var(--fg);font-weight:600}
+
+.rh{position:sticky;left:0;z-index:4;background:var(--surface);border-right:1px solid var(--line);border-bottom:1px solid var(--line-soft);padding:12px;display:flex;flex-direction:column;gap:6px}
+.rh .nm{font-family:var(--f-display);font-weight:700;font-size:13px}
+.rh .meta{font-size:12px;color:var(--muted)}
+.rh .meta em{font-style:normal;color:var(--orange);font-weight:600}
+
+.cell{border-left:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);padding:8px;display:flex;flex-direction:column;gap:5px;min-width:0;position:relative}
+.cell.st-all{background:var(--green-cell);box-shadow:inset 3px 0 0 var(--green)}
+.cell.st-part{background:var(--yellow-cell);box-shadow:inset 3px 0 0 var(--yellow)}
+.cell.st-none{background:var(--red-cell);box-shadow:inset 3px 0 0 var(--red)}
+.cell.is-today{outline:2px solid var(--teal);outline-offset:-2px}
+.cell.wkend{background:repeating-linear-gradient(135deg,transparent 0 6px,var(--surface-2) 6px 7px)}
+.cell .empty{color:var(--faint);font-size:12px}
+.cstat{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums}
+.pill{padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap}
+.pill.all{background:var(--green-tint);color:var(--green)}
+.pill.part{background:var(--yellow-tint);color:var(--yellow)}
+.pill.none{background:var(--red-tint);color:var(--red)}
+.pill.fut{background:var(--blue-tint);color:var(--blue)}
+.sec{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--orange);margin-top:3px;display:flex;align-items:center;gap:6px}
+.sec::after{content:"";flex:1;height:1px;background:var(--orange-tint)}
+
+.task{display:flex;flex-direction:column;gap:3px;text-align:left;width:100%;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:7px;padding:5px 8px}
+.task:hover{border-color:var(--blue)}
+.task .tx{font-size:12.5px;line-height:1.3;overflow-wrap:anywhere}
+.task .cr{color:var(--muted);font-weight:600}
+.task .bds{display:flex;flex-wrap:wrap;gap:4px}
+.bd{font-size:10.5px;font-weight:600;padding:0 6px;border-radius:4px;line-height:17px;white-space:nowrap}
+.task.s-done{border-left-color:var(--green)} .task.s-done .tx{color:var(--muted)}
+.task.s-pending,.task.s-planned{border-left-color:var(--blue)}
+.task.s-missed{border-left-color:var(--red)}
+.task.s-over{border-left-color:var(--orange);background:var(--orange-tint);border-color:transparent}
+.task.s-cleared{border-left-color:var(--green);background:var(--green-tint);border-color:transparent}
+.task.s-moved{border-left-style:dashed;border-left-color:var(--faint);border-style:dashed;background:transparent}
+.task.s-moved .tx{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--faint)}
+.bd.done{background:var(--green-tint);color:var(--green)}
+.bd.miss{background:var(--red-tint);color:var(--red)}
+.bd.mv{background:var(--surface-2);color:var(--muted)}
+.bd.ov{background:var(--surface);color:var(--orange)}
+.bd.plan{background:var(--blue-tint);color:var(--blue)}
+.more{border:0;background:none;color:var(--orange);font-weight:600;font-size:12px;text-align:left;padding:2px 0}
+
+.agg{display:flex;flex-direction:column;gap:6px;text-align:left;width:100%;border:0;background:transparent;padding:0}
+.ag-line{display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:5px 8px}
+.ag-line .nm{font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.ag-line .n{font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--muted)}
+.ag-line .n b{color:var(--fg)}
+.ag-line .prog{grid-column:1/-1;height:4px}
+.ag-ov{display:inline-flex;align-self:flex-start;gap:5px;align-items:center;background:var(--orange-tint);color:var(--orange);font-weight:600;font-size:11.5px;padding:2px 8px;border-radius:999px}
+.agg:hover .ag-line{border-color:var(--blue)}
+
+.notes{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.notes h2{font-family:var(--f-display);font-size:15px;margin:0 0 10px}
+.notes ol{margin:0;padding-left:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:8px 28px}
+.notes li{color:var(--muted);max-width:70ch}
+.notes li b{color:var(--fg)}
+
+.scrim{position:fixed;inset:0;background:rgba(10,14,30,.35);z-index:40}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--surface);z-index:41;box-shadow:var(--shadow);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-right:env(safe-area-inset-right,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.dh{display:flex;gap:10px;justify-content:space-between;align-items:flex-start;padding:16px 18px;border-bottom:1px solid var(--line)}
+.dh h3{font-family:var(--f-display);font-size:16px;margin:0;text-wrap:balance}
+.dh p{margin:3px 0 0;color:var(--muted)}
+.x{border:1px solid var(--line);background:var(--surface);border-radius:8px;width:32px;height:32px;flex:none}
+.db{padding:16px 18px;overflow:auto;display:flex;flex-direction:column;gap:14px}
+.db h4{margin:0;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.tl li{position:relative;padding:0 0 14px 22px}
+.tl li::before{content:"";position:absolute;left:5px;top:5px;width:9px;height:9px;border-radius:50%;background:var(--blue)}
+.tl li::after{content:"";position:absolute;left:9px;top:16px;bottom:0;width:1px;background:var(--line)}
+.tl li:last-child::after{display:none}
+.tl li.m::before{background:var(--red)} .tl li.d::before{background:var(--green)} .tl li.o::before{background:var(--orange)}
+.tl .when{font-size:12px;color:var(--muted)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px}
+.kv dt{color:var(--muted)} .kv dd{margin:0;font-weight:600}
+.dlist{display:flex;flex-direction:column;gap:6px}
+.dday{font-family:var(--f-display);font-weight:700;font-size:12px;margin-top:6px}
+@media (max-width:640px){.nav .lbl{min-width:110px}.spacer{display:none}}
+@media (prefers-reduced-motion:no-preference){.task,.ag-line{transition:border-color .15s}}
+.task.s-dayplan{border-left-color:var(--teal)}
+.task.s-dayplan.is-done{border-left-color:var(--green)}
+.task.s-replan{border-left-style:dashed;border-left-color:var(--faint);border-style:dashed;background:transparent}
+.task.s-replan .tx{color:var(--muted)}
+.bd.dp{background:var(--teal-tint);color:var(--blue)}
+.bd.pf{background:var(--blue-tint);color:var(--blue)}
+.bd.rp{background:var(--surface-2);color:var(--muted)}
+.rh .meta button{border:0;background:none;padding:0;color:var(--orange);font-weight:600;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
+.ag-miss{display:inline-flex;align-self:flex-start;background:var(--red-tint);color:var(--red);font-weight:600;font-size:11.5px;padding:2px 8px;border-radius:999px}
+.ag-chips{display:flex;flex-wrap:wrap;gap:5px}
+.ag-pf{display:inline-flex;background:var(--teal-tint);color:var(--blue);font-weight:600;font-size:11.5px;padding:2px 8px;border-radius:999px}
+
+.guide{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+.guide h2,.notes h2{font-family:var(--f-display);font-size:15px;margin:0}
+.guide > p{margin:0;color:var(--muted);max-width:90ch}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:10px}
+.rule{border:1px solid var(--line-soft);border-radius:10px;padding:10px 12px;background:var(--surface-2)}
+.rule b{font-family:var(--f-display);display:block;margin-bottom:2px}
+.rule span{color:var(--muted)}
+.sc-wrap{overflow-x:auto}
+.sc{display:grid;grid-template-columns:minmax(200px,260px) repeat(5,minmax(120px,1fr));min-width:860px;border-top:1px solid var(--line-soft)}
+.sc > div{padding:8px;border-bottom:1px solid var(--line-soft);border-left:1px solid var(--line-soft);display:flex;flex-direction:column;gap:4px;min-width:0}
+.sc .sh{font-family:var(--f-display);font-weight:700;font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.sc .sh.now{color:var(--blue);background:var(--teal-tint)}
+.sc .sn{border-left:0}
+.sc .sn b{font-family:var(--f-display)}
+.sc .sn span{color:var(--muted);font-size:12px}
+.sc .now-col{background:color-mix(in srgb,var(--teal-tint) 45%,transparent)}
+.mini{font-size:11.5px;border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:6px;padding:3px 6px;background:var(--surface);line-height:1.3}
+.mini.g{border-left-color:var(--green)} .mini.r{border-left-color:var(--red)} .mini.t{border-left-color:var(--teal)}
+.mini.mv{border-style:dashed;border-left-color:var(--faint);background:transparent;color:var(--muted)}
+.mini.mv s{text-decoration-color:var(--faint)}
+.mini em{display:block;font-style:normal;font-size:10.5px;font-weight:600}
+.mini.g em{color:var(--green)} .mini.r em,.mini em.r{color:var(--red)} .mini.t em{color:var(--blue)} .mini.mv em{color:var(--muted)}
+.mini.mv em.r{color:var(--red)}
+.gone{font-size:11px;color:var(--faint);font-style:italic}
+</style>
+
+<div class="page">
+  <header class="top">
+    <div class="ttl">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+      <div>
+        <h1>Tasks in hand: planner <span class="sum" id="sum"></span></h1>
+        <p id="sub">Each day shows only the tasks planned for it, as Project → Title: by deadline, or taken into the assignee's day plan. Click any task for its plan log.</p>
+      </div>
+    </div>
+    <span class="mock-tag">Design mockup · sample data · today = Wed 11 Nov 2026</span>
+  </header>
+
+  <div class="bar" role="toolbar" aria-label="Planner controls">
+    <div class="seg" id="viewSeg">
+      <button data-v="day" aria-pressed="true">Day</button>
+      <button data-v="week" aria-pressed="false">Week</button>
+      <button data-v="month" aria-pressed="false">Month</button>
+    </div>
+    <div class="seg" id="modeSeg">
+      <button data-m="assignee" aria-pressed="true">Assignee</button>
+      <button data-m="project" aria-pressed="false">Project</button>
+    </div>
+    <div class="nav">
+      <button class="ic" id="prev" aria-label="Previous period"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <span class="lbl" id="period"></span>
+      <button class="ic" id="next" aria-label="Next period"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+      <button class="btn" id="todayBtn">Today</button>
+    </div>
+    <div class="filter" id="filter">
+      <button class="btn pri" id="filterBtn" aria-haspopup="true" aria-expanded="false"></button>
+      <div class="pop" id="pop" hidden>
+        <input type="search" id="popQ" placeholder="Search">
+        <div class="acts"><button id="selAll">Select all</button><button id="selNone">Clear</button></div>
+        <div id="popList"></div>
+      </div>
+    </div>
+    <label class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="q" placeholder="Search task, person or project"></label>
+    <span class="spacer"></span>
+    <button class="btn">Excel</button><button class="btn">PDF</button>
+  </div>
+  <div class="chips" id="chips"></div>
+
+  <div class="legend">
+    <div class="grp"><b>Task</b>
+      <span class="lg"><span class="sw" style="background:var(--green)"></span>Done</span>
+      <span class="lg"><span class="sw" style="background:var(--blue)"></span>Planned (deadline day)</span>
+      <span class="lg"><span class="sw" style="background:var(--teal)"></span>Taken into day plan</span>
+      <span class="lg"><span class="sw" style="background:var(--red)"></span>Not done that day</span>
+      <span class="lg"><span class="sw" style="border:1px dashed var(--faint)"></span>Moved away (log)</span>
+    </div>
+    <div class="grp"><b>Day cell</b>
+      <span class="lg"><span class="sw" style="background:var(--green-tint);border-color:var(--green)"></span>All done</span>
+      <span class="lg"><span class="sw" style="background:var(--yellow-tint);border-color:var(--yellow)"></span>Partly done</span>
+      <span class="lg"><span class="sw" style="background:var(--red-tint);border-color:var(--red)"></span>Nothing done</span>
+      <span class="lg"><span class="sw" style="border:2px solid var(--teal)"></span>Today</span>
+    </div>
+  </div>
+
+  <div class="scroll" id="scroll"><div class="grid" id="grid"></div></div>
+
+  <section class="guide" aria-labelledby="gH">
+    <h2 id="gH">How a task moves on the planner</h2>
+    <p>A task appears only on the day it is planned for. Overdue work is not repeated on later days: it stays red on the day it was missed, and the row shows how many tasks are overdue now (click the number for the list).</p>
+    <div class="rules">
+      <div class="rule"><b>Where a task sits</b><span>On its deadline day, or on the day the assignee added it to their day plan.</span></div>
+      <div class="rule"><b>Past days keep their log</b><span>If the day had already arrived when the task moved, that day keeps a struck-through entry saying where it went and who moved it.</span></div>
+      <div class="rule"><b>Future days are cleared</b><span>If the task moves before the day arrives (re-planned, pulled forward by the PM, or taken into today's plan), it simply disappears from that future day, week and month.</span></div>
+      <div class="rule"><b>Missed count</b><span>Each time a deadline passes undone and is then moved, the count goes up: 1st, 2nd, 3rd deadline missed. The badge travels with the task to its new day.</span></div>
+    </div>
+    <div class="sc-wrap"><div class="sc" id="scGrid"></div></div>
+  </section>
+
+  <section class="notes">
+    <h2>What this mockup covers</h2>
+    <ol>
+      <li><b>Task titles in Day view.</b> Each cell lists the tasks as Project → Title (Assignee → Title on the Project tab) instead of a count.</li>
+      <li><b>Earlier periods.</b> Day shows the full week Mon to Sun, including past days. The arrows move a week, six weeks or six months back or forward; Today jumps back.</li>
+      <li><b>Colour per task and per cell.</b> Green done, blue planned, teal taken into a day plan, red not done that day. A past or current cell turns green when everything planned that day is done, yellow when part is done, red when nothing is.</li>
+      <li><b>Moves and missed deadlines.</b> Deadline moved later after it passed: "Nth deadline missed" on the new day, struck-through log on the old one. Taken into today's plan or pulled forward by the PM: shown today and removed from the future day, week and month.</li>
+      <li><b>Planned vs done bars.</b> Every column header shows done out of planned for everyone in the filter; each row shows the same for that person or project. Week and Month count each task once per period.</li>
+      <li><b>Filters.</b> Assignee tab gets a multi-select Assignee filter; Project tab gets a multi-select Project filter. Everything mirrors between the two tabs.</li>
+    </ol>
+  </section>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden aria-label="Details">
+  <div class="dh"><div><h3 id="dTitle"></h3><p id="dSub"></p></div><button class="x" id="dClose" aria-label="Close">✕</button></div>
+  <div class="db" id="dBody"></div>
+</aside>
+
+<script>
+(function(){
+// ---------- dates ----------
+const d2n=s=>{const[y,m,d]=s.split('-').map(Number);return Math.round(Date.UTC(y,m-1,d)/864e5)};
+const dt=n=>new Date(n*864e5);
+const dow=n=>dt(n).getUTCDay();
+const isWk=n=>{const w=dow(n);return w===0||w===6};
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAY=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const fD=n=>dt(n).getUTCDate()+' '+MON[dt(n).getUTCMonth()];
+const fL=n=>DAY[dow(n)]+' '+fD(n);
+const wkStart=n=>n-((dow(n)+6)%7);
+const T=d2n('2026-11-11');
+const START=d2n('2026-06-29'), END=d2n('2026-12-27');
+const ord=k=>k+(k%10===1&&k%100!==11?'st':k%10===2&&k%100!==12?'nd':k%10===3&&k%100!==13?'rd':'th');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const $=id=>document.getElementById(id);
+
+// ---------- sample data ----------
+let seed=11;const rnd=()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+const ri=(a,b)=>a+Math.floor(rnd()*(b-a+1));
+const pick=a=>a[Math.floor(rnd()*a.length)];
+const nextWork=n=>{while(isWk(n))n++;return n};
+const prevWork=n=>{while(isWk(n))n--;return n};
+const PROJ=['Moto Indonesia','Moto India','Nural Sales- Infinity','Nural Website','Nural Sales International','Nural SFA'];
+const PM=['Vijay Prajapati','Adnan Mubeen','Vijay Prajapati','Balram Jha','Vijay Prajapati','Adnan Mubeen'];
+const TITLES={
+ 'Moto Indonesia':['Dealer stock sync job retries','Claim settlement report: date filter','Sell-out upload template v3','Fix IMEI duplicate check','Retailer KYC approval flow','Scheme slab calculation for Q4','Distributor ledger export','Push alert when target achieved'],
+ 'Moto India':['Activation report timeout','Secondary sales dashboard filters','Promoter attendance geo-fence','Price drop claim validation','Tertiary sales API pagination','Beat plan crash on Android 14','Incentive statement PDF','Serial scan offline mode'],
+ 'Nural Sales- Infinity':['Order booking GST rounding','Collection receipt print layout','Party master bulk import','Sales return approval step','Credit limit alert email','Copy route plan to next week','Invoice sync with Tally','Today\'s orders tile'],
+ 'Nural Website':['Careers form spam check','Case study page layout','Contact form CRM hook','Blog listing pagination','Hero banner compression','Footer links update','SEO meta for product pages','Cookie consent banner'],
+ 'Nural Sales International':['Multi-currency price list','Country-wise tax config','Export invoice template','Distributor portal SSO','Shipment tracking widget','Daily FX rate job','Arabic RTL layout fixes','Order approval matrix'],
+ 'Nural SFA':['Visit check-in selfie compression','Expense claim limits','Leave request sync','Outlet map clustering','Day-end report email','Merchandising photo audit','Survey builder skip logic','Offline queue retry']
+};
+const PEOPLE=[
+ {name:'Mohit Srivastava',p:[0,1,2]},{name:'Devesh Kumar',p:[2,1,3]},{name:'Umang Singh',p:[3]},
+ {name:'Yajur',p:[4]},{name:'Mishaal',p:[3,5]},{name:'Faiz Arsalan',p:[4,1]}];
+const TASKS=[];let id=41820;const cyc={};
+PEOPLE.forEach((pp,a)=>{
+  for(let n=START;n<=END;n++){ if(isWk(n))continue;
+    const r=rnd();const k=r<.3?0:r<.65?1:r<.9?2:3;
+    for(let i=0;i<k;i++){
+      const p=pick(pp.p);const created=prevWork(n-ri(3,10));
+      if(created>T)continue;
+      const t={id:id++,a,p,title:TITLES[PROJ[p]][(cyc[p]=(cyc[p]||0)+1)%8],created,hist:[{dl:n,on:created,by:PM[p]}],plans:[],done:null};
+      let cur=n;const x0=rnd();
+      // PM pulls the deadline forward (change made before the old day arrived)
+      if(x0<.07&&n-created>=4){const on=nextWork(created+1);if(on<=T){const nd=nextWork(on+ri(0,Math.max(0,n-on-3)));if(nd<n&&nd>=on){t.hist.push({dl:nd,on,by:PM[p]});cur=nd}}}
+      // re-planned later before it was due
+      else if(x0<.14){const on=prevWork(cur-ri(1,3));if(on>created&&on<=T){const nd=nextWork(cur+ri(2,5));t.hist.push({dl:nd,on,by:PM[p]});cur=nd}}
+      // assignee takes it into a day plan before the deadline, deadline unchanged
+      if(rnd()<.13){const dp=prevWork(cur-ri(1,4));if(dp>created&&dp<=T){t.plans.push(dp);if(dp<T?rnd()<.65:rnd()<.4){t.done=dp}}}
+      if(t.done===null)for(;;){
+        if(cur<T){const x=rnd(),old=cur<T-30;
+          if(x<.58){t.done=Math.max(created,cur-ri(0,1));break}
+          if(x<.72){t.done=Math.min(T,cur+ri(1,4));break}
+          if(x<.9&&t.hist.length<4){const on=Math.min(T,nextWork(cur+ri(1,2)));const nd=nextWork(on+ri(1,4));t.hist.push({dl:nd,on,by:PM[p]});cur=nd;continue}
+          if(old&&rnd()<.88){t.done=Math.min(T,cur+ri(1,12));break}
+          break;
+        } else if(cur===T){ if(rnd()<.45)t.done=T; break } else break;
+      }
+      TASKS.push(t);
+    }
+  }
+});
+const byId=new Map(TASKS.map(t=>[t.id,t]));
+
+// ---------- placement rules ----------
+const curDl=t=>t.hist[t.hist.length-1].dl;
+const missedCount=(t,upto)=>{let c=0;for(let k=1;k<t.hist.length;k++){if(upto!==undefined&&t.hist[k].on>upto)break;if(t.hist[k].on>t.hist[k-1].dl)c++}return c};
+function lastChange(t){if(t.hist.length<2)return null;const k=t.hist.length-1,a=t.hist[k-1],b=t.hist[k];
+  if(b.dl<a.dl)return{kind:'pull',from:a.dl,by:b.by,on:b.on};
+  if(b.on<a.dl)return{kind:'replan',from:a.dl,by:b.by,on:b.on};
+  return{kind:'missed',from:a.dl,by:b.by,on:b.on};}
+const isOverdueNow=t=>t.done===null&&curDl(t)<T;
+/* Entries for one task on day n. Each entry: {t, st, kind, counts} */
+function entriesFor(t,n){
+  const out=[];
+  // 1. deadline entries (current or past deadlines)
+  t.hist.forEach((h,k)=>{ if(h.dl!==n)return;
+    if(k===t.hist.length-1){
+      // hidden from a future deadline day while it is in today's plan, or after being done in an earlier day plan
+      if(t.plans.some(dp=>dp<n&&(t.done===dp||(dp===T&&n>T&&t.done===null))))return;
+      if(t.done!==null&&t.done<n&&t.plans.some(dp=>dp===t.done))return;
+      let st=t.done!==null&&t.done<=n?'done':n<T?'missed':n===T?'pending':'planned';
+      out.push({t,kind:'deadline',st,counts:true});
+    } else {
+      const nx=t.hist[k+1];
+      if(nx.on<n)return;                       // moved before this day arrived: slot cleared
+      if(nx.on>n)out.push({t,kind:'moved',st:'moved',to:nx.dl,on:nx.on,by:nx.by,nth:missedCount(t,nx.on),counts:true});
+      else out.push({t,kind:'replan',st:'replan',to:nx.dl,on:nx.on,by:nx.by,counts:false}); // moved on the day itself
+    }
+  });
+  // 2. day-plan entries (assignee took it into this day without a deadline change)
+  if(t.plans.includes(n)&&!t.hist.some(h=>h.dl===n)){
+    const st=t.done!==null&&t.done<=n?'done':n<T?'missed':'pending';
+    out.push({t,kind:'dayplan',st,counts:true});
+  }
+  return out;
+}
+function dayInfo(list,n){
+  const entries=[];let planned=0,done=0;
+  for(const t of list){if(t.created>n&&n<=T)continue;
+    for(const e of entriesFor(t,n)){entries.push(e);if(e.counts){planned++;if(e.st==='done')done++}}}
+  const rank={missed:0,pending:1,planned:1,done:2,moved:3,replan:4};
+  entries.sort((x,y)=>rank[x.st]-rank[y.st]);
+  return {entries,planned,done};
+}
+const statusOf=(planned,done)=>planned===0?null:done===planned?'all':done>0?'part':'none';
+const STLBL={all:'All done',part:'Partly done',none:'Nothing done'};
+
+// ---------- state ----------
+const S={view:'day',mode:'assignee',off:0,q:'',selA:new Set(PEOPLE.map((_,i)=>i)),selP:new Set(PROJ.map((_,i)=>i))};
+
+function columns(){
+  const cols=[];
+  if(S.view==='day'){const s=wkStart(T)+7*S.off;
+    for(let i=0;i<7;i++){const n=s+i;cols.push({s:n,e:n,name:n===T?'Today':n===T+1?'Tomorrow':n===T-1?'Yesterday':DAY[dow(n)],sub:fD(n),today:n===T,wk:isWk(n)})}
+  } else if(S.view==='week'){const base=wkStart(T)+7*(S.off*6-4);
+    for(let i=0;i<6;i++){const s=base+7*i;cols.push({s,e:s+6,name:s<=T&&T<=s+6?'This week':'Week of '+fD(s),sub:fD(s)+' – '+fD(s+6),today:s<=T&&T<=s+6})}
+  } else {const td=dt(T);let y=td.getUTCFullYear(),m=td.getUTCMonth()+S.off*6-4;
+    for(let i=0;i<6;i++){const yy=y+Math.floor((m+i)/12),mm=((m+i)%12+12)%12;const s=Math.round(Date.UTC(yy,mm,1)/864e5),e=Math.round(Date.UTC(yy,mm+1,1)/864e5)-1;
+      cols.push({s,e,name:s<=T&&T<=e?'This month':MON[mm],sub:MON[mm]+' '+yy,today:s<=T&&T<=e})}
+  }
+  return cols;
+}
+function periodLabel(c){const a=c[0],b=c[c.length-1];
+  if(S.view==='month')return a.sub+' – '+b.sub;
+  return fD(a.s)+' – '+fD(b.e)+' '+dt(b.e).getUTCFullYear();}
+function rowsAll(){
+  const q=S.q.trim().toLowerCase();const isA=S.mode==='assignee';
+  const base=isA?PEOPLE.map((p,i)=>({key:i,name:p.name})).filter(r=>S.selA.has(r.key)):PROJ.map((p,i)=>({key:i,name:p})).filter(r=>S.selP.has(r.key));
+  return base.map(r=>{let list=TASKS.filter(t=>(isA?t.a:t.p)===r.key);
+    if(q&&!r.name.toLowerCase().includes(q))list=list.filter(t=>(t.title+' '+PROJ[t.p]+' '+PEOPLE[t.a].name).toLowerCase().includes(q));
+    return {...r,list};}).filter(r=>!q||r.list.length);
+}
+const crumb=t=>S.mode==='assignee'?PROJ[t.p]:PEOPLE[t.a].name;
+const first=s=>s.split(' ')[0];
+
+function taskBtn(e){const t=e.t;let cls='s-'+(e.kind==='dayplan'?'dayplan'+(e.st==='done'?' is-done':''):e.st),b='';
+  if(e.kind==='dayplan')b+='<span class="bd dp">In day plan · deadline '+fL(curDl(t))+'</span>';
+  if(e.st==='done')b+='<span class="bd done">Done</span>';
+  if(e.st==='missed')b+='<span class="bd miss">Not done'+(t.done!==null?' · done '+fD(t.done):'')+'</span>';
+  if(e.st==='pending')b+='<span class="bd plan">Due today</span>';
+  if(e.kind==='moved')b+='<span class="bd mv">Moved → '+fL(e.to)+' by '+esc(first(e.by))+'</span><span class="bd miss">'+ord(e.nth)+' deadline missed</span>';
+  if(e.kind==='replan')b+='<span class="bd rp">Re-planned → '+fL(e.to)+' the same day</span>';
+  if(e.kind==='deadline'){const mc=missedCount(t);if(mc)b+='<span class="bd miss">'+ord(mc)+' deadline missed</span>';
+    const lc=lastChange(t);if(lc&&lc.kind==='pull')b+='<span class="bd pf">Pulled forward from '+fL(lc.from)+' by '+esc(first(lc.by))+'</span>';
+    if(lc&&lc.kind==='replan')b+='<span class="bd rp">Re-planned from '+fL(lc.from)+'</span>';
+    const nd=t.plans.filter(dp=>dp<e.t.hist[e.t.hist.length-1].dl&&t.done!==dp);if(nd.length)b+='<span class="bd rp">Not done in day plan '+fD(nd[nd.length-1])+'</span>';}
+  return '<button class="task '+cls+'" data-t="'+t.id+'"><span class="tx"><span class="cr">'+esc(crumb(t))+' →</span> '+esc(t.title)+'</span>'+(b?'<span class="bds">'+b+'</span>':'')+'</button>';
+}
+/* Week / month: each task counts once per period. Done if any counted entry in the period is done. */
+function aggInfo(list,c,uptoToday){
+  const seen=new Map();let missedDl=0,pulled=0;
+  const e2=Math.min(c.e,uptoToday?T:c.e);
+  for(let n=c.s;n<=e2;n++){for(const t of list){if(t.created>n&&n<=T)continue;for(const e of entriesFor(t,n)){
+    if(e.kind==='moved')missedDl++;
+    if(e.kind==='deadline'){const lc=lastChange(t);if(lc&&lc.kind==='pull')pulled++}
+    if(!e.counts)continue;const s=seen.get(t.id)||{t,done:false};if(e.st==='done')s.done=true;seen.set(t.id,s)}}}
+  let planned=0,done=0;const groups=new Map();
+  for(const s of seen.values()){planned++;if(s.done)done++;const key=S.mode==='assignee'?PROJ[s.t.p]:PEOPLE[s.t.a].name;const g=groups.get(key)||{p:0,d:0};g.p++;if(s.done)g.d++;groups.set(key,g)}
+  return {planned,done,groups,missedDl,pulled};
+}
+function progHTML(planned,done,future){
+  if(!planned)return '<div class="prog"></div><div class="pl"><span>Nothing planned</span></div>';
+  const pct=Math.round(done/planned*100);
+  if(future)return '<div class="prog"><i class="rest" style="width:100%"></i></div><div class="pl"><span><b>'+planned+'</b> planned</span><span>upcoming</span></div>';
+  return '<div class="prog"><i style="width:'+pct+'%"></i></div><div class="pl"><span><b>'+done+'</b> of '+planned+' done</span><span>'+pct+'%</span></div>';
+}
+
+function render(){
+  const cols=columns(),rows=rowsAll();
+  $('period').textContent=periodLabel(cols);
+  document.querySelectorAll('#viewSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===S.view));
+  document.querySelectorAll('#modeSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===S.mode));
+  renderFilterBtn();
+  const g=$('grid');
+  g.style.gridTemplateColumns='minmax(190px,220px) '+cols.map(c=>c.wk?'minmax(120px,.45fr)':(S.view==='day'?'minmax(250px,1fr)':'minmax(220px,1fr)')).join(' ');
+  const day=S.view==='day';
+  const data=rows.map(r=>cols.map(c=>day?dayInfo(r.list,c.s):{all:aggInfo(r.list,c,false),past:c.s<=T?aggInfo(r.list,c,true):null}));
+  let h='<div class="hc corner"><span class="lab">'+(S.mode==='assignee'?'Assignee':'Project')+'</span><span class="dsub">'+rows.length+' shown</span></div>';
+  cols.forEach((c,ci)=>{let p=0,d=0;data.forEach(rw=>{const x=day?rw[ci]:rw[ci].all;p+=x.planned;d+=x.done});
+    h+='<div class="hc'+(c.today?' today':'')+(c.wk?' wkend':'')+'"><span class="dname">'+c.name+'</span><span class="dsub">'+c.sub+'</span>'+(c.wk&&!p?'':progHTML(p,d,c.s>T))+'</div>';
+  });
+  let totOpen=0,totOver=0;
+  rows.forEach((r,ri)=>{
+    const open=r.list.filter(t=>t.done===null).length, over=r.list.filter(isOverdueNow).length;
+    totOpen+=open;totOver+=over;
+    let p=0,d=0;data[ri].forEach((x,ci)=>{if(cols[ci].s<=T){const y=day?x:x.past;p+=y.planned;d+=y.done}});
+    h+='<div class="rh"><span class="nm">'+esc(r.name)+'</span><span class="meta">'+open+' open · '+(over?'<button data-over="'+ri+'">'+over+' overdue now</button>':'0 overdue')+'</span>'+progHTML(p,d,false).replace(' done</span>',' done so far</span>')+'</div>';
+    cols.forEach((c,ci)=>{const x=data[ri][ci];let inner='',st=null;
+      if(day){
+        st=c.s<=T?statusOf(x.planned,x.done):null;
+        if(st)inner+='<div class="cstat"><span class="pill '+st+'">'+STLBL[st]+'</span><span>'+x.done+'/'+x.planned+'</span></div>';
+        else if(x.planned)inner+='<div class="cstat"><span class="pill fut">'+x.planned+' planned</span></div>';
+        inner+=x.entries.map(taskBtn).join('');
+        if(!inner)inner='<span class="empty">'+(c.wk?'Weekend':'No tasks')+'</span>';
+        h+='<div class="cell'+(st?' st-'+st:'')+(c.today?' is-today':'')+(c.wk&&!x.entries.length?' wkend':'')+'">'+inner+'</div>';
+      } else {
+        const a=x.all,pp=x.past;st=pp?statusOf(pp.planned,pp.done):null;
+        if(st)inner+='<div class="cstat"><span class="pill '+st+'">'+STLBL[st]+'</span><span>'+pp.done+'/'+pp.planned+(a.planned>pp.planned?' · '+(a.planned-pp.planned)+' still ahead':'')+'</span></div>';
+        else if(a.planned)inner+='<div class="cstat"><span class="pill fut">'+a.planned+' planned</span></div>';
+        if(a.groups.size){
+          let lines='';[...a.groups.entries()].sort((u,v)=>v[1].p-u[1].p).forEach(([nm,gg])=>{const pct=gg.p?Math.round(gg.d/gg.p*100):0;
+            lines+='<span class="ag-line"><span class="nm">'+esc(nm)+'</span><span class="n"><b>'+gg.d+'</b>/'+gg.p+'</span><span class="prog"><i style="width:'+pct+'%"></i></span></span>'});
+          let ch='';if(a.missedDl)ch+='<span class="ag-miss">'+a.missedDl+' deadline'+(a.missedDl>1?'s':'')+' missed</span>';if(a.pulled)ch+='<span class="ag-pf">'+a.pulled+' pulled forward</span>';
+          if(ch)lines+='<span class="ag-chips">'+ch+'</span>';
+          inner+='<button class="agg" data-agg="'+ri+'|'+ci+'">'+lines+'</button>';
+        }
+        if(!inner)inner='<span class="empty">No tasks</span>';
+        h+='<div class="cell'+(st?' st-'+st:'')+(c.today?' is-today':'')+'">'+inner+'</div>';
+      }
+    });
+  });
+  g.innerHTML=h;
+  $('sum').textContent='· '+totOpen+' open, '+totOver+' overdue now';
+  g._ctx={cols,rows};
+}
+
+// ---------- filter ----------
+function renderFilterBtn(){
+  const isA=S.mode==='assignee',sel=isA?S.selA:S.selP,all=isA?PEOPLE.length:PROJ.length;
+  $('filterBtn').innerHTML=(isA?'Assignee':'Project')+' <span class="count">'+(sel.size===all?'All':sel.size)+'</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>';
+  const names=isA?PEOPLE.map(p=>p.name):PROJ;
+  $('chips').innerHTML=sel.size===all?'':[...sel].map(i=>'<button class="chip" data-chip="'+i+'">'+esc(names[i])+'<span aria-label="Remove">✕</span></button>').join('');
+}
+function renderPop(){
+  const isA=S.mode==='assignee',sel=isA?S.selA:S.selP,names=isA?PEOPLE.map(p=>p.name):PROJ,q=$('popQ').value.toLowerCase();
+  $('popList').innerHTML=names.map((n,i)=>n.toLowerCase().includes(q)?'<label><input type="checkbox" id="f'+i+'" data-f="'+i+'"'+(sel.has(i)?' checked':'')+'> '+esc(n)+'</label>':'').join('');
+}
+const curSel=()=>S.mode==='assignee'?S.selA:S.selP;
+const allIdx=()=>(S.mode==='assignee'?PEOPLE:PROJ).map((_,i)=>i);
+$('filterBtn').onclick=e=>{e.stopPropagation();const p=$('pop');p.hidden=!p.hidden;$('filterBtn').setAttribute('aria-expanded',!p.hidden);if(!p.hidden){$('popQ').value='';renderPop();$('popQ').focus()}};
+$('pop').onclick=e=>e.stopPropagation();
+$('popQ').oninput=renderPop;
+$('popList').onchange=e=>{const i=+e.target.dataset.f,s=curSel();e.target.checked?s.add(i):s.delete(i);render()};
+$('selAll').onclick=()=>{allIdx().forEach(i=>curSel().add(i));renderPop();render()};
+$('selNone').onclick=()=>{curSel().clear();renderPop();render()};
+document.addEventListener('click',()=>{$('pop').hidden=true;$('filterBtn').setAttribute('aria-expanded','false')});
+$('chips').onclick=e=>{const b=e.target.closest('[data-chip]');if(!b)return;curSel().delete(+b.dataset.chip);render()};
+
+// ---------- controls ----------
+$('viewSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.view=b.dataset.v;S.off=0;render()};
+$('modeSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.mode=b.dataset.m;$('pop').hidden=true;render()};
+$('prev').onclick=()=>{S.off--;render()};
+$('next').onclick=()=>{S.off++;render()};
+$('todayBtn').onclick=()=>{S.off=0;render()};
+$('q').oninput=e=>{S.q=e.target.value;render()};
+
+// ---------- drawer ----------
+function openDrawer(title,sub,body){$('dTitle').textContent=title;$('dSub').textContent=sub;$('dBody').innerHTML=body;$('drawer').hidden=false;$('scrim').hidden=false;$('dClose').focus()}
+function closeDrawer(){$('drawer').hidden=true;$('scrim').hidden=true}
+$('dClose').onclick=closeDrawer;$('scrim').onclick=closeDrawer;
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer()});
+function taskDetail(t){
+  const cur=curDl(t);const ev=[];
+  ev.push({n:t.created,o:0,h:'<li><div>Created, deadline <b>'+fL(t.hist[0].dl)+'</b></div><div class="when">'+fL(t.created)+' · by '+esc(t.hist[0].by)+'</div></li>'});
+  t.hist.forEach((h,k)=>{if(!k)return;const prev=t.hist[k-1];
+    const kind=h.dl<prev.dl?'Pulled forward':h.on>prev.dl?ord(missedCount(t,h.on))+' deadline missed':'Re-planned before it was due';
+    ev.push({n:h.on,o:1,h:'<li class="'+(h.on>prev.dl?'m':'')+'"><div>Deadline '+fL(prev.dl)+' → <b>'+fL(h.dl)+'</b></div><div class="when">'+fL(h.on)+' · by '+esc(h.by)+' · '+kind+'</div></li>'})});
+  t.plans.forEach(dp=>ev.push({n:dp,o:2,h:'<li><div>Taken into day plan for <b>'+fL(dp)+'</b></div><div class="when">by '+esc(PEOPLE[t.a].name)+' · deadline unchanged'+(t.done===dp?'':dp<T?' · not done that day':'')+'</div></li>'}));
+  if(t.done!==null)ev.push({n:t.done,o:3,h:'<li class="d"><div>Completed</div><div class="when">'+fL(t.done)+(t.done<=cur?' · on or before the deadline':' · '+(t.done-cur)+' day(s) after the deadline')+'</div></li>'});
+  else if(cur<T)ev.push({n:T,o:3,h:'<li class="m"><div>Still open</div><div class="when">'+(T-cur)+' day(s) past '+fL(cur)+'</div></li>'});
+  else ev.push({n:T,o:3,h:'<li><div>Open</div><div class="when">due '+fL(cur)+'</div></li>'});
+  ev.sort((a,b)=>a.n-b.n||a.o-b.o);
+  const shown=[];for(let n=Math.min(t.created,...t.plans);n<=Math.max(cur,T);n++){const es=entriesFor(t,n);if(es.length)shown.push(fL(n)+' ('+es.map(e=>({deadline:'deadline',moved:'moved away',replan:'re-planned',dayplan:'day plan'})[e.kind]).join(', ')+')')}
+  openDrawer(t.title,'#'+t.id+' · '+PROJ[t.p]+' · '+PEOPLE[t.a].name,
+   '<dl class="kv"><dt>Project</dt><dd>'+esc(PROJ[t.p])+'</dd><dt>Assignee</dt><dd>'+esc(PEOPLE[t.a].name)+'</dd><dt>Current deadline</dt><dd>'+fL(cur)+'</dd><dt>Deadlines missed</dt><dd>'+missedCount(t)+'</dd></dl>'+
+   '<h4>Plan log</h4><ol class="tl">'+ev.map(e=>e.h).join('')+'</ol><h4>Shown on the planner</h4><p style="margin:0;color:var(--muted)">'+(shown.join(' · ')||'Nowhere yet')+'</p>');
+}
+function aggDetail(ri,ci){
+  const {cols,rows}=$('grid')._ctx;const r=rows[ri],c=cols[ci];let body='';
+  for(let n=c.s;n<=c.e;n++){const di=dayInfo(r.list,n);if(!di.entries.length)continue;
+    const st=n<=T?statusOf(di.planned,di.done):null;
+    body+='<div class="dday">'+fL(n)+(st?' · <span class="pill '+st+'">'+di.done+'/'+di.planned+'</span>':'')+'</div><div class="dlist">'+di.entries.map(taskBtn).join('')+'</div>'}
+  openDrawer(r.name,c.sub,body||'<p>No tasks.</p>');
+}
+function overDetail(ri){
+  const {rows}=$('grid')._ctx;const r=rows[ri];
+  const l=r.list.filter(isOverdueNow).sort((a,b)=>curDl(a)-curDl(b));
+  openDrawer(r.name+' · overdue now',l.length+' open tasks past their deadline. Each stays on its own deadline day on the planner.',
+   '<div class="dlist">'+l.map(t=>{const e={t,kind:'deadline',st:'missed'};return taskBtn(e).replace('Not done','Due '+fL(curDl(t))+' · '+(T-curDl(t))+'d overdue')}).join('')+'</div>');
+}
+$('grid').onclick=e=>{
+  const o=e.target.closest('[data-over]');if(o){overDetail(+o.dataset.over);return}
+  const tb=e.target.closest('[data-t]');if(tb){taskDetail(byId.get(+tb.dataset.t));return}
+  const ag=e.target.closest('[data-agg]');if(ag){const[a,b]=ag.dataset.agg.split('|').map(Number);aggDetail(a,b)}
+};
+$('dBody').onclick=e=>{const tb=e.target.closest('[data-t]');if(tb)taskDetail(byId.get(+tb.dataset.t))};
+
+// ---------- guide: scenarios (week Mon–Fri, today = Wed) ----------
+const SC=[
+ ['Done on its day','Deadline Tue, finished Tue.',{1:'<div class="mini g">Claim report filter<em>Done</em></div>'}],
+ ['Not done, deadline unchanged','Stays red on Tue only. Counted in "overdue now" on the row.',{1:'<div class="mini r">Claim report filter<em>Not done</em></div>'}],
+ ['Missed, PM moves it later','Tue keeps the log; Thu shows the missed count.',{1:'<div class="mini mv"><s>Claim report filter</s><em>Moved → Thu by Vijay</em><em class="r">1st deadline missed</em></div>',3:'<div class="mini">Claim report filter<em class="r">1st deadline missed</em></div>'}],
+ ['Missed twice','Every missed day keeps its log; the badge counts up.',{0:'<div class="mini mv"><s>IMEI duplicate check</s><em>Moved → Tue</em><em class="r">1st deadline missed</em></div>',1:'<div class="mini mv"><s>IMEI duplicate check</s><em>Moved → Thu</em><em class="r">2nd deadline missed</em></div>',3:'<div class="mini">IMEI duplicate check<em class="r">2nd deadline missed</em></div>'}],
+ ['Re-planned before it was due','Changed on Mon from Thu to Fri. Thu had not arrived, so it is cleared.',{3:'<span class="gone">cleared</span>',4:'<div class="mini">Ledger export<em>Re-planned from Thu</em></div>'}],
+ ['Assignee takes it into today\'s plan','Deadline stays Fri. Shown today, removed from Fri. Done today: stays on Wed only. Not done by day end: Wed turns red and it returns to Fri.',{2:'<div class="mini t">KYC approval flow<em>In day plan · deadline Fri</em></div>',4:'<span class="gone">removed while in today\'s plan</span>'}],
+ ['PM pulls the deadline forward','Fri → Wed. Shown today with where it came from; Fri is cleared.',{2:'<div class="mini">Scheme slab Q4<em>Pulled forward from Fri by Vijay</em></div>',4:'<span class="gone">cleared</span>'}],
+ ['Moved on the day itself','Re-planned on Tue before the day ended: logged, not counted as missed.',{1:'<div class="mini mv">Push alert<em>Re-planned → Thu the same day</em></div>',3:'<div class="mini">Push alert<em>Planned</em></div>'}]
+];
+(function(){let h='<div class="sh sn">Situation</div>';['Mon','Tue','Wed · today','Thu','Fri'].forEach((d,i)=>h+='<div class="sh'+(i===2?' now':'')+'">'+d+'</div>');
+  SC.forEach(([n,s,c])=>{h+='<div class="sn"><b>'+n+'</b><span>'+s+'</span></div>';for(let i=0;i<5;i++)h+='<div class="'+(i===2?'now-col':'')+'">'+(c[i]||'')+'</div>'});
+  $('scGrid').innerHTML=h;})();
+render();
+})();
+</script>

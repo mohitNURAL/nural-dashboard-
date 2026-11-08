@@ -12,8 +12,6 @@ import {
   STAGE_COLORS,
   tasksInHand,
   inHandByGroup,
-  inHandCalendar,
-  type CalendarView,
   projectWork,
   WORK_PERIODS,
   projectWorkSummary,
@@ -27,18 +25,20 @@ import type { Dataset } from '../data/dataset';
 import {
   assignee,
   contextOf,
-  namedCalendar,
   project,
   unassignedOpen,
   withAssignees,
   withGroupNames,
   type AppOptions,
 } from './context';
-import { calendarParam, groupByParam, parseQuery, scopeParam } from './params';
+import { groupByParam, parseQuery, scopeParam } from './params';
+import { plannerRoutes, type DayPlanReader } from './planner';
 
 export interface DevRouteDeps {
   /** PMs (config/roles.json and People directory roles): their projects count on Projects. */
   pms?: () => ReadonlySet<number>;
+  /** Posted Daily update plans (the Tasks in hand planner's day plans). */
+  readPlans?: DayPlanReader;
 }
 
 /**
@@ -66,7 +66,7 @@ export function devRoutes(
   app: FastifyInstance,
   getDataset: RequestDataset,
   opts: AppOptions,
-  { pms = () => new Set<number>() }: DevRouteDeps = {},
+  { pms = () => new Set<number>(), readPlans = async () => [] }: DevRouteDeps = {},
 ) {
   async function scope(req: FastifyRequest, extra?: z.ZodRawShape) {
     const { query: q, filters } = parseQuery(req.query, { ...scopeParam, ...extra });
@@ -134,12 +134,16 @@ export function devRoutes(
     return { groupBy: by, rows: withGroupNames(ds, r.rows, by), totals: r.totals };
   });
 
-  // Tasks in hand as a planner: day, week or month columns, per assignee or project (2026-10-20).
-  app.get('/api/dev/inhand/calendar', async (req) => {
-    const { ds, ctx, tasks, q } = await scope(req, { ...groupByParam, ...calendarParam });
-    const view = (q as { view?: CalendarView }).view ?? 'week';
-    return namedCalendar(ds, inHandCalendar(tasks, ctx, view, q.groupBy ?? 'assignee'));
-  });
+  // Tasks in hand planner (2026-11-08, SRS 25): the tab's tasks, pending and overdue as everywhere.
+  plannerRoutes(
+    app,
+    '/api/dev/inhand/calendar',
+    async (req) => {
+      const { ds, ctx, tasks } = await scope(req);
+      return { ds, ctx, list: tasks };
+    },
+    readPlans,
+  );
 
   app.get('/api/dev/assignees', async (req) => {
     const { ds, ctx, tasks, q } = await scope(req, groupByParam);

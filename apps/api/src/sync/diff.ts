@@ -10,6 +10,8 @@ export interface StoredTask {
   changedAt: Date;
   /** Assignee before this change (live-stream scoping: the previous owner is told too). */
   responsibleId?: number;
+  /** Deadline before this change (planner: a change reads the task's DEADLINE history). */
+  deadline?: Date | null;
 }
 
 export interface NextTask {

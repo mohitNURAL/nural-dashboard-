@@ -328,18 +328,22 @@ export async function buildServer({
     if (guard && !guard[1](await scoping.viewer(req)))
       return reply.code(403).send({ error: `You have no access to ${guard[2]}.` });
   });
+  // Daily update plans also feed the Tasks in hand planner's day plans (SRS 25).
+  const dailyStore = daily?.store ?? memoryDailyStore();
+  const readPlans = (from: string, to: string) => dailyStore.range(from, to);
   devRoutes(app, scoping.dataset, opts, {
+    readPlans,
     pms: () =>
       new Set([
         ...rolesCfg.pms,
         ...[...grants.users].filter(([, g]) => g.role === 'pm').map(([id]) => id),
       ]),
   });
-  qaRoutes(app, scoping.dataset, opts);
+  qaRoutes(app, scoping.dataset, opts, { readPlans });
   taskRoutes(app, scoping.dataset, opts, { describe, viewer: scoping.viewer });
   filterRoutes(app, scoping.dataset, opts);
   alertRoutes(app, scoping.dataset, opts);
-  kpiRoutes(app, scoping.dataset, opts, scoping.viewer);
+  kpiRoutes(app, scoping.dataset, opts, scoping.viewer, { readPlans });
   insightRoutes(app, scoping.dataset, opts, scoping.viewer);
   actionRoutes(app, scoping.dataset, {
     now,
@@ -434,7 +438,6 @@ export async function buildServer({
   reportRoutes(app, scoping.viewer, { engine, store: reportStore, scheduler });
   // Daily update: the KPI calendar's holidays with the company's working days (WORK_DAYS).
   const cal = kpiConfig().calendar;
-  const dailyStore = daily?.store ?? memoryDailyStore();
   const dailyCalendar = {
     ...cal,
     days: new Set(

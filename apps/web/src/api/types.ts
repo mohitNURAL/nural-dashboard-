@@ -2,6 +2,8 @@
 import type {
   DueWindow,
   GroupBy,
+  PlanEntry,
+  PlannerView,
   IssueType,
   QaSummaryPart,
   StageGroup,
@@ -270,26 +272,99 @@ export interface DevMatrix {
 
 // ---------------------------------------------------------------- QA tab (routes/qa.ts)
 
-/** Tasks in hand as a planner (2026-10-20): one row per person or project, day / week / month columns. */
-export interface InHandCalendarCell {
-  count: number;
-  /** Projects for a person, people for a project. */
-  items: { id: number; name: string; count: number }[];
+/**
+ * Tasks in hand planner (2026-11-08, SRS 25; routes/planner.ts, packages/shared planner.ts): one
+ * row per person or project, the 7 days of a week, 6 weeks or 6 months. Day cells list the tasks
+ * planned that day; week and month cells count each task once.
+ */
+export type PlannerEntry = PlanEntry;
+export type { PlannerView };
+export interface PlannerTask {
+  id: number;
+  title: string;
+  projectId: number;
+  project: string;
+  assigneeId: number;
+  assignee: string;
+  deadline: string | null;
+  /** The deadline's day (IST). */
+  deadlineDay: string | null;
 }
-export interface InHandCalendar {
-  view: 'day' | 'week' | 'month';
+export interface PlannerProgress {
+  planned: number;
+  done: number;
+}
+export interface PlannerDayCell extends PlannerProgress {
+  entries: PlannerEntry[];
+}
+export interface PlannerPeriodCell extends PlannerProgress {
+  plannedToDate: number;
+  doneToDate: number;
+  groups: (PlannerProgress & { id: number; name: string })[];
+  missedDeadlines: number;
+  pulledForward: number;
+}
+export type PlannerCell = PlannerDayCell | PlannerPeriodCell;
+export interface PlannerGrid {
+  view: PlannerView;
   groupBy: GroupBy;
-  /** YYYY-MM-DD (IST). */
+  /** First column's first day; today (YYYY-MM-DD, IST). */
+  start: string;
   today: string;
-  columns: { key: string; from: string; to: string | null }[];
+  columns: { key: string; from: string; to: string }[];
   rows: {
     id: number;
     name: string;
-    total: number;
-    overdue: InHandCalendarCell;
-    cells: Record<string, InHandCalendarCell>;
+    open: number;
+    overdueNow: number;
+    progress: PlannerProgress;
+    cells: Record<string, PlannerCell>;
   }[];
-  totals: { total: number; overdue: number; cells: Record<string, number> };
+  columnTotals: Record<string, PlannerProgress & { plannedToDate: number; doneToDate: number }>;
+  totals: { open: number; overdueNow: number };
+  /** The tasks and people the entries refer to. */
+  tasks: Record<string, PlannerTask>;
+  people: Record<string, string>;
+  /** The Assignee and Project picks (the tab's tasks, before the planner's own filters). */
+  choices: { assignees: { id: number; name: string }[]; projects: { id: number; name: string }[] };
+}
+export interface PlannerOverdue {
+  row: number;
+  name: string | null;
+  items: (PlannerTask & { deadlineDay: string; daysOverdue: number; missed: number })[];
+}
+export interface PlannerPeriod {
+  row: number | null;
+  name: string | null;
+  today: string;
+  days: (PlannerProgress & { day: string; entries: PlannerEntry[] })[];
+  tasks: Record<string, PlannerTask>;
+  people: Record<string, string>;
+}
+export type PlannerLogItem =
+  | { type: 'created'; day: string; deadline: string | null; by: number | null }
+  | {
+      type: 'change';
+      day: string;
+      at: string;
+      from: string | null;
+      to: string | null;
+      by: number | null;
+      kind: 'set' | 'removed' | 'missed' | 'pull' | 'replan';
+      nth: number;
+    }
+  | { type: 'dayplan'; day: string; done: boolean; past: boolean }
+  | { type: 'completed'; day: string; lateDays: number }
+  | { type: 'open'; overdueDays: number };
+export interface PlannerTaskLog {
+  task: PlannerTask & { url: string };
+  today: string;
+  deadline: string | null;
+  missed: number;
+  done: string | null;
+  log: PlannerLogItem[];
+  shownOn: { day: string; kinds: PlannerEntry['kind'][] }[];
+  people: Record<string, string>;
 }
 
 /** QA Last filed popup: issues filed on one day by project, creator and assignee. */

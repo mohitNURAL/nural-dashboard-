@@ -9,7 +9,7 @@ import { chunk, excludedSet } from '../db/upsert';
 import type { EventBus, TaskChanged } from '../events/bus';
 import { syncGroupStages } from './directory';
 import { diffTask, type StoredTask } from './diff';
-import { stageEventsFrom, type HistoryEntry } from './historyBackfill';
+import { deadlineEventsFrom, stageEventsFrom, type HistoryEntry } from './historyBackfill';
 import { loadStageMap, testingTeamIds } from './initialLoad';
 import { mapTask, type BitrixTask, type TaskRow } from './mapTask';
 
@@ -105,6 +105,40 @@ async function recordStageMoves(call: Call, taskIds: number[], source: ChangeSou
   return inserted;
 }
 
+/**
+ * Pulls the DEADLINE history of tasks whose deadline changed (Tasks in hand planner, SRS 25), so
+ * the planner knows who moved it, when and from where. Read-only; history IDs keep it free of
+ * duplicates.
+ */
+async function recordDeadlineChanges(call: Call, taskIds: number[], source: ChangeSource) {
+  let inserted = 0;
+  for (const ids of chunk(taskIds, 50)) {
+    const commands: Record<string, Command> = {};
+    for (const id of ids)
+      commands[`d${id}`] = {
+        method: 'tasks.task.history.list',
+        params: { taskId: id, filter: { FIELD: 'DEADLINE' } },
+      };
+    const res = await batch<{ list?: HistoryEntry[] }>(call, commands, { allowErrors: true });
+    const rows = ids.flatMap((id) =>
+      deadlineEventsFrom(
+        id,
+        res.result[`d${id}`]?.list ?? [],
+        source === 'nightly' ? 'reconcile' : source,
+      ),
+    );
+    if (rows.length) {
+      const out = await db
+        .insert(schema.taskDeadlineEvents)
+        .values(rows)
+        .onConflictDoNothing({ target: schema.taskDeadlineEvents.historyId })
+        .returning({ id: schema.taskDeadlineEvents.id });
+      inserted += out.length;
+    }
+  }
+  return inserted;
+}
+
 export interface ApplyResult {
   changes: TaskChanged[];
   stageEvents: number;
@@ -149,6 +183,7 @@ export async function applyTasks(
           deleted: schema.tasks.deleted,
           changedAt: schema.tasks.changedAt,
           responsibleId: schema.tasks.responsibleId,
+          deadline: schema.tasks.deadline,
         })
         .from(schema.tasks)
         .where(inArray(schema.tasks.id, ids))
@@ -168,6 +203,7 @@ export async function applyTasks(
   await writeRelations(keep, sources);
   const changes: TaskChanged[] = [];
   const moved: number[] = [];
+  const redated: number[] = [];
   const at = new Date().toISOString();
 
   for (const row of keep) {
@@ -179,6 +215,9 @@ export async function applyTasks(
       changedAt: row.changedAt,
     });
     if (d.stageChanged || d.isNew) moved.push(row.id);
+    const before = stored.get(row.id)?.deadline ?? null;
+    if ((d.isNew && row.deadline) || (!d.isNew && before?.getTime() !== row.deadline?.getTime()))
+      redated.push(row.id);
     if (!d.changed) continue;
     changes.push({
       type: 'task.changed',
@@ -217,6 +256,7 @@ export async function applyTasks(
       )),
     );
   const stageEvents = moved.length ? await recordStageMoves(call, moved, source) : 0;
+  if (redated.length) await recordDeadlineChanges(call, redated, source);
 
   if (bus) for (const c of changes) await bus.publish(c);
   return { changes, stageEvents };

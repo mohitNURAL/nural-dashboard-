@@ -1,45 +1,99 @@
 import { describe, expect, it } from 'vitest';
-import type { InHandCalendar } from '../api/types';
+import type { PlannerPeriod } from '../api/types';
 import { plannerTable } from './inHandCalendarExport';
 
-const cell = (items: [number, string, number][]) => ({
-  count: items.reduce((n, [, , c]) => n + c, 0),
-  items: items.map(([id, name, count]) => ({ id, name, count })),
+const task = (id: number, title: string) => ({
+  id,
+  title,
+  projectId: 148,
+  project: 'Moto',
+  assigneeId: 30,
+  assignee: 'Dev A',
+  deadline: '2026-11-12T13:00:00.000Z',
+  deadlineDay: '2026-11-12',
 });
 
 describe('Tasks in hand planner export', () => {
-  it('writes each person, then each project they work on, with every column', () => {
-    const data: InHandCalendar = {
-      view: 'week',
-      groupBy: 'assignee',
-      today: '2026-10-20',
-      columns: [
-        { key: '2026-10-19', from: '2026-10-19', to: '2026-10-25' },
-        { key: 'later', from: '2026-10-26', to: null },
-      ],
-      rows: [
+  it('writes one line per entry: day, who, task, entry type, status, missed and the move', () => {
+    const data: Pick<PlannerPeriod, 'days' | 'tasks' | 'people'> = {
+      days: [
         {
-          id: 30,
-          name: 'Dev A',
-          total: 4,
-          overdue: cell([[148, 'Moto', 1]]),
-          cells: {
-            '2026-10-19': cell([
-              [148, 'Moto', 1],
-              [154, 'Pulse', 2],
-            ]),
-            later: cell([]),
-          },
+          day: '2026-11-10',
+          planned: 1,
+          done: 0,
+          entries: [
+            {
+              taskId: 7,
+              day: '2026-11-10',
+              kind: 'moved',
+              status: 'moved',
+              counts: true,
+              missed: 1,
+              to: '2026-11-12',
+              by: 28,
+            },
+          ],
+        },
+        {
+          day: '2026-11-12',
+          planned: 1,
+          done: 0,
+          entries: [
+            {
+              taskId: 7,
+              day: '2026-11-12',
+              kind: 'deadline',
+              status: 'planned',
+              counts: true,
+              missed: 1,
+            },
+          ],
         },
       ],
-      totals: { total: 4, overdue: 1, cells: { '2026-10-19': 3, later: 0 } },
+      tasks: { '7': task(7, 'Ledger export') },
+      people: { '28': 'Vijay Prajapati' },
     };
-    expect(plannerTable(data, data.rows)).toEqual([
-      ['Assignee', 'Project', 'Total', 'Overdue', '19-25 Oct', 'Later (from 26 Oct)'],
-      ['Dev A', 'All', 4, 1, 3, 0],
-      ['Dev A', 'Moto', 2, 1, 1, 0],
-      ['Dev A', 'Pulse', 2, 0, 2, 0],
-      ['Total', 'All', 4, 1, 3, 0],
+    const t = plannerTable(data);
+    expect(t[0]).toEqual([
+      'Day',
+      'Assignee',
+      'Project',
+      'Task',
+      'Title',
+      'Entry type',
+      'Status',
+      'Missed count',
+      'Moved to',
+      'Moved by',
+      'Deadline now',
+    ]);
+    expect(t.slice(1)).toEqual([
+      [
+        'Tue 10 Nov',
+        'Dev A',
+        'Moto',
+        7,
+        'Ledger export',
+        'Moved away',
+        'Moved',
+        '1st',
+        'Thu 12 Nov',
+        'Vijay Prajapati',
+        'Thu 12 Nov',
+      ],
+      [
+        'Thu 12 Nov',
+        'Dev A',
+        'Moto',
+        7,
+        'Ledger export',
+        'Deadline',
+        'Planned',
+        '1st',
+        '',
+        '',
+        'Thu 12 Nov',
+      ],
     ]);
   });
 });

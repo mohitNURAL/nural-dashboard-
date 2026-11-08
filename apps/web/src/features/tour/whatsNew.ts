@@ -18,6 +18,45 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-11-08-planner-kpi',
+    date: '2026-11-08',
+    tab: 'kpi',
+    title: 'Tasks in hand planner: the actual tasks of each day',
+    steps: [
+      {
+        target: slot('kpi.tiles', 'inHand'),
+        title: 'A new planner',
+        text: 'Click Tasks in hand: each day now lists its tasks as Project → Title (Assignee → Title on the Project tab). Green done, blue planned, teal taken into a day plan, red not done that day; a day turns green, amber or red by how much got done. Overdue work stays on the day it was missed, and a moved deadline leaves a log there ("Moved → Thu by Vijay · 1st deadline missed"). Use ‹ › and Today for past weeks and months, the Assignee or Project filter, and click a task for its plan log.',
+      },
+    ],
+  },
+  {
+    id: '2026-11-08-planner-dev',
+    date: '2026-11-08',
+    tab: 'dev',
+    title: 'Tasks in hand planner: the actual tasks of each day',
+    steps: [
+      {
+        target: slot('dev.tiles', 'inHand'),
+        title: 'A new planner',
+        text: 'Click Tasks in hand: each day now lists its tasks as Project → Title (Assignee → Title on the Project tab). Green done, blue planned, teal taken into a day plan, red not done that day; a day turns green, amber or red by how much got done. Overdue work stays on the day it was missed, and a moved deadline leaves a log there ("Moved → Thu by Vijay · 1st deadline missed"). Use ‹ › and Today for past weeks and months, the Assignee or Project filter, and click a task for its plan log.',
+      },
+    ],
+  },
+  {
+    id: '2026-11-08-planner-qa',
+    date: '2026-11-08',
+    tab: 'qa',
+    title: 'Tasks in hand planner: the actual tasks of each day',
+    steps: [
+      {
+        target: slot('qa.tiles', 'inHand'),
+        title: 'A new planner',
+        text: 'Click Tasks in hand: each day now lists its tasks as Project → Title (Assignee → Title on the Project tab). Green done, blue planned, teal taken into a day plan, red not done that day; a day turns green, amber or red by how much got done. Overdue work stays on the day it was missed, and a moved deadline leaves a log there ("Moved → Thu by Vijay · 1st deadline missed"). Use ‹ › and Today for past weeks and months, the Assignee or Project filter, and click a task for its plan log.',
+      },
+    ],
+  },
+  {
     id: '2026-11-02-admin-pulse-account',
     date: '2026-11-02',
     tab: 'people',

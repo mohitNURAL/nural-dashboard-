@@ -23,7 +23,6 @@ import {
   STAGE_COLORS,
   tasksInHand,
   inHandByGroup,
-  inHandCalendar,
   testingTasks,
   testingWorkload,
   waitingForRetest,
@@ -34,7 +33,6 @@ import type { RequestDataset } from '../auth/roles';
 import {
   assignee,
   contextOf,
-  namedCalendar,
   person,
   project,
   unassignedOpen,
@@ -43,9 +41,15 @@ import {
   withPeople,
   type AppOptions,
 } from './context';
-import { calendarParam, groupByParam, parseQuery } from './params';
+import { groupByParam, parseQuery } from './params';
+import { plannerRoutes, type DayPlanReader } from './planner';
 
-export function qaRoutes(app: FastifyInstance, getDataset: RequestDataset, opts: AppOptions) {
+export function qaRoutes(
+  app: FastifyInstance,
+  getDataset: RequestDataset,
+  opts: AppOptions,
+  { readPlans = async () => [] }: { readPlans?: DayPlanReader } = {},
+) {
   async function scope(req: FastifyRequest) {
     const { filters } = parseQuery(req.query);
     const ds = await getDataset(req);
@@ -126,14 +130,18 @@ export function qaRoutes(app: FastifyInstance, getDataset: RequestDataset, opts:
     return { groupBy: by, rows: withGroupNames(ds, r.rows, by), totals: r.totals };
   });
 
-  // Tasks in hand as a planner (2026-10-20): the QA team's pending testing tasks.
-  app.get('/api/qa/inhand/calendar', async (req) => {
-    const { query, filters } = parseQuery(req.query, { ...groupByParam, ...calendarParam });
-    const ds = await getDataset(req);
-    const ctx = contextOf(ds, opts);
-    const list = applyFilters(testingTasks(ds.tasks, ctx), filters, ctx.tz);
-    return namedCalendar(ds, inHandCalendar(list, ctx, query.view, query.groupBy));
-  });
+  // Tasks in hand planner (2026-11-08, SRS 25): the QA team's testing tasks.
+  plannerRoutes(
+    app,
+    '/api/qa/inhand/calendar',
+    async (req) => {
+      const { filters } = parseQuery(req.query);
+      const ds = await getDataset(req);
+      const ctx = contextOf(ds, opts);
+      return { ds, ctx, list: applyFilters(testingTasks(ds.tasks, ctx), filters, ctx.tz) };
+    },
+    readPlans,
+  );
 
   app.get('/api/qa/issues', async (req) => {
     const { query, filters } = parseQuery(req.query, groupByParam);

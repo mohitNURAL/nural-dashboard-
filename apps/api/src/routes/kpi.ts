@@ -12,8 +12,6 @@ import {
   projectWorkSummary,
   tasksInHand,
   inHandByGroup,
-  inHandCalendar,
-  CALENDAR_VIEWS,
   GROUP_BY,
   overdueBreakdown,
   peoplePerformance,
@@ -29,7 +27,6 @@ import type { Dataset } from '../data/dataset';
 import { kpiConfig } from '../data/kpiConfig';
 import {
   contextOf,
-  namedCalendar,
   person,
   project,
   unassignedOpen,
@@ -38,6 +35,7 @@ import {
   type AppOptions,
 } from './context';
 import { parseQuery } from './params';
+import { plannerRoutes, tabQuery, type DayPlanReader } from './planner';
 
 export const kpiParams = {
   period: z.enum(['day', 'week', 'month']).default('week'),
@@ -89,8 +87,7 @@ function computer(getDataset: RequestDataset, opts: AppOptions) {
   // Keyed by query and checked against the very dataset object: a scoped dataset is a different
   // object per person, so one person's numbers can never be served to another.
   const cache = new Map<string, { ds: Dataset; at: number; value: ReturnType<typeof compute> }>();
-  return async (req: FastifyRequest) => {
-    const query = req.query;
+  return async (req: FastifyRequest, query: unknown = req.query) => {
     const ds = await getDataset(req);
     const key = JSON.stringify(query ?? {});
     const hit = cache.get(key);
@@ -113,6 +110,7 @@ export function kpiRoutes(
   getDataset: RequestDataset,
   opts: AppOptions,
   viewer: (req: FastifyRequest) => Promise<Viewer>,
+  { readPlans = async () => [] }: { readPlans?: DayPlanReader } = {},
 ) {
   const get = computer(getDataset, opts);
   // The KPI tab needs the kpi right (by default admins, PM, team leads, product owners).
@@ -168,28 +166,25 @@ export function kpiRoutes(
     return { groupBy: by, rows: withGroupNames(ds, r.rows, by), totals: r.totals };
   });
 
-  // Tasks in hand as a planner (2026-10-20): KPI open tasks, KPI's own overdue rule.
-  app.get('/api/kpi/inhand/calendar', async (req) => {
-    const by = z
-      .enum(GROUP_BY)
-      .catch('assignee')
-      .parse((req.query as { groupBy?: unknown }).groupBy);
-    const view = z
-      .enum(CALENDAR_VIEWS)
-      .catch('week')
-      .parse((req.query as { view?: unknown }).view);
-    const { ds, scope } = await get(req);
-    const open = new Set(scope.all.filter((k) => k.open).map((k) => k.t.id));
-    const late = new Set(scope.all.filter((k) => k.overdue).map((k) => k.t.id));
-    const cal = inHandCalendar(
-      scope.all.map((k) => k.t),
-      contextOf(ds, opts),
-      view,
-      by,
-      { open: (t) => open.has(t.id), overdue: (t) => late.has(t.id) },
-    );
-    return namedCalendar(ds, cal);
-  });
+  // Tasks in hand planner (2026-11-08, SRS 25): KPI open tasks, KPI's own overdue rule. The
+  // planner's own params are left out of the KPI computation (and its cache key).
+  plannerRoutes(
+    app,
+    '/api/kpi/inhand/calendar',
+    async (req) => {
+      const { ds, scope } = await get(req, tabQuery(req.query));
+      const open = new Set(scope.all.filter((k) => k.open).map((k) => k.t.id));
+      const late = new Set(scope.all.filter((k) => k.overdue).map((k) => k.t.id));
+      return {
+        ds,
+        ctx: contextOf(ds, opts),
+        list: scope.all.map((k) => k.t),
+        open: (t) => open.has(t.id),
+        overdue: (t) => late.has(t.id),
+      };
+    },
+    readPlans,
+  );
 
   app.get('/api/kpi/projects', async (req) => {
     const { ds, projects, activeIds, work } = await get(req);

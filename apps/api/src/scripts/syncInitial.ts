@@ -1,11 +1,12 @@
 // pnpm sync:initial [--skip-history] [--restart-history]
-// Migrates, syncs the directory, loads all tasks, then backfills stage moves from history.
+// Migrates, syncs the directory, loads all tasks, then backfills stage moves and deadline changes
+// from history.
 import { sql } from 'drizzle-orm';
 import { closeBitrix, getBitrix } from '../bitrix';
 import { closeDb, db, schema } from '../db/client';
 import { runMigrations } from '../db/migrate';
 import { syncDirectory } from '../sync/directory';
-import { historyBackfill } from '../sync/historyBackfill';
+import { deadlineBackfill, historyBackfill } from '../sync/historyBackfill';
 import { initialLoad } from '../sync/initialLoad';
 
 const args = new Set(process.argv.slice(2));
@@ -41,6 +42,12 @@ async function main() {
     log(
       `  scanned ${h.tasksScanned} tasks, ${h.eventsInserted} new stage moves` +
         (h.failedTasks ? `, ${h.failedTasks} tasks failed (re-run to retry)` : ''),
+    );
+    log('   Deadline history backfill (planner)');
+    const d = await deadlineBackfill(call, { restart: args.has('--restart-history'), log });
+    log(
+      `  scanned ${d.tasksScanned} tasks, ${d.eventsInserted} new deadline changes` +
+        (d.failedTasks ? `, ${d.failedTasks} tasks failed (re-run to retry)` : ''),
     );
   }
 

@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Dataset } from '../data/dataset';
 import { createMemoryBus } from '../events/bus';
 import { mayReceive } from '../routes/stream';
+import { memoryDailyStore } from '../routes/daily';
 import { buildServer } from '../server';
 import { inScope, scopeDataset, viewerOf, type RolesConfig, LOCAL_VIEWER } from './roles';
 import { sign, SESSION_COOKIE } from './session';
@@ -144,6 +145,13 @@ const ENDPOINTS = [
   '/api/qa/inhand',
   '/api/qa/inhand?groupBy=project',
   '/api/qa/inhand/calendar?view=week&groupBy=project',
+  // Added 2026-11-08: the planner's past periods, day plans, overdue and period panels.
+  '/api/dev/inhand/calendar?view=day&start=2026-09-28&scope=all',
+  '/api/dev/inhand/calendar?view=month&scope=all&assignees=30,28&q=task',
+  '/api/dev/inhand/calendar/overdue?row=30&scope=all',
+  '/api/dev/inhand/calendar/overdue?row=148&groupBy=project&scope=all',
+  '/api/dev/inhand/calendar/period?row=30&pfrom=2026-09-28&pto=2026-10-11&scope=all',
+  '/api/qa/inhand/calendar/overdue?row=14',
 ];
 
 /**
@@ -177,12 +185,33 @@ const stable = (v: unknown): unknown =>
     k === 'asOf' || k === 'dataLoadedAt' || k === 'viewScope' ? undefined : x,
   );
 
+// Posted Daily update plans of several people (the planner's day plans): a member's planner must
+// use only those of their own tasks.
+const dailyStore = memoryDailyStore();
+const plan = (userId: number, day: string, taskIds: number[]) =>
+  dailyStore.save({
+    userId,
+    day,
+    plan: {
+      items: taskIds.map((taskId) => ({ taskId, title: 'Task', project: '', why: 'early' })),
+      note: '',
+    },
+    plannedAt: new Date(`${day}T05:00:00Z`),
+    wrap: null,
+    wrappedAt: null,
+    slackChannel: null,
+    slackTs: null,
+  } as never);
+
 let scoped: Awaited<ReturnType<typeof buildServer>>;
 const references = new Map<number, Awaited<ReturnType<typeof buildServer>>>();
 let fullReference: Awaited<ReturnType<typeof buildServer>>;
 
 beforeAll(async () => {
+  await plan(30, '2026-10-02', [1, 3]);
+  await plan(28, '2026-10-02', [1, 3, 4]);
   scoped = await buildServer({
+    daily: { store: dailyStore },
     getDataset: async () => FULL_DS,
     now: () => NOW,
     logger: false,
@@ -197,6 +226,7 @@ beforeAll(async () => {
     },
   });
   fullReference = await buildServer({
+    daily: { store: dailyStore },
     getDataset: async () => FULL_DS,
     now: () => NOW,
     logger: false,
@@ -208,6 +238,7 @@ beforeAll(async () => {
     references.set(
       uid,
       await buildServer({
+        daily: { store: dailyStore },
         getDataset: async () => makeDataset(tasks.filter((x) => inScope(x, uid, TESTERS))),
         now: () => NOW,
         logger: false,
@@ -276,6 +307,21 @@ describe('every endpoint answers a member exactly as if only their tasks existed
       }
     });
   }
+
+  it('the planner’s task log only opens a member’s own tasks', async () => {
+    expect((await get('/api/dev/inhand/calendar/task/1?scope=all', 30)).statusCode).toBe(200);
+    expect((await get('/api/dev/inhand/calendar/task/1?scope=all', 28)).statusCode).toBe(404);
+    expect((await get('/api/dev/inhand/calendar/task/3?scope=all', 30)).statusCode).toBe(404);
+    // Their own posted plan shows as a day plan (task 1 taken on 2 Oct, due 5 Oct).
+    const g = (
+      await get('/api/dev/inhand/calendar?view=day&start=2026-09-28&scope=all', 30)
+    ).json();
+    const row = g.rows.find((r: { id: number }) => r.id === 30);
+    expect(row.cells['2026-10-02'].entries.map((e: { kind: string }) => e.kind)).toEqual([
+      'dayplan',
+    ]);
+    expect(g.tasks['1'].id).toBe(1);
+  });
 
   it('no endpoint names a project or person outside a member’s own tasks', async () => {
     const extra = [

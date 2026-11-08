@@ -8,6 +8,7 @@ import {
   type IssueType,
   type StageTitle,
   type MetricTask,
+  type DeadlineEvent,
   type StageEvent,
   hasRole,
   DEFAULT_STAGE_ID,
@@ -107,12 +108,19 @@ const selectEvents = () =>
     .select()
     .from(schema.taskStageEvents)
     .orderBy(asc(schema.taskStageEvents.taskId), asc(schema.taskStageEvents.movedAt));
+const selectDeadlines = () =>
+  db
+    .select()
+    .from(schema.taskDeadlineEvents)
+    .orderBy(asc(schema.taskDeadlineEvents.taskId), asc(schema.taskDeadlineEvents.changedAt));
 const relatedOnly = () => eq(schema.taskRelations.kind, 'related');
 
 /** Everything the dataset is built from, as read from Postgres. */
 export interface DatasetRows {
   taskRows: Awaited<ReturnType<typeof selectTasks>>;
   eventRows: (typeof schema.taskStageEvents.$inferSelect)[];
+  /** Deadline changes (planner, SRS 25); absent in older fixtures. */
+  deadlineRows?: (typeof schema.taskDeadlineEvents.$inferSelect)[];
   relationRows: (typeof schema.taskRelations.$inferSelect)[];
   userRows: (typeof schema.users.$inferSelect)[];
   deptRows: (typeof schema.departments.$inferSelect)[];
@@ -127,9 +135,10 @@ export interface DatasetRows {
  */
 export async function patchRows(rows: DatasetRows, ids: readonly number[]): Promise<DatasetRows> {
   const list = [...new Set(ids)];
-  const [tasks, events, relations] = await Promise.all([
+  const [tasks, events, deadlines, relations] = await Promise.all([
     selectTasks().where(inArray(schema.tasks.id, list)),
     selectEvents().where(inArray(schema.taskStageEvents.taskId, list)),
+    selectDeadlines().where(inArray(schema.taskDeadlineEvents.taskId, list)),
     db
       .select()
       .from(schema.taskRelations)
@@ -143,7 +152,12 @@ export async function patchRows(rows: DatasetRows, ids: readonly number[]): Prom
         ),
       ),
   ]);
-  return mergeRows(rows, list, { tasks, events, relations });
+  const merged = mergeRows(rows, list, { tasks, events, relations });
+  const set = new Set(list);
+  return {
+    ...merged,
+    deadlineRows: [...(rows.deadlineRows ?? []).filter((d) => !set.has(d.taskId)), ...deadlines],
+  };
 }
 
 /** The pure part of patchRows: the given tasks' rows swapped for fresh ones, order kept. */
@@ -183,28 +197,39 @@ export async function loadDataset(): Promise<Dataset> {
 
 export async function loadRows(): Promise<DatasetRows> {
   const commentsSince = new Date(Date.now() - 15 * 86_400_000);
-  const [taskRows, eventRows, relationRows, userRows, deptRows, groupRows, stageRows, commentRows] =
-    await Promise.all([
-      selectTasks().where(eq(schema.tasks.deleted, false)),
-      selectEvents(),
-      db.select().from(schema.taskRelations).where(relatedOnly()),
-      db.select().from(schema.users),
-      db.select().from(schema.departments),
-      db.select().from(schema.workgroups),
-      db.select().from(schema.stages),
-      db
-        .select({ taskId: schema.webhookEvents.taskId, at: schema.webhookEvents.receivedAt })
-        .from(schema.webhookEvents)
-        .where(
-          and(
-            eq(schema.webhookEvents.event, 'ONTASKCOMMENTADD'),
-            gte(schema.webhookEvents.receivedAt, commentsSince),
-          ),
+  const [
+    taskRows,
+    eventRows,
+    deadlineRows,
+    relationRows,
+    userRows,
+    deptRows,
+    groupRows,
+    stageRows,
+    commentRows,
+  ] = await Promise.all([
+    selectTasks().where(eq(schema.tasks.deleted, false)),
+    selectEvents(),
+    selectDeadlines(),
+    db.select().from(schema.taskRelations).where(relatedOnly()),
+    db.select().from(schema.users),
+    db.select().from(schema.departments),
+    db.select().from(schema.workgroups),
+    db.select().from(schema.stages),
+    db
+      .select({ taskId: schema.webhookEvents.taskId, at: schema.webhookEvents.receivedAt })
+      .from(schema.webhookEvents)
+      .where(
+        and(
+          eq(schema.webhookEvents.event, 'ONTASKCOMMENTADD'),
+          gte(schema.webhookEvents.receivedAt, commentsSince),
         ),
-    ]);
+      ),
+  ]);
   return {
     taskRows,
     eventRows,
+    deadlineRows,
     relationRows,
     userRows,
     deptRows,
@@ -219,6 +244,7 @@ export function buildDataset(rows: DatasetRows): Dataset {
   const {
     taskRows,
     eventRows,
+    deadlineRows = [],
     relationRows,
     userRows,
     deptRows,
@@ -255,6 +281,13 @@ export function buildDataset(rows: DatasetRows): Dataset {
       by: e.movedBy,
     });
     events.set(e.taskId, list);
+  }
+
+  const deadlineEvents = new Map<number, DeadlineEvent[]>();
+  for (const d of deadlineRows) {
+    const list = deadlineEvents.get(d.taskId) ?? [];
+    list.push({ from: d.oldDeadline, to: d.newDeadline, at: d.changedAt, by: d.changedBy });
+    deadlineEvents.set(d.taskId, list);
   }
 
   // Related links are stored on one side; metrics need them on both.
@@ -299,6 +332,7 @@ export function buildDataset(rows: DatasetRows): Dataset {
       isIssue: t.isIssue,
       issueType: t.issueType as IssueType | null,
       events: events.get(t.id) ?? [],
+      deadlineEvents: deadlineEvents.get(t.id) ?? [],
       startDatePlan: t.startDatePlan,
       dateStart: t.dateStart,
       stageId: t.stageId,

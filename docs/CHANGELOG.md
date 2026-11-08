@@ -17,10 +17,28 @@ and the next change fills its ID in.
   New captures need a sign-in at each access level.
 - Five tables (Alert details, Projects at work, Stage matrix, Ranking, Insights list) still use
   their own markup instead of the shared table.
+- Tasks in hand planner: run `pnpm sync:deadlines` once on the server to read every task's
+  deadline history (until then only changes made after the deploy show as moves). The done green
+  is a new `--success` token (#178A4A; the Figma file has no green yet): confirm with design.
+- Tasks in hand planner: day plans come from posted Daily update plans only; working-day
+  holidays are not greyed (weekends are). The PDF guides do not show the new planner yet.
+
+## 2026-11-08
+
+- Tasks in hand planner redesigned (SRS 25, mockup docs/tasks-in-hand-planner.html) on KPI,
+  Development and QA: each day lists its tasks (Project → Title / Assignee → Title) by deadline
+  or Daily update day plan, done / due / not done / moved / re-planned with "Nth deadline missed"
+  and who moved it; overdue work stays on the day it was missed; past weeks and months (‹ › and
+  Today, state in the URL); planned vs done bars per column and row, Week and Month counting each
+  task once; Assignee and Project multi-select; side panel with a task's plan log, a period by day
+  and a row's overdue-now list; Excel/PDF one line per entry. New table task_deadline_events
+  (migration 0016) from tasks.task.history.list FIELD DEADLINE: backfill `pnpm sync:deadlines`,
+  and the sync reads it again when a task's deadline changes. Logic in packages/shared
+  planner.ts (Vitest: the 8 scenarios and more).
 
 ## 2026-11-02
 
-- Admins create Pulse accounts (no mail needed): People directory › Edit person › Pulse sign-in
+- `8509e41` Admins create Pulse accounts (no mail needed): People directory › Edit person › Pulse sign-in
   sets a temporary password for a person with an active @nuraltech.com Bitrix24 email (or resets
   it, or removes the account; /api/accounts/:id, admin right). Signing in with it answers
   { change: true } and no session until the person chooses their own (/api/auth/password-change,

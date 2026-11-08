@@ -14,6 +14,18 @@ export interface StageEvent {
 }
 
 /** A task as the metric functions see it (packages/shared/src/metrics.ts). */
+/**
+ * A deadline change (2026-11-08, SRS 25), from tasks.task.history.list (field DEADLINE): the old
+ * and new deadline (null = none), when and by whom. Bitrix24 logs no entry for the deadline set at
+ * creation: the first change's `from` is it.
+ */
+export interface DeadlineEvent {
+  from: Date | null;
+  to: Date | null;
+  at: Date;
+  by: number | null;
+}
+
 export interface MetricTask {
   id: number;
   title: string;
@@ -38,6 +50,8 @@ export interface MetricTask {
   issueType: IssueType | null;
   /** Stage moves, oldest first. */
   events: StageEvent[];
+  /** Deadline changes, oldest first (Tasks in hand planner); absent in older fixtures. */
+  deadlineEvents?: DeadlineEvent[];
   /**
    * Whether its board has a QA Backlog stage. False: a closed task is completed wherever its
    * card is (SRS 5). Absent (older fixtures, no workgroup): the stage alone decides.

@@ -39,6 +39,7 @@ export default {
           soft: v('--bad-soft'),
         },
         good: v('--good'),
+        success: v('--success'),
         navy: { DEFAULT: v('--navy'), deep: v('--navy-deep') },
         'on-accent': v('--on-accent'),
         chrome: v('--chrome'),

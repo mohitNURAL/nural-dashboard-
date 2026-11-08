@@ -20,6 +20,8 @@
   --bad-soft: #f1b9ba; /* Red/R200 */
   --good: #039194; /* Teal/T600 until design adds a green */
   --warn: #f59e0b;
+  /* Done (Tasks in hand planner, 2026-11-08): a real green; the Figma file has none yet. */
+  --success: #178a4a;
   --text: #231f20;
   --border: #dfddde; /* Grey 200 */
   --text-muted: #b9b2b4; /* Grey 300 */
@@ -56,6 +58,7 @@
   --chrome: #111937; /* Primary 800 */
   --neutral-chip: #2a3150;
   --on-primary: #0d111e;
+  --success: #3cb371; /* readable on the dark surface */
   color-scheme: dark;
 }
 
