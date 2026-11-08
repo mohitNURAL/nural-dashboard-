@@ -23,7 +23,10 @@ and the next change fills its ID in.
 
 ## 2026-11-08
 
-- Tasks in hand planner: scrolls and drags freely from week to week (the period before and after
+- Tasks in hand planner, Short view: the week fills the width shown (no stretching, no sideways
+  scroll for one week), titles cut with "…", slimmer row names so more people fit; also in the
+  Planner this week card.
+- `e70107b` Tasks in hand planner: scrolls and drags freely from week to week (the period before and after
   load with it); Day view Short (one line a task) / Full (each task with ID, assignee or project,
   deadline and what happened); Excel and PDF laid out like the grid (a row per person, dates
   across the top, tasks in each cell, tinted like the screen); readable secondary text in light

@@ -202,7 +202,7 @@ export function InHandCalendarDialog({
 
   // ---- Scrolling: jumps (opening, the arrows, Today, a new view) and free movement.
   const scroller = useRef<HTMLDivElement>(null);
-  const scrollerRef = useDragPan(scroller);
+  const { ref: scrollerRef, width: boxWidth } = useDragPan(scroller);
   /** Put the toolbar's period at the left edge after the next render. */
   const jump = useRef(true);
   /** The column at the left edge and where it was: kept in place when columns join on the left. */
@@ -246,7 +246,7 @@ export function InHandCalendarDialog({
     if (moving.current && plannerStart(view, moving.current) === timeline.mid.start)
       moving.current = null;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs when the columns change
-  }, [colKeys, stale, density]);
+  }, [colKeys, stale, density, boxWidth]);
 
   const frame = useRef(0);
   const onScroll = () => {
@@ -443,6 +443,7 @@ export function InHandCalendarDialog({
                 <PlannerTable
                   data={table}
                   density={density}
+                  fitWidth={boxWidth}
                   onTask={openTask}
                   onOverdue={(r) => setPanel({ type: 'overdue', row: r.id, name: r.name })}
                   onPeriod={(r, c) =>

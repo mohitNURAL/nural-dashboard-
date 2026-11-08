@@ -35,7 +35,7 @@ export function PlannerPreviewCard({
   });
   const planner = usePlanner();
   const st = usePlannerState();
-  const scroller = useDragPan<HTMLDivElement>();
+  const { ref: scroller, width: boxWidth } = useDragPan<HTMLDivElement>();
 
   /** Opens the planner on this week, grouped the same way, on a task or a row if given. */
   const open = (focus?: PlannerFocus) => {
@@ -106,6 +106,7 @@ export function PlannerPreviewCard({
                 data={data}
                 density="short"
                 compact
+                fitWidth={boxWidth}
                 onTask={(id) => open({ type: 'task', id })}
                 onOverdue={(r) => open({ type: 'overdue', row: r.id, name: r.name })}
               />

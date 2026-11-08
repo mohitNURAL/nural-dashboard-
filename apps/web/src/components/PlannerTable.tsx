@@ -55,6 +55,11 @@ function widthOf(view: PlannerView, density: Density, weekend: boolean, compact?
   return weekend ? 'min-w-[110px] w-[110px]' : 'min-w-[180px] w-[180px]';
 }
 
+/** Short: a weekend day takes this share of a weekday's width. */
+const WEEKEND_SHARE = 0.6;
+/** Short: a weekday is never narrower than this (a small screen scrolls instead). */
+const MIN_DAY = 110;
+
 export function PlannerTable({
   data,
   density,
@@ -62,6 +67,7 @@ export function PlannerTable({
   onOverdue,
   onPeriod,
   compact,
+  fitWidth,
 }: {
   data: PlannerTableData;
   density: Density;
@@ -70,22 +76,41 @@ export function PlannerTable({
   onPeriod?: (row: Row, c: Column) => void;
   /** The dashboard preview: narrower columns, no row progress. */
   compact?: boolean;
+  /**
+   * The width the grid is shown in. Day view Short sizes a week to fill it exactly (no stretching,
+   * no sideways scroll for one week); titles are cut with "…".
+   */
+  fitWidth?: number;
 }) {
   const { view, today, columns, rows } = data;
   const by = data.groupBy;
   const weekend = (c: Column) => view === 'day' && isWeekend(c.from);
+  const short = view === 'day' && density === 'short';
+  const firstW = compact || short ? 170 : 200;
+  // Short day view: 5 weekdays and 2 narrower weekend days share the width left of the names.
+  const unit =
+    short && fitWidth ? Math.max(MIN_DAY, (fitWidth - firstW - 1) / (5 + 2 * WEEKEND_SHARE)) : 0;
+  const colW = (c: Column) => Math.floor(weekend(c) ? unit * WEEKEND_SHARE : unit);
+  const fixed = (w: number): CSSProperties => ({ width: w, minWidth: w, maxWidth: w });
   // In the Day view a thicker line marks where a week starts.
   const weekLine = (c: Column, i: number) =>
     view === 'day' && i > 0 && new Date(`${c.from}T00:00:00Z`).getUTCDay() === 1;
   return (
-    <table className="border-separate border-spacing-0 text-table">
+    <table
+      className="border-separate border-spacing-0 text-table"
+      style={
+        unit
+          ? { tableLayout: 'fixed', width: firstW + columns.reduce((a, c) => a + colW(c), 0) }
+          : undefined
+      }
+    >
       <thead className="sticky top-0 z-20">
         <tr>
           <th
             className={clsx(
               'sticky left-0 z-30 border-b border-r border-border bg-surface px-3 py-2 text-left align-top',
-              compact ? 'min-w-[170px] w-[170px]' : 'min-w-[200px] w-[200px]',
             )}
+            style={fixed(firstW)}
           >
             <span className="block font-heading text-label font-bold uppercase tracking-wide text-primary">
               {by === 'project' ? 'Project' : 'Assignee'}
@@ -102,9 +127,10 @@ export function PlannerTable({
               <th
                 key={c.key}
                 data-col={c.key}
+                style={unit ? fixed(colW(c)) : undefined}
                 className={clsx(
-                  'border-b border-border px-2 py-2 text-left align-top',
-                  widthOf(view, density, weekend(c), compact),
+                  'overflow-hidden border-b border-border px-2 py-2 text-left align-top',
+                  !unit && widthOf(view, density, weekend(c), compact),
                   weekLine(c, i) && 'border-l-2 border-l-primary-soft-300',
                   isToday
                     ? 'bg-accent/15 text-text shadow-[inset_0_2px_0_var(--accent)]'
@@ -113,10 +139,19 @@ export function PlannerTable({
                       : 'bg-surface text-primary-dark',
                 )}
               >
-                <span className="block font-heading text-label font-bold uppercase">{top}</span>
-                <span className={clsx('block font-body text-[12px] font-normal', SUB)}>
-                  {dates}
-                </span>
+                {short ? (
+                  <span className="block truncate">
+                    <span className="font-heading text-label font-bold uppercase">{top}</span>{' '}
+                    <span className={clsx('font-body text-[12px] font-normal', SUB)}>{dates}</span>
+                  </span>
+                ) : (
+                  <>
+                    <span className="block font-heading text-label font-bold uppercase">{top}</span>
+                    <span className={clsx('block font-body text-[12px] font-normal', SUB)}>
+                      {dates}
+                    </span>
+                  </>
+                )}
                 {tot && (tot.planned > 0 || !weekend(c)) && (
                   <ProgressBar p={tot} future={c.from > today} />
                 )}
@@ -128,10 +163,28 @@ export function PlannerTable({
       <tbody>
         {rows.map((r) => (
           <tr key={r.id} className="align-top">
-            <td className="sticky left-0 z-10 border-b border-r border-border bg-surface px-3 py-2">
-              <span className="block font-heading font-bold text-primary-dark">{r.name}</span>
-              <span className={clsx('text-[12px]', SUB)}>
-                {r.open} open ·{' '}
+            <td
+              className={clsx(
+                'sticky left-0 z-10 border-b border-r border-border bg-surface px-3',
+                short ? 'py-1.5' : 'py-2',
+              )}
+              style={fixed(firstW)}
+            >
+              <span
+                className="block truncate font-heading font-bold text-primary-dark"
+                title={r.name}
+              >
+                {r.name}
+              </span>
+              <span className={clsx('block text-[12px]', SUB)}>
+                {r.open} open{short ? '' : ' · '}
+                {short && r.progress.planned > 0 && (
+                  <>
+                    {' · '}
+                    <b className="text-text">{r.progress.done}</b>/{r.progress.planned} done
+                  </>
+                )}
+                {short && <br />}
                 {r.overdueNow ? (
                   onOverdue ? (
                     <button
@@ -148,7 +201,7 @@ export function PlannerTable({
                   '0 overdue'
                 )}
               </span>
-              {!compact && <ProgressBar p={r.progress} soFar />}
+              {!compact && !short && <ProgressBar p={r.progress} soFar />}
             </td>
             {columns.map((c, i) => {
               const cell = r.cells[c.key];
@@ -166,7 +219,8 @@ export function PlannerTable({
                       : null,
                   )}
                   className={clsx(
-                    'border-b border-border px-2 py-2',
+                    'overflow-hidden border-b border-border px-2',
+                    short ? 'py-1.5' : 'py-2',
                     isToday && 'border-x-2 border-x-accent',
                     weekLine(c, i) && !isToday && 'border-l-2 border-l-primary-soft-300',
                     weekend(c) && !cell?.planned && 'bg-bg',

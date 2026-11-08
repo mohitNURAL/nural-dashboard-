@@ -4,10 +4,19 @@ import { useCallback, useEffect, useState, type MutableRefObject } from 'react';
 /**
  * Drag with the mouse to move the grid (sideways through the weeks, or down the rows). A drag
  * longer than a few pixels is not a click, so the task under the pointer does not open. Returns
- * the ref to put on the box (it also fills `ref`): the box may appear after the first render.
+ * the ref to put on the box (it also fills `ref`), the box may appear after the first render, and
+ * the box's inner width (kept up to date).
  */
 export function useDragPan<T extends HTMLElement>(ref?: MutableRefObject<T | null>) {
   const [el, setEl] = useState<T | null>(null);
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    if (!el) return;
+    const ro = new ResizeObserver(() => setWidth(el.clientWidth));
+    ro.observe(el);
+    setWidth(el.clientWidth);
+    return () => ro.disconnect();
+  }, [el]);
   const setRef = useCallback(
     (node: T | null) => {
       if (ref) ref.current = node;
@@ -67,5 +76,5 @@ export function useDragPan<T extends HTMLElement>(ref?: MutableRefObject<T | nul
       window.removeEventListener('pointerup', onUp);
     };
   }, [el]);
-  return setRef;
+  return { ref: setRef, width };
 }
