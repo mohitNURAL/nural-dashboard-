@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { useApi, withGroupBy } from '../../api/queries';
 import type { GroupBy, InHand } from '../../api/types';
 import { InHandCard } from '../../components/InHandCard';
+import { PlannerPreviewCard } from '../../components/PlannerPreviewCard';
+import { useQaPlannerSource } from './plannerSource';
 import { rowParams } from '../dev/drill';
 import { useFocusRow } from '../filters/useFilters';
 import { INFO } from '../info';
@@ -36,4 +38,9 @@ export function QaInHandCard() {
       }
     />
   );
+}
+
+/** The planner's week on the dashboard, without opening it (2026-11-08). */
+export function QaPlannerCard() {
+  return <PlannerPreviewCard source={useQaPlannerSource()} info={INFO.plannerPreview} />;
 }

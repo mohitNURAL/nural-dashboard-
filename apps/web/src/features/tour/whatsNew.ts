@@ -18,6 +18,60 @@ const slot = (group: string, id: string) => `[data-group="${group}"] [data-slot=
 
 export const WHATS_NEW: WhatsNew[] = [
   {
+    id: '2026-11-08-planner-free-kpi',
+    date: '2026-11-08',
+    tab: 'kpi',
+    title: 'Planner: this week on the page, free scrolling, Short / Full, files like the grid',
+    steps: [
+      {
+        target: slot('kpi.cards', 'planner'),
+        title: 'Planner this week',
+        text: 'This week of the Tasks in hand planner, right on the page: a row per person (or project), each day with its tasks one line each (green edge done, blue planned, teal day plan, red not done; 2× = deadlines missed). Drag it sideways or use ‹ › for other weeks; hover a task for its details, click it for its plan log, or Open planner.',
+      },
+      {
+        target: slot('kpi.tiles', 'inHand'),
+        title: 'The planner moves freely',
+        text: 'The planner now scrolls freely: drag the grid with the mouse (or scroll sideways) from week to week, or month to month. In Day, Short shows one line a task and Full each task with its details (ID, project, assignee, deadline, what happened). Excel and PDF now look like the planner: a row per person, the dates across the top and the tasks of each day in its cell. Text is easier to read in light and dark.',
+      },
+    ],
+  },
+  {
+    id: '2026-11-08-planner-free-dev',
+    date: '2026-11-08',
+    tab: 'dev',
+    title: 'Planner: this week on the page, free scrolling, Short / Full, files like the grid',
+    steps: [
+      {
+        target: slot('dev.cards', 'planner'),
+        title: 'Planner this week',
+        text: 'This week of the Tasks in hand planner, right on the page: a row per person (or project), each day with its tasks one line each (green edge done, blue planned, teal day plan, red not done; 2× = deadlines missed). Drag it sideways or use ‹ › for other weeks; hover a task for its details, click it for its plan log, or Open planner.',
+      },
+      {
+        target: slot('dev.tiles', 'inHand'),
+        title: 'The planner moves freely',
+        text: 'The planner now scrolls freely: drag the grid with the mouse (or scroll sideways) from week to week, or month to month. In Day, Short shows one line a task and Full each task with its details (ID, project, assignee, deadline, what happened). Excel and PDF now look like the planner: a row per person, the dates across the top and the tasks of each day in its cell. Text is easier to read in light and dark.',
+      },
+    ],
+  },
+  {
+    id: '2026-11-08-planner-free-qa',
+    date: '2026-11-08',
+    tab: 'qa',
+    title: 'Planner: this week on the page, free scrolling, Short / Full, files like the grid',
+    steps: [
+      {
+        target: slot('qa.cards', 'planner'),
+        title: 'Planner this week',
+        text: 'This week of the Tasks in hand planner, right on the page: a row per person (or project), each day with its tasks one line each (green edge done, blue planned, teal day plan, red not done; 2× = deadlines missed). Drag it sideways or use ‹ › for other weeks; hover a task for its details, click it for its plan log, or Open planner.',
+      },
+      {
+        target: slot('qa.tiles', 'inHand'),
+        title: 'The planner moves freely',
+        text: 'The planner now scrolls freely: drag the grid with the mouse (or scroll sideways) from week to week, or month to month. In Day, Short shows one line a task and Full each task with its details (ID, project, assignee, deadline, what happened). Excel and PDF now look like the planner: a row per person, the dates across the top and the tasks of each day in its cell. Text is easier to read in light and dark.',
+      },
+    ],
+  },
+  {
     id: '2026-11-08-planner-kpi',
     date: '2026-11-08',
     tab: 'kpi',

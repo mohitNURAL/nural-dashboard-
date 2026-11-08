@@ -11,16 +11,30 @@ import {
 } from 'nuqs';
 import { create } from 'zustand';
 
+/** What the planner opens on, from the dashboard's planner preview: a task's log or a row's overdue. */
+export type PlannerFocus =
+  { type: 'task'; id: number } | { type: 'overdue'; row: number; name: string };
+
 interface State {
   open: boolean;
-  show: () => void;
+  /** Who opened it, and so draws it: the Tasks in hand tile or the planner preview card. */
+  from: 'tile' | 'preview';
+  focus: PlannerFocus | null;
+  show: (focus?: PlannerFocus, from?: 'tile' | 'preview') => void;
   close: () => void;
+  /** The dialog has opened on the focus. */
+  clearFocus: () => void;
 }
 
-export const usePlanner = create<State>((set) => ({
+export const usePlanner = create<State>((set, get) => ({
   open: false,
-  show: () => set({ open: true }),
-  close: () => set({ open: false }),
+  from: 'tile',
+  focus: null,
+  show: (focus, from = 'tile') => set({ open: true, focus: focus ?? null, from }),
+  close: () => set({ open: false, focus: null }),
+  clearFocus: () => {
+    if (get().focus) set({ focus: null });
+  },
 }));
 
 // Prefixed names: `assignee`, `project`, `from` and `to` are the tab's own filters.
@@ -32,6 +46,8 @@ const plannerParsers = {
   pa: parseAsArrayOf(parseAsInteger).withDefault([]),
   pp: parseAsArrayOf(parseAsInteger).withDefault([]),
   pq: parseAsString.withDefault(''),
+  /** Day view: Short (one line a task) or Full (each task with its details), 2026-11-08. */
+  pd: parseAsStringLiteral(['short', 'full'] as const).withDefault('short'),
 };
 
 /** The planner's view state, kept in the URL. */
@@ -44,6 +60,7 @@ export function usePlannerState() {
     assignees: s.pa,
     projects: s.pp,
     q: s.pq,
+    density: s.pd,
     /** A new view opens on its default period. */
     setView: (v: (typeof PLANNER_VIEWS)[number]) => void set({ pv: v, ps: null }),
     setStart: (start: string | null) => void set({ ps: start }),
@@ -51,5 +68,9 @@ export function usePlannerState() {
     setAssignees: (ids: number[]) => void set({ pa: ids.length ? ids : null }),
     setProjects: (ids: number[]) => void set({ pp: ids.length ? ids : null }),
     setQ: (q: string) => void set({ pq: q || null }),
+    setDensity: (d: 'short' | 'full') => void set({ pd: d === 'short' ? null : d }),
+    /** Opens a given week of the Day view (the dashboard's planner preview). */
+    openWeek: (start: string | null, by: 'assignee' | 'project') =>
+      void set({ pv: 'day', ps: start, pg: by }),
   };
 }

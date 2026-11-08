@@ -25,7 +25,8 @@ export function InHandTile({
   /** Opens the tab's list of these tasks, narrowed to one window. */
   onOpen: (w: DueWindow, label: string) => void;
 }) {
-  const { open: planner, show, close } = usePlanner();
+  const { open, from, show, close } = usePlanner();
+  const planner = open && from === 'tile';
   return (
     <>
       <StatTile

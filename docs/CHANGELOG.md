@@ -23,7 +23,12 @@ and the next change fills its ID in.
 
 ## 2026-11-08
 
-- Every deploy reads the deadline history (scripts/server-update.sh runs `pnpm sync:deadlines`
+- Tasks in hand planner: scrolls and drags freely from week to week (the period before and after
+  load with it); Day view Short (one line a task) / Full (each task with ID, assignee or project,
+  deadline and what happened); Excel and PDF laid out like the grid (a row per person, dates
+  across the top, tasks in each cell, tinted like the screen); readable secondary text in light
+  and dark; new "Planner this week" card on KPI, Development and QA (SRS 25).
+- `4dbd6d6` Every deploy reads the deadline history (scripts/server-update.sh runs `pnpm sync:deadlines`
   after the restart; resumable, read-only, never fails the deploy), so the planner's moves and
   missed deadlines cover tasks from before the planner went live.
 - `91124f2` Tasks in hand planner redesigned (SRS 25, mockup docs/tasks-in-hand-planner.html) on KPI,

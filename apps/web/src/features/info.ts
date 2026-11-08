@@ -21,6 +21,8 @@ export const INFO = {
     'Pending, not on hold, the deadline has passed and it fell in the current day, week or month (IST).',
   devProjects:
     'Every project active in Bitrix24 whose owner is in the Development or QA Testing department, or a PM (fixed: the switch and filters do not change it; only the Project filter narrows it) = Active + Silent + Hold. Hold: every unfinished task is in On Hold. Active: open tasks and a task changed or moved in the last 30 days (bulk changes left out). Silent: the rest (no open task, or no activity for 30 days). Click for Projects at work, most active this week first, then the earliest deadline: open a project for who works on it. Its Day / Week / Month switch sets Done (previous period), Overdue (this period) and Spill (previous period).',
+  plannerPreview:
+    'The Tasks in hand planner for this week, without opening it: one row per person or project, each day with its tasks one line each (green edge done, blue planned, teal day plan, red not done; 2× = deadlines missed, → where it moved). Drag the grid sideways or use ‹ › for other weeks. Hover a task for its details, click it for its plan log; Open planner for the Full view, Week and Month, Excel and PDF.',
   inHandBy:
     'Pending tasks with the deadline ahead, per assignee or project. The chart shows the window picked above it (All, Tomorrow, Rest of week, Rest of month, Next week, Next month); the table shows every window. A bar or count opens those tasks; a name sets the filter.',
   qaInHandBy:

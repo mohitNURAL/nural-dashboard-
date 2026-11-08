@@ -2,16 +2,16 @@
 // Feedback, or for Retesting awaited Dev tasks and Issues) add up to it and open their own list.
 import type { IssuePreset, QaSummaryPart } from '@nural/shared';
 import { SortableGroup } from '../../components/layout/SortableGroup';
-import { useFilterSummary } from '../filters/useFilters';
 import { InHandTile } from '../../components/InHandTile';
 import { StatTile } from '../../components/StatTile';
 import { useIssueList, useOpenIssues } from './issueList';
-import { useQaParams, useQaRetest, useQaSummary } from './api';
+import { useQaRetest, useQaSummary } from './api';
 import { FiledDialog } from './FiledDialog';
 import { useFiledPopup } from './filedPopup';
 import { OpenDialog } from './OpenDialog';
 import { useOpenPopup } from './openPopup';
 import { lastFiledText } from './format';
+import { useQaPlannerSource } from './plannerSource';
 import { INFO } from '../info';
 
 interface Props {
@@ -28,8 +28,7 @@ const TYPE_LABEL = { bug: 'Bug', feedback: 'Feedback' } as const;
 
 export function QaTiles({ active, onSelect, onPart, onRetest }: Props) {
   const { data } = useQaSummary();
-  const qaParams = useQaParams();
-  const showing = useFilterSummary('qa');
+  const planner = useQaPlannerSource();
   const { data: retest } = useQaRetest();
   const openList = useOpenIssues();
   const shown = useIssueList((st) => st.list.label);
@@ -70,19 +69,7 @@ export function QaTiles({ active, onSelect, onPart, onRetest }: Props) {
                 onOpen={(w, label) =>
                   openList({ kind: 'testing', preset: 'pending', label, params: { due: w } })
                 }
-                calendar={{
-                  path: '/api/qa/inhand/calendar',
-                  params: qaParams,
-                  showing: showing ?? undefined,
-                  onOpen: (label, params, overdue) =>
-                    openList({
-                      kind: 'testing',
-                      preset: overdue ? 'overdue' : 'pending',
-                      label,
-                      params,
-                      back: 'planner',
-                    }),
-                }}
+                calendar={planner}
               />
             ),
           },

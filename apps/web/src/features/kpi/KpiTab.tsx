@@ -25,7 +25,7 @@ import { useKpiParams, useKpiSummary } from './api';
 import { KPI_INFO } from './info';
 import { InsightsCard } from './InsightsCard';
 import { KpiTiles } from './KpiTiles';
-import { KpiInHandCard } from './InHandByCard';
+import { KpiInHandCard, KpiPlannerCard } from './InHandByCard';
 import { kpiFilterKey, useKpiList, useOpenKpiList } from './kpiList';
 import { OverdueCard } from './OverdueCard';
 import { PERIOD_WORDS } from './format';
@@ -105,6 +105,7 @@ export function KpiTab() {
               className: 'lg:col-span-12',
               node: <ProjectHealthCard ref={projectsRef} />,
             },
+            { id: 'planner', className: 'lg:col-span-12', node: <KpiPlannerCard /> },
             { id: 'inHand', className: 'lg:col-span-12', node: <KpiInHandCard /> },
             { id: 'overdue', className: 'lg:col-span-6', node: <OverdueCard ref={overdueRef} /> },
             { id: 'workload', className: 'lg:col-span-6', node: <WorkloadCard /> },

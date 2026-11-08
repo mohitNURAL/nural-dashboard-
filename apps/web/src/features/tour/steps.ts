@@ -122,6 +122,7 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
     },
     { target: slot('dev.tiles', 'doneToday'), title: 'Done today', text: INFO.doneToday },
     { target: slot('dev.tiles', 'inHand'), title: 'Tasks in hand', text: INFO.inHand },
+    { target: slot('dev.cards', 'planner'), title: 'Planner this week', text: INFO.plannerPreview },
     {
       target: slot('dev.cards', 'inHand'),
       title: 'Tasks in hand by assignee',
@@ -164,6 +165,7 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
       member: `Bugs and feedback assigned to you or filed by you. ${CLICK_COUNT}`,
     },
     { target: slot('qa.tiles', 'inHand'), title: 'Tasks in hand', text: INFO.qaInHand },
+    { target: slot('qa.cards', 'planner'), title: 'Planner this week', text: INFO.plannerPreview },
     {
       target: slot('qa.cards', 'inHand'),
       title: 'Tasks in hand by assignee',
@@ -230,6 +232,11 @@ export const TAB_STEPS: Record<Tab, TourStep[]> = {
     { target: slot('kpi.tiles', 'onTime'), title: 'On-time', text: KPI_INFO.onTime },
     { target: slot('kpi.tiles', 'active'), title: 'Projects', text: KPI_INFO.active },
     { target: slot('kpi.tiles', 'inHand'), title: 'Tasks in hand', text: KPI_INFO.inHand },
+    {
+      target: slot('kpi.cards', 'planner'),
+      title: 'Planner this week',
+      text: KPI_INFO.plannerPreview,
+    },
     {
       target: slot('kpi.cards', 'inHand'),
       title: 'Tasks in hand by assignee',

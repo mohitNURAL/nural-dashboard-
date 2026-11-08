@@ -26,7 +26,7 @@ import { TILE_LABELS } from './format';
 import { RankingCard } from './RankingCard';
 import { StageMatrixCard } from './StageMatrixCard';
 import { SummaryTiles } from './SummaryTiles';
-import { DevInHandCard } from './InHandByCard';
+import { DevInHandCard, DevPlannerCard } from './InHandByCard';
 import { INFO } from '../info';
 
 type Section = 'dueToday' | 'overdue' | 'all' | 'alerts';
@@ -140,6 +140,7 @@ export function DevTab() {
           items={[
             { id: 'assignees', className: 'lg:col-span-7', node: <AssigneeTableCard /> },
             { id: 'pendingDone', className: 'lg:col-span-5', node: <PendingDoneCard /> },
+            { id: 'planner', className: 'lg:col-span-12', node: <DevPlannerCard /> },
             { id: 'inHand', className: 'lg:col-span-12', node: <DevInHandCard /> },
             { id: 'ageing', className: 'lg:col-span-6', node: <TaskAgeingCard /> },
             { id: 'ranking', className: 'lg:col-span-6', node: <RankingCard /> },

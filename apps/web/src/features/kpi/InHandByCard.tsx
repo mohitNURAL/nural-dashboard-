@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { useApi, withGroupBy } from '../../api/queries';
 import type { GroupBy, InHand } from '../../api/types';
 import { InHandCard } from '../../components/InHandCard';
+import { PlannerPreviewCard } from '../../components/PlannerPreviewCard';
+import { useKpiPlannerSource } from './plannerSource';
 import { useFocusRow } from '../filters/useFilters';
 import { useKpiParams } from './api';
 import { KPI_INFO } from './info';
@@ -34,4 +36,9 @@ export function KpiInHandCard() {
       }
     />
   );
+}
+
+/** The planner's week on the dashboard, without opening it (2026-11-08). */
+export function KpiPlannerCard() {
+  return <PlannerPreviewCard source={useKpiPlannerSource()} info={KPI_INFO.plannerPreview} />;
 }

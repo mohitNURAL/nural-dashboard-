@@ -8,6 +8,8 @@ export const KPI_INFO = {
     'Tasks closed in the period (first QA Backlog, else the Bitrix24 closed date). Clean-ups of 30+ tasks closed in one project on one day are left out.',
   onTime:
     'Of the tasks closed in the period that had a deadline, the share closed on or before it.',
+  plannerPreview:
+    'The Tasks in hand planner for this week, without opening it: one row per person or project, each day with its tasks one line each (green edge done, blue planned, teal day plan, red not done; 2× = deadlines missed, → where it moved). Drag the grid sideways or use ‹ › for other weeks. Hover a task for its details, click it for its plan log; Open planner for the Full view, Week and Month, Excel and PDF.',
   inHandBy:
     'Open tasks with the deadline ahead, per assignee or project. The chart shows the window picked above it (All, Tomorrow, Rest of week, Rest of month, Next week, Next month); the table shows every window. A bar or count opens those tasks; a name sets the filter.',
   inHand:

@@ -13,6 +13,7 @@ export const POINT_LABELS: Record<string, Record<string, string>> = {
     inHand: 'Tasks in hand',
   },
   'dev.cards': {
+    planner: 'Planner this week',
     assignees: 'Assignee-wise tasks',
     pendingDone: 'Pending vs Done',
     inHand: 'Tasks in hand by assignee',
@@ -37,6 +38,7 @@ export const POINT_LABELS: Record<string, Record<string, string>> = {
     retestAwaited: 'Retesting awaited',
   },
   'qa.cards': {
+    planner: 'Planner this week',
     issuesByAssignee: 'Issues by assignee',
     rework: 'Rework by developer',
     testing: 'Testing team workload',
@@ -63,6 +65,7 @@ export const POINT_LABELS: Record<string, Record<string, string>> = {
     inHand: 'Tasks in hand',
   },
   'kpi.cards': {
+    planner: 'Planner this week',
     insights: 'Insights',
     projectHealth: 'Project health',
     inHand: 'Tasks in hand by assignee',

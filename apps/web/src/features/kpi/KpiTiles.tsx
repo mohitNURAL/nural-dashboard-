@@ -3,11 +3,12 @@
 import { SortableGroup } from '../../components/layout/SortableGroup';
 import { InHandTile } from '../../components/InHandTile';
 import { StatTile } from '../../components/StatTile';
-import { useFilterSummary, useKpiControls } from '../filters/useFilters';
-import { useKpiParams, useKpiSummary } from './api';
+import { useKpiControls } from '../filters/useFilters';
+import { useKpiSummary } from './api';
 import { KPI_INFO } from './info';
 import { useKpiList, useOpenKpiList } from './kpiList';
 import { PERIOD_WORDS } from './format';
+import { useKpiPlannerSource } from './plannerSource';
 import type { ProjectShow } from './projectShow';
 
 export function KpiTiles({
@@ -19,8 +20,7 @@ export function KpiTiles({
   onOverdue: () => boolean;
 }) {
   const { data: s } = useKpiSummary();
-  const kpiParams = useKpiParams();
-  const showing = useFilterSummary('kpi');
+  const planner = useKpiPlannerSource();
   const { period } = useKpiControls();
   const open = useOpenKpiList();
   const shown = useKpiList((st) => st.list.label);
@@ -191,18 +191,7 @@ export function KpiTiles({
               info={KPI_INFO.inHand}
               active={!!shown?.startsWith('Tasks in hand')}
               onOpen={(w, label) => list(label, { kpi: 'open', due: w }, KPI_INFO.inHand)}
-              calendar={{
-                path: '/api/kpi/inhand/calendar',
-                params: kpiParams,
-                showing: showing ?? undefined,
-                onOpen: (label, params, overdue) =>
-                  open({
-                    label,
-                    params: { kpi: overdue ? 'overdue' : 'open', ...params },
-                    info: overdue ? KPI_INFO.overdue : KPI_INFO.inHand,
-                    back: 'planner',
-                  }),
-              }}
+              calendar={planner}
             />
           ),
         },

@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { useApi, withGroupBy } from '../../api/queries';
 import type { GroupBy, InHand } from '../../api/types';
 import { InHandCard } from '../../components/InHandCard';
+import { PlannerPreviewCard } from '../../components/PlannerPreviewCard';
+import { useDevPlannerSource } from './plannerSource';
 import { useFocusRow } from '../filters/useFilters';
 import { INFO } from '../info';
 import { useDevParams } from './api';
@@ -30,4 +32,9 @@ export function DevInHandCard() {
       }
     />
   );
+}
+
+/** The planner's week on the dashboard, without opening it (2026-11-08). */
+export function DevPlannerCard() {
+  return <PlannerPreviewCard source={useDevPlannerSource()} info={INFO.plannerPreview} />;
 }
