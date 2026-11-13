@@ -21,9 +21,17 @@ and the next change fills its ID in.
 - Tasks in hand planner: day plans come from posted Daily update plans only; working-day
   holidays are not greyed (weekends are). The PDF guides do not show the new planner yet.
 
+## 2026-11-13
+
+- Tasks in hand planner PDF: text no longer overlaps; each line is measured in its own font
+  (bold names), clipped to its cell, and characters the PDF font lacks (₹, emoji, other scripts)
+  print as "?".
+- `de3e77f` Code pushed to the company repo NuraltechPvtLtd/NuralPulseDashboard (its earlier
+  history joined, our files unchanged); deploys still run from mohitNURAL until DevOps moves them.
+
 ## 2026-11-08
 
-- Tasks in hand planner, Short view: the week fills the width shown (no stretching, no sideways
+- `b8d87e6` Tasks in hand planner, Short view: the week fills the width shown (no stretching, no sideways
   scroll for one week), titles cut with "…", slimmer row names so more people fit; also in the
   Planner this week card.
 - `e70107b` Tasks in hand planner: scrolls and drags freely from week to week (the period before and after

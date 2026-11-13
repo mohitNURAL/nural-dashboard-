@@ -200,10 +200,24 @@ const rgb = (hex: string): [number, number, number] => [
   parseInt(hex.slice(3, 5), 16),
   parseInt(hex.slice(5, 7), 16),
 ];
-/** The PDF's built-in font has no arrows. */
-const pdfText = (t: string) => t.replace(/→/g, '->');
+/** Characters the PDF's built-in font (Windows-1252) has beyond Latin-1. */
+const WIN_ANSI = new Set('€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ');
+/**
+ * Text the PDF's built-in font can draw and measure: arrows as "->", ticks as "(done)", and any
+ * other character it has no glyph for (₹, emoji, other scripts) as "?". Unknown glyphs are
+ * measured wrong, which made long titles run over the next column.
+ */
+export const pdfText = (t: string) =>
+  [...t.replace(/→/g, '->').replace(/✓/g, '(done)').replace(/\t/g, ' ')]
+    .map((ch) => (ch === '\n' || (ch >= ' ' && ch <= 'ÿ') || WIN_ANSI.has(ch) ? ch : '?'))
+    .join('');
 
 export function exportPlannerPdf(title: string, showing: string, grid: GridExport) {
+  plannerPdf(title, showing, grid).save(fileName(title, 'pdf'));
+}
+
+/** The planner as a PDF document (the grid on landscape A4, or A3 for long Full days). */
+export function plannerPdf(title: string, showing: string, grid: GridExport): jsPDF {
   // Day columns of the Full view need the room of A3.
   const big = grid.day && grid.rows.some((r) => r.some((c) => c.text.split('\n').length > 14));
   const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: big ? 'a3' : 'a4' });
@@ -242,7 +256,11 @@ export function exportPlannerPdf(title: string, showing: string, grid: GridExpor
       pdf.text(pdf.splitTextToSize(pdfText(h), widths[i]! - 6)[0] as string, x + 3, y + 10);
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(6.8);
-      pdf.text(pdfText(grid.sub[i] ?? ''), x + 3, y + 20);
+      pdf.text(
+        pdf.splitTextToSize(pdfText(grid.sub[i] ?? ''), widths[i]! - 6)[0] as string,
+        x + 3,
+        y + 20,
+      );
       x += widths[i]!;
     });
     y += headH;
@@ -250,14 +268,27 @@ export function exportPlannerPdf(title: string, showing: string, grid: GridExpor
   header();
 
   pdf.setFontSize(fs);
+  /** Lines of a cell at its width, measured in the font each line is drawn in. */
+  const wrap = (t: string, w: number, boldFirst: boolean): { line: string; bold: boolean }[] => {
+    const [head = '', ...rest] = pdfText(t).split('\n');
+    const split = (s: string, bold: boolean) => {
+      pdf.setFont('helvetica', bold ? 'bold' : 'normal');
+      return (pdf.splitTextToSize(s, w) as string[]).map((line) => ({ line, bold }));
+    };
+    return [
+      ...split(head, boldFirst),
+      ...rest.flatMap((s) => (s.trim() ? split(s, false) : [{ line: '', bold: false }])),
+    ];
+  };
   for (const r of grid.rows) {
-    const cellLines = r.map((c, i) =>
-      c.text ? (pdf.splitTextToSize(pdfText(c.text), widths[i]! - 8) as string[]) : [],
-    );
+    pdf.setFontSize(fs);
+    const cellLines = r.map((c, i) => (c.text ? wrap(c.text, widths[i]! - 9, i === 0) : []));
     const room = Math.floor((H - 2 * m - headH - 20) / lineH);
     // A cell longer than a page shows what fits and how many more lines there are.
     const shown = cellLines.map((ls) =>
-      ls.length > room ? [...ls.slice(0, room - 1), `… ${ls.length - room + 1} more lines`] : ls,
+      ls.length > room
+        ? [...ls.slice(0, room - 1), { line: `… ${ls.length - room + 1} more lines`, bold: false }]
+        : ls,
     );
     const rowH = Math.max(3, ...shown.map((ls) => ls.length)) * lineH + 6;
     if (y + rowH > H - m - 12) {
@@ -280,10 +311,17 @@ export function exportPlannerPdf(title: string, showing: string, grid: GridExpor
       pdf.setDrawColor(...rgb(XL.border));
       pdf.rect(x, y, w, rowH, 'S');
       pdf.setTextColor(...rgb(i === 0 ? XL.title : '#1E2333'));
-      shown[i]!.forEach((line, k) => {
-        pdf.setFont('helvetica', i === 0 && k === 0 ? 'bold' : 'normal');
+      pdf.setFontSize(fs);
+      // Nothing is drawn outside its cell.
+      pdf.saveGraphicsState();
+      pdf.rect(x + 1, y, w - 2, rowH, null);
+      pdf.clip();
+      pdf.discardPath();
+      shown[i]!.forEach(({ line, bold }, k) => {
+        pdf.setFont('helvetica', bold ? 'bold' : 'normal');
         pdf.text(line, x + 4, y + 4 + lineH * (k + 0.8));
       });
+      pdf.restoreGraphicsState();
       x += w;
     });
     y += rowH;
@@ -299,5 +337,5 @@ export function exportPlannerPdf(title: string, showing: string, grid: GridExpor
       align: 'right',
     });
   }
-  pdf.save(fileName(title, 'pdf'));
+  return pdf;
 }

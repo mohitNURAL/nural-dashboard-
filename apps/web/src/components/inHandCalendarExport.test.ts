@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PlannerGrid } from '../api/types';
-import { plannerGridExport } from './inHandCalendarExport';
+import { pdfText, plannerGridExport } from './inHandCalendarExport';
 
 const task = (id: number, title: string) => ({
   id,
@@ -103,5 +103,9 @@ describe('Tasks in hand planner export', () => {
     expect(tue.text).toBe(
       '0/1 done\n• Moto → Ledger export #7\n   Moved → Thu 12 Nov by Vijay Prajapati · 1st deadline missed',
     );
+  });
+
+  it('PDF text: only characters the PDF font can draw and measure', () => {
+    expect(pdfText('Moto → KYC ✓ – “₹ 500” 🐞\nदो')).toBe('Moto -> KYC (done) – “? 500” ?\n??');
   });
 });
